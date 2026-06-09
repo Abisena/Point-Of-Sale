@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-06-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "company",
+  "column_break_main",
+  "points",
+  "total_earned",
+  "total_redeemed",
+  "stamp_count",
+  "loyalty_tier",
+  "tier_multiplier"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "points",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Poin Saat Ini"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_earned",
+   "fieldtype": "Int",
+   "label": "Total Poin Diperoleh"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_redeemed",
+   "fieldtype": "Int",
+   "label": "Total Poin Ditukar"
+  },
+  {
+   "default": "0",
+   "fieldname": "stamp_count",
+   "fieldtype": "Int",
+   "label": "Stamp Saat Ini"
+  },
+  {
+   "fieldname": "loyalty_tier",
+   "fieldtype": "Link",
+   "label": "Tier",
+   "options": "IMOGI POS Loyalty Tier",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "tier_multiplier",
+   "fieldtype": "Float",
+   "label": "Tier Multiplier",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Loyalty Member",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "IMOGI Cashier",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

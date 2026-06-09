@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-06-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "branch_code",
+  "branch_name",
+  "franchisee",
+  "column_break_main",
+  "period_start",
+  "period_end",
+  "status",
+  "totals_section",
+  "gross_sales",
+  "royalty_percent",
+  "royalty_amount",
+  "order_count",
+  "journal_entry"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "branch_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Kode Cabang",
+   "reqd": 1
+  },
+  {
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Cabang"
+  },
+  {
+   "fieldname": "franchisee",
+   "fieldtype": "Link",
+   "label": "Franchisee",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "period_start",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Periode Mulai",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_end",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Periode Akhir",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nPosted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break",
+   "label": "Ringkasan"
+  },
+  {
+   "fieldname": "gross_sales",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Penjualan Kotor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "royalty_percent",
+   "fieldtype": "Float",
+   "label": "Royalty %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "royalty_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Royalty Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_count",
+   "fieldtype": "Int",
+   "label": "Jumlah Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Royalty Accrual",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

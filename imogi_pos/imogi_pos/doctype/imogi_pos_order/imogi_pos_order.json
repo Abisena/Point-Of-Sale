@@ -1,0 +1,496 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-06-04 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "order_entry_section",
+  "naming_series",
+  "company",
+  "pos_profile",
+  "order_channel",
+  "order_type",
+  "order_source",
+  "column_break_order",
+  "customer",
+  "customer_name",
+  "customer_phone",
+  "customer_email",
+  "restaurant_table",
+  "status",
+  "items_section",
+  "items",
+  "totals_section",
+  "currency",
+  "total_qty",
+  "subtotal",
+  "discount_type",
+  "discount_value",
+  "discount_amount",
+  "voucher_code",
+  "voucher_discount_amount",
+  "loyalty_points_redeemed",
+  "loyalty_discount_amount",
+  "loyalty_points_earned",
+  "promo_discount_amount",
+  "applied_promo",
+  "royalty_amount",
+  "offline_client_id",
+  "marketplace_platform",
+  "external_order_id",
+  "grand_total",
+  "column_break_totals",
+  "requires_kitchen",
+  "requires_fulfillment",
+  "payment_section",
+  "payments",
+  "paid_amount",
+  "pos_invoice",
+  "return_pos_invoice",
+  "refunded_amount",
+  "links_section",
+  "kitchen_order",
+  "fulfillment_task",
+  "delivery_task",
+  "service_section",
+  "service_started_at",
+  "service_completed_at",
+  "column_break_service",
+  "delivery_address",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "order_entry_section",
+   "fieldtype": "Section Break",
+   "label": "Step 01 — POS Counter"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ORD-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "label": "POS Profile",
+   "options": "POS Profile"
+  },
+  {
+   "default": "Walk-in",
+   "fieldname": "order_channel",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Order Channel",
+   "options": "Walk-in\nMobile\nWeb\nQR\nGrabFood\nGoFood\nShopeeFood",
+   "reqd": 1
+  },
+  {
+   "default": "Dine-in",
+   "fieldname": "order_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Order Type",
+   "options": "Dine-in\nTakeaway\nDelivery",
+   "reqd": 1
+  },
+  {
+   "default": "IMOGI POS",
+   "fieldname": "order_source",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Order Source",
+   "options": "IMOGI POS\nERPNext POS\nIMOGI API\nMarketplace",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_order",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_phone",
+   "fieldtype": "Data",
+   "label": "Customer Phone"
+  },
+  {
+   "fieldname": "customer_email",
+   "fieldtype": "Data",
+   "label": "Customer Email",
+   "options": "Email"
+  },
+  {
+   "depends_on": "eval:doc.order_type=='Dine-in'",
+   "fieldname": "restaurant_table",
+   "fieldtype": "Link",
+   "label": "Restaurant Table",
+   "options": "IMOGI Restaurant Table"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Order Status",
+   "no_copy": 1,
+   "options": "Draft\nAwaiting Payment\nPaid\nIn Kitchen\nKitchen Ready\nIn Fulfillment\nFulfilled\nIn Service\nCompleted\nPartially Refunded\nRefunded\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "label": "Products & Cart"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "IMOGI POS Order Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break",
+   "label": "Totals"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_qty",
+   "fieldtype": "Float",
+   "label": "Total Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subtotal",
+   "fieldtype": "Currency",
+   "label": "Subtotal",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discount_type",
+   "fieldtype": "Select",
+   "label": "Discount Type",
+   "options": "\nPercent\nAmount"
+  },
+  {
+   "fieldname": "discount_value",
+   "fieldtype": "Float",
+   "label": "Discount Value"
+  },
+  {
+   "fieldname": "discount_amount",
+   "fieldtype": "Currency",
+   "label": "Discount Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "voucher_code",
+   "fieldtype": "Data",
+   "label": "Voucher Code"
+  },
+  {
+   "fieldname": "voucher_discount_amount",
+   "fieldtype": "Currency",
+   "label": "Voucher Discount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "loyalty_points_redeemed",
+   "fieldtype": "Int",
+   "label": "Loyalty Points Redeemed"
+  },
+  {
+   "fieldname": "loyalty_discount_amount",
+   "fieldtype": "Currency",
+   "label": "Loyalty Discount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "loyalty_points_earned",
+   "fieldtype": "Int",
+   "label": "Loyalty Points Earned",
+   "read_only": 1
+  },
+  {
+   "fieldname": "promo_discount_amount",
+   "fieldtype": "Currency",
+   "label": "Promo Discount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applied_promo",
+   "fieldtype": "Small Text",
+   "label": "Applied Promo",
+   "read_only": 1
+  },
+  {
+   "fieldname": "royalty_amount",
+   "fieldtype": "Currency",
+   "label": "Royalty Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "offline_client_id",
+   "fieldtype": "Data",
+   "label": "Offline Client ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "marketplace_platform",
+   "fieldtype": "Select",
+   "label": "Marketplace",
+   "options": "\nGrabFood\nGoFood\nShopeeFood",
+   "read_only": 1
+  },
+  {
+   "fieldname": "external_order_id",
+   "fieldtype": "Data",
+   "label": "External Order ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "in_standard_filter": 0,
+   "label": "Grand Total",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_kitchen",
+   "fieldtype": "Check",
+   "label": "Requires Kitchen (Step 03)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_fulfillment",
+   "fieldtype": "Check",
+   "label": "Requires Fulfillment (Step 04)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_section",
+   "fieldtype": "Section Break",
+   "label": "Step 02 — Payment Processing"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "payments",
+   "fieldtype": "Table",
+   "label": "Payments",
+   "options": "IMOGI POS Order Payment"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pos_invoice",
+   "fieldtype": "Link",
+   "label": "POS Invoice",
+   "options": "POS Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "return_pos_invoice",
+   "fieldtype": "Link",
+   "label": "Return POS Invoice",
+   "options": "POS Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "refunded_amount",
+   "fieldtype": "Currency",
+   "label": "Refunded Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "links_section",
+   "fieldtype": "Section Break",
+   "label": "Linked Processes"
+  },
+  {
+   "fieldname": "kitchen_order",
+   "fieldtype": "Link",
+   "label": "Kitchen Order",
+   "options": "IMOGI Kitchen Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fulfillment_task",
+   "fieldtype": "Link",
+   "label": "Fulfillment Task",
+   "options": "IMOGI Fulfillment Task",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_task",
+   "fieldtype": "Link",
+   "label": "Delivery Task",
+   "options": "IMOGI Delivery Task",
+   "read_only": 1
+  },
+  {
+   "fieldname": "service_section",
+   "fieldtype": "Section Break",
+   "label": "Step 05 — Delivery & Service"
+  },
+  {
+   "fieldname": "service_started_at",
+   "fieldtype": "Datetime",
+   "label": "Service Started At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "service_completed_at",
+   "fieldtype": "Datetime",
+   "label": "Service Completed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_service",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.order_type=='Delivery'",
+   "fieldname": "delivery_address",
+   "fieldtype": "Small Text",
+   "label": "Delivery Address"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "IMOGI POS Order",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [
+  {
+   "group": "Transactions",
+   "link_doctype": "POS Invoice",
+   "link_fieldname": "imogi_pos_order"
+  },
+  {
+   "group": "Kitchen",
+   "link_doctype": "IMOGI Kitchen Order",
+   "link_fieldname": "pos_order"
+  },
+  {
+   "group": "Fulfillment",
+   "link_doctype": "IMOGI Fulfillment Task",
+   "link_fieldname": "pos_order"
+  },
+  {
+   "group": "Delivery",
+   "link_doctype": "IMOGI Delivery Task",
+   "link_fieldname": "pos_order"
+  }
+ ],
+ "modified": "2026-06-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Order",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

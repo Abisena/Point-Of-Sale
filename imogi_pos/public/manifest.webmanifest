@@ -1,0 +1,25 @@
+{
+  "name": "IMOGI POS Kasir",
+  "short_name": "IMOGI Kasir",
+  "description": "Kasir IMOGI POS untuk tablet dan mobile",
+  "start_url": "/app/imogi-pos-cashier",
+  "scope": "/app/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1f35",
+  "theme_color": "#0f1f35",
+  "icons": [
+    {
+      "src": "/assets/imogi_pos/images/imogi-pos-favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/imogi_pos/images/imogi-pos-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

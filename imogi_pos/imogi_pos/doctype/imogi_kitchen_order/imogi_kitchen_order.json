@@ -1,0 +1,140 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-06-04 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "pos_order",
+  "company",
+  "kitchen_station",
+  "status",
+  "column_break_k",
+  "started_at",
+  "timer_minutes",
+  "expected_ready_at",
+  "quality_check_passed",
+  "items",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "IMO-KIT-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pos_order",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "POS Order",
+   "options": "IMOGI POS Order",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "pos_order.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kitchen_station",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Kitchen Station",
+   "options": "IMOGI Kitchen Station"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nPreparing\nReady\nDone\nCancelled"
+  },
+  {
+   "fieldname": "column_break_k",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Started At"
+  },
+  {
+   "default": "15",
+   "fieldname": "timer_minutes",
+   "fieldtype": "Int",
+   "label": "Timer (Minutes)"
+  },
+  {
+   "fieldname": "expected_ready_at",
+   "fieldtype": "Datetime",
+   "label": "Expected Ready At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "quality_check_passed",
+   "fieldtype": "Check",
+   "label": "Quality Check Passed"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "IMOGI Kitchen Order Item"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-06-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI Kitchen Order",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

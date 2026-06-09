@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Demo Order IMOGI POS API</title>
+	<style>
+		body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+		label { display: block; font-weight: 600; margin-top: 12px; }
+		input, select, button { width: 100%; padding: 10px; margin-top: 6px; box-sizing: border-box; }
+		button { background: #f39c12; border: 0; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 700; }
+		pre { background: #f8fafc; border-radius: 8px; overflow: auto; padding: 12px; }
+		.hint { color: #64748b; font-size: 13px; }
+	</style>
+</head>
+<body>
+	<h1>Demo Order Website → IMOGI POS</h1>
+	<p class="hint">Isi URL bench + API Key/Secret dari IMOGI POS Settings. Jalankan file ini via browser (buka langsung atau serve static).</p>
+
+	<label>Base URL</label>
+	<input id="base_url" value="http://localhost:8003" />
+
+	<label>API Key</label>
+	<input id="api_key" placeholder="X-Imogi-Api-Key" />
+
+	<label>API Secret</label>
+	<input id="api_secret" type="password" placeholder="X-Imogi-Api-Secret" />
+
+	<label>Item Code</label>
+	<input id="item_code" value="IMOGI-001" />
+
+	<label>Qty</label>
+	<input id="qty" type="number" value="1" min="1" />
+
+	<label>Rate</label>
+	<input id="rate" type="number" value="3500" min="0" />
+
+	<label>Mode of Payment</label>
+	<input id="mop" value="Cash" />
+
+	<button type="button" id="btn_create">Buat Order (unpaid)</button>
+	<button type="button" id="btn_auto">Buat + Bayar Langsung</button>
+
+	<h3>Response</h3>
+	<pre id="output">{}</pre>
+
+	<script>
+		const $ = (id) => document.getElementById(id);
+		const headers = () => ({
+			"X-Imogi-Api-Key": $("api_key").value.trim(),
+			"X-Imogi-Api-Secret": $("api_secret").value.trim(),
+		});
+
+		async function call(params) {
+			const base = $("base_url").value.replace(/\/$/, "");
+			const url = base + "/api/method/imogi_pos.api.order.create_order";
+			const body = new URLSearchParams(params);
+			const res = await fetch(url, { method: "POST", headers: { ...headers(), "Content-Type": "application/x-www-form-urlencoded" }, body });
+			const data = await res.json();
+			if (data.exc_type) throw new Error(data.message || data.exc);
+			$("output").textContent = JSON.stringify(data.message || data, null, 2);
+			return data.message || data;
+		}
+
+		$("btn_create").onclick = async () => {
+			try {
+				await call({
+					items: JSON.stringify([{ item_code: $("item_code").value, qty: $("qty").value, rate: $("rate").value }]),
+					order_channel: "Web",
+					order_type: "Takeaway",
+				});
+			} catch (e) {
+				$("output").textContent = e.message;
+			}
+		};
+
+		$("btn_auto").onclick = async () => {
+			try {
+				const total = Number($("qty").value) * Number($("rate").value);
+				await call({
+					items: JSON.stringify([{ item_code: $("item_code").value, qty: $("qty").value, rate: $("rate").value }]),
+					order_channel: "Web",
+					order_type: "Takeaway",
+					auto_pay: 1,
+					payments: JSON.stringify([{ mode_of_payment: $("mop").value, amount: total }]),
+				});
+			} catch (e) {
+				$("output").textContent = e.message;
+			}
+		};
+	</script>
+</body>
+</html>

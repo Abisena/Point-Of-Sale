@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:branch_code",
+ "creation": "2026-06-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "branch_name",
+  "branch_code",
+  "company",
+  "column_break_main",
+  "warehouse",
+  "pos_profile",
+  "is_active",
+  "is_default",
+  "details_section",
+  "city",
+  "target_monthly_sales",
+  "sort_order",
+  "menu_pricing_section",
+  "selling_price_list",
+  "use_custom_menu",
+  "item_groups",
+  "hr_section",
+  "erpnext_branch",
+  "franchise_section",
+  "branch_model",
+  "royalty_percent",
+  "franchisee"
+ ],
+ "fields": [
+  {
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Cabang",
+   "reqd": 1
+  },
+  {
+   "description": "Kode unik cabang, mis. DIRNO-SENAYAN",
+   "fieldname": "branch_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kode Cabang",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "POS Profile",
+   "options": "POS Profile",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktif"
+  },
+  {
+   "default": "0",
+   "description": "Cabang default untuk kasir baru / fallback sistem.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Cabang Default"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Detail"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "Kota"
+  },
+  {
+   "fieldname": "target_monthly_sales",
+   "fieldtype": "Currency",
+   "label": "Target Omzet Bulanan"
+  },
+  {
+   "default": "0",
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Urutan Tampil"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "menu_pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Menu & Harga"
+  },
+  {
+   "description": "Kosongkan untuk memakai Selling Price List dari POS Profile cabang.",
+   "fieldname": "selling_price_list",
+   "fieldtype": "Link",
+   "label": "Selling Price List Cabang",
+   "options": "Price List"
+  },
+  {
+   "default": "0",
+   "description": "Aktifkan untuk membatasi produk di kasir tanpa mengubah POS Profile.",
+   "fieldname": "use_custom_menu",
+   "fieldtype": "Check",
+   "label": "Menu Khusus Cabang"
+  },
+  {
+   "depends_on": "eval:doc.use_custom_menu",
+   "fieldname": "item_groups",
+   "fieldtype": "Table",
+   "label": "Item Group Diizinkan",
+   "options": "IMOGI Branch Item Group"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "hr_section",
+   "fieldtype": "Section Break",
+   "label": "Integrasi HR"
+  },
+  {
+   "description": "Opsional: hubungkan ke Branch ERPNext untuk kehadiran/karyawan.",
+   "fieldname": "erpnext_branch",
+   "fieldtype": "Link",
+   "label": "ERPNext Branch",
+   "options": "Branch"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "franchise_section",
+   "fieldtype": "Section Break",
+   "label": "Franchise"
+  },
+  {
+   "default": "Owned",
+   "fieldname": "branch_model",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Model Cabang",
+   "options": "Owned\nFranchise"
+  },
+  {
+   "depends_on": "eval:doc.branch_model=='Franchise'",
+   "fieldname": "royalty_percent",
+   "fieldtype": "Float",
+   "label": "Royalty %"
+  },
+  {
+   "depends_on": "eval:doc.branch_model=='Franchise'",
+   "fieldname": "franchisee",
+   "fieldtype": "Link",
+   "label": "Franchisee",
+   "options": "Customer"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI Branch",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "IMOGI Cashier"
+  }
+ ],
+ "sort_field": "sort_order",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "branch_name",
+ "track_changes": 1
+}

@@ -1,0 +1,7 @@
+no,produk,kategori,add_on,standard_rate,stock_uom
+1,Chicken Sandwich,Food,"Extra Chicken, Cheese, Fried Egg",25000,Nos
+2,Beef Burger,Food,"Extra Patty, Cheese, Fried Egg",32000,Nos
+3,Matcha Latte Hot,Beverage,"Oat Milk, Whipped Cream",28000,Nos
+4,Lemon Tea,Beverage,"Less Ice, Extra Lemon",15000,Nos
+5,Chocolate Cake,Dessert,Vanilla Ice Cream,22000,Nos
+6,Table Service Fee,Service,,5000,Nos

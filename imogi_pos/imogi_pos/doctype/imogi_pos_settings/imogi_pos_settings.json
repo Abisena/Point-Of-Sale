@@ -1,0 +1,699 @@
+{
+ "actions": [],
+ "creation": "2026-06-04 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "setup_section",
+  "business_type",
+  "business_template",
+  "mode_summary",
+  "setup_complete",
+  "store_identity_section",
+  "store_city",
+  "owner_whatsapp",
+  "multi_branch",
+  "branch_pricing_section",
+  "master_selling_price_list",
+  "sync_prices_to_branches_on_import",
+  "sync_branch_prices",
+  "hq_push_menu_from_branch",
+  "hq_ensure_branch_price_lists",
+  "target_monthly_sales",
+  "default_opening_time",
+  "default_closing_time",
+  "general_section",
+  "default_company",
+  "default_pos_profile",
+  "default_warehouse",
+  "enable_pos_shift",
+  "flow_section",
+  "enable_kitchen_display",
+  "enable_fulfillment",
+  "kitchen_item_groups",
+  "fulfillment_for_order_types",
+  "inventory_section",
+  "low_stock_check_interval",
+  "low_stock_alert_roles",
+  "reorder_level_field",
+  "receipt_section",
+  "enable_receipt_print",
+  "thermal_print_mode",
+  "thermal_printer_width",
+  "receipt_print_format",
+  "receipt_header",
+  "receipt_footer",
+  "import_section",
+  "import_menu",
+  "import_stock",
+  "import_products",
+  "import_bom",
+  "analytics_section",
+  "enable_realtime_notifications",
+  "dashboard_refresh_seconds",
+  "loyalty_section",
+  "enable_loyalty",
+  "loyalty_points_per_amount",
+  "loyalty_point_value",
+  "loyalty_min_redeem_points",
+  "stamp_section",
+  "enable_stamp_card",
+  "stamp_target",
+  "stamp_reward_discount_type",
+  "stamp_reward_discount_value",
+  "stamp_reward_min_order",
+  "promo_section",
+  "enable_promo_rules",
+  "payment_gateway_section",
+  "enable_payment_gateway",
+  "payment_gateway_provider",
+  "payment_gateway_sandbox",
+  "payment_gateway",
+  "payment_gateway_key",
+  "payment_gateway_client_key",
+  "api_section",
+  "enable_order_api",
+  "order_api_user",
+  "enable_order_api_webhook",
+  "order_api_webhook_url",
+  "integrations_section",
+  "enable_offline_cashier",
+  "enable_marketplace_orders",
+  "marketplace_webhook_secret",
+  "franchise_section",
+  "generate_franchise_royalty",
+  "post_franchise_royalty_journals",
+  "royalty_expense_account",
+  "royalty_payable_account",
+  "printer_setup_status",
+  "generate_order_api_key",
+  "order_api_key",
+  "order_api_secret",
+  "order_api_info"
+ ],
+ "fields": [
+  {
+   "fieldname": "setup_section",
+   "fieldtype": "Section Break",
+   "label": "Profil Bisnis"
+  },
+  {
+   "description": "Dipilih saat Setup Wizard. Gunakan tombol <b>Run Setup Wizard</b> untuk mengganti mode.",
+   "fieldname": "business_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tipe Bisnis",
+   "options": "Restaurant / Cafe\nUMKM",
+   "read_only": 1
+  },
+  {
+   "description": "Jenis usaha detail dari Setup Wizard.",
+   "fieldname": "business_template",
+   "fieldtype": "Select",
+   "label": "Template Usaha",
+   "options": "Warung / Sembako\nKafe / F&B\nFashion / Retail\nMinimarket\nJasa / Servis\nLainnya / Custom",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mode_summary",
+   "fieldtype": "HTML",
+   "label": "Ringkasan Alur"
+  },
+  {
+   "default": "0",
+   "fieldname": "setup_complete",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Setup Complete",
+   "read_only": 1
+  },
+  {
+   "fieldname": "store_identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identitas Toko"
+  },
+  {
+   "fieldname": "store_city",
+   "fieldtype": "Data",
+   "label": "Kota / Kabupaten"
+  },
+  {
+   "fieldname": "owner_whatsapp",
+   "fieldtype": "Data",
+   "label": "WA Owner"
+  },
+  {
+   "default": "0",
+   "fieldname": "multi_branch",
+   "fieldtype": "Check",
+   "label": "Multi Cabang"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "fieldname": "branch_pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Harga & Menu Multi Cabang"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "description": "Price list pusat untuk import menu. Harga cabang bisa disinkronkan dari sini.",
+   "fieldname": "master_selling_price_list",
+   "fieldtype": "Link",
+   "label": "Master Selling Price List",
+   "options": "Price List"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.multi_branch",
+   "fieldname": "sync_prices_to_branches_on_import",
+   "fieldtype": "Check",
+   "label": "Sync Harga ke Semua Cabang saat Import Menu"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "fieldname": "sync_branch_prices",
+   "fieldtype": "Button",
+   "label": "Sync Harga ke Cabang"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "description": "Buat price list cabang yang belum punya daftar harga.",
+   "fieldname": "hq_ensure_branch_price_lists",
+   "fieldtype": "Button",
+   "label": "Buat Price List Cabang"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "description": "Salin menu khusus dari cabang template ke cabang lain (dialog).",
+   "fieldname": "hq_push_menu_from_branch",
+   "fieldtype": "Button",
+   "label": "Push Menu dari Cabang Template"
+  },
+  {
+   "description": "Target penjualan bulanan untuk progress bar di kasir dan dashboard.",
+   "fieldname": "target_monthly_sales",
+   "fieldtype": "Currency",
+   "label": "Target Omzet Bulanan"
+  },
+  {
+   "fieldname": "default_opening_time",
+   "fieldtype": "Time",
+   "label": "Jam Buka Default"
+  },
+  {
+   "fieldname": "default_closing_time",
+   "fieldtype": "Time",
+   "label": "Jam Tutup Default"
+  },
+  {
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "Pengaturan Dasar POS"
+  },
+  {
+   "fieldname": "default_company",
+   "fieldtype": "Link",
+   "label": "Perusahaan",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "description": "Profil kasir yang dipakai saat proses pembayaran.",
+   "fieldname": "default_pos_profile",
+   "fieldtype": "Link",
+   "label": "POS Profile",
+   "options": "POS Profile",
+   "reqd": 1
+  },
+  {
+   "description": "Gudang default untuk pengurangan stok otomatis.",
+   "fieldname": "default_warehouse",
+   "fieldtype": "Link",
+   "label": "Gudang Default",
+   "options": "Warehouse"
+  },
+  {
+   "default": "1",
+   "description": "Jika aktif, kasir wajib <b>Buka Shift</b> (POS Opening Entry) sebelum checkout dan bisa tutup shift di akhir hari. Nonaktifkan untuk UMKM yang tidak pakai buka/tutup kas.",
+   "fieldname": "enable_pos_shift",
+   "fieldtype": "Check",
+   "label": "Wajib Shift Kasir (Buka/Tutup)"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
+   "fieldname": "flow_section",
+   "fieldtype": "Section Break",
+   "label": "Alur Restoran / Cafe"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
+   "description": "Aktifkan jika pesanan perlu masuk dapur (Kitchen Display).",
+   "fieldname": "enable_kitchen_display",
+   "fieldtype": "Check",
+   "label": "Kitchen Display"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
+   "description": "Aktifkan untuk pesanan Takeaway / Delivery yang perlu packing.",
+   "fieldname": "enable_fulfillment",
+   "fieldtype": "Check",
+   "label": "Fulfillment"
+  },
+  {
+   "default": "Consumable",
+   "depends_on": "eval:doc.business_type=='Restaurant / Cafe' && doc.enable_kitchen_display",
+   "description": "Nama Item Group, pisahkan dengan koma. Contoh: Consumable, Food",
+   "fieldname": "kitchen_item_groups",
+   "fieldtype": "Small Text",
+   "label": "Item Group Dapur"
+  },
+  {
+   "default": "Takeaway\nDelivery",
+   "depends_on": "eval:doc.business_type=='Restaurant / Cafe' && doc.enable_fulfillment",
+   "description": "Satu tipe order per baris.",
+   "fieldname": "fulfillment_for_order_types",
+   "fieldtype": "Small Text",
+   "label": "Tipe Order Fulfillment"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "inventory_section",
+   "fieldtype": "Section Break",
+   "label": "Stok Otomatis"
+  },
+  {
+   "default": "180",
+   "description": "Seberapa sering sistem mengecek stok menipis. Default: 180 detik (3 menit).",
+   "fieldname": "low_stock_check_interval",
+   "fieldtype": "Int",
+   "label": "Interval Cek Stok (detik)"
+  },
+  {
+   "description": "Role yang menerima peringatan stok menipis. Contoh: Sales Manager, IMOGI Cashier",
+   "fieldname": "low_stock_alert_roles",
+   "fieldtype": "Small Text",
+   "label": "Role Notifikasi Stok"
+  },
+  {
+   "default": "reorder_level",
+   "fieldname": "reorder_level_field",
+   "fieldtype": "Select",
+   "label": "Batas Stok Berdasarkan",
+   "options": "reorder_level\nprojected_qty"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "receipt_section",
+   "fieldtype": "Section Break",
+   "label": "Struk / Receipt"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_receipt_print",
+   "fieldtype": "Check",
+   "label": "Tampilkan Cetak Struk di Kasir"
+  },
+  {
+   "default": "Browser",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "fieldname": "thermal_print_mode",
+   "fieldtype": "Select",
+   "label": "Mode Cetak Thermal",
+   "options": "Browser\nESC/POS Serial\nESC/POS Download"
+  },
+  {
+   "default": "58mm",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "fieldname": "thermal_printer_width",
+   "fieldtype": "Select",
+   "label": "Lebar Kertas Thermal",
+   "options": "58mm\n80mm"
+  },
+  {
+   "depends_on": "eval:doc.enable_receipt_print",
+   "fieldname": "receipt_print_format",
+   "fieldtype": "Link",
+   "label": "Print Format Struk",
+   "options": "Print Format"
+  },
+  {
+   "default": "IMOGI POS",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "fieldname": "receipt_header",
+   "fieldtype": "Data",
+   "label": "Header Struk"
+  },
+  {
+   "default": "Terima kasih",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "fieldname": "receipt_footer",
+   "fieldtype": "Data",
+   "label": "Footer Struk"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "import_section",
+   "fieldtype": "Section Break",
+   "label": "Import Produk & BOM (CSV / Excel)"
+  },
+  {
+   "description": "Satu file Excel: produk jadi + resep BOM (Qty, UOM, Harga). Kategori Service dilewati.",
+   "fieldname": "import_menu",
+   "fieldtype": "Button",
+   "label": "Import Menu Lengkap (Product + BOM)"
+  },
+  {
+   "description": "Stok awal bahan baku: Komponen, Qty, UOM, Harga. Sheet 'Stok Awal' atau CSV terpisah.",
+   "fieldname": "import_stock",
+   "fieldtype": "Button",
+   "label": "Import Stok Bahan Baku"
+  },
+  {
+   "description": "Kolom: no, produk, kategori (Food/Beverage/Dessert/Service), add_on, standard_rate, stock_uom. Format: CSV, XLSX, XLS.",
+   "fieldname": "import_products",
+   "fieldtype": "Button",
+   "label": "Import Produk"
+  },
+  {
+   "description": "Kolom: product, bom_product, qty, uom, double (double = qty x2). Format: CSV, XLSX, XLS.",
+   "fieldname": "import_bom",
+   "fieldtype": "Button",
+   "label": "Import BOM"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "analytics_section",
+   "fieldtype": "Section Break",
+   "label": "Dashboard & Notifikasi"
+  },
+  {
+   "default": "1",
+   "description": "Notifikasi realtime saat ada order baru atau perubahan status.",
+   "fieldname": "enable_realtime_notifications",
+   "fieldtype": "Check",
+   "label": "Notifikasi Realtime"
+  },
+  {
+   "default": "30",
+   "description": "Seberapa sering dashboard POS memperbarui angka.",
+   "fieldname": "dashboard_refresh_seconds",
+   "fieldtype": "Int",
+   "label": "Refresh Dashboard (detik)"
+  },
+  {
+   "fieldname": "api_section",
+   "fieldtype": "Section Break",
+   "label": "Order API (Website)"
+  },
+  {
+   "default": "0",
+   "description": "Aktifkan REST API untuk website atau aplikasi eksternal.",
+   "fieldname": "enable_order_api",
+   "fieldtype": "Check",
+   "label": "Aktifkan Order API"
+  },
+  {
+   "default": "Administrator",
+   "depends_on": "eval:doc.enable_order_api",
+   "description": "User yang dipakai saat request API (permission order).",
+   "fieldname": "order_api_user",
+   "fieldtype": "Link",
+   "label": "API User",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_order_api",
+   "description": "Kirim HTTP POST JSON saat status order berubah.",
+   "fieldname": "enable_order_api_webhook",
+   "fieldtype": "Check",
+   "label": "Aktifkan Webhook"
+  },
+  {
+   "depends_on": "eval:doc.enable_order_api && doc.enable_order_api_webhook",
+   "description": "Contoh: https://website-anda.com/api/imogi/webhook",
+   "fieldname": "order_api_webhook_url",
+   "fieldtype": "Data",
+   "label": "Webhook URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "payment_gateway_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Gateway"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_payment_gateway",
+   "fieldtype": "Check",
+   "label": "Aktifkan Payment Gateway"
+  },
+  {
+   "default": "Midtrans",
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "fieldname": "payment_gateway_provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "Midtrans\nXendit"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "description": "Centang untuk sandbox / uji coba.",
+   "fieldname": "payment_gateway_sandbox",
+   "fieldtype": "Check",
+   "label": "Mode Sandbox"
+  },
+  {
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "fieldname": "payment_gateway",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Payment Gateway (legacy)"
+  },
+  {
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "description": "Midtrans Server Key / Xendit Secret API Key",
+   "fieldname": "payment_gateway_key",
+   "fieldtype": "Password",
+   "label": "Gateway Server Key"
+  },
+  {
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "description": "Opsional: Midtrans Client Key untuk Snap (future).",
+   "fieldname": "payment_gateway_client_key",
+   "fieldtype": "Data",
+   "label": "Gateway Client Key"
+  },
+  {
+   "fieldname": "loyalty_section",
+   "fieldtype": "Section Break",
+   "label": "Loyalty & Poin Member"
+  },
+  {
+   "default": "0",
+   "description": "Aktifkan poin member dan voucher promo di kasir.",
+   "fieldname": "enable_loyalty",
+   "fieldtype": "Check",
+   "label": "Aktifkan Loyalty"
+  },
+  {
+   "default": "10000",
+   "depends_on": "eval:doc.enable_loyalty",
+   "description": "Contoh: 10000 = 1 poin per Rp 10.000 belanja.",
+   "fieldname": "loyalty_points_per_amount",
+   "fieldtype": "Currency",
+   "label": "Belanja per 1 Poin (Rp)"
+  },
+  {
+   "default": "100",
+   "depends_on": "eval:doc.enable_loyalty",
+   "description": "Contoh: 100 = 1 poin senilai Rp 100 saat ditukar.",
+   "fieldname": "loyalty_point_value",
+   "fieldtype": "Currency",
+   "label": "Nilai 1 Poin (Rp)"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enable_loyalty",
+   "fieldname": "loyalty_min_redeem_points",
+   "fieldtype": "Int",
+   "label": "Minimal Poin Ditukar"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.enable_loyalty",
+   "fieldname": "stamp_section",
+   "fieldtype": "Section Break",
+   "label": "Stamp Card"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_loyalty",
+   "description": "Kumpulkan stamp per transaksi; dapat voucher otomatis saat target tercapai (Wave 4).",
+   "fieldname": "enable_stamp_card",
+   "fieldtype": "Check",
+   "label": "Aktifkan Stamp Card"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enable_stamp_card",
+   "fieldname": "stamp_target",
+   "fieldtype": "Int",
+   "label": "Target Stamp"
+  },
+  {
+   "default": "Percent",
+   "depends_on": "eval:doc.enable_stamp_card",
+   "fieldname": "stamp_reward_discount_type",
+   "fieldtype": "Select",
+   "label": "Reward Stamp — Tipe Diskon",
+   "options": "Percent\nAmount"
+  },
+  {
+   "default": "20",
+   "depends_on": "eval:doc.enable_stamp_card",
+   "fieldname": "stamp_reward_discount_value",
+   "fieldtype": "Float",
+   "label": "Reward Stamp — Nilai Diskon"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_stamp_card",
+   "fieldname": "stamp_reward_min_order",
+   "fieldtype": "Currency",
+   "label": "Reward Stamp — Min. Order (Rp)"
+  },
+  {
+   "fieldname": "promo_section",
+   "fieldtype": "Section Break",
+   "label": "Promo Otomatis"
+  },
+  {
+   "default": "0",
+   "description": "Terapkan rule Buy X Get Y otomatis di kasir (Wave 3).",
+   "fieldname": "enable_promo_rules",
+   "fieldtype": "Check",
+   "label": "Aktifkan Promo Rules"
+  },
+  {
+   "fieldname": "integrations_section",
+   "fieldtype": "Section Break",
+   "label": "Offline & Marketplace"
+  },
+  {
+   "default": "0",
+   "description": "Izinkan kasir menyimpan transaksi tunai saat offline dan sinkron saat online (Wave 4).",
+   "fieldname": "enable_offline_cashier",
+   "fieldtype": "Check",
+   "label": "Aktifkan Offline Cashier"
+  },
+  {
+   "default": "0",
+   "description": "Terima order GrabFood / GoFood / ShopeeFood via webhook (Wave 4).",
+   "fieldname": "enable_marketplace_orders",
+   "fieldtype": "Check",
+   "label": "Aktifkan Marketplace Orders"
+  },
+  {
+   "depends_on": "eval:doc.enable_marketplace_orders",
+   "description": "HMAC secret untuk header X-IMOGI-Signature.",
+   "fieldname": "marketplace_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Marketplace Webhook Secret"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "franchise_section",
+   "fieldtype": "Section Break",
+   "label": "Franchise & Royalty"
+  },
+  {
+   "description": "Buat accrual royalty bulan berjalan untuk semua cabang franchise (Wave 3).",
+   "fieldname": "generate_franchise_royalty",
+   "fieldtype": "Button",
+   "label": "Generate Royalty Bulan Ini"
+  },
+  {
+   "description": "Posting accrual royalty ke Journal Entry ERPNext (Wave 4).",
+   "fieldname": "post_franchise_royalty_journals",
+   "fieldtype": "Button",
+   "label": "Post Royalty ke Journal Entry"
+  },
+  {
+   "depends_on": "eval:doc.default_company",
+   "description": "Akun beban royalty di Journal Entry.",
+   "fieldname": "royalty_expense_account",
+   "fieldtype": "Link",
+   "label": "Royalty Expense Account",
+   "options": "Account"
+  },
+  {
+   "depends_on": "eval:doc.default_company",
+   "description": "Akun hutang royalty di Journal Entry.",
+   "fieldname": "royalty_payable_account",
+   "fieldtype": "Link",
+   "label": "Royalty Payable Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "printer_setup_status",
+   "fieldtype": "Select",
+   "label": "Status Setup Printer",
+   "options": "Skip\nSetup Nanti\nSetup Sekarang"
+  },
+  {
+   "fieldname": "generate_order_api_key",
+   "fieldtype": "Button",
+   "hidden": 1,
+   "label": "Generate API Key"
+  },
+  {
+   "depends_on": "eval:doc.enable_order_api",
+   "fieldname": "order_api_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "API Key",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.enable_order_api",
+   "fieldname": "order_api_secret",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "API Secret",
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_api_info",
+   "fieldtype": "HTML",
+   "label": "Panduan API"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

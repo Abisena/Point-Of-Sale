@@ -1,0 +1,20 @@
+{
+ "creation": "2026-06-05 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "setting",
+ "idx": 0,
+ "modified": "2026-06-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "imogi-pos-setup",
+ "owner": "Administrator",
+ "page_name": "imogi-pos-setup",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Sales Manager"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "IMOGI POS Setup"
+}

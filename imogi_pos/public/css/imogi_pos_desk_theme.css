@@ -1,0 +1,634 @@
+/* IMOGI POS desk theme — aligned with login page */
+
+:root {
+	--imogi-navy-900: #07111f;
+	--imogi-navy-800: #0f1f35;
+	--imogi-navy-700: #1a3352;
+	--imogi-navy-600: #2a4f73;
+	--imogi-navy-500: #4a7fad;
+	--imogi-primary: var(--imogi-navy-800);
+	--imogi-primary-hover: var(--imogi-navy-700);
+	--imogi-input-hover: var(--imogi-navy-600);
+	--imogi-input-focus: var(--imogi-navy-700);
+}
+
+body.imogi-pos-themed,
+body:has(.imogi-cashier-page),
+body:has(.imogi-open-shift-page),
+body:has(.imogi-close-shift-page) {
+	background-attachment: fixed;
+	background-color: var(--imogi-navy-900);
+	background-image: url("/assets/imogi_pos/images/imogi-login-corner.svg"),
+		url("/assets/imogi_pos/images/imogi-login-watermark.svg"),
+		linear-gradient(145deg, #07111f 0%, #0f1f35 22%, #1a3352 48%, #2a4f73 72%, #4a7fad 100%);
+	background-position: right bottom, center center, center center;
+	background-repeat: no-repeat, no-repeat, no-repeat;
+	background-size: min(48vw, 520px), clamp(280px, 46vw, 560px), cover;
+}
+
+body.imogi-pos-themed .navbar,
+body:has(.imogi-cashier-page) .navbar,
+body:has(.imogi-open-shift-page) .navbar,
+body:has(.imogi-close-shift-page) .navbar {
+	background: rgba(7, 17, 31, 0.92) !important;
+	backdrop-filter: blur(10px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.imogi-pos-themed .navbar .navbar-brand,
+body.imogi-pos-themed .navbar > .container > .navbar-nav > .nav-item > .nav-link,
+body.imogi-pos-themed .navbar > .container > .collapse .navbar-nav > .nav-item > .nav-link,
+body.imogi-pos-themed .navbar > .container > .collapse .navbar-nav > .nav-item > .btn-reset:not(.dropdown-menu .btn-reset),
+body.imogi-pos-themed #navbar-breadcrumbs a,
+body:has(.imogi-cashier-page) .navbar .navbar-brand,
+body:has(.imogi-open-shift-page) .navbar .navbar-brand,
+body:has(.imogi-close-shift-page) .navbar .navbar-brand,
+body:has(.imogi-cashier-page) .navbar .nav-link,
+body:has(.imogi-open-shift-page) .navbar .nav-link,
+body:has(.imogi-close-shift-page) .navbar .nav-link,
+body:has(.imogi-cashier-page) #navbar-breadcrumbs a,
+body:has(.imogi-open-shift-page) #navbar-breadcrumbs a,
+body:has(.imogi-close-shift-page) #navbar-breadcrumbs a {
+	color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.imogi-pos-themed #navbar-breadcrumbs li:not(:last-child)::after,
+body:has(.imogi-cashier-page) #navbar-breadcrumbs li:not(:last-child)::after,
+body:has(.imogi-open-shift-page) #navbar-breadcrumbs li:not(:last-child)::after,
+body:has(.imogi-close-shift-page) #navbar-breadcrumbs li:not(:last-child)::after {
+	color: rgba(255, 255, 255, 0.45);
+}
+
+body.imogi-pos-themed .navbar .dropdown-menu,
+body:has(.imogi-cashier-page) .navbar .dropdown-menu,
+body:has(.imogi-open-shift-page) .navbar .dropdown-menu,
+body:has(.imogi-close-shift-page) .navbar .dropdown-menu {
+	background: #fff !important;
+	border: 1px solid #e4e4e7 !important;
+	box-shadow: 0 12px 32px rgba(7, 17, 31, 0.18) !important;
+}
+
+body.imogi-pos-themed .navbar .dropdown-menu .dropdown-item,
+body.imogi-pos-themed .navbar .dropdown-menu .btn-reset,
+body:has(.imogi-cashier-page) .navbar .dropdown-menu .dropdown-item,
+body:has(.imogi-cashier-page) .navbar .dropdown-menu .btn-reset,
+body:has(.imogi-open-shift-page) .navbar .dropdown-menu .dropdown-item,
+body:has(.imogi-open-shift-page) .navbar .dropdown-menu .btn-reset,
+body:has(.imogi-close-shift-page) .navbar .dropdown-menu .dropdown-item,
+body:has(.imogi-close-shift-page) .navbar .dropdown-menu .btn-reset {
+	color: #3f3f46 !important;
+}
+
+body.imogi-pos-themed .navbar .dropdown-menu .dropdown-item:hover,
+body.imogi-pos-themed .navbar .dropdown-menu .btn-reset:hover,
+body:has(.imogi-cashier-page) .navbar .dropdown-menu .dropdown-item:hover,
+body:has(.imogi-cashier-page) .navbar .dropdown-menu .btn-reset:hover,
+body:has(.imogi-open-shift-page) .navbar .dropdown-menu .dropdown-item:hover,
+body:has(.imogi-open-shift-page) .navbar .dropdown-menu .btn-reset:hover,
+body:has(.imogi-close-shift-page) .navbar .dropdown-menu .dropdown-item:hover,
+body:has(.imogi-close-shift-page) .navbar .dropdown-menu .btn-reset:hover {
+	background: #f4f4f5 !important;
+	color: #18181b !important;
+}
+
+body.imogi-pos-themed .navbar .dropdown-divider,
+body:has(.imogi-cashier-page) .navbar .dropdown-divider,
+body:has(.imogi-open-shift-page) .navbar .dropdown-divider,
+body:has(.imogi-close-shift-page) .navbar .dropdown-divider {
+	border-top-color: #e4e4e7 !important;
+}
+
+body.imogi-pos-themed .navbar .search-bar input,
+body:has(.imogi-cashier-page) .navbar .search-bar input,
+body:has(.imogi-open-shift-page) .navbar .search-bar input,
+body:has(.imogi-close-shift-page) .navbar .search-bar input {
+	background: rgba(255, 255, 255, 0.12) !important;
+	border-color: rgba(255, 255, 255, 0.18) !important;
+	color: #fff !important;
+}
+
+body:has(.imogi-cashier-page) .navbar .search-bar input::placeholder,
+body:has(.imogi-open-shift-page) .navbar .search-bar input::placeholder,
+body:has(.imogi-close-shift-page) .navbar .search-bar input::placeholder {
+	color: rgba(255, 255, 255, 0.55);
+}
+
+body:has(.imogi-cashier-page) .navbar .search-bar .search-icon,
+body:has(.imogi-open-shift-page) .navbar .search-bar .search-icon,
+body:has(.imogi-close-shift-page) .navbar .search-bar .search-icon {
+	color: rgba(255, 255, 255, 0.65);
+}
+
+body:has(.imogi-cashier-page) .navbar-brand .app-logo,
+body:has(.imogi-open-shift-page) .navbar-brand .app-logo,
+body:has(.imogi-close-shift-page) .navbar-brand .app-logo {
+	background: rgba(255, 255, 255, 0.95);
+	border-radius: 6px;
+	height: 28px;
+	max-height: 28px;
+	object-fit: contain;
+	padding: 2px 4px;
+	width: auto;
+}
+
+body.imogi-pos-themed .navbar-brand .app-logo {
+	background: rgba(255, 255, 255, 0.95);
+	border-radius: 6px;
+	padding: 2px 4px;
+}
+
+body.imogi-pos-themed .layout-main-section-wrapper,
+body:has(.imogi-cashier-page) .layout-main-section-wrapper,
+body:has(.imogi-open-shift-page) .layout-main-section-wrapper,
+body:has(.imogi-close-shift-page) .layout-main-section-wrapper {
+	background: transparent !important;
+}
+
+body:has(.imogi-cashier-page) .imogi-cashier-page .layout-main-section-wrapper,
+body:has(.imogi-cashier-page) .imogi-cashier-page .layout-main-section,
+body:has(.imogi-cashier-page) .imogi-cashier-page .page-body,
+body:has(.imogi-open-shift-page) .page-body,
+body:has(.imogi-close-shift-page) .page-body {
+	background: transparent !important;
+}
+
+/* Primary buttons */
+body:has(.imogi-cashier-page) .imogi-cashier-btn-primary,
+body:has(.imogi-cashier-page) .imogi-cashier-pay,
+body:has(.imogi-cashier-page) .imogi-cashier-dock-badge,
+body:has(.imogi-cashier-page) .imogi-cashier-hold-count,
+body:has(.imogi-cashier-page) .imogi-cashier-group-btn.is-active,
+body:has(.imogi-cashier-page) .imogi-cashier-order-type-btn.is-active,
+body:has(.imogi-open-shift-page) .imogi-shift-btn-primary,
+body:has(.imogi-open-shift-page) .imogi-shift-store-icon,
+body:has(.imogi-close-shift-page) .imogi-close-btn-primary.is-balanced {
+	background: var(--imogi-primary) !important;
+	border-color: var(--imogi-primary) !important;
+	color: #fff !important;
+}
+
+body:has(.imogi-cashier-page) .imogi-cashier-btn-primary:hover,
+body:has(.imogi-cashier-page) .imogi-cashier-btn-primary:focus,
+body:has(.imogi-cashier-page) .imogi-cashier-pay:hover,
+body:has(.imogi-cashier-page) .imogi-cashier-pay:focus,
+body:has(.imogi-open-shift-page) .imogi-shift-btn-primary:hover,
+body:has(.imogi-open-shift-page) .imogi-shift-btn-primary:focus,
+body:has(.imogi-close-shift-page) .imogi-close-btn-primary.is-balanced:hover {
+	background: var(--imogi-primary-hover) !important;
+	color: #fff !important;
+}
+
+/* Themed inputs */
+body:has(.imogi-cashier-page) .imogi-cashier-search,
+body:has(.imogi-cashier-page) .imogi-cashier-customer-row input,
+body:has(.imogi-cashier-page) .imogi-cashier-discount-row input,
+body:has(.imogi-cashier-page) .imogi-cashier-discount-row select,
+body:has(.imogi-open-shift-page) .imogi-shift-input,
+body:has(.imogi-open-shift-page) .imogi-shift-denom-qty,
+body:has(.imogi-close-shift-page) .imogi-close-input,
+body:has(.imogi-close-shift-page) .imogi-close-denom-qty {
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+body:has(.imogi-cashier-page) .imogi-cashier-search:hover:not(:focus),
+body:has(.imogi-cashier-page) .imogi-cashier-customer-row input:hover:not(:focus),
+body:has(.imogi-cashier-page) .imogi-cashier-discount-row input:hover:not(:focus),
+body:has(.imogi-open-shift-page) .imogi-shift-input:hover:not(:focus),
+body:has(.imogi-open-shift-page) .imogi-shift-denom-qty:hover:not(:focus),
+body:has(.imogi-close-shift-page) .imogi-close-input:hover:not(:focus),
+body:has(.imogi-close-shift-page) .imogi-close-denom-qty:hover:not(:focus) {
+	background: #fff !important;
+	border-color: var(--imogi-input-hover) !important;
+	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
+}
+
+body:has(.imogi-cashier-page) .imogi-cashier-search:focus,
+body:has(.imogi-cashier-page) .imogi-cashier-customer-row input:focus,
+body:has(.imogi-cashier-page) .imogi-cashier-discount-row input:focus,
+body:has(.imogi-open-shift-page) .imogi-shift-input:focus,
+body:has(.imogi-open-shift-page) .imogi-shift-denom-qty:focus,
+body:has(.imogi-close-shift-page) .imogi-close-input:focus,
+body:has(.imogi-close-shift-page) .imogi-close-denom-qty:focus {
+	background: #fff !important;
+	border-color: var(--imogi-input-focus) !important;
+	box-shadow: 0 0 0 3px rgba(26, 51, 82, 0.18) !important;
+	outline: none !important;
+}
+
+/* Cards — solid white body, navy headers */
+body.imogi-pos-themed .imogi-cashier-panel,
+body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-card,
+body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-summary-card,
+body.imogi-pos-themed .imogi-close-shift-page .imogi-close-card,
+body.imogi-pos-themed .imogi-close-shift-page .imogi-close-verify-card,
+body:has(.imogi-cashier-page) .imogi-cashier-panel,
+body:has(.imogi-open-shift-page) .imogi-shift-card,
+body:has(.imogi-open-shift-page) .imogi-shift-summary-card,
+body:has(.imogi-close-shift-page) .imogi-close-card,
+body:has(.imogi-close-shift-page) .imogi-close-verify-card {
+	background: #fff !important;
+	border-color: #e4e4e7 !important;
+	box-shadow: 0 12px 32px rgba(7, 17, 31, 0.12);
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-bar,
+body.imogi-pos-themed .imogi-cashier-page > .imogi-cashier-shift-bar,
+.imogi-cashier-page > .imogi-cashier-shift-bar,
+.imogi-cashier-shift-bar {
+	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.12) !important;
+	border-radius: 12px !important;
+	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
+}
+
+body.imogi-pos-themed .imogi-cashier-panel-head,
+body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-header,
+body.imogi-pos-themed .imogi-close-shift-page .imogi-close-header,
+body:has(.imogi-cashier-page) .imogi-cashier-panel-head,
+body:has(.imogi-open-shift-page) .imogi-shift-header,
+body:has(.imogi-close-shift-page) .imogi-close-header {
+	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
+	border-color: rgba(255, 255, 255, 0.12) !important;
+	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-text,
+body.imogi-pos-themed .imogi-cashier-shift-text a,
+.imogi-cashier-shift-text,
+.imogi-cashier-shift-text a {
+	color: #fff !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-text .fa,
+.imogi-cashier-shift-text .fa {
+	color: rgba(255, 255, 255, 0.72) !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
+.imogi-cashier-shift-bar .imogi-cashier-close-shift-btn {
+	background: rgba(255, 255, 255, 0.12) !important;
+	border: 1px solid rgba(255, 255, 255, 0.24) !important;
+	border-radius: 8px !important;
+	color: #fff !important;
+	font-weight: 700 !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-panel-head h5,
+body.imogi-pos-themed .imogi-shift-header-title,
+body.imogi-pos-themed .imogi-close-header-title,
+body:has(.imogi-cashier-page) .imogi-cashier-panel-head h5,
+body:has(.imogi-open-shift-page) .imogi-shift-header-title,
+body:has(.imogi-close-shift-page) .imogi-close-header-title {
+	color: #fff !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-text a,
+body:has(.imogi-cashier-page) .imogi-cashier-shift-text a {
+	color: #fff !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
+body:has(.imogi-cashier-page) .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn {
+	background: rgba(255, 255, 255, 0.12) !important;
+	border: 1px solid rgba(255, 255, 255, 0.24) !important;
+	border-radius: 8px !important;
+	color: #fff !important;
+	font-weight: 700 !important;
+}
+
+body.imogi-pos-themed .imogi-cashier-head-icon,
+body.imogi-pos-themed .imogi-cashier-meta,
+body.imogi-pos-themed .imogi-shift-header-sub,
+body.imogi-pos-themed .imogi-close-header-sub,
+body:has(.imogi-cashier-page) .imogi-cashier-head-icon,
+body:has(.imogi-cashier-page) .imogi-cashier-meta,
+body:has(.imogi-open-shift-page) .imogi-shift-header-sub,
+body:has(.imogi-close-shift-page) .imogi-close-header-sub {
+	color: rgba(255, 255, 255, 0.72) !important;
+}
+
+@media (max-width: 768px) {
+	body.imogi-pos-themed,
+	body:has(.imogi-cashier-page),
+	body:has(.imogi-open-shift-page),
+	body:has(.imogi-close-shift-page) {
+		background-size: min(70vw, 400px), min(78vw, 340px), cover;
+	}
+}
+
+/* Payment dialog — login navy theme */
+.modal.imogi-pay-dialog {
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 24px 16px !important;
+}
+
+.modal.imogi-pay-dialog.show,
+.modal.imogi-pay-dialog.in {
+	display: flex !important;
+}
+
+.modal.imogi-pay-dialog .modal-dialog {
+	align-items: center;
+	display: flex !important;
+	margin: 0 auto !important;
+	max-width: 420px;
+	min-height: auto !important;
+	width: calc(100% - 32px);
+}
+
+.imogi-pay-dialog .modal-content {
+	border: 1px solid #e4e4e7;
+	border-radius: 18px;
+	box-shadow: 0 24px 64px rgba(7, 17, 31, 0.22);
+	overflow: hidden;
+}
+
+.imogi-pay-dialog .modal-header {
+	background: #fff;
+	border-bottom: 1px solid #e4e4e7;
+	padding: 16px 20px;
+}
+
+.imogi-pay-dialog .modal-title {
+	color: #0f1f35;
+	font-size: 17px;
+	font-weight: 800;
+}
+
+.imogi-pay-dialog .modal-body {
+	background: #fff;
+	padding: 18px 20px 8px;
+}
+
+.imogi-pay-dialog .modal-footer {
+	background: #fafafa;
+	border-top: 1px solid #e4e4e7;
+	padding: 14px 20px 18px;
+}
+
+.imogi-pay-dialog .btn-primary {
+	background: var(--imogi-primary) !important;
+	border-color: var(--imogi-primary) !important;
+	border-radius: 10px !important;
+	color: #fff !important;
+	font-weight: 700 !important;
+}
+
+.imogi-pay-dialog .btn-primary:hover,
+.imogi-pay-dialog .btn-primary:focus {
+	background: var(--imogi-primary-hover) !important;
+	border-color: var(--imogi-primary-hover) !important;
+	color: #fff !important;
+}
+
+.imogi-pay-dialog .frappe-control .control-label {
+	color: #27272a;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.imogi-pay-dialog .form-control {
+	background: #fafafa !important;
+	border: 1px solid #d4d4d8 !important;
+	border-radius: 10px !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.imogi-pay-dialog .form-control:hover:not(:focus) {
+	background: #fff !important;
+	border-color: var(--imogi-input-hover) !important;
+	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
+}
+
+.imogi-pay-dialog .form-control:focus {
+	background: #fff !important;
+	border-color: var(--imogi-input-focus) !important;
+	box-shadow: 0 0 0 3px rgba(26, 51, 82, 0.18) !important;
+	outline: none !important;
+}
+
+.imogi-pay-summary {
+	background: linear-gradient(145deg, #07111f 0%, #0f1f35 28%, #1a3352 62%, #2a4f73 100%);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 14px;
+	margin-bottom: 16px;
+	padding: 20px 16px;
+	text-align: center;
+}
+
+.imogi-pay-summary--compact {
+	margin-top: 12px;
+	padding: 16px 14px;
+}
+
+.imogi-pay-total-label {
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	margin-bottom: 6px;
+	text-transform: uppercase;
+}
+
+.imogi-pay-total-value {
+	color: #fff;
+	font-size: 30px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	line-height: 1.15;
+}
+
+.imogi-pay-currency {
+	color: #fff;
+	font-weight: 700;
+}
+
+.imogi-pay-change-highlight {
+	background: #fafafa;
+	border: 1px solid #e4e4e7;
+	border-radius: 10px;
+	color: #0f1f35;
+	font-size: 16px;
+	font-weight: 800;
+	margin-top: 12px;
+	padding: 10px 12px;
+}
+
+.imogi-pay-success-icon {
+	color: #10b981;
+	font-size: 48px;
+	margin-bottom: 4px;
+}
+
+.imogi-pay-success-order {
+	color: #0f1f35;
+	font-size: 18px;
+	font-weight: 800;
+	margin-bottom: 4px;
+}
+
+.imogi-pay-success-status {
+	color: #71717a;
+	font-size: 12px;
+	margin-top: 12px;
+}
+
+.imogi-pay-success-dialog .modal-footer {
+	display: none !important;
+}
+
+.imogi-success-actions {
+	border-top: 1px solid #f1f5f9;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-top: 18px;
+	padding-top: 16px;
+	text-align: left;
+}
+
+.imogi-success-action-btn {
+	align-items: center;
+	background: #fff;
+	border: 1px solid #e4e4e7;
+	border-radius: 12px;
+	color: #0f1f35;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	justify-content: center;
+	min-height: 78px;
+	padding: 12px 10px;
+	transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.imogi-success-action-btn:hover {
+	background: #fafafa;
+	border-color: #0f1f35;
+	transform: translateY(-1px);
+}
+
+.imogi-success-action-btn.is-primary {
+	background: #0f1f35;
+	border-color: #0f1f35;
+	color: #fff;
+	flex-direction: row;
+	gap: 10px;
+	grid-column: 1 / -1;
+	min-height: 48px;
+}
+
+.imogi-success-action-btn.is-primary:hover {
+	background: #1a3352;
+	color: #fff;
+}
+
+.imogi-success-action-icon {
+	align-items: center;
+	background: #f8fafc;
+	border-radius: 10px;
+	color: #0f1f35;
+	display: flex;
+	font-size: 18px;
+	height: 36px;
+	justify-content: center;
+	width: 36px;
+}
+
+.imogi-success-action-btn.is-primary .imogi-success-action-icon {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font-size: 16px;
+	height: auto;
+	width: auto;
+}
+
+.imogi-success-action-label {
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.2;
+	text-align: center;
+}
+
+.imogi-success-action-btn.is-primary .imogi-success-action-label {
+	font-size: 14px;
+}
+
+.imogi-pay-dialog .imogi-pay-change-box {
+	background: #fafafa;
+	border: 1px solid #e4e4e7;
+	border-radius: 10px;
+	color: #0f1f35;
+	font-size: 22px;
+	font-weight: 800;
+	margin-top: 6px;
+	padding: 12px;
+	text-align: center;
+}
+
+.imogi-pay-dialog .imogi-pay-quick-btn {
+	background: #fff;
+	border: 1px solid #d4d4d8;
+	border-radius: 8px;
+	color: #0f1f35;
+	cursor: pointer;
+	flex: 1;
+	font-size: 12px;
+	font-weight: 700;
+	min-width: 70px;
+	padding: 8px 6px;
+	transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.imogi-pay-dialog .imogi-pay-quick-btn:hover {
+	background: #fafafa;
+	border-color: var(--imogi-input-hover);
+	color: #0f1f35;
+}
+
+/* IMOGI Cashier fullscreen kiosk mode — hide desk chrome on shift workflow pages */
+body.imogi-pos-cashier-fullscreen .navbar,
+body.imogi-pos-cashier-fullscreen header.navbar,
+body.imogi-pos-cashier-fullscreen .sticky-top,
+body.imogi-pos-cashier-fullscreen #navbar-breadcrumbs,
+body.imogi-pos-cashier-fullscreen .layout-side-section,
+body.imogi-pos-cashier-fullscreen .desk-sidebar {
+	display: none !important;
+}
+
+body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper {
+	flex: 0 0 100% !important;
+	max-width: 100% !important;
+	width: 100% !important;
+}
+
+body.imogi-pos-cashier-fullscreen .layout-main {
+	margin-top: 0 !important;
+	padding-top: 0 !important;
+}
+
+body.imogi-pos-cashier-fullscreen .page-container,
+body.imogi-pos-cashier-fullscreen .main-section {
+	padding-top: 0 !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-cashier-page.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-cashier-page {
+	height: 100vh !important;
+	height: 100dvh !important;
+	max-height: 100vh !important;
+	max-height: 100dvh !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .layout-main-section {
+	min-height: 100vh !important;
+	min-height: 100dvh !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .page-body,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-body {
+	padding-top: 16px !important;
+}

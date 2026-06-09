@@ -1,0 +1,150 @@
+{
+ "actions": [],
+ "autoname": "field:promo_name",
+ "creation": "2026-06-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "promo_name",
+  "company",
+  "is_active",
+  "column_break_main",
+  "rule_type",
+  "min_qty",
+  "trigger_item_code",
+  "trigger_item_group",
+  "reward_section",
+  "reward_item_code",
+  "reward_value",
+  "validity_section",
+  "valid_from",
+  "valid_upto",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "promo_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Promo",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktif"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Buy X Get Y Free",
+   "fieldname": "rule_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tipe Rule",
+   "options": "Buy X Get Y Free\nBuy X Get Other Free\nQty Discount Percent",
+   "reqd": 1
+  },
+  {
+   "default": "2",
+   "fieldname": "min_qty",
+   "fieldtype": "Int",
+   "label": "Minimal Qty Trigger",
+   "reqd": 1
+  },
+  {
+   "fieldname": "trigger_item_code",
+   "fieldtype": "Link",
+   "label": "Item Trigger",
+   "options": "Item"
+  },
+  {
+   "fieldname": "trigger_item_group",
+   "fieldtype": "Link",
+   "label": "Item Group Trigger",
+   "options": "Item Group"
+  },
+  {
+   "fieldname": "reward_section",
+   "fieldtype": "Section Break",
+   "label": "Reward"
+  },
+  {
+   "depends_on": "eval:doc.rule_type=='Buy X Get Other Free'",
+   "fieldname": "reward_item_code",
+   "fieldtype": "Link",
+   "label": "Item Reward (gratis)",
+   "options": "Item"
+  },
+  {
+   "depends_on": "eval:doc.rule_type=='Qty Discount Percent'",
+   "description": "Persen diskon untuk item trigger.",
+   "fieldname": "reward_value",
+   "fieldtype": "Float",
+   "label": "Nilai Reward"
+  },
+  {
+   "fieldname": "validity_section",
+   "fieldtype": "Section Break",
+   "label": "Masa Berlaku"
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Berlaku Dari"
+  },
+  {
+   "fieldname": "valid_upto",
+   "fieldtype": "Date",
+   "label": "Berlaku Sampai"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Catatan"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Promo Rule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "IMOGI Cashier"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

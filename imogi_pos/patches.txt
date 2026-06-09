@@ -1,0 +1,11 @@
+[pre_model_sync]
+
+[post_model_sync]
+imogi_pos.patches.sync_workspace
+imogi_pos.patches.reload_setup_wizard_child_doctypes
+imogi_pos.patches.grant_cashier_customer_permissions
+imogi_pos.patches.create_default_branch
+imogi_pos.patches.sync_branch_pricing_defaults
+imogi_pos.patches.grant_loyalty_permissions
+imogi_pos.patches.grant_wave3_permissions
+imogi_pos.patches.grant_wave4_permissions

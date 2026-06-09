@@ -1,0 +1,369 @@
+/* IMOGI POS login — navy gradient + white card */
+
+body[data-path="login"] {
+	background-attachment: fixed;
+	background-color: #07111f;
+	background-image: url("/assets/imogi_pos/images/imogi-login-corner.svg"),
+		url("/assets/imogi_pos/images/imogi-login-watermark.svg"),
+		linear-gradient(145deg, #07111f 0%, #0f1f35 22%, #1a3352 48%, #2a4f73 72%, #4a7fad 100%);
+	background-position: right bottom, center center, center center;
+	background-repeat: no-repeat, no-repeat, no-repeat;
+	background-size: min(48vw, 520px), clamp(280px, 46vw, 560px), cover;
+	min-height: 100vh;
+}
+
+body[data-path="login"] .navbar {
+	background: rgba(7, 17, 31, 0.28) !important;
+	backdrop-filter: blur(10px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+	position: relative;
+	z-index: 2;
+}
+
+body[data-path="login"] .navbar .navbar-brand,
+body[data-path="login"] .navbar .nav-link,
+body[data-path="login"] .navbar .navbar-text {
+	color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-path="login"] #page-login,
+body[data-path="login"] .page-content-wrapper {
+	position: relative;
+	z-index: 1;
+}
+
+body[data-path="login"] .page-content-wrapper {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	min-height: calc(100vh - 56px);
+	padding: 20px 16px 32px;
+}
+
+body[data-path="login"] .page_content,
+body[data-path="login"] main.container {
+	margin: 0 !important;
+	max-width: none !important;
+	padding: 0 !important;
+	width: 100%;
+}
+
+body[data-path="login"] .imogi-login-shell {
+	margin: 0 auto;
+	max-width: 420px;
+	width: 100%;
+}
+
+body[data-path="login"] .imogi-login-shell .page-card-head {
+	margin: 0 0 16px;
+	padding: 0 !important;
+	text-align: center;
+}
+
+body[data-path="login"] .imogi-login-shell .imogi-login-brand {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 420px;
+	width: 100%;
+}
+
+body[data-path="login"] .imogi-login-brand-row {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+}
+
+body[data-path="login"] .imogi-login-brand-row .app-logo {
+	filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.28));
+	flex-shrink: 0;
+	max-height: 44px;
+	mix-blend-mode: normal;
+	width: auto;
+}
+
+body[data-path="login"] .imogi-login-brand-row h4 {
+	color: #ffffff;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	margin: 0;
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+	white-space: nowrap;
+}
+
+body[data-path="login"] .imogi-login-shell .page-card-head:not(.imogi-login-brand) .app-logo {
+	filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.28));
+	max-height: 52px;
+	mix-blend-mode: normal;
+}
+
+body[data-path="login"] .imogi-login-shell .page-card-head:not(.imogi-login-brand) h4 {
+	color: #ffffff;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	margin: 12px 0 0;
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+}
+
+body[data-path="login"] .for-login .page-card,
+body[data-path="login"] .for-forgot .page-card,
+body[data-path="login"] .for-signup .page-card,
+body[data-path="login"] .for-email-login .page-card,
+body[data-path="login"] .for-login-with-email-link .page-card {
+	background: #ffffff !important;
+	border: 1px solid #e4e4e7 !important;
+	border-radius: 18px !important;
+	box-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+}
+
+body[data-path="login"] .imogi-login-shell .imogi-login-card {
+	margin: 0 auto;
+	max-width: 420px !important;
+	overflow: hidden;
+	padding: 24px 24px 22px !important;
+}
+
+body[data-path="login"] .imogi-login-card .page-card-body.imogi-login-fields input[type="text"],
+body[data-path="login"] .imogi-login-card .page-card-body.imogi-login-fields input[type="password"] {
+	margin-bottom: 0 !important;
+}
+
+body[data-path="login"] .imogi-login-shell .imogi-login-card form {
+	margin: 0;
+	max-width: none;
+}
+
+body[data-path="login"] .imogi-login-card-intro {
+	margin-bottom: 18px;
+	text-align: left;
+}
+
+body[data-path="login"] .imogi-login-card-subtitle {
+	color: #71717a;
+	font-size: 13px;
+	line-height: 1.5;
+	margin: 0;
+}
+
+body[data-path="login"] .imogi-field-group {
+	margin-bottom: 18px;
+}
+
+body[data-path="login"] .imogi-field-group:last-of-type {
+	margin-bottom: 0;
+}
+
+body[data-path="login"] .imogi-field-label {
+	color: #27272a;
+	display: block !important;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	margin-bottom: 8px;
+}
+
+body[data-path="login"] .email-field.imogi-input-wrap,
+body[data-path="login"] .password-field.imogi-input-wrap {
+	display: block;
+	position: relative;
+}
+
+body[data-path="login"] .imogi-input-wrap .form-control {
+	background: #fafafa !important;
+	border: 1px solid #d4d4d8 !important;
+	border-radius: 10px !important;
+	box-shadow: none !important;
+	color: #18181b !important;
+	font-size: 14px !important;
+	height: 44px !important;
+	line-height: 1.4 !important;
+	margin-bottom: 0 !important;
+	padding: 0 44px 0 40px !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+	width: 100%;
+}
+
+body[data-path="login"] .imogi-input-wrap .form-control:hover:not(:focus):not(:disabled) {
+	background: #ffffff !important;
+	border-color: #2a4f73 !important;
+	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
+}
+
+body[data-path="login"] .imogi-input-wrap .form-control:focus,
+body[data-path="login"] .imogi-input-wrap .form-control:focus-visible,
+body[data-path="login"] .imogi-input-wrap:focus-within .form-control {
+	background: #ffffff !important;
+	border-color: #1a3352 !important;
+	box-shadow: 0 0 0 3px rgba(26, 51, 82, 0.2) !important;
+	outline: none !important;
+}
+
+body[data-path="login"] .imogi-input-wrap:focus-within .field-icon {
+	color: #1a3352 !important;
+}
+
+body[data-path="login"] .imogi-input-wrap .form-control::placeholder {
+	color: #a1a1aa;
+	opacity: 1;
+}
+
+body[data-path="login"] .imogi-input-wrap .field-icon {
+	color: #71717a !important;
+	height: 16px;
+	left: 14px !important;
+	margin: 0;
+	pointer-events: none;
+	position: absolute !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	width: 16px;
+	z-index: 2;
+}
+
+body[data-path="login"] .imogi-input-wrap .toggle-password,
+body[data-path="login"] .imogi-input-wrap .imogi-toggle-password {
+	align-items: center;
+	color: #71717a !important;
+	cursor: pointer;
+	display: inline-flex !important;
+	font-size: 12px !important;
+	font-weight: 600;
+	height: auto !important;
+	line-height: 1 !important;
+	margin: 0 !important;
+	padding: 4px 0;
+	position: absolute !important;
+	right: 14px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	user-select: none;
+	z-index: 2;
+}
+
+body[data-path="login"] .imogi-login-fields {
+	padding: 0;
+}
+
+body[data-path="login"] .imogi-forgot-password {
+	margin: 10px 0 0;
+	text-align: right;
+}
+
+body[data-path="login"] .imogi-forgot-password a {
+	color: #52525b !important;
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+body[data-path="login"] .imogi-forgot-password a:hover {
+	color: #18181b !important;
+}
+
+body[data-path="login"] .imogi-login-actions {
+	margin-top: 18px !important;
+}
+
+body[data-path="login"] .imogi-login-submit {
+	border-radius: 10px !important;
+	font-size: 15px !important;
+	font-weight: 700 !important;
+	padding: 12px 16px !important;
+}
+
+body[data-path="login"] .for-login .social-logins {
+	margin-top: 0;
+}
+
+body[data-path="login"] .for-login .social-login-buttons {
+	margin-top: 0;
+}
+
+body[data-path="login"] .for-login .social-login-buttons .login-button-wrapper {
+	margin-bottom: 0;
+	padding: 0;
+	width: 100%;
+}
+
+body[data-path="login"] .for-login .login-divider.text-muted {
+	color: #a1a1aa !important;
+	opacity: 1 !important;
+}
+
+body[data-path="login"] .for-login .login-divider {
+	align-items: center;
+	color: #a1a1aa !important;
+	display: flex;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 12px;
+	letter-spacing: 0.04em;
+	margin: 18px 0 14px;
+	text-transform: lowercase;
+}
+
+body[data-path="login"] .for-login .login-divider::before,
+body[data-path="login"] .for-login .login-divider::after {
+	background: #e4e4e7;
+	content: "";
+	flex: 1;
+	height: 1px;
+}
+
+body[data-path="login"] .for-login .btn-login-option {
+	background: #f4f4f5 !important;
+	border: 1px solid #e4e4e7 !important;
+	border-radius: 10px !important;
+	color: #3f3f46 !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	padding: 11px 16px !important;
+}
+
+body[data-path="login"] .for-login .btn-login-option:hover {
+	background: #e4e4e7 !important;
+	border-color: #d4d4d8 !important;
+	color: #18181b !important;
+}
+
+body[data-path="login"] .sign-up-message {
+	color: rgba(255, 255, 255, 0.78) !important;
+	margin-top: 14px;
+}
+
+body[data-path="login"] .sign-up-message a {
+	color: #ffffff !important;
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+body[data-path="login"] .btn-primary.btn-login,
+body[data-path="login"] .btn-primary.btn-forgot,
+body[data-path="login"] .btn-primary.btn-login-with-email-link {
+	background: rgba(15, 31, 53, 0.92) !important;
+	border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body[data-path="login"] .btn-primary.btn-login:hover,
+body[data-path="login"] .btn-primary.btn-forgot:hover,
+body[data-path="login"] .btn-primary.btn-login-with-email-link:hover {
+	background: rgba(26, 51, 82, 0.96) !important;
+	border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+@media (max-width: 768px) {
+	body[data-path="login"] {
+		background-size: min(70vw, 400px), min(78vw, 340px), cover;
+	}
+
+	body[data-path="login"] .imogi-login-shell {
+		max-width: 100%;
+	}
+
+	body[data-path="login"] .imogi-login-shell .imogi-login-card {
+		padding: 20px 18px 22px !important;
+	}
+}

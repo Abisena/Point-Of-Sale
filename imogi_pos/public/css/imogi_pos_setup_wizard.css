@@ -1,0 +1,305 @@
+/* IMOGI POS 9-step Setup Wizard */
+.imogi-wizard-shell {
+	display: flex;
+	min-height: calc(100vh - 120px);
+	background: #f4f6f8;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 2px 16px rgba(15, 31, 53, 0.08);
+}
+
+.imogi-wizard-sidebar {
+	width: 280px;
+	background: #0f1f35;
+	color: #cbd5e1;
+	padding: 24px 0;
+	flex-shrink: 0;
+}
+
+.imogi-wizard-brand {
+	padding: 0 24px 20px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	margin-bottom: 16px;
+}
+
+.imogi-wizard-brand h5 {
+	color: #fff;
+	margin: 0 0 4px;
+	font-weight: 700;
+}
+
+.imogi-wizard-brand small {
+	color: #94a3b8;
+}
+
+.imogi-wizard-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0 12px;
+}
+
+.imogi-wizard-step-item {
+	display: flex;
+	gap: 12px;
+	padding: 12px;
+	border-radius: 8px;
+	margin-bottom: 4px;
+	cursor: default;
+	transition: background 0.15s;
+}
+
+.imogi-wizard-step-item.active {
+	background: rgba(13, 148, 136, 0.25);
+	color: #fff;
+}
+
+.imogi-wizard-step-item.done {
+	opacity: 0.85;
+}
+
+.imogi-wizard-step-num {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	border: 2px solid #475569;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	flex-shrink: 0;
+}
+
+.imogi-wizard-step-item.active .imogi-wizard-step-num {
+	background: #0d9488;
+	border-color: #0d9488;
+	color: #fff;
+}
+
+.imogi-wizard-step-item.done .imogi-wizard-step-num {
+	background: #059669;
+	border-color: #059669;
+	color: #fff;
+}
+
+.imogi-wizard-step-title {
+	font-weight: 600;
+	font-size: 13px;
+	color: #e2e8f0;
+}
+
+.imogi-wizard-step-hint {
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+.imogi-wizard-progress {
+	padding: 16px 24px 0;
+	margin-top: auto;
+}
+
+.imogi-wizard-progress-bar {
+	height: 4px;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.imogi-wizard-progress-fill {
+	height: 100%;
+	background: #0d9488;
+	transition: width 0.3s;
+}
+
+.imogi-wizard-main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background: #fff;
+}
+
+.imogi-wizard-content {
+	flex: 1;
+	padding: 32px 40px;
+	overflow-y: auto;
+}
+
+.imogi-wizard-kicker {
+	color: #0d9488;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-bottom: 4px;
+}
+
+.imogi-wizard-content h3 {
+	margin: 0 0 8px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.imogi-wizard-desc {
+	color: #64748b;
+	margin-bottom: 24px;
+	max-width: 640px;
+}
+
+.imogi-wizard-footer {
+	padding: 16px 40px;
+	border-top: 1px solid #e2e8f0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: #fafbfc;
+}
+
+.imogi-wizard-footer-hint {
+	color: #94a3b8;
+	font-size: 13px;
+}
+
+.imogi-wizard-footer-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.imogi-type-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.imogi-type-card {
+	border: 2px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	height: 100%;
+}
+
+.imogi-type-card:hover {
+	border-color: #99f6e4;
+}
+
+.imogi-type-card.selected {
+	border-color: #0d9488;
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.imogi-type-card h5 {
+	margin: 8px 0 4px;
+	font-size: 15px;
+}
+
+.imogi-type-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 8px;
+}
+
+.imogi-type-badge {
+	background: #f1f5f9;
+	color: #475569;
+	font-size: 10px;
+	padding: 2px 8px;
+	border-radius: 999px;
+}
+
+.imogi-type-preview {
+	background: #ecfdf5;
+	border: 1px solid #a7f3d0;
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin-top: 16px;
+	font-size: 13px;
+}
+
+.imogi-wizard-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.imogi-wizard-table th,
+.imogi-wizard-table td {
+	padding: 8px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.imogi-pay-card {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	padding: 14px 16px;
+	margin-bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.imogi-pay-card.active {
+	border-color: #0d9488;
+	background: #f0fdfa;
+}
+
+.imogi-choice-cards {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	max-width: 560px;
+}
+
+.imogi-choice-card {
+	border: 2px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 24px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.imogi-choice-card.selected {
+	border-color: #0d9488;
+	background: #f0fdfa;
+}
+
+.imogi-confirm-table td:first-child {
+	color: #64748b;
+	width: 180px;
+}
+
+.imogi-auto-list {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px 24px;
+	font-size: 13px;
+	margin-top: 16px;
+}
+
+.imogi-auto-list div::before {
+	content: "✓ ";
+	color: #059669;
+}
+
+.imogi-product-tabs .nav-link {
+	cursor: pointer;
+}
+
+.imogi-wizard-shell .btn-primary {
+	background: #0d9488;
+	border-color: #0d9488;
+}
+
+.imogi-wizard-shell .btn-primary:hover {
+	background: #0f766e;
+	border-color: #0f766e;
+}
+
+@media (max-width: 900px) {
+	.imogi-wizard-shell {
+		flex-direction: column;
+	}
+	.imogi-wizard-sidebar {
+		width: 100%;
+	}
+}

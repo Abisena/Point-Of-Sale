@@ -1,0 +1,38 @@
+no,produk,kategori,add_on,standard_rate,stock_uom
+1,Chicken Sandwich,Food,"Extra Chicken, Cheese, Fried Egg",25000,Nos
+2,Club Sandwich,Food,"Extra Chicken, Cheese, French Fries",28000,Nos
+3,Beef Burger,Food,"Extra Patty, Cheese, Fried Egg",32000,Nos
+4,Chicken Burger,Food,"Extra Chicken, Cheese, Fried Egg",28000,Nos
+5,French Fries,Food,"Cheese Sauce, BBQ Seasoning",18000,Nos
+6,Chicken Nuggets,Food,"BBQ Sauce, Cheese Sauce",22000,Nos
+7,Chicken Rice Bowl,Food,"Extra Chicken, Fried Egg, Extra Rice",35000,Nos
+8,Beef Teriyaki Rice Bowl,Food,"Extra Beef, Fried Egg, Extra Rice",38000,Nos
+9,Spaghetti Bolognese,Food,"Extra Cheese, Garlic Bread",32000,Nos
+10,Fried Rice Special,Food,"Fried Egg, Chicken, Crackers",30000,Nos
+11,Matcha Latte Hot,Beverage,"Oat Milk, Whipped Cream",28000,Nos
+12,Matcha Latte Ice,Beverage,"Oat Milk, Less Ice",30000,Nos
+13,Chocolate Hot,Beverage,"Marshmallow, Whipped Cream",25000,Nos
+14,Chocolate Ice,Beverage,"Marshmallow, Whipped Cream",27000,Nos
+15,Thai Tea,Beverage,"Boba, Less Ice",22000,Nos
+16,Lemon Tea,Beverage,"Less Ice, Extra Lemon",15000,Nos
+17,Peach Tea,Beverage,"Less Ice, Extra Peach Syrup",18000,Nos
+18,Taro Latte,Beverage,"Boba, Whipped Cream",28000,Nos
+19,Red Velvet Latte,Beverage,Whipped Cream,30000,Nos
+20,Fresh Orange Juice,Beverage,"Extra Orange, Less Ice",20000,Nos
+21,Chocolate Cake,Dessert,Vanilla Ice Cream,22000,Nos
+22,Tiramisu Cake,Dessert,Espresso Shot,28000,Nos
+23,Cheesecake,Dessert,Strawberry Sauce,25000,Nos
+24,Red Velvet Cake,Dessert,Cream Cheese Frosting,26000,Nos
+25,Brownies,Dessert,Vanilla Ice Cream,18000,Nos
+26,Croffle Original,Dessert,"Maple Syrup, Ice Cream",25000,Nos
+27,Croffle Chocolate,Dessert,Extra Chocolate Sauce,27000,Nos
+28,Vanilla Ice Cream,Dessert,"Chocolate Sauce, Sprinkles",15000,Nos
+29,Chocolate Ice Cream,Dessert,Chocolate Chips,15000,Nos
+30,Banana Split,Dessert,Extra Ice Cream Scoop,32000,Nos
+31,Birthday Decoration,Service,"Balloon Package, Flower Package",150000,Nos
+32,Meeting Room Rental,Service,"Projector, Coffee Break",500000,Nos
+33,VIP Room Rental,Service,"Projector, Coffee Break, Snack Box",750000,Nos
+34,Catering Service,Service,"Coffee Package, Snack Package",300000,Nos
+35,Event Reservation,Service,"Sound System, Decoration",400000,Nos
+36,Coffee Brewing Class,Service,Training Kit,250000,Nos
+37,Coffee Bean Grinding Service,Service,Premium Packaging,50000,Nos

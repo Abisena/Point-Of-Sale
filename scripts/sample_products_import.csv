@@ -1,0 +1,21 @@
+item_code,item_name,item_group,standard_rate,stock_uom,reorder_level,reorder_qty
+IMOGI-001,Indomie Goreng,Products,3500,Nos,20,40
+IMOGI-002,Indomie Kuah Ayam Bawang,Products,3500,Nos,20,40
+IMOGI-003,Aqua 600ml,Products,4000,Nos,24,48
+IMOGI-004,Teh Botol Sosro 350ml,Products,5000,Nos,12,24
+IMOGI-005,Kopi Kapal Api Special,Products,2500,Nos,15,30
+IMOGI-006,Gula Pasir 1kg,Products,15000,Nos,5,10
+IMOGI-007,Beras Premium 5kg,Products,72000,Nos,3,6
+IMOGI-008,Minyak Goreng 1L,Products,18000,Nos,6,12
+IMOGI-009,Susu UHT 1L,Products,17000,Nos,6,12
+IMOGI-010,Roti Tawar,Products,12000,Nos,4,8
+IMOGI-011,Sabun Lifebuoy,Products,4500,Nos,10,20
+IMOGI-012,Shampoo Clear 170ml,Products,28000,Nos,4,8
+IMOGI-013,Pampers S 4s,Products,22000,Nos,3,6
+IMOGI-014,Chitato Rasa Sapi Panggang,Products,9500,Nos,8,16
+IMOGI-015,Biskuit Roma Kelapa,Products,9000,Nos,8,16
+IMOGI-016,Teh Celup Sariwangi 25s,Products,6500,Nos,10,20
+IMOGI-017,Kecap Manis ABC 520ml,Products,21000,Nos,4,8
+IMOGI-018,Saus Sambal ABC 335ml,Products,12000,Nos,5,10
+IMOGI-019,Mie Sedap Goreng,Products,3500,Nos,20,40
+IMOGI-020,Air Mineral Gelas,Products,500,Nos,48,96

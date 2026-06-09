@@ -1,0 +1,235 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"hdr_flow\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI Flow — Cut &amp; Cups</b></span>\",\"col\":12}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":3}},{\"id\":\"sc_kds\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Kitchen Display\",\"col\":3}},{\"id\":\"sc_ful\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fulfillment Queue\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Process Steps</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 01-02 Order & Payment\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 03-04 Kitchen & Fulfillment\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 05-07 Service & Analytics\",\"col\":4}}]",
+ "creation": "2026-06-04 00:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "retail",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Imogi POS",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Step 01-02 Order & Payment",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI POS Order",
+   "link_count": 0,
+   "link_to": "IMOGI POS Order",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Kasir",
+   "link_count": 0,
+   "link_to": "imogi-pos-cashier",
+   "link_type": "Page",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Restaurant Table",
+   "link_count": 0,
+   "link_to": "IMOGI Restaurant Table",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI POS Settings",
+   "link_count": 0,
+   "link_to": "IMOGI POS Settings",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Branch",
+   "link_count": 0,
+   "link_to": "IMOGI Branch",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tambah Company & Cabang",
+   "link_count": 0,
+   "link_to": "imogi-pos-add-branch",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Step 03-04 Kitchen & Fulfillment",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Kitchen Display",
+   "link_count": 0,
+   "link_to": "kitchen-display",
+   "link_type": "Page",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Kitchen Order",
+   "link_count": 0,
+   "link_to": "IMOGI Kitchen Order",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Kitchen Station",
+   "link_count": 0,
+   "link_to": "IMOGI Kitchen Station",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fulfillment Queue",
+   "link_count": 0,
+   "link_to": "fulfillment-queue",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fulfillment Task",
+   "link_count": 0,
+   "link_to": "IMOGI Fulfillment Task",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Step 05-07 Service & Analytics",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Delivery Task",
+   "link_count": 0,
+   "link_to": "IMOGI Delivery Task",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Invoice",
+   "link_count": 0,
+   "link_to": "POS Invoice",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Dashboard",
+   "link_count": 0,
+   "link_to": "imogi-pos-dashboard",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Order Summary",
+   "link_count": 0,
+   "link_to": "IMOGI POS Order Summary",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Branch Sales Summary",
+   "link_count": 0,
+   "link_to": "IMOGI Branch Sales Summary",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-06-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "Imogi POS",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Orange",
+   "label": "IMOGI POS Order",
+   "link_to": "IMOGI POS Order",
+   "type": "DocType"
+  },
+  {
+   "color": "Red",
+   "label": "Kitchen Display",
+   "link_to": "kitchen-display",
+   "type": "Page"
+  },
+  {
+   "color": "Yellow",
+   "label": "Fulfillment Queue",
+   "link_to": "fulfillment-queue",
+   "type": "Page"
+  },
+  {
+   "color": "Blue",
+   "label": "POS Dashboard",
+   "link_to": "imogi-pos-dashboard",
+   "type": "Page"
+  }
+ ],
+ "title": "Imogi POS"
+}

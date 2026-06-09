@@ -1,0 +1,50 @@
+# Copyright (c) 2026, Imogi and contributors
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import escape_html
+
+from imogi_pos.api.settings_api import assign_credentials_on_enable
+from imogi_pos.imogi_pos.utils.business_profile import BUSINESS_UMKM
+
+
+class IMOGIPOSSettings(Document):
+	def validate(self):
+		if self.business_type == BUSINESS_UMKM:
+			self.enable_kitchen_display = 0
+			self.enable_fulfillment = 0
+			self.kitchen_item_groups = ""
+			self.fulfillment_for_order_types = ""
+
+		if self.enable_order_api:
+			assign_credentials_on_enable(self)
+
+			if not self.order_api_user:
+				self.order_api_user = "Administrator"
+
+	def on_update(self):
+		frappe.publish_realtime("imogi_pos_settings_updated", {"enable_pos_shift": self.enable_pos_shift})
+
+	@frappe.whitelist()
+	def generate_order_api_key(self):
+		"""Called from Settings Button — works even without custom client JS."""
+		from imogi_pos.api.settings_api import regenerate_order_api_credentials
+
+		result = regenerate_order_api_credentials()
+		frappe.msgprint(
+			_(
+				"<p><b>{0}:</b> <code>{1}</code></p>"
+				"<p><b>{2}:</b> <code>{3}</code></p>"
+				"<p class='text-muted'>{4}</p>"
+			).format(
+				_("API Key"),
+				escape_html(result["api_key"]),
+				_("API Secret"),
+				escape_html(result["api_secret"]),
+				_("Copy the secret now — it will not be shown again."),
+			),
+			title=_("API Credentials Generated"),
+			indicator="green",
+		)
+		return result

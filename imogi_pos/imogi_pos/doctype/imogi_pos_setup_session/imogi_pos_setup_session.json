@@ -1,0 +1,309 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-06-07 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_status",
+  "naming_series",
+  "status",
+  "current_step",
+  "column_break_status",
+  "completed_on",
+  "completed_by",
+  "section_store",
+  "store_name",
+  "store_city",
+  "owner_whatsapp",
+  "column_break_store",
+  "multi_branch",
+  "branch_name",
+  "section_business",
+  "business_type",
+  "opening_time",
+  "closing_time",
+  "column_break_business",
+  "target_monthly_sales",
+  "section_printer",
+  "printer_option",
+  "printer_note",
+  "section_gateway",
+  "payment_gateway",
+  "payment_gateway_key",
+  "section_links",
+  "company",
+  "pos_profile",
+  "warehouse",
+  "section_people",
+  "cashiers",
+  "section_products",
+  "products",
+  "section_suppliers",
+  "suppliers",
+  "section_payments",
+  "payments",
+  "section_notes",
+  "auto_created_summary"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "IMOGI-SETUP-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "IMOGI-SETUP-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nCompleted\nCancelled",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "current_step",
+   "fieldtype": "Int",
+   "label": "Langkah Saat Ini"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Datetime",
+   "label": "Selesai Pada",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_by",
+   "fieldtype": "Link",
+   "label": "Diselesaikan Oleh",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_store",
+   "fieldtype": "Section Break",
+   "label": "Identitas Toko"
+  },
+  {
+   "fieldname": "store_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Toko"
+  },
+  {
+   "fieldname": "store_city",
+   "fieldtype": "Data",
+   "label": "Kota / Kabupaten"
+  },
+  {
+   "fieldname": "owner_whatsapp",
+   "fieldtype": "Data",
+   "label": "WA Owner"
+  },
+  {
+   "fieldname": "column_break_store",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Centang jika toko punya lebih dari satu cabang (cabang pertama dibuat saat setup).",
+   "fieldname": "multi_branch",
+   "fieldtype": "Check",
+   "label": "Punya Cabang"
+  },
+  {
+   "depends_on": "eval:doc.multi_branch",
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "label": "Nama Cabang Utama"
+  },
+  {
+   "fieldname": "section_business",
+   "fieldtype": "Section Break",
+   "label": "Jenis Usaha & Operasional"
+  },
+  {
+   "fieldname": "business_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Jenis Usaha",
+   "options": "Warung / Sembako\nKafe / F&B\nFashion / Retail\nMinimarket\nJasa / Servis\nLainnya / Custom"
+  },
+  {
+   "fieldname": "opening_time",
+   "fieldtype": "Time",
+   "label": "Jam Buka"
+  },
+  {
+   "fieldname": "closing_time",
+   "fieldtype": "Time",
+   "label": "Jam Tutup"
+  },
+  {
+   "fieldname": "column_break_business",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "target_monthly_sales",
+   "fieldtype": "Currency",
+   "label": "Target Omzet Bulanan"
+  },
+  {
+   "fieldname": "section_printer",
+   "fieldtype": "Section Break",
+   "label": "Printer"
+  },
+  {
+   "default": "Skip",
+   "fieldname": "printer_option",
+   "fieldtype": "Select",
+   "label": "Opsi Printer",
+   "options": "Skip\nSetup Nanti\nSetup Sekarang"
+  },
+  {
+   "fieldname": "printer_note",
+   "fieldtype": "Small Text",
+   "label": "Catatan Printer"
+  },
+  {
+   "fieldname": "section_gateway",
+   "fieldtype": "Section Break",
+   "label": "Payment Gateway"
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Data",
+   "label": "Gateway"
+  },
+  {
+   "fieldname": "payment_gateway_key",
+   "fieldtype": "Password",
+   "label": "Server Key"
+  },
+  {
+   "fieldname": "section_links",
+   "fieldtype": "Section Break",
+   "label": "Hasil Setup"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "fieldtype": "Link",
+   "label": "POS Profile",
+   "options": "POS Profile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_people",
+   "fieldtype": "Section Break",
+   "label": "Kasir"
+  },
+  {
+   "fieldname": "cashiers",
+   "fieldtype": "Table",
+   "label": "Kasir",
+   "options": "IMOGI POS Setup Cashier Line"
+  },
+  {
+   "fieldname": "section_products",
+   "fieldtype": "Section Break",
+   "label": "Produk Awal"
+  },
+  {
+   "fieldname": "products",
+   "fieldtype": "Table",
+   "label": "Produk",
+   "options": "IMOGI POS Setup Product Line"
+  },
+  {
+   "fieldname": "section_suppliers",
+   "fieldtype": "Section Break",
+   "label": "Supplier"
+  },
+  {
+   "fieldname": "suppliers",
+   "fieldtype": "Table",
+   "label": "Supplier",
+   "options": "IMOGI POS Setup Supplier Line"
+  },
+  {
+   "fieldname": "section_payments",
+   "fieldtype": "Section Break",
+   "label": "Metode Pembayaran"
+  },
+  {
+   "fieldname": "payments",
+   "fieldtype": "Table",
+   "label": "Pembayaran",
+   "options": "IMOGI POS Setup Payment Line"
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "Ringkasan"
+  },
+  {
+   "fieldname": "auto_created_summary",
+   "fieldtype": "Long Text",
+   "label": "Master Data Dibuat",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-07 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Setup Session",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
