@@ -11,8 +11,21 @@ import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime, getdate, now_datetime, today
 
-from imogi_pos.imogi_pos.utils.feature_registry import SUBSCRIPTION_TIERS, normalize_tier
+from imogi_pos.imogi_pos.utils.feature_registry import (
+	SUBSCRIPTION_TIERS,
+	normalize_tier,
+	tier_rank,
+)
 from imogi_pos.imogi_pos.utils.flow import get_settings
+
+TIER_MONTHLY_PRICES: dict[str, int] = {
+	"Free": 0,
+	"Starter": 149_000,
+	"Professional": 499_000,
+	"Enterprise": 999_000,
+}
+
+TIER_PAYMENT_METHODS = ("QRIS", "Tunai", "Bank Transfer")
 
 BILLING_STATUS_ACTIVE = frozenset({"Trial", "Active"})
 BILLING_STATUS_GRACE = frozenset({"Past Due"})
@@ -271,3 +284,76 @@ def serialize_billing_status(settings=None) -> dict:
 		"manual_tier": normalize_tier(getattr(settings, "subscription_tier", None) or "Enterprise"),
 		"webhook_url": webhook_url,
 	}
+
+
+def get_tier_monthly_price(tier: str | None) -> int:
+	tier = normalize_tier(tier)
+	return int(TIER_MONTHLY_PRICES.get(tier, 0))
+
+
+def get_upgrade_payment_config(settings=None) -> dict:
+	settings = settings or get_settings()
+	company = getattr(settings, "default_company", None) or "IMOGI"
+	return {
+		"qris_merchant": getattr(settings, "default_company", None) or company,
+		"bank_name": "BCA",
+		"bank_account": "1234567890",
+		"bank_holder": company,
+		"cash_note": _("Bayar tunai di kantor IMOGI atau kepada sales representative Anda."),
+	}
+
+
+def serialize_tier_upgrade_quote(target_tier: str, settings=None) -> dict:
+	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
+
+	settings = settings or get_settings()
+	current = get_subscription_tier(settings)
+	target = normalize_tier(target_tier)
+	price = get_tier_monthly_price(target)
+	is_upgrade = tier_rank(target) > tier_rank(current)
+	is_downgrade = tier_rank(target) < tier_rank(current)
+	requires_payment = is_upgrade and price > 0
+
+	return {
+		"current_tier": current,
+		"target_tier": target,
+		"monthly_price": price,
+		"monthly_price_label": frappe.utils.fmt_money(price, currency="IDR") if price else _("Gratis"),
+		"is_upgrade": is_upgrade,
+		"is_downgrade": is_downgrade,
+		"requires_payment": requires_payment,
+		"payment_methods": list(TIER_PAYMENT_METHODS),
+		"payment_config": get_upgrade_payment_config(settings),
+	}
+
+
+def log_tier_upgrade_payment(
+	target_tier: str,
+	payment_method: str | None = None,
+	payment_reference: str | None = None,
+	*,
+	before_tier: str | None = None,
+	settings=None,
+) -> str:
+	settings = settings or get_settings()
+	payload = {
+		"before_tier": before_tier,
+		"target_tier": normalize_tier(target_tier),
+		"payment_method": payment_method,
+		"payment_reference": payment_reference,
+		"amount": get_tier_monthly_price(target_tier),
+	}
+	doc = frappe.get_doc(
+		{
+			"doctype": "IMOGI POS Subscription Event",
+			"event_type": "tier.upgrade.manual",
+			"subscription_id": getattr(settings, "billing_external_id", None),
+			"plan_code": normalize_tier(target_tier).lower(),
+			"billing_status": "Manual",
+			"applied_tier": normalize_tier(target_tier),
+			"notes": f"{payment_method or 'Manual'} — {payment_reference or ''}".strip(" —"),
+			"payload_json": frappe.as_json(payload),
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	return doc.name

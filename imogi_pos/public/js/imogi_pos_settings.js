@@ -376,7 +376,160 @@ const SETTINGS_TABS = [
 	},
 ];
 
+/** Form layout order — section breaks + fields (matches imogi_pos_settings.json field_order). */
+const SETTINGS_FORM_LAYOUT = [
+	{ section: "setup_section" },
+	"business_type",
+	"business_template",
+	"mode_summary",
+	"setup_complete",
+	{ section: "store_identity_section" },
+	"store_city",
+	"owner_whatsapp",
+	"multi_branch",
+	{ section: "branch_pricing_section" },
+	"master_selling_price_list",
+	"sync_prices_to_branches_on_import",
+	"sync_branch_prices",
+	"hq_push_menu_from_branch",
+	"hq_ensure_branch_price_lists",
+	"target_monthly_sales",
+	"default_opening_time",
+	"default_closing_time",
+	{ section: "general_section" },
+	"subscription_tier",
+	"upgrade_subscription_tier",
+	"default_company",
+	"default_pos_profile",
+	"default_warehouse",
+	"enable_pos_shift",
+	{ section: "billing_section" },
+	"enable_saas_billing_sync",
+	"billing_provider",
+	"billing_external_id",
+	"billing_plan_code",
+	"billing_status",
+	"billing_period_end",
+	"billing_last_synced",
+	"billing_auto_apply_tier",
+	"billing_webhook_secret",
+	"sync_subscription_tier",
+	{ section: "flow_section" },
+	"enable_kitchen_display",
+	"enable_fulfillment",
+	"kitchen_item_groups",
+	"fulfillment_for_order_types",
+	{ section: "inventory_section" },
+	"low_stock_check_interval",
+	"low_stock_alert_roles",
+	"reorder_level_field",
+	{ section: "receipt_section" },
+	"enable_receipt_print",
+	"thermal_print_mode",
+	"thermal_printer_width",
+	"receipt_print_format",
+	"receipt_header",
+	"receipt_footer",
+	{ section: "import_section" },
+	"import_menu",
+	"import_stock",
+	"import_products",
+	"import_bom",
+	{ section: "analytics_section" },
+	"enable_realtime_notifications",
+	"dashboard_refresh_seconds",
+	{ section: "loyalty_section" },
+	"enable_loyalty",
+	"loyalty_points_per_amount",
+	"loyalty_point_value",
+	"loyalty_min_redeem_points",
+	{ section: "stamp_section" },
+	"enable_stamp_card",
+	"stamp_target",
+	"stamp_reward_discount_type",
+	"stamp_reward_discount_value",
+	"stamp_reward_min_order",
+	{ section: "promo_section" },
+	"enable_promo_rules",
+	{ section: "payment_gateway_section" },
+	"enable_payment_gateway",
+	"payment_gateway_provider",
+	"payment_gateway_sandbox",
+	"payment_gateway",
+	"payment_gateway_key",
+	"payment_gateway_client_key",
+	{ section: "api_section" },
+	"enable_order_api",
+	"order_api_user",
+	"enable_order_api_webhook",
+	"order_api_webhook_url",
+	{ section: "integrations_section" },
+	"enable_offline_cashier",
+	"enable_marketplace_orders",
+	"marketplace_webhook_secret",
+	{ section: "operations_section" },
+	"enable_role_gating",
+	"enable_approval_workflow",
+	"approval_discount_threshold_percent",
+	"approval_supervisor_pin",
+	"enable_central_kitchen",
+	"central_kitchen_station",
+	"enable_kitchen_printer",
+	"enable_cashback",
+	"cashback_percent",
+	"enable_birthday_promo",
+	"birthday_discount_percent",
+	{ section: "franchise_section" },
+	"generate_franchise_royalty",
+	"post_franchise_royalty_journals",
+	"royalty_expense_account",
+	"royalty_payable_account",
+	"printer_setup_status",
+	"generate_order_api_key",
+	"order_api_key",
+	"order_api_secret",
+	"order_api_info",
+];
+
+const SETTINGS_ALWAYS_HIDDEN_FIELDS = new Set([
+	"business_type",
+	"business_template",
+	"setup_complete",
+	"subscription_tier",
+	"upgrade_subscription_tier",
+	"printer_setup_status",
+	"generate_order_api_key",
+	"order_api_key",
+	"order_api_secret",
+	"order_api_info",
+]);
+
 let __imogi_settings_active_tab = "general";
+
+function get_settings_section_fields(section_name) {
+	const fields = [];
+	let capture = false;
+	for (const item of SETTINGS_FORM_LAYOUT) {
+		if (item.section) {
+			if (item.section === section_name) {
+				capture = true;
+				continue;
+			}
+			if (capture) break;
+			continue;
+		}
+		if (capture) fields.push(item);
+	}
+	return fields;
+}
+
+function get_all_settings_tab_sections() {
+	const names = [];
+	for (const item of SETTINGS_FORM_LAYOUT) {
+		if (item.section && item.section !== "setup_section") names.push(item.section);
+	}
+	return names;
+}
 
 const ENDPOINT_GROUPS = {
 	order: {
@@ -410,11 +563,12 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v5")) return;
+	if (document.getElementById("imogi-settings-inline-css-v6")) return;
 	document.getElementById("imogi-settings-inline-css")?.remove();
 	document.getElementById("imogi-settings-inline-css-v2")?.remove();
 	document.getElementById("imogi-settings-inline-css-v3")?.remove();
 	document.getElementById("imogi-settings-inline-css-v4")?.remove();
+	document.getElementById("imogi-settings-inline-css-v5")?.remove();
 	frappe.dom.set_style(`
 		.imogi-settings-page .imogi-mode-summary-host .control-label,
 		.imogi-settings-page .form-section[data-fieldname="setup_section"] .section-head,
@@ -437,35 +591,10 @@ function inject_imogi_settings_css() {
 		.imogi-settings-page .custom-btn.imogi-toolbar-docs-btn:hover {
 			background: #f39c12 !important; border-color: #d68910 !important; color: #fff !important;
 		}
-		.imogi-tier-lock-banner {
-			margin-top: 12px; padding: 10px 14px; border-radius: 10px;
-			background: linear-gradient(135deg, #fff7ed, #ffedd5);
-			border: 1px solid #f39c12; color: #7c2d12; font-size: 13px; line-height: 1.45;
-		}
-		.imogi-tier-lock-banner strong { color: #9a3412; }
-		.imogi-tier-lock-banner a { color: #c2410c; font-weight: 600; text-decoration: underline; }
-		.imogi-subscription-dock {
-			align-items: center; background: linear-gradient(135deg, #f8fafc, #fff);
-			border: 1px solid #e2e8f0; border-radius: 14px; display: flex;
-			flex-wrap: wrap; gap: 14px; justify-content: space-between;
-			margin-bottom: 16px; padding: 16px 18px;
-		}
-		.imogi-subscription-dock-main { flex: 1; min-width: 220px; }
-		.imogi-subscription-dock-label { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-		.imogi-subscription-dock-tier { color: #0f172a; font-size: 22px; font-weight: 800; margin: 4px 0 6px; }
-		.imogi-subscription-dock-desc { color: #64748b; font-size: 12px; line-height: 1.45; margin: 0; }
-		.imogi-subscription-dock-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
-		.imogi-subscription-dock .btn-upgrade-tier {
-			background: linear-gradient(135deg, #f5b041, #f39c12) !important;
-			border: none !important; border-radius: 10px !important; box-shadow: 0 4px 14px rgba(243,156,18,.28);
-			color: #fff !important; font-weight: 700 !important; padding: 10px 18px !important;
-		}
-		.imogi-subscription-dock .btn-upgrade-tier:hover { box-shadow: 0 6px 18px rgba(243,156,18,.38); color: #fff !important; }
-		.imogi-subscription-dock .btn-upgrade-tier:disabled { opacity: .65; }
 		.imogi-settings-page .frappe-control[data-imogi-tier-locked="1"] .control-label::after {
 			content: " 🔒"; font-size: 11px; opacity: 0.75;
 		}
-	`, "imogi-settings-inline-css-v5");
+	`, "imogi-settings-inline-css-v6");
 }
 
 function can_manage_api(frm) {
@@ -481,7 +610,7 @@ function can_manage_api(frm) {
 
 function init_settings_page(frm) {
 	frm.$wrapper.addClass("imogi-settings-page");
-	["generate_order_api_key", "order_api_key", "order_api_secret", "order_api_info", "business_type"].forEach(
+	["generate_order_api_key", "order_api_key", "order_api_secret", "order_api_info", "business_type", "business_template"].forEach(
 		(f) => frm.toggle_display(f, false)
 	);
 	render_mode_summary(frm);
@@ -521,59 +650,18 @@ function apply_billing_ui_state(frm) {
 		);
 	}
 	render_billing_dock_summary(frm);
-	render_subscription_tier_dock(frm);
 }
 
 function build_subscription_tier_dock(frm) {
 	frm.toggle_display("subscription_tier", false);
 	frm.toggle_display("upgrade_subscription_tier", false);
-
-	const ctx = get_settings_section(frm, "general_section");
-	if (!ctx || !ctx.$wrapper) return;
-
-	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-	if ($body.find(".imogi-subscription-dock").length) {
-		render_subscription_tier_dock(frm);
-		return;
-	}
-
-	$body.find(".imogi-settings-card-head").after(`
-		<div class="imogi-subscription-dock">
-			<div class="imogi-subscription-dock-main">
-				<div class="imogi-subscription-dock-label">${__("Paket Langganan")}</div>
-				<div class="imogi-subscription-dock-tier">—</div>
-				<p class="imogi-subscription-dock-desc"></p>
-			</div>
-			<div class="imogi-subscription-dock-actions">
-				<button type="button" class="btn btn-upgrade-tier">${__("Upgrade Langganan")}</button>
-			</div>
-		</div>`);
-
-	$body.find(".btn-upgrade-tier").on("click", () => open_subscription_tier_picker(frm));
-	render_subscription_tier_dock(frm);
-}
-
-function render_subscription_tier_dock(frm) {
-	const $dock = frm.$wrapper.find(".imogi-subscription-dock");
-	if (!$dock.length) return;
-
-	const sync_on = cint(frm.doc.enable_saas_billing_sync);
-	const auto_apply = cint(frm.doc.billing_auto_apply_tier);
-	const billing_locked = sync_on && auto_apply;
-	const tier = frm.doc.subscription_tier || frappe.boot.imogi_pos_subscription_tier || "Enterprise";
-
-	$dock.find(".imogi-subscription-dock-tier").text(tier);
-	$dock.find(".imogi-subscription-dock-desc").text(
-		billing_locked
-			? __("Dikelola otomatis oleh billing SaaS.")
-			: __("Menentukan fitur yang tersedia di workspace dan kasir.")
-	);
-
-	const $btn = $dock.find(".btn-upgrade-tier");
-	$btn.text(billing_locked ? __("Lihat Paket") : __("Upgrade Langganan")).prop("disabled", false);
+	frm.$wrapper.find(".imogi-subscription-dock").remove();
 }
 
 function open_subscription_tier_picker(frm) {
+	if (imogi_pos.tier_picker && imogi_pos.tier_picker._active_dialog) {
+		return;
+	}
 	if (!imogi_pos.tier_picker) {
 		frappe.msgprint(__("Modul tier picker belum dimuat. Muat ulang halaman."));
 		return;
@@ -756,37 +844,32 @@ function set_settings_button_enabled(frm, fieldname, enabled, message) {
 }
 
 function render_tier_lock_banner(frm, data) {
-	const $host = frm.$wrapper.find(".imogi-mode-summary-host .imogi-page-hero");
-	if (!$host.length) return;
+	const $card = frm.$wrapper.find(".imogi-mode-summary-host .imogi-hero-tier-card");
+	if (!$card.length) return;
 
-	const tier = frappe.utils.escape_html(data.tier || frm.doc.subscription_tier || "Enterprise");
+	const tier = data.tier || frm.doc.subscription_tier || "Enterprise";
+	const tier_safe = frappe.utils.escape_html(tier);
 	const locked_count = Object.values(data.locks || {}).filter((lock) => !lock.allowed).length;
 	const matrix_route = data.matrix_route || "imogi-pos-feature-matrix";
+	const sync_on = cint(frm.doc.enable_saas_billing_sync);
+	const auto_apply = cint(frm.doc.billing_auto_apply_tier);
+	const billing_locked = sync_on && auto_apply;
 
-	let $banner = $host.find(".imogi-tier-lock-banner");
-	if (!$banner.length) {
-		$banner = $('<div class="imogi-tier-lock-banner"></div>');
-		$host.find(".imogi-page-hero-desc").after($banner);
-	}
+	const status_text = billing_locked
+		? __("Dikelola billing SaaS")
+		: locked_count
+			? __("{0} pengaturan terkunci", [locked_count])
+			: __("Semua fitur tier tersedia");
 
-	$banner.html(`
-		<strong>${__("Paket langganan")}: ${tier}</strong>
-		${locked_count ? ` — ${locked_count} ${__("pengaturan terkunci di paket ini.")}` : ` — ${__("Semua pengaturan tier tersedia.")}`}
-		<a href="#" class="imogi-tier-upgrade-link">${__("Upgrade langganan")}</a>
-		·
-		<a href="#" class="imogi-settings-action" data-route="${frappe.utils.escape_html(matrix_route)}">${__("Matriks fitur")}</a>
-	`);
-
-	$banner.off("click", ".imogi-settings-action");
-	$banner.on("click", ".imogi-settings-action", function (e) {
-		e.preventDefault();
-		frappe.set_route($(this).data("route"));
-	});
-	$banner.off("click", ".imogi-tier-upgrade-link");
-	$banner.on("click", ".imogi-tier-upgrade-link", function (e) {
-		e.preventDefault();
-		open_subscription_tier_picker(frm);
-	});
+	$card
+		.removeClass("is-tier-free is-tier-starter is-tier-professional is-tier-enterprise")
+		.addClass(`is-tier-${tier.toLowerCase()}`);
+	$card.find(".imogi-hero-tier-card-value").text(tier);
+	$card.find(".imogi-hero-tier-card-status").text(status_text);
+	$card.find(".imogi-hero-tier-upgrade-btn").text(
+		billing_locked ? __("Lihat Paket") : __("Upgrade Langganan")
+	);
+	$card.find(".imogi-hero-tier-matrix-btn").attr("data-route", matrix_route);
 }
 
 function get_settings_section(frm, fieldname) {
@@ -796,21 +879,33 @@ function get_settings_section(frm, fieldname) {
 	return { section, $wrapper };
 }
 
+function set_settings_field_visible(frm, fieldname, show) {
+	if (!frm.fields_dict[fieldname]) return;
+	if (SETTINGS_ALWAYS_HIDDEN_FIELDS.has(fieldname)) {
+		frm.toggle_display(fieldname, false);
+		return;
+	}
+	frm.toggle_display(fieldname, !!show);
+}
+
 function set_settings_section_visible(frm, fieldname, show) {
 	const ctx = get_settings_section(frm, fieldname);
-	if (!ctx || !ctx.$wrapper) return;
-
-	ctx.$wrapper.toggle(!!show);
-	ctx.$wrapper.removeClass("hide-control");
-
-	if (show) {
-		if (typeof ctx.section.collapse === "function") {
-			ctx.section.collapse(false);
+	if (ctx && ctx.$wrapper) {
+		ctx.$wrapper.toggle(!!show);
+		ctx.$wrapper.removeClass("hide-control");
+		if (show) {
+			if (typeof ctx.section.collapse === "function") {
+				ctx.section.collapse(false);
+			}
+			const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+			$body.removeClass("hide").show();
+			ctx.$wrapper.find(".section-head").removeClass("collapsed");
 		}
-		const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-		$body.removeClass("hide").show();
-		ctx.$wrapper.find(".section-head").removeClass("collapsed");
 	}
+
+	get_settings_section_fields(fieldname).forEach((fname) => {
+		set_settings_field_visible(frm, fname, show);
+	});
 }
 
 function get_visible_settings_tabs(frm) {
@@ -918,14 +1013,12 @@ function activate_settings_tab(frm, tabId) {
 		(SETTINGS_TABS.find((t) => t.id === tabId)?.sections || []).flat()
 	);
 
-	SETTINGS_TABS.forEach((tab) => {
-		tab.sections.forEach((sectionName) => {
-			let show = visible_sections.has(sectionName);
-			if (sectionName === "flow_section" && frm.doc.business_type === "UMKM") {
-				show = false;
-			}
-			set_settings_section_visible(frm, sectionName, show);
-		});
+	get_all_settings_tab_sections().forEach((sectionName) => {
+		let show = visible_sections.has(sectionName);
+		if (sectionName === "flow_section" && frm.doc.business_type === "UMKM") {
+			show = false;
+		}
+		set_settings_section_visible(frm, sectionName, show);
 	});
 
 	if (tabId === "integrations") {
@@ -951,9 +1044,18 @@ function activate_settings_tab(frm, tabId) {
 		render_billing_dock_summary(frm);
 	}
 	if (tabId === "analytics") {
+		position_target_dock(frm);
 		render_target_dock_summary(frm);
 	}
 	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "analytics");
+}
+
+function position_target_dock(frm) {
+	const $host = frm.$wrapper.find(".imogi-settings-target-host");
+	const $content = frm.$wrapper.find(".imogi-settings-content");
+	if ($host.length && $content.length) {
+		$content.prepend($host);
+	}
 }
 
 function style_setting_cards(frm) {
@@ -1017,9 +1119,9 @@ function build_target_dock(frm) {
 	let $host = frm.$wrapper.find(".imogi-settings-target-host");
 	if (!$host.length) {
 		$host = $(`<div class="imogi-settings-target-host" style="display:none;"></div>`);
-		const $nav = frm.$wrapper.find(".imogi-settings-tab-nav-wrap");
-		if ($nav.length) {
-			$nav.after($host);
+		const $content = frm.$wrapper.find(".imogi-settings-content");
+		if ($content.length) {
+			$content.prepend($host);
 		} else {
 			frm.$wrapper.find(".form-layout").prepend($host);
 		}
@@ -1672,12 +1774,10 @@ function render_mode_summary(frm) {
 		? {
 				title: __("Mode UMKM"),
 				text: __("Satu operator — order langsung selesai setelah bayar."),
-				steps: [__("Order"), __("Bayar"), __("Selesai")],
 		  }
 		: {
 				title: __("Mode Restoran / Cafe"),
 				text: __("Alur F&B lengkap dengan kitchen & fulfillment."),
-				steps: [__("Order"), __("Kitchen"), __("Fulfillment"), __("Selesai")],
 		  };
 
 	const field = frm.get_field("mode_summary");
@@ -1686,44 +1786,64 @@ function render_mode_summary(frm) {
 	field.$wrapper.closest(".frappe-control").addClass("imogi-mode-summary-host");
 	field.$wrapper.closest(".frappe-control").find(".control-label").hide();
 
-	const flow = summary.steps
-		.map(
-			(s, i) =>
-				`<div class="imogi-flow-step">
-					<span class="imogi-flow-dot">${i + 1}</span>
-					<span>${s}</span>
-				</div>${i < summary.steps.length - 1 ? '<span class="imogi-flow-connector"></span>' : ""}`
-		)
-		.join("");
+	const tier = frm.doc.subscription_tier || frappe.boot.imogi_pos_subscription_tier || "Enterprise";
+	const tier_class = `is-tier-${String(tier).toLowerCase()}`;
+	const template_label = (frm.doc.business_template || "").trim();
 
 	field.$wrapper.html(`
 		<div class="imogi-page-hero ${is_umkm ? "is-umkm" : "is-restaurant"}">
-			<div>
-				<span class="imogi-page-hero-badge">${frappe.utils.escape_html(frm.doc.business_type || "")}</span>
-				<h2 class="imogi-page-hero-title">${summary.title}</h2>
-				<p class="imogi-page-hero-desc">${summary.text}</p>
-				<div class="imogi-flow-track">${flow}</div>
+			<div class="imogi-hero-top">
+				<div class="imogi-hero-top-left">
+					<span class="imogi-page-hero-badge">${frappe.utils.escape_html(frm.doc.business_type || "")}</span>
+					${template_label ? `<span class="imogi-hero-template">${frappe.utils.escape_html(template_label)}</span>` : ""}
+				</div>
+				<div class="imogi-hero-tier-card ${tier_class}">
+					<div class="imogi-hero-tier-inline">
+						<span class="imogi-hero-tier-card-label">${__("Paket")}</span>
+						<span class="imogi-hero-tier-card-value">${frappe.utils.escape_html(tier)}</span>
+					</div>
+					<div class="imogi-hero-tier-card-status">${__("Memuat status paket...")}</div>
+					<div class="imogi-hero-tier-card-actions">
+						<button type="button" class="btn btn-sm imogi-hero-tier-upgrade-btn">${__("Upgrade Langganan")}</button>
+						<button type="button" class="btn btn-sm btn-default imogi-hero-tier-matrix-btn" data-route="imogi-pos-feature-matrix">${__("Matriks")}</button>
+					</div>
+				</div>
 			</div>
-			<div class="imogi-quick-links">
-				<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-cashier">
-					<span class="imogi-quick-link-icon"><i class="fa fa-shopping-cart"></i></span>
-					${__("Kasir IMOGI")}
-				</button>
-				<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-dashboard">
-					<span class="imogi-quick-link-icon"><i class="fa fa-dashboard"></i></span>
-					${__("Dashboard")}
-				</button>
-				<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-feature-matrix">
-					<span class="imogi-quick-link-icon"><i class="fa fa-th"></i></span>
-					${__("Matriks Fitur")}
-				</button>
+			<h2 class="imogi-page-hero-title">${summary.title}</h2>
+			<p class="imogi-page-hero-desc">${summary.text}</p>
+			<div class="imogi-hero-bottom">
+				<div class="imogi-quick-links imogi-quick-links--inline">
+					<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-cashier">
+						<span class="imogi-quick-link-icon"><i class="fa fa-shopping-cart"></i></span>
+						${__("Kasir IMOGI")}
+					</button>
+					<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-dashboard">
+						<span class="imogi-quick-link-icon"><i class="fa fa-dashboard"></i></span>
+						${__("Dashboard")}
+					</button>
+				</div>
 			</div>
 		</div>`);
 
-	field.$wrapper.off("click", ".imogi-settings-action");
-	field.$wrapper.on("click", ".imogi-settings-action", function () {
+	const $host = field.$wrapper;
+	$host.off("click.imogi-hero");
+	$host.on("click.imogi-hero", ".imogi-settings-action", function (e) {
+		e.preventDefault();
 		frappe.set_route($(this).data("route"));
 	});
+	$host.on("click.imogi-hero", ".imogi-hero-tier-upgrade-btn", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		open_subscription_tier_picker(frm);
+	});
+	$host.on("click.imogi-hero", ".imogi-hero-tier-matrix-btn", (e) => {
+		e.preventDefault();
+		frappe.set_route($(e.currentTarget).data("route") || "imogi-pos-feature-matrix");
+	});
+
+	if (frm._imogi_tier_locks) {
+		render_tier_lock_banner(frm, frm._imogi_tier_locks);
+	}
 }
 
 function toggle_settings_by_business_type(frm) {

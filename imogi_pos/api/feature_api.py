@@ -14,7 +14,9 @@ from imogi_pos.imogi_pos.utils.feature_registry import (
 )
 from imogi_pos.imogi_pos.utils.subscription_billing import (
 	is_billing_sync_enabled,
+	log_tier_upgrade_payment,
 	serialize_billing_status,
+	serialize_tier_upgrade_quote,
 )
 
 
@@ -100,11 +102,24 @@ def get_tier_catalog(tier=None):
 		"billing_locked"
 	]
 	catalog["matrix_route"] = "imogi-pos-feature-matrix"
+	catalog["pricing"] = {
+		tier_name: serialize_tier_upgrade_quote(tier_name, frappe.get_single("IMOGI POS Settings"))[
+			"monthly_price"
+		]
+		for tier_name in SUBSCRIPTION_TIERS
+	}
 	return catalog
 
 
 @frappe.whitelist()
-def set_subscription_tier(tier):
+def get_tier_upgrade_quote(tier):
+	"""Quote for upgrading/downgrading subscription tier."""
+	frappe.has_permission("IMOGI POS Settings", "read", throw=True)
+	return serialize_tier_upgrade_quote(tier)
+
+
+@frappe.whitelist()
+def set_subscription_tier(tier, payment_method=None, payment_reference=None):
 	"""Manually change subscription tier (when billing auto-apply is off)."""
 	frappe.has_permission("IMOGI POS Settings", "write", throw=True)
 	from frappe.utils import cint
@@ -119,7 +134,23 @@ def set_subscription_tier(tier):
 			title=_("Tidak Dapat Diubah"),
 		)
 
+	quote = serialize_tier_upgrade_quote(tier, settings)
+	if quote.get("requires_payment") and not (payment_method or "").strip():
+		frappe.throw(
+			_("Pilih metode pembayaran dan selesaikan pembayaran sebelum mengaktifkan paket."),
+			title=_("Pembayaran Diperlukan"),
+		)
+
 	before = get_subscription_tier(settings)
+	if quote.get("requires_payment"):
+		log_tier_upgrade_payment(
+			tier,
+			payment_method=payment_method,
+			payment_reference=payment_reference,
+			before_tier=before,
+			settings=settings,
+		)
+
 	settings.subscription_tier = tier
 	settings.flags.ignore_permissions = True
 	settings.save(ignore_permissions=True)
@@ -128,4 +159,10 @@ def set_subscription_tier(tier):
 
 	frappe.publish_realtime("imogi_pos_settings_updated", {"subscription_tier": tier})
 
-	return {"before": before, "after": tier, "tier": tier}
+	return {
+		"before": before,
+		"after": tier,
+		"tier": tier,
+		"payment_method": payment_method,
+		"payment_reference": payment_reference,
+	}

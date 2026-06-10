@@ -1329,6 +1329,11 @@
 	min-width: 0;
 }
 
+.imogi-settings-page .imogi-settings-content .form-section.hide-control,
+.imogi-settings-page .imogi-settings-content .frappe-control.hide-control {
+	display: none !important;
+}
+
 .imogi-settings-content .form-layout {
 	max-width: none;
 }
@@ -1735,13 +1740,49 @@
 	border: 1px solid #e8ecf1;
 	border-radius: 16px;
 	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
-	display: grid;
-	gap: 16px;
-	grid-template-columns: 1fr auto;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 	margin-bottom: 0;
 	overflow: hidden;
-	padding: 20px 22px;
+	padding: 18px 20px 16px;
 	position: relative;
+}
+
+.imogi-hero-top {
+	align-items: flex-start;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.imogi-hero-top-left {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.imogi-hero-template {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	color: #475569;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 10px;
+}
+
+.imogi-hero-bottom {
+	align-items: center;
+	border-top: 1px solid #f1f5f9;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: space-between;
+	margin-top: 4px;
+	padding-top: 14px;
 }
 
 .imogi-page-hero::before {
@@ -1763,8 +1804,17 @@
 }
 
 @media (max-width: 768px) {
-	.imogi-page-hero {
-		grid-template-columns: 1fr;
+	.imogi-hero-top {
+		flex-direction: column;
+	}
+
+	.imogi-hero-tier-card {
+		width: 100%;
+	}
+
+	.imogi-hero-bottom {
+		align-items: stretch;
+		flex-direction: column;
 	}
 }
 
@@ -1774,28 +1824,31 @@
 	border-radius: 8px;
 	color: #64748b;
 	display: inline-block;
+	flex-shrink: 0;
 	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
-	margin-bottom: 8px;
+	margin-bottom: 0;
 	padding: 4px 10px;
 	text-transform: uppercase;
 }
 
 .imogi-page-hero-title {
 	color: #0f172a;
+	flex: 1;
 	font-size: 22px;
 	font-weight: 800;
 	line-height: 1.2;
-	margin: 0 0 6px;
+	margin: 0;
+	min-width: 0;
 }
 
 .imogi-page-hero-desc {
 	color: #64748b;
 	font-size: 14px;
 	line-height: 1.5;
-	margin: 0 0 16px;
-	max-width: 480px;
+	margin: 0;
+	max-width: 640px;
 }
 
 .imogi-flow-track {
@@ -1803,6 +1856,142 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0;
+}
+
+.imogi-hero-tier-card {
+	background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+	display: grid;
+	gap: 6px 12px;
+	grid-template-columns: auto 1fr;
+	grid-template-areas:
+		"tier tier"
+		"status status"
+		"actions actions";
+	min-width: 260px;
+	padding: 10px 12px;
+}
+
+.imogi-hero-tier-inline {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	grid-area: tier;
+}
+
+.imogi-hero-tier-card .imogi-hero-tier-card-status {
+	grid-area: status;
+	min-height: 0;
+}
+
+.imogi-hero-tier-card .imogi-hero-tier-card-actions {
+	grid-area: actions;
+}
+
+.imogi-hero-tier-card-label {
+	color: #64748b;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.imogi-hero-tier-card-icon {
+	align-items: center;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	color: #94a3b8;
+	display: flex;
+	font-size: 11px;
+	height: 28px;
+	justify-content: center;
+	width: 28px;
+}
+
+.imogi-hero-tier-card-value {
+	color: #0f172a;
+	font-size: 18px;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.1;
+}
+
+.imogi-hero-tier-card-status {
+	color: #64748b;
+	font-size: 11px;
+	line-height: 1.35;
+}
+
+.imogi-hero-tier-card-actions {
+	display: grid;
+	gap: 6px;
+	grid-template-columns: 1fr 1fr;
+}
+
+.imogi-hero-tier-upgrade-btn {
+	background: linear-gradient(135deg, #f5b041, #f39c12) !important;
+	border: none !important;
+	border-radius: 10px !important;
+	box-shadow: 0 3px 10px rgba(243, 156, 18, 0.25);
+	color: #fff !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	padding: 8px 10px !important;
+}
+
+.imogi-hero-tier-upgrade-btn:hover {
+	box-shadow: 0 5px 14px rgba(243, 156, 18, 0.35);
+	color: #fff !important;
+}
+
+.imogi-hero-tier-matrix-btn {
+	border-radius: 10px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	padding: 8px 10px !important;
+}
+
+.imogi-hero-tier-card.is-tier-free {
+	border-top: 3px solid #94a3b8;
+}
+
+.imogi-hero-tier-card.is-tier-free .imogi-hero-tier-card-icon {
+	background: #f8fafc;
+	color: #64748b;
+}
+
+.imogi-hero-tier-card.is-tier-starter {
+	border-top: 3px solid #3b82f6;
+}
+
+.imogi-hero-tier-card.is-tier-starter .imogi-hero-tier-card-icon {
+	background: #eff6ff;
+	border-color: #bfdbfe;
+	color: #2563eb;
+}
+
+.imogi-hero-tier-card.is-tier-professional {
+	border-top: 3px solid #8b5cf6;
+}
+
+.imogi-hero-tier-card.is-tier-professional .imogi-hero-tier-card-icon {
+	background: #f5f3ff;
+	border-color: #ddd6fe;
+	color: #7c3aed;
+}
+
+.imogi-hero-tier-card.is-tier-enterprise {
+	border-top: 3px solid #f59e0b;
+}
+
+.imogi-hero-tier-card.is-tier-enterprise .imogi-hero-tier-card-icon {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #d97706;
 }
 
 .imogi-flow-step {
@@ -1845,13 +2034,12 @@
 	display: grid;
 	gap: 8px;
 	grid-template-columns: 1fr;
-	justify-content: center;
 }
 
-@media (min-width: 901px) {
-	.imogi-quick-links {
-		min-width: 168px;
-	}
+.imogi-quick-links--inline {
+	grid-auto-flow: column;
+	grid-template-columns: repeat(2, auto);
+	width: auto;
 }
 
 .imogi-quick-link {
@@ -1865,10 +2053,10 @@
 	font-size: 13px;
 	font-weight: 600;
 	gap: 10px;
-	min-width: 160px;
-	padding: 10px 14px;
+	padding: 8px 12px;
 	text-align: left;
 	transition: all 0.15s ease;
+	white-space: nowrap;
 }
 
 .imogi-quick-link:hover {

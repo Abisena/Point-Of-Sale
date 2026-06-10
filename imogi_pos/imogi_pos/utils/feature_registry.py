@@ -1274,7 +1274,7 @@ def serialize_tier_catalog(current_tier: str | None = None) -> dict:
 					}
 					for f in new_at_tier
 					if f["status"] == FEATURE_STATUS_BUILT
-				][:10],
+				][:5],
 			}
 		)
 	return {

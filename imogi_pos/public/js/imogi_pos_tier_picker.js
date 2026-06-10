@@ -46,8 +46,11 @@ imogi_pos.tier_picker.ensure_styles = function () {
 			align-items: flex-start; background: linear-gradient(135deg, #0f1f35 0%, #1a3358 55%, #243b66 100%);
 			border: 0; color: #fff; padding: 22px 28px 20px;
 		}
-		.imogi-tier-picker-dialog .modal-header .modal-title {
-			font-size: 20px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2;
+		.imogi-tier-picker-dialog .modal-header .modal-title,
+		.imogi-tier-picker-dialog .modal-header h4,
+		.imogi-tier-picker-checkout .modal-header .modal-title,
+		.imogi-tier-picker-checkout .modal-header h4 {
+			color: #fff !important; font-size: 20px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2;
 		}
 		.imogi-tier-picker-dialog .modal-header .btn-modal-close,
 		.imogi-tier-picker-dialog .modal-header .close {
@@ -136,10 +139,8 @@ imogi_pos.tier_picker.ensure_styles = function () {
 			margin-bottom: 8px; text-transform: uppercase;
 		}
 		.imogi-tier-picker-features {
-			flex: 1; list-style: none; margin: 0 0 14px; max-height: 210px; overflow-y: auto; padding: 0;
+			flex: 1; list-style: none; margin: 0 0 14px; padding: 0;
 		}
-		.imogi-tier-picker-features::-webkit-scrollbar { width: 4px; }
-		.imogi-tier-picker-features::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 		.imogi-tier-picker-features li {
 			align-items: flex-start; color: #475569; display: flex; font-size: 12px;
 			gap: 8px; line-height: 1.4; margin-bottom: 7px;
@@ -187,10 +188,84 @@ imogi_pos.tier_picker.ensure_styles = function () {
 		.imogi-tier-picker-inline .imogi-tier-picker-hero { margin-top: 12px; }
 		.imogi-tier-picker-inline .imogi-tier-picker-card { cursor: pointer; }
 		.imogi-tier-picker-grid--loading { min-height: 120px; place-items: center; }
+		.imogi-tier-picker-checkout .modal-dialog { max-width: 560px; }
+		.imogi-tier-picker-checkout .modal-body { background: #f8fafc; padding: 20px 22px 22px; }
+		.imogi-tier-checkout-steps {
+			display: flex; gap: 6px; margin-bottom: 18px;
+		}
+		.imogi-tier-checkout-step {
+			background: #e2e8f0; border-radius: 999px; color: #64748b; flex: 1;
+			font-size: 10px; font-weight: 700; padding: 7px 8px; text-align: center; text-transform: uppercase;
+		}
+		.imogi-tier-checkout-step.is-active { background: #0f1f35; color: #fff; }
+		.imogi-tier-checkout-step.is-done { background: #dcfce7; color: #166534; }
+		.imogi-tier-checkout-card {
+			background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+			box-shadow: 0 4px 18px rgba(15,23,42,.05); margin-bottom: 14px; padding: 16px 18px;
+		}
+		.imogi-tier-checkout-card h5 { color: #0f172a; font-size: 16px; font-weight: 800; margin: 0 0 10px; }
+		.imogi-tier-checkout-arrow-row {
+			align-items: center; display: flex; gap: 12px; justify-content: center; margin: 14px 0;
+		}
+		.imogi-tier-checkout-pill {
+			background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+			color: #0f172a; font-size: 15px; font-weight: 800; padding: 10px 16px;
+		}
+		.imogi-tier-checkout-pill.is-target { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+		.imogi-tier-checkout-price {
+			background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1px solid #fed7aa;
+			border-radius: 12px; color: #9a3412; font-size: 22px; font-weight: 800;
+			margin-top: 12px; padding: 12px 14px; text-align: center;
+		}
+		.imogi-tier-checkout-price small { color: #b45309; display: block; font-size: 11px; font-weight: 600; margin-top: 4px; }
+		.imogi-tier-pay-methods { display: grid; gap: 10px; }
+		.imogi-tier-pay-method {
+			align-items: center; background: #fff; border: 2px solid #e2e8f0; border-radius: 12px;
+			cursor: pointer; display: flex; gap: 12px; padding: 14px 16px; transition: all .15s ease;
+		}
+		.imogi-tier-pay-method:hover { border-color: #cbd5e1; }
+		.imogi-tier-pay-method.is-selected { border-color: #f39c12; box-shadow: 0 0 0 1px #f39c12; }
+		.imogi-tier-pay-method-icon {
+			align-items: center; background: #f8fafc; border-radius: 10px; color: #0f1f35;
+			display: flex; font-size: 18px; height: 42px; justify-content: center; width: 42px;
+		}
+		.imogi-tier-pay-method.is-selected .imogi-tier-pay-method-icon {
+			background: #fff7ed; color: #c05621;
+		}
+		.imogi-tier-pay-method-title { color: #0f172a; font-size: 14px; font-weight: 700; }
+		.imogi-tier-pay-method-desc { color: #64748b; font-size: 12px; margin-top: 2px; }
+		.imogi-tier-pay-instruction {
+			background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px;
+			color: #334155; font-size: 13px; line-height: 1.55; padding: 14px 16px;
+		}
+		.imogi-tier-pay-instruction strong { color: #0f172a; }
+		.imogi-tier-pay-instruction .imogi-tier-pay-amount {
+			color: #c05621; font-size: 20px; font-weight: 800; margin: 8px 0;
+		}
+		.imogi-tier-pay-qris-box {
+			align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+			display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 20px;
+		}
+		.imogi-tier-pay-qris-box i { color: #0f1f35; font-size: 64px; }
+		.imogi-tier-checkout-note { color: #64748b; font-size: 12px; line-height: 1.45; margin: 0; }
+		.imogi-tier-picker-checkout .btn-tier-checkout-primary {
+			background: linear-gradient(135deg, #f5b041, #f39c12) !important;
+			border: none !important; border-radius: 10px !important; color: #fff !important; font-weight: 700 !important;
+		}
+		.imogi-tier-picker-checkout .btn-tier-checkout-confirm {
+			background: #0f1f35 !important; border: none !important; border-radius: 10px !important;
+			color: #fff !important; font-weight: 700 !important;
+		}
 		`,
 		"imogi-tier-picker-css"
 	);
 };
+
+const IMOGI_TIER_PAYMENT_METHODS = [
+	{ id: "QRIS", label: __("QRIS"), icon: "fa-qrcode", desc: __("Scan & bayar instan") },
+	{ id: "Tunai", label: __("Tunai"), icon: "fa-money", desc: __("Bayar ke sales / kantor") },
+	{ id: "Bank Transfer", label: __("Bank Transfer"), icon: "fa-university", desc: __("Transfer manual ke rekening") },
+];
 
 imogi_pos.tier_picker.can_view_matrix = function () {
 	return (
@@ -296,7 +371,11 @@ imogi_pos.tier_picker.apply_tier = function (tier, options = {}) {
 	const on_done = options.on_done || function () {};
 	frappe.call({
 		method: "imogi_pos.api.feature_api.set_subscription_tier",
-		args: { tier },
+		args: {
+			tier,
+			payment_method: options.payment_method || null,
+			payment_reference: options.payment_reference || null,
+		},
 		freeze: true,
 		freeze_message: __("Menerapkan paket langganan..."),
 		callback(r) {
@@ -312,7 +391,234 @@ imogi_pos.tier_picker.apply_tier = function (tier, options = {}) {
 	});
 };
 
+imogi_pos.tier_picker._format_idr = function (amount) {
+	const n = flt(amount);
+	if (!n) return __("Gratis");
+	try {
+		return new Intl.NumberFormat("id-ID", {
+			style: "currency",
+			currency: "IDR",
+			maximumFractionDigits: 0,
+		}).format(n);
+	} catch (e) {
+		return `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+	}
+};
+
+imogi_pos.tier_picker._render_checkout_steps = function (active_step) {
+	const steps = [
+		{ id: 1, label: __("Ringkasan") },
+		{ id: 2, label: __("Pembayaran") },
+		{ id: 3, label: __("Aktivasi") },
+	];
+	return `<div class="imogi-tier-checkout-steps">${steps
+		.map((s) => {
+			const cls =
+				s.id < active_step ? "is-done" : s.id === active_step ? "is-active" : "";
+			return `<div class="imogi-tier-checkout-step ${cls}">${frappe.utils.escape_html(s.label)}</div>`;
+		})
+		.join("")}</div>`;
+};
+
+imogi_pos.tier_picker._payment_instruction_html = function (quote, method) {
+	const cfg = quote.payment_config || {};
+	const amount = imogi_pos.tier_picker._format_idr(quote.monthly_price);
+	const ref = `IMOGI-${frappe.session.user}-${quote.target_tier}`.replace(/\s/g, "");
+
+	if (method === "QRIS") {
+		return `
+			<div class="imogi-tier-pay-instruction">
+				<strong>${__("Scan QRIS")}</strong>
+				<div class="imogi-tier-pay-amount">${amount}</div>
+				<p class="imogi-tier-checkout-note mb-0">${__(
+					"Merchant: {0}. Setelah pembayaran berhasil, lanjut ke langkah aktivasi.",
+					[frappe.utils.escape_html(cfg.qris_merchant || "IMOGI POS")]
+				)}</p>
+				<div class="imogi-tier-pay-qris-box">
+					<i class="fa fa-qrcode"></i>
+					<span class="text-muted small">${__("QR Code — integrasi gateway menyusul")}</span>
+				</div>
+			</div>`;
+	}
+	if (method === "Tunai") {
+		return `
+			<div class="imogi-tier-pay-instruction">
+				<strong>${__("Pembayaran tunai")}</strong>
+				<div class="imogi-tier-pay-amount">${amount}</div>
+				<p>${frappe.utils.escape_html(cfg.cash_note || __("Bayar tunai ke sales representative IMOGI."))}</p>
+				<p class="imogi-tier-checkout-note mb-0">${__(
+					"Catat bukti pembayaran, lalu klik <b>Sudah bayar — aktifkan paket</b>."
+				)}</p>
+			</div>`;
+	}
+	return `
+		<div class="imogi-tier-pay-instruction">
+			<strong>${__("Transfer bank")}</strong>
+			<div class="imogi-tier-pay-amount">${amount}</div>
+			<p><strong>${frappe.utils.escape_html(cfg.bank_name || "BCA")}</strong><br>
+			${frappe.utils.escape_html(cfg.bank_account || "-")}<br>
+			a.n. ${frappe.utils.escape_html(cfg.bank_holder || "IMOGI")}</p>
+			<p>${__("Berita transfer")}: <code>${frappe.utils.escape_html(ref)}</code></p>
+			<p class="imogi-tier-checkout-note mb-0">${__(
+				"Setelah transfer, klik <b>Sudah bayar — aktifkan paket</b>."
+			)}</p>
+		</div>`;
+};
+
+imogi_pos.tier_picker.open_checkout = function (tier, options = {}) {
+	imogi_pos.tier_picker.ensure_styles();
+	const on_done = options.on_done || function () {};
+
+	frappe.call({
+		method: "imogi_pos.api.feature_api.get_tier_upgrade_quote",
+		args: { tier },
+		callback(r) {
+			if (r.exc) return;
+			const quote = r.message || {};
+			if (!quote.requires_payment) {
+				frappe.confirm(
+					__(
+						"Ubah paket langganan dari <b>{0}</b> ke <b>{1}</b>? Pengaturan yang tidak tersedia di paket ini akan dinonaktifkan.",
+						[quote.current_tier, quote.target_tier]
+					),
+					() => {
+						imogi_pos.tier_picker.apply_tier(quote.target_tier, { on_done });
+					}
+				);
+				return;
+			}
+
+			let step = 1;
+			let selected_method = null;
+
+			const dialog = new frappe.ui.Dialog({
+				title: __("Upgrade ke {0}", [quote.target_tier]),
+				size: "large",
+			});
+			dialog.$wrapper.addClass("imogi-tier-picker-dialog imogi-tier-picker-checkout");
+
+			const render = () => {
+				if (step === 1) {
+					dialog.$body.html(`
+						${imogi_pos.tier_picker._render_checkout_steps(1)}
+						<div class="imogi-tier-checkout-card">
+							<h5>${__("Ringkasan perubahan paket")}</h5>
+							<div class="imogi-tier-checkout-arrow-row">
+								<span class="imogi-tier-checkout-pill">${frappe.utils.escape_html(quote.current_tier)}</span>
+								<i class="fa fa-long-arrow-right text-muted"></i>
+								<span class="imogi-tier-checkout-pill is-target">${frappe.utils.escape_html(quote.target_tier)}</span>
+							</div>
+							<div class="imogi-tier-checkout-price">
+								${frappe.utils.escape_html(quote.monthly_price_label || imogi_pos.tier_picker._format_idr(quote.monthly_price))}
+								<small>${__("per bulan")}</small>
+							</div>
+							<p class="imogi-tier-checkout-note mt-3 mb-0">${__(
+								"Anda akan memilih metode pembayaran di langkah berikutnya, lalu mengaktifkan paket setelah pembayaran."
+							)}</p>
+						</div>
+					`);
+					dialog.set_primary_action(__("Lanjut ke Pembayaran"), () => {
+						step = 2;
+						render();
+					});
+					dialog.get_primary_btn().addClass("btn-tier-checkout-primary");
+					dialog.get_secondary_btn().addClass("hide");
+					return;
+				}
+
+				if (step === 2) {
+					const methods_html = IMOGI_TIER_PAYMENT_METHODS.map(
+						(m) => `
+						<div class="imogi-tier-pay-method ${selected_method === m.id ? "is-selected" : ""}" data-method="${frappe.utils.escape_html(m.id)}">
+							<span class="imogi-tier-pay-method-icon"><i class="fa ${m.icon}"></i></span>
+							<div>
+								<div class="imogi-tier-pay-method-title">${frappe.utils.escape_html(m.label)}</div>
+								<div class="imogi-tier-pay-method-desc">${frappe.utils.escape_html(m.desc)}</div>
+							</div>
+						</div>`
+					).join("");
+
+					dialog.$body.html(`
+						${imogi_pos.tier_picker._render_checkout_steps(2)}
+						<div class="imogi-tier-checkout-card">
+							<h5>${__("Pilih metode pembayaran")}</h5>
+							<div class="imogi-tier-pay-methods">${methods_html}</div>
+						</div>
+					`);
+
+					dialog.$body.find(".imogi-tier-pay-method").on("click", function () {
+						selected_method = $(this).data("method");
+						dialog.$body.find(".imogi-tier-pay-method").removeClass("is-selected");
+						$(this).addClass("is-selected");
+					});
+
+					dialog.set_primary_action(__("Lanjut"), () => {
+						if (!selected_method) {
+							frappe.msgprint(__("Pilih metode pembayaran terlebih dahulu."));
+							return;
+						}
+						step = 3;
+						render();
+					});
+					dialog.set_secondary_action_label(__("Kembali"));
+					dialog.set_secondary_action(() => {
+						step = 1;
+						render();
+					});
+					dialog.get_primary_btn().addClass("btn-tier-checkout-primary");
+					return;
+				}
+
+				dialog.$body.html(`
+					${imogi_pos.tier_picker._render_checkout_steps(3)}
+					<div class="imogi-tier-checkout-card">
+						<h5>${__("Selesaikan pembayaran")} — ${frappe.utils.escape_html(selected_method)}</h5>
+						${imogi_pos.tier_picker._payment_instruction_html(quote, selected_method)}
+					</div>
+				`);
+
+				dialog.set_primary_action(__("Sudah bayar — aktifkan paket"), () => {
+					frappe.confirm(
+						__(
+							"Aktifkan paket <b>{0}</b> sekarang? Pastikan pembayaran <b>{1}</b> sebesar <b>{2}</b> sudah diterima.",
+							[
+								quote.target_tier,
+								selected_method,
+								quote.monthly_price_label || imogi_pos.tier_picker._format_idr(quote.monthly_price),
+							]
+						),
+						() => {
+							const ref = `IMOGI-${quote.target_tier}-${Date.now()}`;
+							imogi_pos.tier_picker.apply_tier(quote.target_tier, {
+								payment_method: selected_method,
+								payment_reference: ref,
+								on_done(msg) {
+									dialog.hide();
+									on_done(msg);
+								},
+							});
+						}
+					);
+				});
+				dialog.set_secondary_action_label(__("Kembali"));
+				dialog.set_secondary_action(() => {
+					step = 2;
+					render();
+				});
+				dialog.get_primary_btn().addClass("btn-tier-checkout-confirm");
+			};
+
+			render();
+			dialog.show();
+			dialog.$wrapper.find(".modal-header .modal-title, .modal-header h4").css("color", "#fff");
+		},
+	});
+};
+
 imogi_pos.tier_picker.open = function (options = {}) {
+	if (imogi_pos.tier_picker._active_dialog) {
+		return;
+	}
 	imogi_pos.tier_picker.ensure_styles();
 	const title = options.title || __("Upgrade Langganan");
 	const on_select = options.on_select || function () {};
@@ -333,6 +639,12 @@ imogi_pos.tier_picker.open = function (options = {}) {
 		});
 
 		dialog.$wrapper.addClass("imogi-tier-picker-dialog");
+		imogi_pos.tier_picker._active_dialog = dialog;
+		dialog.$wrapper.on("hidden.bs.modal.imogi-tier-picker", () => {
+			if (imogi_pos.tier_picker._active_dialog === dialog) {
+				imogi_pos.tier_picker._active_dialog = null;
+			}
+		});
 		dialog.$body.html(`
 			<div class="imogi-tier-picker-hero">
 				<p>${__(
@@ -346,19 +658,12 @@ imogi_pos.tier_picker.open = function (options = {}) {
 		dialog.$body.find(".btn-tier-select").on("click", function () {
 			const tier = $(this).data("tier");
 			if (!tier || catalog.billing_locked || !catalog.can_change_tier) return;
-			frappe.confirm(
-				__("Ubah paket langganan ke <b>{0}</b>? Pengaturan yang tidak tersedia di paket ini akan dinonaktifkan.", [
-					tier,
-				]),
-				() => {
-					imogi_pos.tier_picker.apply_tier(tier, {
-						on_done(msg) {
-							dialog.hide();
-							on_select(msg);
-						},
-					});
-				}
-			);
+			imogi_pos.tier_picker.open_checkout(tier, {
+				on_done(msg) {
+					dialog.hide();
+					on_select(msg);
+				},
+			});
 		});
 
 		if (imogi_pos.tier_picker.can_view_matrix()) {
@@ -372,6 +677,7 @@ imogi_pos.tier_picker.open = function (options = {}) {
 		dialog.set_primary_action(__("Tutup"), () => dialog.hide());
 
 		dialog.show();
+		dialog.$wrapper.find(".modal-header .modal-title, .modal-header h4").css("color", "#fff");
 		dialog.get_primary_btn().addClass("btn-tier-close");
 		const $secondary = dialog.get_secondary_btn();
 		if ($secondary && $secondary.length && !$secondary.hasClass("hide")) {
