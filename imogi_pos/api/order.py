@@ -25,6 +25,7 @@ def _parse_json(value, label):
 def _serialize_order(order):
 	return {
 		"name": order.name,
+		"creation": order.creation,
 		"status": order.status,
 		"docstatus": order.docstatus,
 		"company": order.company,

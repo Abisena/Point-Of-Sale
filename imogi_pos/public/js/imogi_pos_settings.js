@@ -93,9 +93,32 @@ frappe.ui.form.on("IMOGI POS Settings", {
 	},
 
 	target_monthly_sales(frm) {
-		if (__imogi_settings_active_tab === "analytics") {
+		if (__imogi_settings_active_tab === "general") {
+			render_receipt_preview(frm);
+		}
+		if (__imogi_settings_active_tab === "notifications") {
 			render_target_dock_summary(frm);
 		}
+	},
+
+	store_city(frm) {
+		render_receipt_preview(frm);
+	},
+
+	owner_whatsapp(frm) {
+		render_receipt_preview(frm);
+	},
+
+	receipt_header(frm) {
+		render_receipt_preview(frm);
+	},
+
+	receipt_footer(frm) {
+		render_receipt_preview(frm);
+	},
+
+	default_company(frm) {
+		render_receipt_preview(frm);
 	},
 
 	business_type(frm) {
@@ -301,80 +324,94 @@ const SETTINGS_TABS = [
 	{
 		id: "general",
 		label: __("Dasar"),
-		icon: "fa-cog",
-		desc: __("Identitas toko, perusahaan, profil kasir & shift"),
-		sections: [
-			"store_identity_section",
-			"branch_pricing_section",
-			"general_section",
-			"billing_section",
-			"flow_section",
-		],
+		icon: "fa-sliders",
+		desc: __("Mode operasional, paket langganan, dan identitas toko"),
+		sections: ["store_identity_section", "branch_pricing_section", "general_section", "flow_section"],
 	},
 	{
-		id: "inventory",
-		label: __("Stok"),
-		icon: "fa-cubes",
-		desc: __("Pengurangan stok BOM & peringatan menipis"),
-		sections: ["inventory_section"],
-	},
-	{
-		id: "receipt",
-		label: __("Struk"),
-		icon: "fa-print",
-		desc: __("Cetak struk thermal di kasir"),
-		sections: ["receipt_section"],
-	},
-	{
-		id: "import",
-		label: __("Import"),
-		icon: "fa-upload",
-		desc: __("Import menu, produk, BOM & stok bahan"),
-		sections: ["import_section"],
-	},
-	{
-		id: "analytics",
-		label: __("Dashboard"),
-		icon: "fa-line-chart",
-		desc: __("Target omzet, notifikasi & refresh"),
-		sections: ["analytics_section"],
-	},
-	{
-		id: "loyalty",
-		label: __("Loyalty"),
-		icon: "fa-gift",
-		desc: __("Poin member, stamp card & promo otomatis"),
+		id: "transactions",
+		label: __("Transaksi"),
+		icon: "fa-exchange",
+		desc: __("Loyalty, stamp card, dan promo otomatis"),
 		sections: ["loyalty_section", "stamp_section", "promo_section"],
 	},
 	{
 		id: "payment",
-		label: __("Bayar"),
+		label: __("Pembayaran"),
 		icon: "fa-credit-card",
 		desc: __("Payment gateway QRIS (Midtrans / Xendit)"),
 		sections: ["payment_gateway_section"],
 	},
 	{
+		id: "inventory",
+		label: __("Produk & Stok"),
+		icon: "fa-cubes",
+		desc: __("Stok otomatis, import menu, produk & BOM"),
+		sections: ["inventory_section", "import_section"],
+	},
+	{
+		id: "tax",
+		label: __("Pajak & Service"),
+		icon: "fa-percent",
+		desc: __("Franchise royalty dan akun pajak"),
+		sections: ["franchise_section"],
+	},
+	{
+		id: "receipt",
+		label: __("Printer & Struk"),
+		icon: "fa-print",
+		desc: __("Cetak struk thermal di kasir"),
+		sections: ["receipt_section"],
+	},
+	{
 		id: "integrations",
 		label: __("Integrasi"),
 		icon: "fa-plug",
-		desc: __("Order API website, offline cashier & marketplace"),
-		sections: ["api_section", "integrations_section"],
+		desc: __("Order API, offline cashier, marketplace & billing"),
+		sections: ["api_section", "integrations_section", "billing_section"],
 	},
 	{
-		id: "operations",
-		label: __("Operasional"),
-		icon: "fa-shield",
+		id: "roles",
+		label: __("Role & Akses"),
+		icon: "fa-users",
 		desc: __("Role gating, approval workflow & central kitchen"),
 		sections: ["operations_section"],
 	},
 	{
-		id: "franchise",
-		label: __("Franchise"),
-		icon: "fa-building",
-		desc: __("Royalty franchise & jurnal ERPNext"),
-		sections: ["franchise_section"],
+		id: "notifications",
+		label: __("Notifikasi"),
+		icon: "fa-bell",
+		desc: __("Notifikasi realtime dan refresh dashboard"),
+		sections: ["analytics_section"],
+	},
+	{
+		id: "security",
+		label: __("Keamanan"),
+		icon: "fa-lock",
+		desc: __("Pengaturan keamanan lanjutan"),
+		placeholder: true,
+		sections: [],
+	},
+	{
+		id: "activity",
+		label: __("Log Aktivitas"),
+		icon: "fa-list-alt",
+		desc: __("Riwayat perubahan pengaturan"),
+		placeholder: true,
+		sections: [],
 	},
 ];
+
+const IMOGI_TIER_PERKS = {
+	Free: [__("Fitur dasar kasir"), __("Dashboard penjualan"), __("Laporan harian")],
+	Starter: [__("Customer & meja"), __("Multi payment & QRIS"), __("Hold order")],
+	Professional: [__("Kitchen & fulfillment"), __("Loyalty & promo"), __("Shift kasir")],
+	Enterprise: [
+		__("Semua fitur tersedia"),
+		__("Update & support prioritas"),
+		__("Integrasi tanpa batas"),
+	],
+};
 
 /** Form layout order — section breaks + fields (matches imogi_pos_settings.json field_order). */
 const SETTINGS_FORM_LAYOUT = [
@@ -627,6 +664,8 @@ function init_settings_page(frm) {
 	build_subscription_tier_dock(frm);
 	style_form_sections(frm);
 	style_setting_cards(frm);
+	build_sidebar_help(frm);
+	build_trust_cards(frm);
 	activate_settings_tab(frm, __imogi_settings_active_tab);
 	apply_billing_ui_state(frm);
 	fetch_settings_tier_locks(frm);
@@ -824,10 +863,10 @@ function apply_settings_tier_locks(frm, data) {
 		}
 	});
 
-	if (__imogi_settings_active_tab === "loyalty") render_loyalty_dock_summary(frm);
+	if (__imogi_settings_active_tab === "transactions") render_loyalty_dock_summary(frm);
 	if (__imogi_settings_active_tab === "payment") render_payment_dock_summary(frm);
 	if (__imogi_settings_active_tab === "integrations") render_integrations_dock_summary(frm);
-	if (__imogi_settings_active_tab === "franchise") render_franchise_dock_summary(frm);
+	if (__imogi_settings_active_tab === "tax") render_franchise_dock_summary(frm);
 }
 
 function set_settings_button_enabled(frm, fieldname, enabled, message) {
@@ -844,32 +883,34 @@ function set_settings_button_enabled(frm, fieldname, enabled, message) {
 }
 
 function render_tier_lock_banner(frm, data) {
-	const $card = frm.$wrapper.find(".imogi-mode-summary-host .imogi-hero-tier-card");
-	if (!$card.length) return;
+	const $panel = frm.$wrapper.find(".imogi-mode-summary-host .imogi-tier-panel");
+	if (!$panel.length) return;
 
 	const tier = data.tier || frm.doc.subscription_tier || "Enterprise";
-	const tier_safe = frappe.utils.escape_html(tier);
 	const locked_count = Object.values(data.locks || {}).filter((lock) => !lock.allowed).length;
 	const matrix_route = data.matrix_route || "imogi-pos-feature-matrix";
 	const sync_on = cint(frm.doc.enable_saas_billing_sync);
 	const auto_apply = cint(frm.doc.billing_auto_apply_tier);
 	const billing_locked = sync_on && auto_apply;
+	const perks = IMOGI_TIER_PERKS[tier] || IMOGI_TIER_PERKS.Enterprise;
 
-	const status_text = billing_locked
-		? __("Dikelola billing SaaS")
-		: locked_count
-			? __("{0} pengaturan terkunci", [locked_count])
-			: __("Semua fitur tier tersedia");
-
-	$card
+	$panel
 		.removeClass("is-tier-free is-tier-starter is-tier-professional is-tier-enterprise")
 		.addClass(`is-tier-${tier.toLowerCase()}`);
-	$card.find(".imogi-hero-tier-card-value").text(tier);
-	$card.find(".imogi-hero-tier-card-status").text(status_text);
-	$card.find(".imogi-hero-tier-upgrade-btn").text(
-		billing_locked ? __("Lihat Paket") : __("Upgrade Langganan")
+	$panel.find(".imogi-tier-panel-name").text(tier);
+	$panel.find(".imogi-tier-panel-perks").html(
+		perks.map((p) => `<li><i class="fa fa-check"></i>${frappe.utils.escape_html(p)}</li>`).join("")
 	);
-	$card.find(".imogi-hero-tier-matrix-btn").attr("data-route", matrix_route);
+	$panel.find(".imogi-hero-tier-upgrade-btn").text(
+		billing_locked ? __("Lihat Paket") : __("Kelola Langganan")
+	);
+	$panel.find(".imogi-hero-tier-matrix-btn").attr("data-route", matrix_route);
+
+	if (locked_count && !billing_locked) {
+		$panel.find(".imogi-tier-panel-note").text(__("{0} pengaturan terkunci di paket ini", [locked_count]));
+	} else {
+		$panel.find(".imogi-tier-panel-note").text("");
+	}
 }
 
 function get_settings_section(frm, fieldname) {
@@ -911,7 +952,7 @@ function set_settings_section_visible(frm, fieldname, show) {
 function get_visible_settings_tabs(frm) {
 	const is_umkm = frm.doc.business_type === "UMKM";
 	return SETTINGS_TABS.filter((tab) => {
-		if (is_umkm && ["operations", "franchise"].includes(tab.id)) {
+		if (is_umkm && ["tax", "roles"].includes(tab.id)) {
 			return false;
 		}
 		return true;
@@ -919,27 +960,46 @@ function get_visible_settings_tabs(frm) {
 }
 
 function layout_settings_shell(frm) {
-	if (frm.$wrapper.find(".imogi-settings-body").length) return;
+	const $layout = frm.$wrapper.find(".form-layout");
+	if (!$layout.length) return;
+	if (frm.$wrapper.find(".imogi-settings-main").length) return;
 
 	const $navWrap = frm.$wrapper.find(".imogi-settings-tab-nav-wrap");
-	const $layout = frm.$wrapper.find(".form-layout");
-	if (!$navWrap.length || !$layout.length) return;
+	const $heroSection = frm.$wrapper.find('.form-section[data-fieldname="setup_section"]');
+	const $existingBody = frm.$wrapper.find(".imogi-settings-body");
+	const $main = $('<div class="imogi-settings-main"></div>');
 
-	const $heroSection = $layout.find('.form-section[data-fieldname="setup_section"]');
-	const $body = $('<div class="imogi-settings-body"></div>');
-	const $content = $('<div class="imogi-settings-content"></div>');
+	const mount_shell = ($body, $content) => {
+		$main.empty().append($heroSection).append($content);
+		$body.empty().append($navWrap).append($main);
+	};
 
-	$navWrap.detach();
-	if ($heroSection.length) {
+	if ($existingBody.length) {
+		let $content = $existingBody.find(".imogi-settings-content");
+		$navWrap.detach();
 		$heroSection.detach();
-		$layout.before($heroSection);
+		if (!$content.length) {
+			$content = $('<div class="imogi-settings-content"></div>');
+			$layout.detach();
+			$content.append($layout);
+		} else {
+			$content.detach();
+		}
+		mount_shell($existingBody, $content);
+		return;
 	}
 
-	$body.insertAfter($heroSection.length ? $heroSection : $layout);
+	const $anchor = $layout.parent();
+	$navWrap.detach();
+	$heroSection.detach();
 	$layout.detach();
-	$body.append($navWrap);
+
+	const $content = $('<div class="imogi-settings-content"></div>');
 	$content.append($layout);
-	$body.append($content);
+
+	const $body = $('<div class="imogi-settings-body"></div>');
+	mount_shell($body, $content);
+	$anchor.append($body);
 }
 
 function build_settings_tabs(frm) {
@@ -1025,16 +1085,16 @@ function activate_settings_tab(frm, tabId) {
 		render_api_dock_summary(frm);
 		render_integrations_dock_summary(frm);
 	}
-	if (tabId === "loyalty") {
+	if (tabId === "transactions") {
 		render_loyalty_dock_summary(frm);
 	}
 	if (tabId === "payment") {
 		render_payment_dock_summary(frm);
 	}
-	if (tabId === "franchise") {
+	if (tabId === "tax") {
 		render_franchise_dock_summary(frm);
 	}
-	if (tabId === "operations") {
+	if (tabId === "roles") {
 		const ops_ctx = get_settings_section(frm, "operations_section");
 		if (ops_ctx && ops_ctx.$wrapper) {
 			ops_ctx.$wrapper.addClass("imogi-section-operations");
@@ -1043,11 +1103,24 @@ function activate_settings_tab(frm, tabId) {
 	if (tabId === "general") {
 		render_billing_dock_summary(frm);
 	}
-	if (tabId === "analytics") {
+	if (tabId === "notifications") {
 		position_target_dock(frm);
 		render_target_dock_summary(frm);
 	}
-	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "analytics");
+	if (tabId === "inventory") {
+		build_import_dock(frm);
+	}
+	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "notifications");
+	frm.$wrapper.find(".imogi-settings-trust-row").toggle(tabId === "general");
+	frm.$wrapper.find(".imogi-settings-placeholder").remove();
+	toggle_general_tab_sections(frm, tabId);
+	if (tabId === "general") {
+		layout_store_identity(frm);
+		render_receipt_preview(frm);
+	}
+	if (SETTINGS_TABS.find((t) => t.id === tabId)?.placeholder) {
+		show_settings_placeholder(frm, tabId);
+	}
 }
 
 function position_target_dock(frm) {
@@ -1773,11 +1846,13 @@ function render_mode_summary(frm) {
 	const summary = is_umkm
 		? {
 				title: __("Mode UMKM"),
-				text: __("Satu operator — order langsung selesai setelah bayar."),
+				text: __(
+					"Satu operator menangani order dan pembayaran. Cocok untuk toko kecil, warung, dan UMKM tanpa alur dapur."
+				),
 		  }
 		: {
 				title: __("Mode Restoran / Cafe"),
-				text: __("Alur F&B lengkap dengan kitchen & fulfillment."),
+				text: __("Alur F&B lengkap dengan kitchen display, fulfillment, dan meja."),
 		  };
 
 	const field = frm.get_field("mode_summary");
@@ -1788,39 +1863,57 @@ function render_mode_summary(frm) {
 
 	const tier = frm.doc.subscription_tier || frappe.boot.imogi_pos_subscription_tier || "Enterprise";
 	const tier_class = `is-tier-${String(tier).toLowerCase()}`;
-	const template_label = (frm.doc.business_template || "").trim();
+	const perks = (IMOGI_TIER_PERKS[tier] || IMOGI_TIER_PERKS.Enterprise)
+		.map((p) => `<li><i class="fa fa-check"></i>${frappe.utils.escape_html(p)}</li>`)
+		.join("");
 
 	field.$wrapper.html(`
-		<div class="imogi-page-hero ${is_umkm ? "is-umkm" : "is-restaurant"}">
-			<div class="imogi-hero-top">
-				<div class="imogi-hero-top-left">
-					<span class="imogi-page-hero-badge">${frappe.utils.escape_html(frm.doc.business_type || "")}</span>
-					${template_label ? `<span class="imogi-hero-template">${frappe.utils.escape_html(template_label)}</span>` : ""}
-				</div>
-				<div class="imogi-hero-tier-card ${tier_class}">
-					<div class="imogi-hero-tier-inline">
-						<span class="imogi-hero-tier-card-label">${__("Paket")}</span>
-						<span class="imogi-hero-tier-card-value">${frappe.utils.escape_html(tier)}</span>
+		<div class="imogi-hero-grid">
+			<div class="imogi-mode-panel ${is_umkm ? "is-umkm" : "is-restaurant"}">
+				<div class="imogi-panel-head">
+					<div class="imogi-panel-title">${__("Mode Operasional")}</div>
+					<div class="imogi-mode-tabs" role="tablist">
+						<button type="button" class="imogi-mode-tab ${is_umkm ? "is-active" : ""}" data-mode="UMKM">${__("UMKM")}</button>
+						<button type="button" class="imogi-mode-tab ${!is_umkm ? "is-active" : ""}" data-mode="Restaurant / Cafe">${__("Restoran / Cafe")}</button>
 					</div>
-					<div class="imogi-hero-tier-card-status">${__("Memuat status paket...")}</div>
-					<div class="imogi-hero-tier-card-actions">
-						<button type="button" class="btn btn-sm imogi-hero-tier-upgrade-btn">${__("Upgrade Langganan")}</button>
-						<button type="button" class="btn btn-sm btn-default imogi-hero-tier-matrix-btn" data-route="imogi-pos-feature-matrix">${__("Matriks")}</button>
+				</div>
+				<div class="imogi-mode-card">
+					<div class="imogi-mode-card-top">
+						<strong>${summary.title}</strong>
+						<span class="imogi-pill is-green">${__("Aktif digunakan")}</span>
+					</div>
+					<p class="imogi-mode-card-desc">${summary.text}</p>
+					<div class="imogi-mode-card-actions">
+						<button type="button" class="btn btn-primary btn-sm imogi-settings-action" data-route="imogi-pos-cashier">
+							<i class="fa fa-shopping-cart"></i> ${__("Buka Kasir")}
+						</button>
+						<button type="button" class="btn btn-default btn-sm imogi-settings-action" data-route="imogi-pos-dashboard">
+							${__("Lihat Dashboard")}
+						</button>
 					</div>
 				</div>
 			</div>
-			<h2 class="imogi-page-hero-title">${summary.title}</h2>
-			<p class="imogi-page-hero-desc">${summary.text}</p>
-			<div class="imogi-hero-bottom">
-				<div class="imogi-quick-links imogi-quick-links--inline">
-					<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-cashier">
-						<span class="imogi-quick-link-icon"><i class="fa fa-shopping-cart"></i></span>
-						${__("Kasir IMOGI")}
-					</button>
-					<button type="button" class="imogi-quick-link imogi-settings-action" data-route="imogi-pos-dashboard">
-						<span class="imogi-quick-link-icon"><i class="fa fa-dashboard"></i></span>
-						${__("Dashboard")}
-					</button>
+			<div class="imogi-tier-panel ${tier_class}">
+				<div class="imogi-tier-panel-visual" aria-hidden="true">
+					<div class="imogi-tier-card-3d">
+						<span class="imogi-tier-card-3d-label">${__("Paket")}</span>
+						<strong class="imogi-tier-panel-name">${frappe.utils.escape_html(tier)}</strong>
+					</div>
+				</div>
+				<div class="imogi-tier-panel-body">
+					<div class="imogi-tier-panel-head">
+						<span class="imogi-tier-crown"><i class="fa fa-diamond"></i></span>
+						<div>
+							<div class="imogi-tier-panel-kicker">${__("Paket Aktif")}</div>
+							<div class="imogi-tier-panel-name">${frappe.utils.escape_html(tier)}</div>
+						</div>
+					</div>
+					<ul class="imogi-tier-panel-perks">${perks}</ul>
+					<p class="imogi-tier-panel-note"></p>
+					<div class="imogi-tier-panel-actions">
+						<button type="button" class="btn btn-sm imogi-btn-orange imogi-hero-tier-upgrade-btn">${__("Kelola Langganan")}</button>
+						<button type="button" class="btn btn-sm btn-default imogi-hero-tier-matrix-btn" data-route="imogi-pos-feature-matrix">${__("Matriks Fitur")}</button>
+					</div>
 				</div>
 			</div>
 		</div>`);
@@ -1840,10 +1933,195 @@ function render_mode_summary(frm) {
 		e.preventDefault();
 		frappe.set_route($(e.currentTarget).data("route") || "imogi-pos-feature-matrix");
 	});
+	$host.on("click.imogi-hero", ".imogi-mode-tab:not(.is-active)", function (e) {
+		e.preventDefault();
+		const mode = $(this).data("mode");
+		if (mode === frm.doc.business_type) return;
+		frappe.msgprint({
+			title: __("Ubah Mode Operasional"),
+			indicator: "blue",
+			message: __("Mode bisnis diatur saat setup awal. Jalankan ulang Setup Wizard untuk mengganti mode."),
+		});
+	});
 
 	if (frm._imogi_tier_locks) {
 		render_tier_lock_banner(frm, frm._imogi_tier_locks);
 	}
+}
+
+const STORE_IDENTITY_FIELDS = [
+	"default_company",
+	"multi_branch",
+	"store_city",
+	"target_monthly_sales",
+	"owner_whatsapp",
+];
+
+function layout_store_identity(frm) {
+	const ctx = get_settings_section(frm, "store_identity_section");
+	if (!ctx || !ctx.$wrapper) return;
+
+	ctx.$wrapper.addClass("imogi-store-identity-section imogi-settings-card-section");
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+
+	frm.set_df_property("default_company", "label", __("Nama Toko"));
+
+	if (!$body.find(".imogi-store-identity-layout").length) {
+		$body.find(".imogi-settings-card-head").remove();
+		$body.prepend(`
+			<div class="imogi-settings-card-head">
+				<span class="imogi-settings-card-icon"><i class="fa fa-store"></i></span>
+				<div>
+					<div class="imogi-settings-card-title">${__("Identitas Toko")}</div>
+					<div class="imogi-settings-card-sub">${__(
+						"Nama toko, kontak, multi cabang, dan target omzet bulanan."
+					)}</div>
+				</div>
+			</div>
+			<div class="imogi-store-identity-layout">
+				<div class="imogi-store-form-grid"></div>
+				<div class="imogi-receipt-preview-wrap">
+					<div class="imogi-receipt-preview-head">${__("Preview Struk")}</div>
+					<div class="imogi-receipt-preview-paper">
+						<div class="imogi-receipt-preview-body"></div>
+					</div>
+				</div>
+			</div>`);
+	}
+
+	const $grid = $body.find(".imogi-store-form-grid");
+	STORE_IDENTITY_FIELDS.forEach((fieldname) => {
+		const field = frm.get_field(fieldname);
+		if (!field || !field.$wrapper) return;
+		const $ctrl = field.$wrapper.closest(".frappe-control");
+		$ctrl.addClass("imogi-store-field");
+		$grid.append($ctrl);
+	});
+
+	if (!$grid.find(".imogi-store-email-field").length) {
+		$grid.append(`
+			<div class="frappe-control imogi-store-field imogi-store-email-field" data-fieldtype="Data">
+				<div class="form-group">
+					<div class="clearfix">
+						<label class="control-label">${__("Email Toko")}</label>
+					</div>
+					<div class="control-input-wrapper">
+						<div class="control-value like-disabled-input imogi-store-email-value text-muted">—</div>
+					</div>
+				</div>
+			</div>`);
+	}
+}
+
+function render_receipt_preview(frm) {
+	const $paper = frm.$wrapper.find(".imogi-receipt-preview-body");
+	const $email = frm.$wrapper.find(".imogi-store-email-value");
+	if (!$paper.length) return;
+
+	const company = frm.doc.default_company || __("Nama Toko");
+	const city = frm.doc.store_city || "";
+	const phone = frm.doc.owner_whatsapp || "";
+	const header = (frm.doc.receipt_header || "").trim();
+	const footer = (frm.doc.receipt_footer || __("Terima kasih!")).trim();
+	const store_name = String(company).toUpperCase();
+
+	const paint = (email) => {
+		if ($email.length) {
+			$email.text(email || "—");
+		}
+		$paper.html(`
+			<div class="imogi-rcpt-store">${frappe.utils.escape_html(store_name)}</div>
+			${city ? `<div class="imogi-rcpt-line">${frappe.utils.escape_html(city)}</div>` : ""}
+			${phone ? `<div class="imogi-rcpt-line">${frappe.utils.escape_html(phone)}</div>` : ""}
+			${email ? `<div class="imogi-rcpt-line">${frappe.utils.escape_html(email)}</div>` : ""}
+			${header ? `<div class="imogi-rcpt-msg">${frappe.utils.escape_html(header)}</div>` : ""}
+			<div class="imogi-rcpt-divider">--------------------------------</div>
+			<div class="imogi-rcpt-item"><span>Pandan Latte</span><span>35.000</span></div>
+			<div class="imogi-rcpt-item"><span>Latte Decaf</span><span>32.000</span></div>
+			<div class="imogi-rcpt-divider">--------------------------------</div>
+			<div class="imogi-rcpt-total"><span>TOTAL</span><span>67.000</span></div>
+			<div class="imogi-rcpt-footer">${frappe.utils.escape_html(footer)}</div>`);
+	};
+
+	if (frm.doc.default_company) {
+		frappe.db.get_value("Company", frm.doc.default_company, "email").then((r) => {
+			paint((r && r.message && r.message.email) || "");
+		});
+	} else {
+		paint("");
+	}
+}
+
+function build_trust_cards(frm) {
+	const $content = frm.$wrapper.find(".imogi-settings-content");
+	if (!$content.length || $content.find(".imogi-settings-trust-row").length) return;
+
+	$content.append(`
+		<div class="imogi-settings-trust-row">
+			<div class="imogi-trust-card">
+				<span class="imogi-trust-icon is-green"><i class="fa fa-shield"></i></span>
+				<div class="imogi-trust-title">${__("Aman & Terpercaya")}</div>
+				<div class="imogi-trust-desc">${__("Data terenkripsi dan backup otomatis.")}</div>
+			</div>
+			<div class="imogi-trust-card">
+				<span class="imogi-trust-icon is-blue"><i class="fa fa-refresh"></i></span>
+				<div class="imogi-trust-title">${__("Update Berkala")}</div>
+				<div class="imogi-trust-desc">${__("Fitur baru tanpa biaya tambahan.")}</div>
+			</div>
+			<div class="imogi-trust-card">
+				<span class="imogi-trust-icon is-purple"><i class="fa fa-plug"></i></span>
+				<div class="imogi-trust-title">${__("Integrasi Lengkap")}</div>
+				<div class="imogi-trust-desc">${__("Payment gateway, marketplace & API.")}</div>
+			</div>
+			<div class="imogi-trust-card">
+				<span class="imogi-trust-icon is-orange"><i class="fa fa-headphones"></i></span>
+				<div class="imogi-trust-title">${__("Support Prioritas")}</div>
+				<div class="imogi-trust-desc">${__("Tim support siap bantu operasional.")}</div>
+			</div>
+		</div>`);
+}
+
+function build_sidebar_help(frm) {
+	const $navWrap = frm.$wrapper.find(".imogi-settings-tab-nav-wrap");
+	if (!$navWrap.length || $navWrap.find(".imogi-settings-help-card").length) return;
+
+	$navWrap.append(`
+		<div class="imogi-settings-help-card">
+			<div class="imogi-settings-help-title">${__("Butuh bantuan?")}</div>
+			<p class="imogi-settings-help-desc">${__("Tim support IMOGI siap membantu setup dan troubleshooting.")}</p>
+			<a class="btn btn-default btn-sm btn-block" href="mailto:support@imogi.id">${__("Hubungi Support")}</a>
+		</div>`);
+}
+
+function show_settings_placeholder(frm, tabId) {
+	const tab = SETTINGS_TABS.find((t) => t.id === tabId);
+	const $content = frm.$wrapper.find(".imogi-settings-content");
+	$content.append(`
+		<div class="imogi-settings-placeholder">
+			<div class="imogi-settings-placeholder-icon"><i class="fa ${tab.icon}"></i></div>
+			<h3>${tab.label}</h3>
+			<p>${__("Bagian ini akan tersedia di pembaruan berikutnya.")}</p>
+		</div>`);
+}
+
+function toggle_general_tab_sections(frm, tabId) {
+	if (tabId !== "general") return;
+	["branch_pricing_section", "general_section", "flow_section"].forEach((section) => {
+		set_settings_section_visible(frm, section, false);
+	});
+	[
+		"master_selling_price_list",
+		"sync_prices_to_branches_on_import",
+		"sync_branch_prices",
+		"hq_push_menu_from_branch",
+		"hq_ensure_branch_price_lists",
+		"default_opening_time",
+		"default_closing_time",
+		"default_pos_profile",
+		"default_warehouse",
+		"enable_pos_shift",
+	].forEach((fieldname) => frm.toggle_display(fieldname, false));
+	STORE_IDENTITY_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
 }
 
 function toggle_settings_by_business_type(frm) {

@@ -123,6 +123,9 @@ imogi_pos.thermal.build_receipt_html = function (order, options = {}) {
 			? `<div class="change">${__("Kembalian")}: ${_money(options.change, order.currency)}</div>`
 			: "";
 
+	const header = options.header
+		? `<div class="sub imogi-rcpt-header">${frappe.utils.escape_html(options.header)}</div>`
+		: "";
 	const footer = options.footer
 		? `<div class="foot">${frappe.utils.escape_html(options.footer)}</div>`
 		: "";
@@ -156,7 +159,7 @@ tbody td { border-bottom: 1px dotted #eee; padding: 6px 0; vertical-align: top; 
 @media print { body { background: #fff; padding: 0; } .receipt { border: none; border-radius: 0; max-width: 72mm; } }
 </style></head><body>
 <div class="receipt">
-  <div class="head"><div class="store">${store}</div>${branch}</div>
+  <div class="head"><div class="store">${store}</div>${branch}${header}</div>
   <div class="meta">
     <div class="meta-row"><span>${__("No. Order")}</span><span>${frappe.utils.escape_html(
 		order.name || ""
@@ -183,7 +186,17 @@ tbody td { border-bottom: 1px dotted #eee; padding: 6px 0; vertical-align: top; 
   ${payments ? `<div class="pay">${payments}${change}</div>` : change}
   ${footer}
 </div>
-<script>window.onload = function(){ window.focus(); window.print(); }<\/script>
+<script>
+window.onload = function () {
+	window.focus();
+	setTimeout(function () {
+		window.print();
+		setTimeout(function () {
+			try { window.close(); } catch (e) {}
+		}, 500);
+	}, 250);
+};
+<\/script>
 </body></html>`;
 };
 
@@ -205,29 +218,105 @@ imogi_pos.thermal._to_escpos = function (lines, width) {
 	return chunks.join("");
 };
 
-imogi_pos.thermal.print_order = async function (order, options = {}) {
-	const mode = (options.mode || frappe.boot?.imogi_pos_thermal_mode || "browser").toLowerCase();
+function _resolve_thermal_mode(mode) {
+	const raw = String(mode || frappe.boot?.imogi_pos_thermal_mode || "Browser").toLowerCase();
+	if (raw.includes("serial")) return "serial";
+	if (raw.includes("download")) return "download";
+	return "browser";
+}
 
-	if (mode === "serial" && navigator.serial) {
+imogi_pos.thermal.resolve_mode = _resolve_thermal_mode;
+
+function _escpos_to_bytes(data) {
+	const bytes = new Uint8Array(data.length);
+	for (let i = 0; i < data.length; i++) {
+		bytes[i] = data.charCodeAt(i) & 0xff;
+	}
+	return bytes;
+}
+
+imogi_pos.thermal._print_browser = function (order, options = {}) {
+	const html = imogi_pos.thermal.build_receipt_html(order, options);
+	const paper = options.width >= 40 ? "80mm" : "58mm";
+
+	// Hidden iframe avoids popup blockers (common reason print "does nothing").
+	let $frame = $("#imogi-thermal-print-frame");
+	
+	if (!$frame.length) {
+		$frame = $(
+			'<iframe id="imogi-thermal-print-frame" title="IMOGI Receipt Print" style="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;"></iframe>'
+		);
+		$("body").append($frame);
+	}
+
+	const win = $frame[0].contentWindow;
+	win.document.open();
+	win.document.write(html);
+	win.document.close();
+
+	setTimeout(() => {
+		try {
+			win.focus();
+			win.print();
+			frappe.show_alert({
+				message: __("Dialog cetak dibuka — pilih printer Epson Anda"),
+				indicator: "blue",
+			});
+		} catch (e) {
+			frappe.msgprint({
+				title: __("Gagal membuka dialog cetak"),
+				indicator: "red",
+				message: __("Izinkan pop-up/cetak di browser, lalu coba lagi. ({0})", [e.message || e]),
+			});
+		}
+	}, 350);
+
+	return true;
+};
+
+imogi_pos.thermal.print_order = async function (order, options = {}) {
+	const mode = _resolve_thermal_mode(options.mode);
+
+	if (mode === "serial") {
+		if (!navigator.serial) {
+			frappe.msgprint({
+				title: __("Mode Serial tidak didukung"),
+				indicator: "orange",
+				message: __(
+					"Printer USB Epson TM-T82X sebaiknya pakai mode <b>Browser</b>. Beralih ke cetak browser sekarang."
+				),
+			});
+			return imogi_pos.thermal._print_browser(order, options);
+		}
 		const data = imogi_pos.thermal.build_receipt(order, options);
 		try {
 			const port = await navigator.serial.requestPort();
-			await port.open({ baudRate: 9600 });
+			await port.open({ baudRate: cint(options.baud_rate) || 9600 });
 			const writer = port.writable.getWriter();
-			const encoded = new TextEncoder().encode(data);
-			await writer.write(encoded);
+			await writer.write(_escpos_to_bytes(data));
 			writer.releaseLock();
 			await port.close();
 			frappe.show_alert({ message: __("Struk thermal terkirim"), indicator: "green" });
 			return true;
 		} catch (e) {
-			frappe.msgprint(__("Gagal kirim ke printer serial: {0}", [e.message || e]));
+			const cancelled = String(e.message || e).toLowerCase().includes("cancel");
+			if (!cancelled) {
+				frappe.msgprint({
+					title: __("Gagal kirim ke printer serial"),
+					indicator: "orange",
+					message: __(
+						"{0}<br><br>Untuk Epson TM-T82X via USB, ubah <b>Mode Cetak Thermal</b> ke <b>Browser</b> di Settings → Printer & Struk.",
+						[e.message || e]
+					),
+				});
+			}
+			return imogi_pos.thermal._print_browser(order, options);
 		}
 	}
 
 	if (mode === "download") {
 		const data = imogi_pos.thermal.build_receipt(order, options);
-		const blob = new Blob([data], { type: "application/octet-stream" });
+		const blob = new Blob([_escpos_to_bytes(data)], { type: "application/octet-stream" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
@@ -238,12 +327,22 @@ imogi_pos.thermal.print_order = async function (order, options = {}) {
 		return true;
 	}
 
-	// browser — styled HTML receipt
-	const html = imogi_pos.thermal.build_receipt_html(order, options);
-	const w = window.open("", "_blank", "width=360,height=640");
-	if (!w) return false;
-	w.document.open();
-	w.document.write(html);
-	w.document.close();
-	return true;
+	return imogi_pos.thermal._print_browser(order, options);
+};
+
+imogi_pos.thermal.get_print_options = function (context, payment_info = {}) {
+	const ctx = context || {};
+	return {
+		mode: ctx.thermal_print_mode || frappe.boot?.imogi_pos_thermal_mode || "Browser",
+		width: ctx.thermal_printer_width === "80mm" ? 42 : 32,
+		store_name:
+			ctx.receipt_store_name ||
+			frappe.boot.imogi_pos_default_company ||
+			frappe.boot.sysdefaults?.company ||
+			ctx.company,
+		branch_name: ctx.active_branch?.branch_name,
+		header: ctx.receipt_header || frappe.boot.imogi_pos_receipt_header || "",
+		footer: ctx.receipt_footer || frappe.boot.imogi_pos_receipt_footer || __("Terima kasih"),
+		change: flt(payment_info.change),
+	};
 };

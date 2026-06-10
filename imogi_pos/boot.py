@@ -1,6 +1,7 @@
 # Copyright (c) 2026, Imogi and contributors
 
 import frappe
+from frappe import _
 from frappe.utils import cint
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
@@ -141,6 +142,8 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_enable_shift = is_setting_enabled("enable_pos_shift", settings)
 	bootinfo.imogi_pos_default_company = resolve_company(None, settings) if settings.setup_complete else (settings.default_company or "")
 	bootinfo.imogi_pos_thermal_mode = settings.thermal_print_mode or "Browser"
+	bootinfo.imogi_pos_receipt_header = settings.receipt_header or ""
+	bootinfo.imogi_pos_receipt_footer = settings.receipt_footer or __("Terima kasih")
 	bootinfo.imogi_pos_payment_gateway_enabled = is_setting_enabled("enable_payment_gateway", settings)
 	bootinfo.imogi_pos_loyalty_enabled = is_setting_enabled("enable_loyalty", settings)
 	bootinfo.imogi_pos_default_pos_profile = settings.default_pos_profile or ""

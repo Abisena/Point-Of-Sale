@@ -386,6 +386,20 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	display: none !important;
 }
 
+.modal.imogi-pay-success-dialog {
+	z-index: 1065 !important;
+}
+
+.modal.imogi-pay-success-dialog + .modal-backdrop {
+	z-index: 1060 !important;
+}
+
+.imogi-success-action-btn {
+	pointer-events: auto;
+	position: relative;
+	z-index: 2;
+}
+
 .imogi-success-actions {
 	border-top: 1px solid #f1f5f9;
 	display: grid;

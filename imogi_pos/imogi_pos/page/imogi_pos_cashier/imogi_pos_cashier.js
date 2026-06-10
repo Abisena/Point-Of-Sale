@@ -2682,6 +2682,80 @@ imogi_pos.CashierPage = class CashierPage {
 		this.render_cart();
 	}
 
+	print_receipt(order, payment_info = {}) {
+		if (!order || !order.name || !imogi_pos.thermal) {
+			frappe.msgprint(__("Modul cetak thermal belum dimuat. Muat ulang halaman kasir."));
+			return false;
+		}
+		const options =
+			typeof imogi_pos.thermal.get_print_options === "function"
+				? imogi_pos.thermal.get_print_options(this.context, payment_info)
+				: {
+						mode: this.context?.thermal_print_mode || "Browser",
+						width: this.context?.thermal_printer_width === "80mm" ? 42 : 32,
+						store_name: this.context?.receipt_store_name || this.context?.company,
+						header: this.context?.receipt_header || "",
+						footer: this.context?.receipt_footer || __("Terima kasih"),
+						change: flt(payment_info.change),
+				  };
+		return imogi_pos.thermal.print_order(order, options);
+	}
+
+	open_receipt_print(order) {
+		if (!order || !order.name) return;
+		frappe.call({
+			method: "imogi_pos.api.cashier.get_receipt_url",
+			args: { order_name: order.name },
+			callback: (r) => {
+				const url = r.message && r.message.url;
+				if (!url) {
+					frappe.msgprint(__("URL struk tidak tersedia."));
+					return;
+				}
+				const win = window.open(url, "_blank");
+				if (!win) {
+					frappe.msgprint({
+						title: __("Pop-up diblokir"),
+						indicator: "orange",
+						message: __("Izinkan pop-up untuk situs ini, lalu klik Cetak Struk lagi."),
+					});
+				}
+			},
+		});
+	}
+
+	handle_success_action(dialog, order, payment_info, action) {
+		if (action === "print") {
+			this.open_receipt_print(order);
+			return;
+		}
+		if (action === "thermal") {
+			this.print_receipt(order, payment_info);
+			return;
+		}
+		if (action === "invoice" && order.pos_invoice) {
+			dialog.hide();
+			frappe.set_route("Form", "POS Invoice", order.pos_invoice);
+			return;
+		}
+		if (action === "new") {
+			dialog.hide();
+		}
+	}
+
+	bind_success_dialog_actions(dialog, order, payment_info) {
+		const me = this;
+		const $scope = dialog.$wrapper.find(".imogi-success-actions");
+		$scope.off("click.imogi-success-action");
+		$scope.on("click.imogi-success-action", ".imogi-success-action-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const action = $(this).attr("data-action");
+			if (!action) return;
+			me.handle_success_action(dialog, order, payment_info, action);
+		});
+	}
+
 	show_success(order, payment_info = {}) {
 		const change_html =
 			payment_info.change > 0
@@ -2755,41 +2829,22 @@ imogi_pos.CashierPage = class CashierPage {
 		dialog.$wrapper.addClass("imogi-pay-dialog imogi-pay-success-dialog");
 		dialog.show();
 		dialog.$wrapper.find(".modal-footer").hide();
+		me.bind_success_dialog_actions(dialog, order, payment_info);
 
-		dialog.$wrapper.off("click.imogi-success-action");
-		dialog.$wrapper.on("click.imogi-success-action", ".imogi-success-action-btn", function () {
-			const action = $(this).data("action");
-			if (action === "print") {
-				frappe.call({
-					method: "imogi_pos.api.cashier.get_receipt_url",
-					args: { order_name: order.name },
-					callback: (r) => {
-						if (r.message && r.message.url) {
-							window.open(r.message.url, "_blank");
-						}
-					},
-				});
-				return;
+		if (show_receipt && imogi_pos.thermal) {
+			const mode =
+				typeof imogi_pos.thermal.resolve_mode === "function"
+					? imogi_pos.thermal.resolve_mode(me.context.thermal_print_mode)
+					: "browser";
+			if (mode === "browser") {
+				setTimeout(() => {
+					try {
+						me.print_receipt(order, payment_info);
+					} catch (err) {
+						console.error(err);
+					}
+				}, 600);
 			}
-			if (action === "thermal") {
-				imogi_pos.thermal.print_order(order, {
-					mode: me.context.thermal_print_mode,
-					width: me.context.thermal_printer_width === "80mm" ? 42 : 32,
-					store_name: frappe.boot.sysdefaults.company || me.context.company,
-					branch_name: me.context.active_branch?.branch_name,
-					footer: frappe.boot.imogi_pos_receipt_footer,
-					change: payment_info.change,
-				});
-				return;
-			}
-			if (action === "invoice" && order.pos_invoice) {
-				dialog.hide();
-				frappe.set_route("Form", "POS Invoice", order.pos_invoice);
-				return;
-			}
-			if (action === "new") {
-				dialog.hide();
-			}
-		});
+		}
 	}
 };

@@ -1325,6 +1325,13 @@
 	margin-bottom: 24px;
 }
 
+.imogi-settings-main {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
+}
+
 .imogi-settings-content {
 	min-width: 0;
 }
@@ -1570,7 +1577,7 @@
 }
 
 /* ── Import tab ── */
-.imogi-settings-page[data-active-tab="import"] .form-section[data-fieldname="import_section"] .section-body {
+.imogi-settings-page[data-active-tab="inventory"] .form-section[data-fieldname="import_section"] .section-body {
 	max-width: 960px;
 }
 .imogi-settings-page .imogi-section-import .frappe-control[data-fieldname="import_menu"],
@@ -1681,7 +1688,7 @@
 }
 
 /* legacy button styles (hidden controls) */
-.imogi-settings-page[data-active-tab="import"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_menu"] .btn {
+.imogi-settings-page[data-active-tab="inventory"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_menu"] .btn {
 	background: linear-gradient(135deg, #3498db, #2980b9);
 	border: none;
 	border-radius: 10px;
@@ -1690,12 +1697,12 @@
 	padding: 10px 18px;
 }
 
-.imogi-settings-page[data-active-tab="import"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_menu"] .btn:hover {
+.imogi-settings-page[data-active-tab="inventory"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_menu"] .btn:hover {
 	background: linear-gradient(135deg, #2980b9, #1f618d);
 	color: #fff;
 }
 
-.imogi-settings-page[data-active-tab="import"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_products"] .btn {
+.imogi-settings-page[data-active-tab="inventory"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_products"] .btn {
 	background: linear-gradient(135deg, #f5b041, #f39c12);
 	border: none;
 	border-radius: 10px;
@@ -1704,7 +1711,7 @@
 	padding: 10px 18px;
 }
 
-.imogi-settings-page[data-active-tab="import"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_products"] .btn:hover {
+.imogi-settings-page[data-active-tab="inventory"] .form-section[data-fieldname="import_section"] .frappe-control[data-fieldname="import_products"] .btn:hover {
 	background: linear-gradient(135deg, #f39c12, #e67e22);
 	color: #fff;
 }
@@ -1732,7 +1739,11 @@
 
 /* ── Page hero ── */
 .imogi-settings-page .form-section[data-fieldname="setup_section"] {
-	margin-bottom: 16px;
+	margin-bottom: 0;
+}
+
+.imogi-settings-main .form-section[data-fieldname="setup_section"] .section-body {
+	padding: 0;
 }
 
 .imogi-page-hero {
@@ -3316,4 +3327,475 @@
 	display: flex;
 	justify-content: space-between;
 	padding: 6px 0;
+}
+
+/* ── Settings mockup: hero grid, identity, trust ── */
+.imogi-hero-grid {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+@media (max-width: 960px) {
+	.imogi-hero-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-mode-panel,
+.imogi-tier-panel {
+	background: #fff;
+	border: 1px solid #e8ecf1;
+	border-radius: 16px;
+	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+	overflow: hidden;
+}
+
+.imogi-panel-head {
+	align-items: center;
+	border-bottom: 1px solid #f1f5f9;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: space-between;
+	padding: 14px 16px 12px;
+}
+
+.imogi-panel-title {
+	color: #0f172a;
+	font-size: 15px;
+	font-weight: 800;
+}
+
+.imogi-mode-tabs {
+	background: #f1f5f9;
+	border-radius: 10px;
+	display: inline-flex;
+	gap: 4px;
+	padding: 4px;
+}
+
+.imogi-mode-tab {
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	color: #64748b;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 7px 12px;
+	transition: all 0.15s ease;
+}
+
+.imogi-mode-tab.is-active {
+	background: #001f3f;
+	box-shadow: 0 2px 8px rgba(0, 31, 63, 0.25);
+	color: #fff;
+}
+
+.imogi-mode-card {
+	padding: 16px;
+}
+
+.imogi-mode-card-top {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.imogi-mode-card-top strong {
+	color: #0f172a;
+	font-size: 16px;
+}
+
+.imogi-mode-card-desc {
+	color: #64748b;
+	font-size: 13px;
+	line-height: 1.55;
+	margin: 0 0 14px;
+}
+
+.imogi-mode-card-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.imogi-mode-card-actions .btn-primary {
+	background: #001f3f;
+	border-color: #001f3f;
+}
+
+.imogi-tier-panel {
+	display: grid;
+	grid-template-columns: 120px minmax(0, 1fr);
+	min-height: 220px;
+	position: relative;
+}
+
+@media (max-width: 560px) {
+	.imogi-tier-panel {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-tier-panel-visual {
+	align-items: center;
+	background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 55%, #fed7aa 100%);
+	display: flex;
+	justify-content: center;
+	padding: 16px 10px;
+}
+
+.imogi-tier-card-3d {
+	background: linear-gradient(145deg, #001f3f, #0a3d6b);
+	border-radius: 12px;
+	box-shadow: 0 12px 28px rgba(0, 31, 63, 0.35);
+	color: #fff;
+	padding: 14px 12px;
+	text-align: center;
+	transform: rotate(-6deg);
+	width: 88px;
+}
+
+.imogi-tier-card-3d-label {
+	display: block;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	opacity: 0.75;
+	text-transform: uppercase;
+}
+
+.imogi-tier-card-3d strong {
+	display: block;
+	font-size: 14px;
+	font-weight: 800;
+	margin-top: 4px;
+}
+
+.imogi-tier-panel-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+}
+
+.imogi-tier-panel-head {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+}
+
+.imogi-tier-crown {
+	align-items: center;
+	background: #fff7ed;
+	border-radius: 10px;
+	color: #f39c12;
+	display: flex;
+	font-size: 16px;
+	height: 36px;
+	justify-content: center;
+	width: 36px;
+}
+
+.imogi-tier-panel-kicker {
+	color: #94a3b8;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.imogi-tier-panel-name {
+	color: #0f172a;
+	font-size: 20px;
+	font-weight: 800;
+	line-height: 1.2;
+}
+
+.imogi-tier-panel-perks {
+	color: #475569;
+	font-size: 12px;
+	list-style: none;
+	margin: 4px 0 0;
+	padding: 0;
+}
+
+.imogi-tier-panel-perks li {
+	align-items: flex-start;
+	display: flex;
+	gap: 8px;
+	line-height: 1.45;
+	padding: 3px 0;
+}
+
+.imogi-tier-panel-perks .fa-check {
+	color: #10b981;
+	font-size: 11px;
+	margin-top: 3px;
+}
+
+.imogi-tier-panel-note {
+	color: #b45309;
+	font-size: 11px;
+	margin: 0;
+}
+
+.imogi-tier-panel-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: auto;
+	padding-top: 4px;
+}
+
+.imogi-btn-orange {
+	background: #f39c12;
+	border-color: #e67e22;
+	color: #fff;
+}
+
+.imogi-btn-orange:hover,
+.imogi-btn-orange:focus {
+	background: #e67e22;
+	border-color: #d35400;
+	color: #fff;
+}
+
+.imogi-tier-panel.is-tier-enterprise .imogi-tier-panel-visual {
+	background: linear-gradient(160deg, #eff6ff 0%, #dbeafe 55%, #bfdbfe 100%);
+}
+
+.imogi-tier-panel.is-tier-professional .imogi-tier-panel-visual {
+	background: linear-gradient(160deg, #f5f3ff 0%, #ede9fe 55%, #ddd6fe 100%);
+}
+
+.imogi-store-identity-layout {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+	margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+	.imogi-store-identity-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-store-form-grid {
+	display: grid;
+	gap: 0 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+	.imogi-store-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-store-form-grid .imogi-store-field {
+	margin-bottom: 12px;
+}
+
+.imogi-receipt-preview-wrap {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 12px;
+}
+
+.imogi-receipt-preview-head {
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	margin-bottom: 10px;
+	text-transform: uppercase;
+}
+
+.imogi-receipt-preview-paper {
+	background: #fff;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+	font-family: "Courier New", Courier, monospace;
+	font-size: 11px;
+	line-height: 1.45;
+	padding: 14px 12px;
+}
+
+.imogi-rcpt-store {
+	font-size: 13px;
+	font-weight: 800;
+	margin-bottom: 4px;
+	text-align: center;
+}
+
+.imogi-rcpt-line {
+	color: #475569;
+	text-align: center;
+}
+
+.imogi-rcpt-msg {
+	margin: 8px 0 4px;
+	text-align: center;
+}
+
+.imogi-rcpt-divider {
+	color: #94a3b8;
+	margin: 6px 0;
+	text-align: center;
+}
+
+.imogi-rcpt-item,
+.imogi-rcpt-total {
+	display: flex;
+	justify-content: space-between;
+}
+
+.imogi-rcpt-total {
+	font-weight: 800;
+	margin-top: 4px;
+}
+
+.imogi-rcpt-footer {
+	margin-top: 10px;
+	text-align: center;
+}
+
+.imogi-settings-trust-row {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+	.imogi-settings-trust-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.imogi-trust-card {
+	background: #fff;
+	border: 1px solid #e8ecf1;
+	border-radius: 12px;
+	padding: 14px;
+}
+
+.imogi-trust-icon {
+	align-items: center;
+	border-radius: 10px;
+	display: inline-flex;
+	font-size: 16px;
+	height: 36px;
+	justify-content: center;
+	margin-bottom: 8px;
+	width: 36px;
+}
+
+.imogi-trust-icon.is-green {
+	background: #ecfdf5;
+	color: #10b981;
+}
+
+.imogi-trust-icon.is-blue {
+	background: #eff6ff;
+	color: #3b82f6;
+}
+
+.imogi-trust-icon.is-purple {
+	background: #f5f3ff;
+	color: #8b5cf6;
+}
+
+.imogi-trust-icon.is-orange {
+	background: #fff7ed;
+	color: #f39c12;
+}
+
+.imogi-trust-title {
+	color: #0f172a;
+	font-size: 13px;
+	font-weight: 800;
+	margin-bottom: 4px;
+}
+
+.imogi-trust-desc {
+	color: #64748b;
+	font-size: 11px;
+	line-height: 1.45;
+}
+
+.imogi-settings-help-card {
+	background: linear-gradient(160deg, #001f3f, #0a3d6b);
+	border-radius: 14px;
+	color: #fff;
+	margin-top: 12px;
+	padding: 14px;
+}
+
+.imogi-settings-help-title {
+	font-size: 14px;
+	font-weight: 800;
+	margin-bottom: 6px;
+}
+
+.imogi-settings-help-desc {
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 12px;
+	line-height: 1.45;
+	margin: 0 0 10px;
+}
+
+.imogi-settings-help-card .btn {
+	border: none;
+	font-weight: 700;
+}
+
+.imogi-settings-placeholder {
+	background: #fff;
+	border: 1px dashed #cbd5e1;
+	border-radius: 14px;
+	margin-top: 8px;
+	padding: 40px 20px;
+	text-align: center;
+}
+
+.imogi-settings-placeholder-icon {
+	color: #94a3b8;
+	font-size: 32px;
+	margin-bottom: 10px;
+}
+
+.imogi-settings-placeholder h3 {
+	color: #0f172a;
+	font-size: 18px;
+	font-weight: 800;
+	margin: 0 0 6px;
+}
+
+.imogi-settings-placeholder p {
+	color: #64748b;
+	font-size: 13px;
+	margin: 0;
+}
+
+.imogi-settings-page .imogi-store-identity-section .section-body {
+	padding-top: 16px;
+}
+
+.imogi-pill.is-green {
+	background: #ecfdf5;
+	border: 1px solid #a7f3d0;
+	border-radius: 999px;
+	color: #047857;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 10px;
 }
