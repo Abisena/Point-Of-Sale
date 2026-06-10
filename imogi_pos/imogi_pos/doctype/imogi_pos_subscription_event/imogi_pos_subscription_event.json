@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-06-09 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_type",
+  "subscription_id",
+  "plan_code",
+  "billing_status",
+  "applied_tier",
+  "notes",
+  "payload_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Event Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subscription_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Subscription ID"
+  },
+  {
+   "fieldname": "plan_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Plan Code"
+  },
+  {
+   "fieldname": "billing_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Billing Status",
+   "options": "Trial\nActive\nPast Due\nCancelled\nExpired\nSuspended\nManual"
+  },
+  {
+   "fieldname": "applied_tier",
+   "fieldtype": "Select",
+   "label": "Applied Tier",
+   "options": "Free\nStarter\nProfessional\nEnterprise"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "payload_json",
+   "fieldtype": "Code",
+   "label": "Payload JSON",
+   "options": "JSON"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Subscription Event",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Sales Manager"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -464,12 +464,19 @@ function format_stock_pill(qty) {
 
 const IMOGI_HOLD_KEY = "imogi_cashier_hold_v1";
 const IMOGI_BRANCH_KEY = "imogi_cashier_branch_v1";
+const IMOGI_CATALOG_MEM_TTL_MS = 45000;
 
 const IMOGI_ORDER_TYPES = [
 	{ value: "Dine-in", label: __("Dine-In"), icon: "fa-cutlery" },
 	{ value: "Takeaway", label: __("Takeaway"), icon: "fa-shopping-bag" },
 	{ value: "Delivery", label: __("Delivery"), icon: "fa-truck" },
 ];
+
+const IMOGI_ORDER_TYPE_FEATURES = {
+	"Dine-in": "dine_in",
+	Takeaway: "take_away",
+	Delivery: "delivery_order",
+};
 
 function round_up_cash(amount, step) {
 	return Math.ceil(flt(amount) / step) * step;
@@ -503,7 +510,20 @@ imogi_pos.CashierPage = class CashierPage {
 		this.variant_picker = new imogi_pos.VariantPicker(this);
 		this.make();
 		this.render_cart();
+		this._bind_catalog_refresh_on_focus();
 		this.load_context();
+	}
+
+	_bind_catalog_refresh_on_focus() {
+		this._on_visibility_refresh = () => {
+			if (document.visibilityState !== "visible" || !this.context) return;
+			this._catalog_mem = {};
+			this.load_items();
+		};
+		document.addEventListener("visibilitychange", this._on_visibility_refresh);
+		this.page?.on_page_hide?.(() => {
+			document.removeEventListener("visibilitychange", this._on_visibility_refresh);
+		});
 	}
 
 	make() {
@@ -653,7 +673,10 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$offline_chip = this.wrapper.find(".imogi-chip-offline");
 		this.$offline_badge = this.wrapper.find(".imogi-cashier-offline-badge");
 		this.$target_chip.on("click", () => this.open_target_detail());
-		this.$marketplace_chip.on("click", () => this.open_marketplace_orders());
+		this.$marketplace_chip.on("click", () => {
+			if (!this.require_feature("grabfood_integration")) return;
+			this.open_marketplace_orders();
+		});
 		this.$offline_chip.on("click", () => {
 			if (imogi_pos.offline?.sync_queue) imogi_pos.offline.sync_queue(this);
 		});
@@ -677,13 +700,23 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		this.wrapper.find(".imogi-cashier-order-type-btn").on("click", (e) => {
-			this.set_order_type($(e.currentTarget).data("type"));
+			const type = $(e.currentTarget).data("type");
+			const feature_key = IMOGI_ORDER_TYPE_FEATURES[type];
+			if (feature_key && !this.require_feature(feature_key)) return;
+			this.set_order_type(type);
 		});
 
 		this.update_hold_ui();
 
 		let customer_timer = null;
+		this.wrapper.find(".imogi-cashier-customer-search").on("focus click", (e) => {
+			if (this.feature_allowed("customer")) return;
+			e.preventDefault();
+			e.target.blur();
+			this.require_feature("customer");
+		});
 		this.wrapper.find(".imogi-cashier-customer-search").on("input", (e) => {
+			if (!this.feature_allowed("customer")) return;
 			clearTimeout(customer_timer);
 			const term = e.target.value.trim();
 			if (!term) {
@@ -696,12 +729,17 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 		this.wrapper.find(".imogi-cashier-customer-search").on("keydown", (e) => {
 			if (e.key !== "Enter") return;
+			if (!this.require_feature("customer")) {
+				e.preventDefault();
+				return;
+			}
 			e.preventDefault();
 			clearTimeout(customer_timer);
 			const term = e.target.value.trim();
 			if (term) this.search_customer(term);
 		});
 		this.wrapper.find(".imogi-cashier-customer-add").on("click", () => {
+			if (!this.require_feature("customer")) return;
 			const prefill = this.wrapper.find(".imogi-cashier-customer-search").val().trim();
 			this.prompt_create_customer(prefill);
 		});
@@ -725,7 +763,10 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		this.$hold_btn.on("click", () => this.hold_order());
-		this.$hold_list_btn.on("click", () => this.show_hold_dialog());
+		this.$hold_list_btn.on("click", () => {
+			if (!this.require_feature("hold_order")) return;
+			this.show_hold_dialog();
+		});
 		this.wrapper.find(".imogi-cashier-open-shift-btn").on("click", () => this.open_shift());
 
 		$(document).on("keydown.imogi-cashier", (e) => {
@@ -784,6 +825,10 @@ imogi_pos.CashierPage = class CashierPage {
 			this.$branch_row.removeClass("is-visible");
 			return;
 		}
+
+		const locked = cint(this.context?.branch_locked_by_shift);
+		this.$branch_select.prop("disabled", locked);
+		this.$branch_row.toggleClass("is-locked", locked);
 
 		const active = this.get_active_branch_code();
 		this.$branch_select.html(
@@ -862,6 +907,8 @@ imogi_pos.CashierPage = class CashierPage {
 		this.held_orders = this.context.held_orders || [];
 		if (this.get_active_branch_code()) {
 			this.set_stored_branch_code(this.get_active_branch_code());
+		} else {
+			this.set_stored_branch_code("");
 		}
 		this.render_branch_picker();
 		if (!this.$branch_row.hasClass("is-visible")) {
@@ -878,6 +925,7 @@ imogi_pos.CashierPage = class CashierPage {
 		} else {
 			this.$shift_bar.hide();
 		}
+		this.apply_feature_gates();
 		this.render_customer_label();
 		this.render_groups();
 		this.update_hold_ui();
@@ -887,13 +935,77 @@ imogi_pos.CashierPage = class CashierPage {
 		this.load_items();
 	}
 
+	feature_allowed(feature_key) {
+		const features = this.context?.features;
+		if (!features) return true;
+		return !!features[feature_key];
+	}
+
+	feature_meta(feature_key) {
+		return (this.context?.feature_meta || {})[feature_key] || {};
+	}
+
+	require_feature(feature_key, options = {}) {
+		if (this.feature_allowed(feature_key)) return true;
+		if (imogi_pos.feature_upgrade) {
+			imogi_pos.feature_upgrade.prompt(this, feature_key, options);
+		} else {
+			const meta = this.feature_meta(feature_key);
+			frappe.show_alert({
+				message: meta.label
+					? __("{0} tidak tersedia di paket Anda", [meta.label])
+					: __("Fitur tidak tersedia di paket Anda"),
+				indicator: "orange",
+			});
+		}
+		return false;
+	}
+
+	apply_feature_gates() {
+		const typeFeatures = IMOGI_ORDER_TYPE_FEATURES;
+		this.wrapper.find(".imogi-cashier-order-type-btn").each((_, el) => {
+			const $btn = $(el);
+			const type = $btn.data("type");
+			const allowed = this.feature_allowed(typeFeatures[type]);
+			$btn.toggleClass("is-tier-locked", !allowed).prop("disabled", !allowed);
+		});
+		this.wrapper.find(".imogi-cashier-order-type-row").show();
+		if (!this.feature_allowed(typeFeatures[this.order_type])) {
+			const fallback = IMOGI_ORDER_TYPES.find((row) => this.feature_allowed(typeFeatures[row.value]));
+			if (fallback) this.set_order_type(fallback.value, true);
+		}
+
+		const customerOn = this.feature_allowed("customer");
+		const $customerRow = this.wrapper.find(".imogi-cashier-customer-row");
+		$customerRow.toggleClass("is-tier-locked", !customerOn);
+		$customerRow.find("input, button").prop("disabled", !customerOn);
+		$customerRow.show();
+		if (!customerOn) {
+			this.selected_customer = this.context?.default_customer || null;
+			this.wrapper.find(".imogi-cashier-customer-search").val("");
+			this.$customer_label.hide();
+		} else {
+			this.$customer_label.show();
+		}
+
+		const holdOn = this.feature_allowed("hold_order");
+		this.$hold_btn.toggleClass("is-tier-locked", !holdOn).prop("disabled", !holdOn).show();
+		if (!holdOn) this.$hold_bar.removeClass("is-visible");
+
+		const marketplaceOn = this.feature_allowed("grabfood_integration");
+		if (!marketplaceOn && this.$marketplace_chip?.hasClass("is-visible")) {
+			this.$marketplace_chip.addClass("is-tier-locked");
+		} else {
+			this.$marketplace_chip?.removeClass("is-tier-locked");
+		}
+	}
+
 	load_context() {
-		const args = {};
-		const stored = this.get_stored_branch_code();
-		if (stored) args.branch = stored;
+		// Cabang ditentukan server (shift terbuka > default user > cabang assign).
+		// localStorage hanya cache tampilan, bukan sumber kebenaran.
 		frappe.call({
 			method: "imogi_pos.api.cashier.get_cashier_context",
-			args,
+			args: {},
 			callback: (r) => {
 				if (r.exc) return;
 				this.apply_cashier_context(r.message || {});
@@ -1230,9 +1342,12 @@ imogi_pos.CashierPage = class CashierPage {
 		const mem = this._catalog_mem[cache_key];
 
 		if (!background && mem?.items?.length) {
-			this._render_catalog_items(mem.items, { from_cache: true });
-			this._fetch_catalog_items(args, { background: true });
-			return;
+			const age = Date.now() - (mem.cached_at || 0);
+			if (age < IMOGI_CATALOG_MEM_TTL_MS) {
+				this._render_catalog_items(mem.items, { from_cache: true });
+				this._fetch_catalog_items(args, { background: true });
+				return;
+			}
 		}
 
 		if (!background) {
@@ -1658,6 +1773,7 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	hold_order() {
+		if (!this.require_feature("hold_order")) return;
 		if (!this.cart.length) return;
 		frappe.prompt(
 			[{ fieldname: "label", fieldtype: "Data", label: __("Label (opsional)"), placeholder: __("Pelanggan A") }],
@@ -1806,8 +1922,13 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$pay.prop("disabled", disabled || !this.cart.length);
 	}
 
-	set_order_type(order_type) {
+	set_order_type(order_type, silent) {
 		if (!order_type || this.order_type === order_type) return;
+		const feature_key = IMOGI_ORDER_TYPE_FEATURES[order_type];
+		if (feature_key && !this.feature_allowed(feature_key)) {
+			if (!silent) this.require_feature(feature_key);
+			return;
+		}
 		this.order_type = order_type;
 		this.sync_order_type_ui();
 	}
@@ -1839,6 +1960,7 @@ imogi_pos.CashierPage = class CashierPage {
 
 	search_customer(term) {
 		if (!term) return;
+		if (!this.require_feature("customer")) return;
 		frappe.call({
 			method: "imogi_pos.api.cashier.search_customers",
 			args: { search: term, limit: 8 },
@@ -1909,6 +2031,7 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	prompt_create_customer(prefill_name = "") {
+		if (!this.require_feature("customer")) return;
 		const d = new frappe.ui.Dialog({
 			title: __("Customer Baru"),
 			fields: [
@@ -2078,7 +2201,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$total.text(format_currency(subtotal));
 		this.refresh_cart_promos(subtotal);
 		this.$pay.prop("disabled", false);
-		this.$hold_btn.prop("disabled", false);
+		this.$hold_btn.prop("disabled", !this.feature_allowed("hold_order"));
 		this.update_mobile_dock();
 	}
 
@@ -2313,7 +2436,9 @@ imogi_pos.CashierPage = class CashierPage {
 						</div>
 					</div>`,
 				},
-				...(me.context.loyalty_enabled && imogi_pos.loyalty
+				...(me.context.loyalty_enabled &&
+				imogi_pos.loyalty &&
+				(me.feature_allowed("point_reward") || me.feature_allowed("voucher"))
 					? [
 							{
 								fieldtype: "HTML",
@@ -2348,6 +2473,8 @@ imogi_pos.CashierPage = class CashierPage {
 				me.discount_value = discount_state.value;
 				if (me.context.loyalty_enabled && imogi_pos.loyalty) {
 					const promo = imogi_pos.loyalty.get_promo_state(dialog);
+					if (promo.voucher_code && !me.require_feature("voucher")) return;
+					if (promo.loyalty_points_redeem && !me.require_feature("point_reward")) return;
 					me.voucher_code = promo.voucher_code;
 					me.loyalty_points_redeem = promo.loyalty_points_redeem;
 				}
@@ -2357,6 +2484,7 @@ imogi_pos.CashierPage = class CashierPage {
 					imogi_pos.qris &&
 					imogi_pos.qris.is_qris_mode(me, values.mode_of_payment)
 				) {
+					if (!me.require_feature("qris")) return;
 					dialog.hide();
 					imogi_pos.qris.open_dialog(me, {
 						items: me.cart.map((row) => ({
@@ -2407,7 +2535,11 @@ imogi_pos.CashierPage = class CashierPage {
 
 		dialog.show();
 		this.setup_payment_discount_ui(dialog, subtotal);
-		if (this.context.loyalty_enabled && imogi_pos.loyalty) {
+		if (
+			this.context.loyalty_enabled &&
+			imogi_pos.loyalty &&
+			(this.feature_allowed("point_reward") || this.feature_allowed("voucher"))
+		) {
 			imogi_pos.loyalty.setup_payment_ui(this, dialog, subtotal);
 		}
 		this.setup_mobile_pay_numpad(dialog, subtotal);
@@ -2475,6 +2607,8 @@ imogi_pos.CashierPage = class CashierPage {
 		if (this.marketplace_order_name) {
 			args.marketplace_order_name = this.marketplace_order_name;
 		}
+		if (this.selected_table) args.restaurant_table = this.selected_table;
+		if (this._pending_approval_code) args.approval_code = this._pending_approval_code;
 
 		const finish = (order, change) => {
 			this.busy = false;
@@ -2510,8 +2644,24 @@ imogi_pos.CashierPage = class CashierPage {
 				this.update_mobile_dock();
 				if (r.exc) {
 					dialog.get_primary_btn().prop("disabled", false);
+					const msg = (r._server_messages || "").toString();
+					if (
+						msg.includes("Perlu Approval") &&
+						imogi_pos.cashier_extras &&
+						imogi_pos.cashier_extras.prompt_supervisor_pin
+					) {
+						imogi_pos.cashier_extras.prompt_supervisor_pin(this, (code) => {
+							this._pending_approval_code = code;
+							this.checkout(dialog, mode_of_payment, total, paid_amount);
+						});
+						return;
+					}
+					if (imogi_pos.feature_upgrade) {
+						imogi_pos.feature_upgrade.from_server_error(this, r.exc);
+					}
 					return;
 				}
+				this._pending_approval_code = null;
 				const change =
 					this.is_cash_mode(mode_of_payment) && flt(paid_amount) > total
 						? flt(paid_amount) - total

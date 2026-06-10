@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hdr_umkm\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — UMKM</b></span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":3}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sc_close\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Closing Entry\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Menu Utama</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Penjualan\",\"col\":6}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan & Laporan\",\"col\":6}}]",
+ "content": "[{\"id\":\"hdr_umkm\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — UMKM</b></span><br><span class=\\\"text-muted\\\">Akses cepat tanpa search — pilih modul di bawah.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":3}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Operasional Harian\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Tutup Hari\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Master & Cabang\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan\",\"col\":4}}]",
  "creation": "2026-06-05 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -15,8 +15,8 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Penjualan",
-   "link_count": 3,
+   "label": "Operasional Harian",
+   "link_count": 4,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -43,6 +43,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "POS Dashboard",
+   "link_count": 0,
+   "link_to": "imogi-pos-dashboard",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "POS Invoice",
    "link_count": 0,
    "link_to": "POS Invoice",
@@ -52,7 +61,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Pengaturan & Laporan",
+   "label": "Shift & Tutup Hari",
    "link_count": 4,
    "onboard": 0,
    "type": "Card Break"
@@ -60,9 +69,115 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "IMOGI POS Settings",
+   "label": "Buka Shift (Kasir)",
    "link_count": 0,
-   "link_to": "IMOGI POS Settings",
+   "link_to": "imogi-pos-open-shift",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tutup Shift (Kasir)",
+   "link_count": 0,
+   "link_to": "imogi-pos-close-shift",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Shift Opening",
+   "link_count": 0,
+   "link_to": "IMOGI POS Shift Opening",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Closing Entry",
+   "link_count": 0,
+   "link_to": "POS Closing Entry",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty & Promo",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Member",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Member",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Tier",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Tier",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Voucher",
+   "link_count": 0,
+   "link_to": "IMOGI POS Voucher",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Promo Rule",
+   "link_count": 0,
+   "link_to": "IMOGI POS Promo Rule",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Transaction",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Transaction",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Master & Cabang",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item / Produk",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Combo Package",
+   "link_count": 0,
+   "link_to": "IMOGI POS Combo Package",
    "link_type": "DocType",
    "type": "Link"
   },
@@ -86,6 +201,58 @@
   },
   {
    "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pengaturan Sistem",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI POS Settings",
+   "link_count": 0,
+   "link_to": "IMOGI POS Settings",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Matrix Paket & Fitur",
+   "link_count": 0,
+   "link_to": "imogi-pos-feature-matrix",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup Wizard",
+   "link_count": 0,
+   "link_to": "imogi-pos-setup",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Offline Checkout Log",
+   "link_count": 0,
+   "link_to": "IMOGI POS Offline Checkout",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Laporan",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
    "is_query_report": 1,
    "label": "Penjualan Harian UMKM",
    "link_count": 0,
@@ -105,24 +272,15 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
-   "label": "POS Closing Entry",
+   "is_query_report": 1,
+   "label": "Order Summary",
    "link_count": 0,
-   "link_to": "POS Closing Entry",
-   "link_type": "DocType",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Item",
-   "link_count": 0,
-   "link_to": "Item",
-   "link_type": "DocType",
+   "link_to": "IMOGI POS Order Summary",
+   "link_type": "Report",
    "type": "Link"
   }
  ],
- "modified": "2026-06-05 00:00:00.000000",
+ "modified": "2026-06-09 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Imogi POS",
  "name": "Imogi POS UMKM",
@@ -155,8 +313,8 @@
   },
   {
    "color": "Grey",
-   "label": "POS Closing Entry",
-   "link_to": "POS Closing Entry",
+   "label": "IMOGI POS Settings",
+   "link_to": "IMOGI POS Settings",
    "type": "DocType"
   }
  ],

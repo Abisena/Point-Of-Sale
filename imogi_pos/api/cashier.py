@@ -47,7 +47,9 @@ def _resolve_customer(customer, pos_profile):
 
 
 def _is_pos_shift_enabled():
-	return cint(get_settings().enable_pos_shift)
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
+	return is_setting_enabled("enable_pos_shift")
 
 
 def _get_opening_balance_details(company, pos_profile=None):
@@ -63,6 +65,35 @@ def _get_pos_opening(user=None):
 	user = user or frappe.session.user
 	entries = check_opening_entry(user) or []
 	return entries[0] if entries else None
+
+
+def _opening_pos_profile(opening):
+	if not opening:
+		return None
+	if isinstance(opening, dict):
+		return opening.get("pos_profile")
+	return getattr(opening, "pos_profile", None)
+
+
+def _resolve_cashier_branch(branch=None, pos_profile=None, strict=False):
+	"""Resolve cabang kasir. Shift terbuka selalu menang (abaikan cache browser)."""
+	opening = _get_pos_opening() if _is_pos_shift_enabled() and not strict else None
+	shift_profile = _opening_pos_profile(opening)
+
+	if shift_profile and not strict:
+		pos_profile = shift_profile
+		branch = None
+
+	ctx = resolve_active_branch(
+		branch_code=branch,
+		pos_profile=pos_profile,
+		strict=strict,
+	)
+
+	if ctx.get("branch_code"):
+		set_user_default_branch_code(ctx["branch_code"])
+
+	return ctx
 
 
 def _requires_cashier_shift(user=None):
@@ -99,10 +130,11 @@ def _create_cashier_order(
 	voucher_code=None,
 	loyalty_points_redeem=0,
 	offline_client_id=None,
+	restaurant_table=None,
 ):
 	"""Build and submit order without importing order._build_order (avoids stale worker signatures)."""
 	settings = get_settings()
-	branch_ctx = resolve_active_branch(pos_profile=pos_profile)
+	branch_ctx = _resolve_cashier_branch(pos_profile=pos_profile)
 	pos_profile = branch_ctx["pos_profile"]
 	company = company or branch_ctx["company"]
 	default_warehouse = warehouse or branch_ctx["warehouse"]
@@ -136,6 +168,8 @@ def _create_cashier_order(
 	apply_promotions_to_order(order, totals)
 	if offline_client_id:
 		order.offline_client_id = offline_client_id
+	if restaurant_table:
+		order.restaurant_table = restaurant_table
 
 	for row in totals.get("items") or parsed_items:
 		if not row.get("item_code"):
@@ -165,6 +199,10 @@ def _create_cashier_order(
 	order.insert(ignore_permissions=True)
 	order.flags.ignore_permissions = True
 	order.submit()
+	if restaurant_table:
+		from imogi_pos.imogi_pos.utils.flow import reserve_restaurant_table
+
+		reserve_restaurant_table(order)
 	return order
 
 
@@ -175,11 +213,23 @@ def get_cashier_context(branch=None, pos_profile=None):
 	ensure_setup_ready()
 
 	settings = get_settings()
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
+	shift_enabled = _is_pos_shift_enabled()
+	opening = _get_pos_opening() if shift_enabled else None
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
 	pos_profile = branch_ctx["pos_profile"]
 	profile = frappe.get_doc("POS Profile", pos_profile)
+	from imogi_pos.imogi_pos.utils.feature_gating import (
+		get_cashier_feature_flags,
+		serialize_cashier_feature_meta,
+	)
+	from imogi_pos.imogi_pos.utils.role_gating import serialize_user_role_context as _serialize_user_role_context
+	from imogi_pos.imogi_pos.utils.payment_gateway import is_qris_payment_mode
+
+	feature_flags = get_cashier_feature_flags(settings, user=frappe.session.user)
 	payment_rows = []
 	for row in profile.payments:
+		if is_qris_payment_mode(row.mode_of_payment) and not feature_flags.get("qris"):
+			continue
 		mode_type = frappe.db.get_value("Mode of Payment", row.mode_of_payment, "type") or "General"
 		payment_rows.append(
 			{
@@ -218,9 +268,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 		limit=40,
 	)
 
-	shift_enabled = _is_pos_shift_enabled()
 	requires_shift = _requires_cashier_shift()
-	opening = _get_pos_opening() if shift_enabled else None
 	from imogi_pos.api.hold import list_holds
 	from imogi_pos.imogi_pos.utils.sales_target import get_sales_target_progress
 
@@ -230,6 +278,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 	from imogi_pos.imogi_pos.utils.promo_rules import is_promo_enabled
 	from imogi_pos.imogi_pos.utils.franchise import get_branch_franchise_meta
 	from imogi_pos.imogi_pos.utils.stamp_card import get_stamp_config, is_stamp_enabled
+	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
 	from imogi_pos.imogi_pos.utils.marketplace import is_marketplace_enabled
 
 	branches = get_accessible_branches(company=branch_ctx["company"])
@@ -258,8 +307,12 @@ def get_cashier_context(branch=None, pos_profile=None):
 			branch_code=branch_ctx.get("branch_code"), pos_profile=pos_profile
 		)
 		or {"branch_model": "Owned"},
-		"enable_pos_shift": cint(settings.enable_pos_shift),
-		"requires_shift_workflow": requires_shift,
+		"enable_pos_shift": _is_pos_shift_enabled(),
+		"requires_shift_workflow": requires_shift and _is_pos_shift_enabled(),
+		"subscription_tier": get_subscription_tier(settings),
+		"features": feature_flags,
+		"feature_meta": serialize_cashier_feature_meta(settings, user=frappe.session.user),
+		"role_context": _serialize_user_role_context(frappe.session.user, settings),
 		"payment_modes": payment_rows,
 		"default_payment_mode": default_mode,
 		"item_groups": [{"name": "", "label": _("Semua")}] + [
@@ -275,7 +328,8 @@ def get_cashier_context(branch=None, pos_profile=None):
 			target_amount=branch_ctx.get("target_monthly_sales"),
 			pos_profile=pos_profile,
 		),
-		"multi_branch_enabled": cint(settings.multi_branch) or len(branches) > 1,
+		"multi_branch_enabled": (cint(settings.multi_branch) or len(branches) > 1)
+		and feature_flags.get("multi_outlet", False),
 		"branches": branches,
 		"active_branch": {
 			"branch_code": branch_ctx.get("branch_code"),
@@ -288,6 +342,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 		},
 		"menu_summary": menu_summary,
 		"selling_price_list": branch_ctx.get("selling_price_list"),
+		"branch_locked_by_shift": bool(_opening_pos_profile(opening)),
 	}
 
 
@@ -296,9 +351,15 @@ def set_active_branch(branch_code):
 	"""Persist cashier branch choice for the current user."""
 	_require_cashier_access()
 	ensure_setup_ready()
-	ctx = resolve_active_branch(branch_code=branch_code)
-	set_user_default_branch_code(ctx.get("branch_code"))
-	return get_cashier_context(branch=ctx.get("branch_code"), pos_profile=ctx.get("pos_profile"))
+
+	if _is_pos_shift_enabled() and _opening_pos_profile(_get_pos_opening()):
+		frappe.throw(
+			_("Shift masih terbuka. Tutup shift dulu sebelum ganti cabang."),
+			title=_("Cabang Terkunci"),
+		)
+
+	_resolve_cashier_branch(branch_code=branch_code, strict=True)
+	return get_cashier_context()
 
 
 @frappe.whitelist()
@@ -316,11 +377,28 @@ def checkout(
 	marketplace_order_name=None,
 	pos_profile=None,
 	branch=None,
+	restaurant_table=None,
+	approval_code=None,
 ):
 	"""Create, pay, and complete an order from the touch cashier."""
 	_require_cashier_access()
 	ensure_setup_ready()
 	_require_pos_opening()
+
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
+	settings = get_settings()
+	default_customer = _resolve_customer(customer, branch_ctx["pos_profile"])
+	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational, validate_checkout_features
+
+	validate_checkout_features(
+		order_type=order_type,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		marketplace_order_name=marketplace_order_name,
+		customer=customer,
+		default_customer=default_customer,
+		settings=settings,
+	)
 
 	if offline_client_id:
 		from imogi_pos.imogi_pos.utils.offline_checkout import get_existing_offline_order
@@ -333,8 +411,8 @@ def checkout(
 	payments_list = _parse_json(payments, "payments") or []
 	if not payments_list:
 		frappe.throw(_("payments is required"))
-
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
+	if len(payments_list) > 1:
+		require_feature_operational("multi_payment", settings)
 
 	parsed_items = _parse_json(items, "items") if isinstance(items, str) else (items or [])
 	if parsed_items:
@@ -344,6 +422,32 @@ def checkout(
 			parsed_items,
 			branch_ctx["warehouse"],
 			pos_profile=branch_ctx["pos_profile"],
+		)
+
+	if restaurant_table:
+		require_feature_operational("table_management", settings)
+
+	from imogi_pos.imogi_pos.utils.approval import discount_requires_approval, require_supervisor_approval
+	from imogi_pos.imogi_pos.utils.loyalty import compute_checkout_totals
+
+	checkout_totals = compute_checkout_totals(
+		parsed_items,
+		discount_type=discount_type,
+		discount_value=discount_value,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		customer=customer,
+		company=branch_ctx["company"],
+		settings=settings,
+	)
+	discount_total = flt(checkout_totals.get("discount_amount"))
+	subtotal = flt(checkout_totals.get("subtotal"))
+	if discount_requires_approval(discount_total, subtotal, settings):
+		require_supervisor_approval(
+			"Discount",
+			amount=discount_total,
+			approval_code=approval_code,
+			reason=_("Diskon kasir melebihi batas approval"),
 		)
 
 	if marketplace_order_name:
@@ -374,6 +478,7 @@ def checkout(
 			voucher_code=voucher_code,
 			loyalty_points_redeem=loyalty_points_redeem,
 			offline_client_id=offline_client_id,
+			restaurant_table=restaurant_table,
 		)
 	order.action_process_payment(silent=True)
 	order.reload()
@@ -461,11 +566,12 @@ def get_shift_opening_page_context(pos_profile=None, branch=None):
 			"pos_opening_entry": opening.get("name") if isinstance(opening, dict) else opening,
 		}
 
-	from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 	from imogi_pos.imogi_pos.utils.shift_opening import get_shift_opening_page_context as _context
 
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
-	return _context(pos_profile=branch_ctx["pos_profile"])
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
+	ctx = _context(pos_profile=branch_ctx["pos_profile"])
+	ctx["branch_code"] = branch_ctx.get("branch_code")
+	return ctx
 
 
 @frappe.whitelist()
@@ -480,17 +586,24 @@ def submit_shift_opening(payments, draft_name=None, remarks=None, pos_profile=No
 	if _get_pos_opening():
 		frappe.throw(_("Shift kasir sudah dibuka"))
 
-	from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 	from imogi_pos.imogi_pos.utils.shift_opening import create_and_submit_shift_opening
 
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
-	return create_and_submit_shift_opening(
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
+	result = create_and_submit_shift_opening(
 		payments,
 		draft_name=draft_name,
 		remarks=remarks,
 		pos_profile=branch_ctx["pos_profile"],
 		company=branch_ctx["company"],
 	)
+	result.update(
+		{
+			"branch_code": branch_ctx.get("branch_code"),
+			"company": branch_ctx.get("company"),
+			"pos_profile": branch_ctx.get("pos_profile"),
+		}
+	)
+	return result
 
 
 @frappe.whitelist()
@@ -505,10 +618,9 @@ def save_shift_opening_draft(payments, draft_name=None, remarks=None, pos_profil
 	if _get_pos_opening():
 		frappe.throw(_("Shift kasir sudah dibuka"))
 
-	from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 	from imogi_pos.imogi_pos.utils.shift_opening import save_shift_opening_draft as _save
 
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
 	return _save(
 		payments,
 		draft_name=draft_name,
@@ -615,7 +727,7 @@ def create_pos_opening(balance_details=None, pos_profile=None, branch=None):
 	if _get_pos_opening():
 		frappe.throw(_("Shift kasir sudah dibuka"))
 
-	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
 	from erpnext.selling.page.point_of_sale.point_of_sale import create_opening_voucher
 
 	if balance_details:

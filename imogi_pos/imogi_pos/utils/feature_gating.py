@@ -1,0 +1,270 @@
+# Copyright (c) 2026, Imogi and contributors
+"""Resolve subscription tier + settings toggles for runtime feature gating."""
+
+import frappe
+from frappe import _
+from frappe.utils import cint
+
+from imogi_pos.imogi_pos.utils.feature_registry import (
+	FEATURE_STATUS_PLANNED,
+	SUBSCRIPTION_TIERS,
+	get_feature,
+	get_subscription_tier,
+	is_feature_in_plan,
+	is_feature_operational,
+	is_tier_at_least,
+	normalize_tier,
+	require_feature,
+	tier_rank,
+)
+from imogi_pos.imogi_pos.utils.flow import get_settings
+
+# Settings checkbox → feature_registry id
+SETTINGS_FEATURE_MAP = {
+	"enable_loyalty": "point_reward",
+	"enable_stamp_card": "point_reward",
+	"enable_promo_rules": "voucher",
+	"enable_payment_gateway": "qris",
+	"enable_marketplace_orders": "grabfood_integration",
+	"enable_kitchen_printer": "kitchen_printer",
+	"enable_cashback": "cashback",
+	"enable_birthday_promo": "birthday_promo",
+	"enable_pos_shift": "open_shift",
+	"enable_kitchen_display": "kitchen_display",
+	"enable_fulfillment": "delivery_order",
+	"enable_order_api": "api_access",
+	"multi_branch": "multi_outlet",
+}
+
+SETTINGS_BUTTON_FIELDS = {
+	"generate_order_api_key": "api_access",
+	"sync_branch_prices": "multi_outlet",
+	"hq_ensure_branch_price_lists": "multi_outlet",
+	"hq_push_menu_from_branch": "multi_outlet",
+}
+
+SETTINGS_KEYS_BY_FEATURE: dict[str, tuple[str, ...]] = {}
+for _settings_key, _feature_id in SETTINGS_FEATURE_MAP.items():
+	SETTINGS_KEYS_BY_FEATURE.setdefault(_feature_id, [])
+	if _settings_key not in SETTINGS_KEYS_BY_FEATURE[_feature_id]:
+		SETTINGS_KEYS_BY_FEATURE[_feature_id].append(_settings_key)
+
+ORDER_TYPE_FEATURES = {
+	"Dine-in": "dine_in",
+	"Takeaway": "take_away",
+	"Delivery": "delivery_order",
+}
+
+CASHIER_FEATURE_IDS = (
+	"hold_order",
+	"customer",
+	"dine_in",
+	"take_away",
+	"delivery_order",
+	"qris",
+	"point_reward",
+	"voucher",
+	"open_shift",
+	"grabfood_integration",
+	"multi_outlet",
+	"multi_payment",
+	"split_bill",
+	"table_management",
+	"move_table",
+)
+
+
+def is_setting_enabled(settings_key: str, settings=None) -> bool:
+	"""Settings toggle is on AND allowed by subscription tier."""
+	settings = settings or get_settings()
+	if not cint(getattr(settings, settings_key, 0)):
+		return False
+	feature_id = SETTINGS_FEATURE_MAP.get(settings_key)
+	if not feature_id:
+		return True
+	return is_feature_operational(feature_id, settings)
+
+
+def require_feature_operational(feature_id: str, settings=None, user=None):
+	user = user or getattr(frappe.session, "user", None)
+	if is_feature_operational(feature_id, settings, user=user):
+		return
+	if not is_feature_in_plan(feature_id):
+		require_feature(feature_id)
+	from imogi_pos.imogi_pos.utils.role_gating import (
+		get_role_block_reason,
+		is_role_gating_enabled,
+		require_feature_role,
+	)
+
+	if is_role_gating_enabled(settings) and get_role_block_reason(feature_id, user=user, settings=settings):
+		require_feature_role(feature_id, user=user, settings=settings)
+	feature = get_feature(feature_id) or {}
+	frappe.throw(
+		_("Fitur <b>{0}</b> belum diaktifkan. Buka IMOGI POS Settings.").format(
+			feature.get("label") or feature_id
+		),
+		title=_("Fitur Nonaktif"),
+	)
+
+
+def get_cashier_feature_flags(settings=None, user=None) -> dict:
+	settings = settings or get_settings()
+	user = user or getattr(frappe.session, "user", None)
+	return {
+		feature_id: is_feature_operational(feature_id, settings, user=user)
+		for feature_id in CASHIER_FEATURE_IDS
+	}
+
+
+def _settings_enabled_for_feature(settings, feature_id: str) -> bool:
+	settings_keys = SETTINGS_KEYS_BY_FEATURE.get(feature_id)
+	if not settings_keys:
+		feature = get_feature(feature_id) or {}
+		settings_key = feature.get("settings_key")
+		settings_keys = [settings_key] if settings_key else []
+	if not settings_keys:
+		return True
+	return any(cint(getattr(settings, settings_key, 0)) for settings_key in settings_keys)
+
+
+def get_feature_block_reason(
+	feature_id: str, settings=None, tier: str | None = None, user: str | None = None
+) -> str | None:
+	"""Return None when feature is usable; else ``tier``, ``role``, ``settings``, or ``planned``."""
+	feature = get_feature(feature_id)
+	if not feature:
+		return "tier"
+	if feature["status"] == FEATURE_STATUS_PLANNED:
+		return "planned"
+	settings = settings or get_settings()
+	tier = tier or get_subscription_tier(settings)
+	if not is_tier_at_least(tier, feature["min_tier"]):
+		return "tier"
+	from imogi_pos.imogi_pos.utils.role_gating import get_role_block_reason as _role_reason
+
+	if _role_reason(feature_id, user=user, settings=settings):
+		return "role"
+	if not _settings_enabled_for_feature(settings, feature_id):
+		return "settings"
+	return None
+
+
+def serialize_cashier_feature_meta(settings=None, user=None) -> dict:
+	"""Rich feature metadata for cashier upgrade prompts."""
+	settings = settings or get_settings()
+	user = user or getattr(frappe.session, "user", None)
+	tier = get_subscription_tier(settings)
+	meta = {}
+	for feature_id in CASHIER_FEATURE_IDS:
+		feature = get_feature(feature_id) or {}
+		meta[feature_id] = {
+			"allowed": is_feature_operational(feature_id, settings, tier, user=user),
+			"in_plan": is_feature_in_plan(feature_id, tier),
+			"label": feature.get("label") or feature_id,
+			"min_tier": feature.get("min_tier") or "Enterprise",
+			"required_role": feature.get("role") or "",
+			"trigger_upgrade": feature.get("trigger_upgrade") or "",
+			"status": feature.get("status"),
+			"blocked_reason": get_feature_block_reason(feature_id, settings, tier, user=user),
+		}
+	return meta
+
+
+def validate_order_type(order_type: str | None, settings=None):
+	feature_id = ORDER_TYPE_FEATURES.get((order_type or "").strip())
+	if feature_id:
+		require_feature_operational(feature_id, settings)
+
+
+def validate_checkout_features(
+	*,
+	order_type=None,
+	voucher_code=None,
+	loyalty_points_redeem=0,
+	marketplace_order_name=None,
+	customer=None,
+	default_customer=None,
+	settings=None,
+):
+	settings = settings or get_settings()
+	validate_order_type(order_type, settings)
+
+	if marketplace_order_name:
+		require_feature_operational("grabfood_integration", settings)
+
+	if voucher_code:
+		require_feature_operational("voucher", settings)
+
+	if cint(loyalty_points_redeem) > 0:
+		require_feature_operational("point_reward", settings)
+
+	if customer and default_customer and customer != default_customer:
+		require_feature_operational("customer", settings)
+
+
+def _lock_message_for_feature(feature_id: str) -> str:
+	feature = get_feature(feature_id) or {}
+	trigger = (feature.get("trigger_upgrade") or "").strip()
+	min_tier = feature.get("min_tier") or "Enterprise"
+	message = _("Tersedia mulai paket {0}").format(min_tier)
+	if trigger:
+		message = f"{message}. {trigger}"
+	return message
+
+
+def _serialize_field_lock(fieldname: str, feature_id: str, tier: str) -> dict:
+	feature = get_feature(feature_id) or {}
+	allowed = is_feature_in_plan(feature_id, tier)
+	return {
+		"fieldname": fieldname,
+		"allowed": allowed,
+		"feature_id": feature_id,
+		"label": feature.get("label") or feature_id,
+		"min_tier": feature.get("min_tier") or "Enterprise",
+		"message": None if allowed else _lock_message_for_feature(feature_id),
+	}
+
+
+def get_settings_field_locks(tier: str | None = None) -> dict:
+	"""Per-field tier lock metadata for IMOGI POS Settings form."""
+	tier = normalize_tier(tier or get_subscription_tier())
+	locks = {}
+	for fieldname, feature_id in SETTINGS_FEATURE_MAP.items():
+		locks[fieldname] = _serialize_field_lock(fieldname, feature_id, tier)
+	for fieldname, feature_id in SETTINGS_BUTTON_FIELDS.items():
+		locks[fieldname] = _serialize_field_lock(fieldname, feature_id, tier)
+	return {
+		"tier": tier,
+		"tiers": list(SUBSCRIPTION_TIERS),
+		"locks": locks,
+		"matrix_route": "imogi-pos-feature-matrix",
+	}
+
+
+def enforce_settings_tier_limits(doc):
+	"""Block enabling gated toggles; auto-disable them when subscription tier is downgraded."""
+	tier = get_subscription_tier(doc)
+	before = doc.get_doc_before_save()
+	prev_tier = get_subscription_tier(before) if before else None
+	tier_downgraded = bool(prev_tier and tier_rank(tier) < tier_rank(prev_tier))
+
+	for fieldname, feature_id in SETTINGS_FEATURE_MAP.items():
+		if not cint(getattr(doc, fieldname, 0)):
+			continue
+		if is_feature_in_plan(feature_id, tier):
+			continue
+		if tier_downgraded:
+			setattr(doc, fieldname, 0)
+			continue
+		feature = get_feature(feature_id) or {}
+		frappe.throw(
+			_(
+				"<b>{0}</b> memerlukan paket <b>{1}</b> atau lebih tinggi. {2}"
+			).format(
+				feature.get("label") or fieldname,
+				feature.get("min_tier") or "Enterprise",
+				feature.get("trigger_upgrade") or _("Lihat matriks fitur untuk detail."),
+			),
+			title=_("Paket Tidak Mencukupi"),
+		)

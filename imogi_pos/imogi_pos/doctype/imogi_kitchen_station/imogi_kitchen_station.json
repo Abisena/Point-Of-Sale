@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "station_name",
+  "station_type",
   "company",
   "is_active",
   "description"
@@ -19,6 +20,14 @@
    "label": "Station Name",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "default": "Kitchen",
+   "fieldname": "station_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Station Type",
+   "options": "Kitchen\nBar\nPastry\nGrill"
   },
   {
    "fieldname": "company",

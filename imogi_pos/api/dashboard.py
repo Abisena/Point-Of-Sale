@@ -71,8 +71,10 @@ def _resolve_dashboard_scope(branch=None, pos_profile=None, company=None):
 
 
 def _get_pos_shift_status(company=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
-	if not cint(settings.enable_pos_shift):
+	if not is_setting_enabled("enable_pos_shift", settings):
 		return {"enabled": False, "open": False}
 
 	if not requires_cashier_shift():
@@ -148,6 +150,19 @@ def get_dashboard_metrics(date=None, branch=None, pos_profile=None, company=None
 		payload.update(_get_umkm_metrics(day_start, day_end, company=company, pos_profile=pos_profile))
 	else:
 		payload.update(_get_restaurant_metrics(day_start, day_end, company=company, pos_profile=pos_profile))
+
+	try:
+		from imogi_pos.api.reports_api import get_extended_reports
+
+		payload["extended_reports"] = get_extended_reports(
+			date=str(day_start),
+			company=company,
+			pos_profile=pos_profile,
+			branch=branch,
+		)
+	except Exception:
+		payload["extended_reports"] = {}
+
 	return payload
 
 

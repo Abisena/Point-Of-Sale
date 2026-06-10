@@ -1,6 +1,6 @@
 frappe.provide("imogi_pos");
 
-const IMOGI_WIZARD_STEPS = 9;
+const IMOGI_WIZARD_STEPS = 10;
 
 imogi_pos.SetupWizard9 = class SetupWizard9 {
 	constructor(wrapper) {
@@ -14,7 +14,10 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 	}
 
 	init() {
-		frappe.require("/assets/imogi_pos/css/imogi_pos_setup_wizard.css", () => {
+		frappe.require([
+			"/assets/imogi_pos/css/imogi_pos_setup_wizard.css",
+			"/assets/imogi_pos/js/imogi_pos_tier_picker.js",
+		], () => {
 			frappe.call({
 				method: "imogi_pos.api.setup_wizard_api.get_wizard_state",
 				callback: (r) => {
@@ -56,7 +59,7 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 						<span class="imogi-wizard-footer-hint"></span>
 						<div class="imogi-wizard-footer-actions">
 							<button class="btn btn-default btn-wiz-back" ${this.step === 1 ? "disabled" : ""}>${__("Kembali")}</button>
-							<button class="btn btn-primary btn-wiz-next">${this.step === 9 ? __("Selesai — buka kasir") : __("Lanjut →")}</button>
+							<button class="btn btn-primary btn-wiz-next">${this.step === IMOGI_WIZARD_STEPS ? __("Selesai — buka kasir") : __("Lanjut →")}</button>
 						</div>
 					</div>
 				</div>
@@ -92,20 +95,44 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 	render_step() {
 		const $c = this.$wrapper.find(".imogi-wizard-content");
 		const renderers = {
-			1: () => this.render_step1($c),
-			2: () => this.render_step2($c),
-			3: () => this.render_step3($c),
-			4: () => this.render_step4($c),
-			5: () => this.render_step5($c),
-			6: () => this.render_step6($c),
-			7: () => this.render_step7($c),
-			8: () => this.render_step8($c),
-			9: () => this.render_step9($c),
+			1: () => this.render_step_subscription($c),
+			2: () => this.render_step1($c),
+			3: () => this.render_step2($c),
+			4: () => this.render_step3($c),
+			5: () => this.render_step4($c),
+			6: () => this.render_step5($c),
+			7: () => this.render_step6($c),
+			8: () => this.render_step7($c),
+			9: () => this.render_step8($c),
+			10: () => this.render_step9($c),
 		};
 		(renderers[this.step] || renderers[1])();
 		this.$wrapper.find(".imogi-wizard-progress-fill").css("width", `${(this.step / IMOGI_WIZARD_STEPS) * 100}%`);
 		this.$wrapper.find(".btn-wiz-back").prop("disabled", this.step === 1);
-		this.$wrapper.find(".btn-wiz-next").text(this.step === 9 ? __("Selesai — buka kasir") : __("Lanjut →"));
+		this.$wrapper.find(".btn-wiz-next").text(
+			this.step === IMOGI_WIZARD_STEPS ? __("Selesai — buka kasir") : __("Lanjut →")
+		);
+	}
+
+	render_step_subscription($c) {
+		const $b = this._header(
+			$c,
+			__("Paket langganan"),
+			__("Pilih paket sesuai skala usaha. Fitur workspace dan kasir menyesuaikan tier yang dipilih.")
+		);
+		this.session.subscription_tier = this.session.subscription_tier || "Free";
+		const $host = $('<div class="imogi-wizard-tier-host"></div>');
+		$b.append($host);
+		if (imogi_pos.tier_picker) {
+			imogi_pos.tier_picker.render_inline($host, {
+				selected_tier: this.session.subscription_tier,
+				on_select: ({ tier }) => {
+					this.session.subscription_tier = tier;
+				},
+			});
+		} else {
+			$host.html(`<div class="alert alert-warning">${__("Gagal memuat pemilih paket. Muat ulang halaman.")}</div>`);
+		}
 	}
 
 	_header($c, title, desc) {
@@ -510,6 +537,7 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 				);
 				$b.html(`
 					<table class="imogi-wizard-table imogi-confirm-table"><tbody>
+						<tr><td>${__("Paket langganan")}</td><td>${frappe.utils.escape_html(s.subscription_tier || "Free")}</td></tr>
 						<tr><td>${__("Nama toko")}</td><td>${frappe.utils.escape_html(s.store_name || "-")}</td></tr>
 						<tr><td>${__("Kota")}</td><td>${frappe.utils.escape_html(s.store_city || "-")}</td></tr>
 						<tr><td>${__("WA owner")}</td><td>${frappe.utils.escape_html(s.owner_whatsapp || "-")}</td></tr>
@@ -544,6 +572,7 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 		data.payments = this.session.payments || [];
 		if (this.session.business_type) data.business_type = this.session.business_type;
 		if (this.session.printer_option) data.printer_option = this.session.printer_option;
+		if (this.session.subscription_tier) data.subscription_tier = this.session.subscription_tier;
 		return data;
 	}
 
@@ -559,20 +588,24 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 	}
 
 	go(delta) {
-		if (delta > 0 && this.step === 1) {
+		if (delta > 0 && this.step === 1 && !this.session.subscription_tier) {
+			frappe.msgprint(__("Pilih paket langganan"));
+			return;
+		}
+		if (delta > 0 && this.step === 2) {
 			const name = this.$wrapper.find('[data-f="store_name"]').val();
 			if (!name || !name.trim()) {
 				frappe.msgprint(__("Nama toko wajib diisi"));
 				return;
 			}
 		}
-		if (delta > 0 && this.step === 2 && !this.session.business_type) {
+		if (delta > 0 && this.step === 3 && !this.session.business_type) {
 			frappe.msgprint(__("Pilih jenis usaha"));
 			return;
 		}
 
 		this.save_step(() => {
-			if (delta > 0 && this.step === 9) {
+			if (delta > 0 && this.step === IMOGI_WIZARD_STEPS) {
 				this.finish();
 				return;
 			}

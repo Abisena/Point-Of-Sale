@@ -16,6 +16,7 @@ class CatalogBatchContext:
 		self.prices = {}
 		self.item_meta = {}
 		self.variants_by_template = {}
+		self.variant_images = {}
 		self.templates_with_attrs = set()
 		self.default_bom = {}
 		self.bom_requirements = {}
@@ -45,6 +46,7 @@ class CatalogBatchContext:
 				"variant_of",
 				"is_stock_item",
 				"standard_rate",
+				"image",
 			],
 		)
 		self.item_meta = {row.name: row for row in rows}
@@ -58,11 +60,13 @@ class CatalogBatchContext:
 		rows = frappe.get_all(
 			"Item",
 			filters={"variant_of": ["in", list(templates)], "disabled": 0, "is_sales_item": 1},
-			fields=["name", "variant_of"],
+			fields=["name", "variant_of", "image"],
 			order_by="name asc",
 		)
 		for row in rows:
 			self.variants_by_template.setdefault(row.variant_of, []).append(row.name)
+			if row.image:
+				self.variant_images[row.name] = row.image
 
 		if templates:
 			attr_parents = frappe.db.sql(
@@ -244,6 +248,29 @@ class CatalogBatchContext:
 		variants = self.get_variants(item_code)
 		return variants[0] if len(variants) == 1 else None
 
+	def resolve_image(self, item_code, row_image=None):
+		if row_image:
+			return row_image
+
+		meta = self.item_meta.get(item_code)
+		if meta and meta.get("image"):
+			return meta.image
+
+		if meta and meta.variant_of:
+			parent = self.item_meta.get(meta.variant_of)
+			if parent and parent.get("image"):
+				return parent.image
+
+		for code in self.get_variants(item_code):
+			image = self.variant_images.get(code)
+			if image:
+				return image
+			child = self.item_meta.get(code)
+			if child and child.get("image"):
+				return child.image
+
+		return ""
+
 	def item_has_variant_children(self, item_code):
 		return bool(self.get_variants(item_code))
 
@@ -348,7 +375,7 @@ class CatalogBatchContext:
 			"item_group": item_group,
 			"imogi_pos_category": pos_category,
 			"description": row.get("description"),
-			"image": row.get("item_image") or row.get("image"),
+			"image": self.resolve_image(item_code, row.get("item_image") or row.get("image")),
 			"rate": rate,
 			"currency": row.get("currency") or self.currency,
 			"uom": row.get("uom") or row.get("stock_uom"),

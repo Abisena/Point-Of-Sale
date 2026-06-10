@@ -181,7 +181,10 @@ def _create_sample_kitchen_station():
 def _create_imogi_roles():
 	roles = [
 		"IMOGI Cashier",
+		"IMOGI Waiter",
+		"IMOGI Supervisor",
 		"IMOGI Kitchen Staff",
+		"IMOGI Chef",
 		"IMOGI Fulfillment Staff",
 		"IMOGI Rider",
 	]
@@ -193,8 +196,41 @@ def _create_imogi_roles():
 			)
 
 	frappe.db.set_value("Role", "IMOGI Cashier", "home_page", "imogi-pos-cashier")
+	frappe.db.set_value("Role", "IMOGI Waiter", "home_page", "imogi-pos-cashier")
+	frappe.db.set_value("Role", "IMOGI Supervisor", "home_page", "imogi-pos-dashboard")
+	frappe.db.set_value("Role", "IMOGI Chef", "home_page", "kitchen-display")
 
 	_perms = {
+		"IMOGI Waiter": [
+			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+			("IMOGI Restaurant Table", {"read": 1, "write": 1}),
+			("Customer", {"read": 1, "create": 1}),
+			("Contact", {"read": 1, "create": 1}),
+			("Page", {"read": 1}),
+			("POS Profile", {"read": 1}),
+			("Mode of Payment", {"read": 1}),
+			("Company", {"read": 1}),
+			("IMOGI Branch", {"read": 1}),
+			("Warehouse", {"read": 1}),
+		],
+		"IMOGI Supervisor": [
+			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
+			("IMOGI POS Approval Request", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI Restaurant Table", {"read": 1, "write": 1}),
+			("POS Invoice", {"read": 1}),
+			("Customer", {"read": 1, "create": 1}),
+			("Page", {"read": 1}),
+			("POS Profile", {"read": 1}),
+			("Mode of Payment", {"read": 1}),
+			("Company", {"read": 1}),
+			("IMOGI Branch", {"read": 1}),
+		],
+		"IMOGI Chef": [
+			("IMOGI Kitchen Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+			("IMOGI Kitchen Station", {"read": 1}),
+			("IMOGI POS Order", {"read": 1}),
+			("Page", {"read": 1}),
+		],
 		"IMOGI Cashier": [
 			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("IMOGI POS Shift Opening", {"read": 1, "write": 1, "create": 1, "submit": 1}),

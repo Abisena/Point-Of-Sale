@@ -19,8 +19,10 @@ FAILED_STATUSES = frozenset({"deny", "cancel", "expire", "failure", "failed", "e
 
 
 def get_gateway_settings():
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
-	if not cint(settings.enable_payment_gateway):
+	if not is_setting_enabled("enable_payment_gateway", settings):
 		return None
 	provider = (settings.payment_gateway_provider or settings.payment_gateway or "").strip()
 	if provider not in ("Midtrans", "Xendit"):

@@ -5,22 +5,39 @@ from frappe import _
 from frappe.utils import now_datetime
 
 
+def _require_kitchen_access():
+	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+	require_feature_operational("kitchen_display")
+
+
 @frappe.whitelist()
-def get_kitchen_queue():
-	frappe.only_for(("IMOGI Kitchen Staff", "Sales Manager", "Sales User", "System Manager"))
+def get_kitchen_queue(station_type=None):
+	_require_kitchen_access()
+	from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
+
+	station_filter = ""
+	values = {}
+	if station_type and is_feature_operational("bar_station"):
+		station_filter = " and ks.station_type = %(station_type)s"
+		values["station_type"] = station_type
 
 	orders = frappe.db.sql(
-		"""
+		f"""
 		select
 			ko.name, ko.pos_order, ko.status, ko.kitchen_station,
 			ko.started_at, ko.expected_ready_at, ko.timer_minutes,
-			po.order_type, po.order_channel, po.customer_name, po.grand_total
+			po.order_type, po.order_channel, po.customer_name, po.grand_total,
+			ks.station_type
 		from `tabIMOGI Kitchen Order` ko
 		left join `tabIMOGI POS Order` po on po.name = ko.pos_order
+		left join `tabIMOGI Kitchen Station` ks on ks.name = ko.kitchen_station
 		where ko.status in ('Pending', 'Preparing')
 			and ko.docstatus < 2
+			{station_filter}
 		order by ko.creation asc
 		""",
+		values,
 		as_dict=True,
 	)
 
@@ -36,7 +53,7 @@ def get_kitchen_queue():
 
 @frappe.whitelist()
 def update_kitchen_status(kitchen_order, status):
-	frappe.only_for(("IMOGI Kitchen Staff", "Sales Manager", "System Manager"))
+	_require_kitchen_access()
 	ko = frappe.get_doc("IMOGI Kitchen Order", kitchen_order)
 	ko.check_permission("write")
 

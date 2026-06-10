@@ -23,10 +23,23 @@
   "default_opening_time",
   "default_closing_time",
   "general_section",
+  "subscription_tier",
+  "upgrade_subscription_tier",
   "default_company",
   "default_pos_profile",
   "default_warehouse",
   "enable_pos_shift",
+  "billing_section",
+  "enable_saas_billing_sync",
+  "billing_provider",
+  "billing_external_id",
+  "billing_plan_code",
+  "billing_status",
+  "billing_period_end",
+  "billing_last_synced",
+  "billing_auto_apply_tier",
+  "billing_webhook_secret",
+  "sync_subscription_tier",
   "flow_section",
   "enable_kitchen_display",
   "enable_fulfillment",
@@ -80,6 +93,18 @@
   "enable_offline_cashier",
   "enable_marketplace_orders",
   "marketplace_webhook_secret",
+  "operations_section",
+  "enable_role_gating",
+  "enable_approval_workflow",
+  "approval_discount_threshold_percent",
+  "approval_supervisor_pin",
+  "enable_central_kitchen",
+  "central_kitchen_station",
+  "enable_kitchen_printer",
+  "enable_cashback",
+  "cashback_percent",
+  "enable_birthday_promo",
+  "birthday_discount_percent",
   "franchise_section",
   "generate_franchise_royalty",
   "post_franchise_royalty_journals",
@@ -211,6 +236,20 @@
    "label": "Pengaturan Dasar POS"
   },
   {
+   "default": "Enterprise",
+   "description": "Paket langganan SaaS. Menentukan fitur yang tersedia (lihat Feature Registry). Default Enterprise agar tenant lama tidak kehilangan akses.",
+   "fieldname": "subscription_tier",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Paket Langganan",
+   "options": "Free\nStarter\nProfessional\nEnterprise"
+  },
+  {
+   "fieldname": "upgrade_subscription_tier",
+   "fieldtype": "Button",
+   "label": "Upgrade Langganan"
+  },
+  {
    "fieldname": "default_company",
    "fieldtype": "Link",
    "label": "Perusahaan",
@@ -238,6 +277,80 @@
    "fieldname": "enable_pos_shift",
    "fieldtype": "Check",
    "label": "Wajib Shift Kasir (Buka/Tutup)"
+  },
+  {
+   "fieldname": "billing_section",
+   "fieldtype": "Section Break",
+   "label": "SaaS Billing Sync"
+  },
+  {
+   "default": "0",
+   "description": "Aktifkan agar paket langganan diatur otomatis dari webhook billing eksternal.",
+   "fieldname": "enable_saas_billing_sync",
+   "fieldtype": "Check",
+   "label": "Aktifkan Sync Billing SaaS"
+  },
+  {
+   "default": "Generic Webhook",
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_provider",
+   "fieldtype": "Select",
+   "label": "Provider Billing",
+   "options": "Generic Webhook\nStripe\nMidtrans\nCustom"
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_external_id",
+   "fieldtype": "Data",
+   "label": "ID Langganan Eksternal",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_plan_code",
+   "fieldtype": "Data",
+   "label": "Kode Plan Billing"
+  },
+  {
+   "default": "Manual",
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_status",
+   "fieldtype": "Select",
+   "label": "Status Billing",
+   "options": "Manual\nTrial\nActive\nPast Due\nCancelled\nExpired\nSuspended"
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_period_end",
+   "fieldtype": "Date",
+   "label": "Masa Berlaku Sampai"
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_last_synced",
+   "fieldtype": "Datetime",
+   "label": "Terakhir Disinkronkan",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "description": "Jika aktif, field Paket Langganan diisi otomatis dari status billing.",
+   "fieldname": "billing_auto_apply_tier",
+   "fieldtype": "Check",
+   "label": "Terapkan Tier Otomatis"
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "billing_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret (HMAC)"
+  },
+  {
+   "depends_on": "eval:doc.enable_saas_billing_sync",
+   "fieldname": "sync_subscription_tier",
+   "fieldtype": "Button",
+   "label": "Sinkronkan Tier dari Billing"
   },
   {
    "collapsible": 1,
@@ -604,6 +717,91 @@
    "fieldname": "marketplace_webhook_secret",
    "fieldtype": "Password",
    "label": "Marketplace Webhook Secret"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "operations_section",
+   "fieldtype": "Section Break",
+   "label": "Operasional Lanjutan"
+  },
+  {
+   "default": "0",
+   "description": "Batasi fitur kasir/kitchen per role matrix (Waiter, Supervisor, Chef, dll). Admin tetap bypass.",
+   "fieldname": "enable_role_gating",
+   "fieldtype": "Check",
+   "label": "Aktifkan Role Gating"
+  },
+  {
+   "default": "0",
+   "description": "Void, refund, dan diskon besar memerlukan approval supervisor.",
+   "fieldname": "enable_approval_workflow",
+   "fieldtype": "Check",
+   "label": "Aktifkan Approval Workflow"
+  },
+  {
+   "default": "15",
+   "depends_on": "enable_approval_workflow",
+   "description": "Diskon manual di atas % ini memerlukan PIN supervisor.",
+   "fieldname": "approval_discount_threshold_percent",
+   "fieldtype": "Percent",
+   "label": "Batas Diskon Approval (%)"
+  },
+  {
+   "depends_on": "enable_approval_workflow",
+   "description": "PIN supervisor untuk approve void/refund/diskon.",
+   "fieldname": "approval_supervisor_pin",
+   "fieldtype": "Data",
+   "label": "PIN Supervisor"
+  },
+  {
+   "default": "0",
+   "depends_on": "multi_branch",
+   "description": "Rute kitchen order ke dapur pusat (Enterprise).",
+   "fieldname": "enable_central_kitchen",
+   "fieldtype": "Check",
+   "label": "Central Kitchen"
+  },
+  {
+   "depends_on": "enable_central_kitchen",
+   "fieldname": "central_kitchen_station",
+   "fieldtype": "Link",
+   "label": "Stasiun Dapur Pusat",
+   "options": "IMOGI Kitchen Station"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_kitchen_display",
+   "fieldname": "enable_kitchen_printer",
+   "fieldtype": "Check",
+   "label": "Cetak Tiket Dapur Otomatis"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_loyalty",
+   "fieldname": "enable_cashback",
+   "fieldtype": "Check",
+   "label": "Aktifkan Cashback"
+  },
+  {
+   "default": "1",
+   "depends_on": "enable_cashback",
+   "fieldname": "cashback_percent",
+   "fieldtype": "Percent",
+   "label": "Cashback (%)"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_loyalty",
+   "fieldname": "enable_birthday_promo",
+   "fieldtype": "Check",
+   "label": "Promo Ulang Tahun"
+  },
+  {
+   "default": "10",
+   "depends_on": "enable_birthday_promo",
+   "fieldname": "birthday_discount_percent",
+   "fieldtype": "Percent",
+   "label": "Diskon Ulang Tahun (%)"
   },
   {
    "collapsible": 1,

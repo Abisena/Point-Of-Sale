@@ -36,8 +36,10 @@ def validate_order_api_access():
 			return
 		frappe.throw(_("Not permitted to access Order API"), frappe.PermissionError)
 
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
-	if not settings.enable_order_api:
+	if not is_setting_enabled("enable_order_api", settings):
 		frappe.throw(_("Order API is disabled in IMOGI POS Settings"), frappe.AuthenticationError)
 
 	api_key, api_secret = _extract_api_credentials()

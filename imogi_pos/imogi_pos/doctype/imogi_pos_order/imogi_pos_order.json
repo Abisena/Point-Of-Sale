@@ -207,7 +207,7 @@
    "fieldname": "discount_type",
    "fieldtype": "Select",
    "label": "Discount Type",
-   "options": "\nPercent\nAmount"
+   "options": "\nPercent\nAmount\nComplimentary"
   },
   {
    "fieldname": "discount_value",

@@ -9,9 +9,11 @@ from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
 
 
 def get_loyalty_config(settings=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = settings or get_settings()
 	return {
-		"enabled": cint(settings.enable_loyalty),
+		"enabled": is_setting_enabled("enable_loyalty", settings),
 		"points_per_amount": flt(settings.loyalty_points_per_amount) or 10000,
 		"point_value": flt(settings.loyalty_point_value) or 100,
 		"min_redeem_points": max(1, cint(settings.loyalty_min_redeem_points) or 1),
@@ -287,6 +289,19 @@ def apply_loyalty_after_payment(order):
 		member.points = cint(member.points) + earned
 		member.total_earned = cint(member.total_earned) + earned
 		_log_transaction(member, order, "Earn", earned, order.grand_total)
+
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+	from imogi_pos.imogi_pos.utils.planned_features import apply_cashback_amount
+
+	if is_setting_enabled("enable_cashback"):
+		config = get_loyalty_config()
+		cashback_amount = apply_cashback_amount(order.grand_total)
+		if cashback_amount > 0 and flt(config["point_value"]) > 0:
+			cashback_points = int(flt(cashback_amount) / flt(config["point_value"]))
+			if cashback_points > 0:
+				member.points = cint(member.points) + cashback_points
+				member.total_earned = cint(member.total_earned) + cashback_points
+				_log_transaction(member, order, "Cashback", cashback_points, cashback_amount)
 
 	from imogi_pos.imogi_pos.utils.loyalty_tiers import sync_member_tier
 

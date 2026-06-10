@@ -7,6 +7,7 @@ from frappe.modules.import_file import import_file_by_path
 
 from imogi_pos.imogi_pos.utils.business_profile import BUSINESS_RESTAURANT, BUSINESS_UMKM
 from imogi_pos.imogi_pos.utils.flow import get_settings
+from imogi_pos.imogi_pos.utils.workspace_catalog import build_workspace_profile
 
 WORKSPACE_NAME = "Imogi POS"
 WORKSPACE_ROUTE = "imogi-pos"
@@ -34,8 +35,8 @@ def import_workspaces():
 def sync_workspaces(business_type=None):
 	"""Apply one Imogi POS workspace; content changes by business profile."""
 	business_type = business_type or get_settings().business_type or BUSINESS_RESTAURANT
-	folder = "imogi_pos_umkm" if business_type == BUSINESS_UMKM else "imogi_pos"
-	profile = _load_workspace_json(folder)
+	variant = "umkm" if business_type == BUSINESS_UMKM else "restaurant"
+	profile = build_workspace_profile(variant=variant)
 
 	import_workspaces()
 	_apply_profile_to_workspace(profile)

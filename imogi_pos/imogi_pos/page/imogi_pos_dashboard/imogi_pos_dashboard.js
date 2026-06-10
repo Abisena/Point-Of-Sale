@@ -243,7 +243,7 @@ imogi_pos.DashboardBase = class DashboardBase {
 		this.refresh();
 	}
 
-	def dashboard_api_args() {
+	dashboard_api_args() {
 		const args = { date: this.selected_date };
 		if (this.selected_branch) args.branch = this.selected_branch;
 		const company =
@@ -747,6 +747,30 @@ imogi_pos.DashboardBase = class DashboardBase {
 				this.render_panel_close()
 		);
 	}
+
+	render_payment_list(rows) {
+		const el = this.wrapper.find(".imogi-payment-chart");
+		if (!el.length) return;
+		if (!rows.length) {
+			el.html(
+				this.render_panel_open(__("Metode Pembayaran"), "fa-credit-card") +
+					this.render_empty(__("Belum ada transaksi.")) +
+					this.render_panel_close()
+			);
+			return;
+		}
+		el.html(
+			this.render_panel_open(__("Metode Pembayaran"), "fa-credit-card") +
+				`<div class="imogi-dash-bars">${this.render_bars(rows, {
+					label_key: "mode_of_payment",
+					value_key: "amount",
+					tone: "purple",
+					meta_fn: (r) =>
+						`<strong>${format_currency(r.amount)}</strong> <span class="imogi-dash-muted">(${r.count}x)</span>`,
+				})}</div>` +
+				this.render_panel_close()
+		);
+	}
 };
 
 imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.DashboardBase {
@@ -768,6 +792,13 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 		this.add_panel("imogi-low-stock", "warning");
 		this.add_panel("imogi-channel-chart", "blue");
 		this.add_panel("imogi-type-chart", "purple");
+		this.add_panel("imogi-sales-hour", "success");
+		this.add_panel("imogi-sales-category", "brand");
+		this.add_panel("imogi-discount-report", "warning");
+		this.add_panel("imogi-refund-report", "danger");
+		this.add_panel("imogi-payment-chart", "purple");
+		this.add_panel("imogi-food-cost", "orange");
+		this.add_panel("imogi-table-turnover", "slate");
 	}
 
 	render(data) {
@@ -816,7 +847,119 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 			data.by_type || [],
 			"order_type"
 		);
+		this.render_extended_reports(data.extended_reports || {});
+		this.render_payment_list(data.by_payment || []);
 		this.render_footer(data);
+	}
+
+	render_extended_reports(reports) {
+		const hour = (reports.sales_by_hour?.rows || []).map((r) => ({
+			hour_label: `${String(r.hour_slot).padStart(2, "0")}:00`,
+			order_count: r.order_count,
+			sales: r.sales,
+		}));
+		this.render_bars_panel(
+			this.wrapper.find(".imogi-sales-hour"),
+			__("Penjualan per Jam"),
+			"fa-clock-o",
+			hour,
+			{
+				label_key: "hour_label",
+				value_key: "sales",
+				tone: "success",
+				meta_fn: (r) => `${r.order_count} order · ${format_currency(r.sales)}`,
+			}
+		);
+		const cat = reports.sales_by_category?.rows || [];
+		this.render_bars_panel(
+			this.wrapper.find(".imogi-sales-category"),
+			__("Penjualan per Kategori"),
+			"fa-pie-chart",
+			cat,
+			{ label_key: "category", value_key: "sales", tone: "brand" }
+		);
+		const disc = reports.discount_report || {};
+		this.render_simple_list(
+			this.wrapper.find(".imogi-discount-report"),
+			__("Laporan Diskon"),
+			"fa-tag",
+			(disc.rows || []).slice(0, 8).map((r) => ({
+				label: r.name,
+				meta: `${format_currency(r.discount_amount || 0)} · ${frappe.datetime.str_to_user(r.creation)}`,
+			})),
+			disc.count ? `${disc.count} transaksi` : ""
+		);
+		const ref = reports.refund_report || {};
+		this.render_simple_list(
+			this.wrapper.find(".imogi-refund-report"),
+			__("Laporan Refund"),
+			"fa-undo",
+			(ref.rows || []).slice(0, 8).map((r) => ({
+				label: r.name,
+				meta: `${format_currency(r.refunded_amount || 0)} · ${r.status}`,
+			})),
+			ref.count ? `${ref.count} refund` : ""
+		);
+		const food = reports.food_cost_report || {};
+		if (!food.locked) {
+			const $fc = this.wrapper.find(".imogi-food-cost");
+			$fc.html(
+				this.render_panel_open(__("Food Cost"), "fa-pie-chart", food.food_cost_percent ? `${Number(food.food_cost_percent).toFixed(1)}%` : "") +
+					`<div class="imogi-mini-stats imogi-mini-stats--grid">
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Penjualan")}</span><span class="imogi-mini-stat-val">${format_currency(food.sales || 0)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Food Cost")}</span><span class="imogi-mini-stat-val">${format_currency(food.food_cost || 0)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Margin")}</span><span class="imogi-mini-stat-val">${format_currency(food.margin || 0)}</span></div>
+					</div>` +
+					this.render_panel_close()
+			);
+		}
+		const turnover = reports.table_turnover_report?.rows || [];
+		if (!reports.table_turnover_report?.locked) {
+			this.render_simple_list(
+				this.wrapper.find(".imogi-table-turnover"),
+				__("Table Turnover"),
+				"fa-table",
+				turnover.slice(0, 8).map((r) => ({
+					label: r.table_number || r.name,
+					meta: `${r.turns || 0} putaran · ${format_currency(r.sales || 0)}`,
+				}))
+			);
+		}
+	}
+
+	render_bars_panel(el, title, icon, rows, opts) {
+		if (!rows.length) {
+			el.html(this.render_panel_open(title, icon) + this.render_empty(__("Belum ada data.")) + this.render_panel_close());
+			return;
+		}
+		el.html(
+			this.render_panel_open(title, icon) +
+				`<div class="imogi-dash-bars">${this.render_bars(rows, opts)}</div>` +
+				this.render_panel_close()
+		);
+	}
+
+	render_simple_list(el, title, icon, rows, badge) {
+		if (!rows.length) {
+			el.html(
+				this.render_panel_open(title, icon) +
+					this.render_empty(__("Belum ada data.")) +
+					this.render_panel_close()
+			);
+			return;
+		}
+		el.html(
+			this.render_panel_open(title, icon, badge || null) +
+				`<div class="imogi-dash-bars">${rows
+					.map(
+						(r) => `<div class="imogi-dash-bar-head">
+						<span class="imogi-dash-bar-name">${frappe.utils.escape_html(r.label)}</span>
+						<span class="imogi-dash-bar-meta">${frappe.utils.escape_html(r.meta || "")}</span>
+					</div>`
+					)
+					.join("")}</div>` +
+				this.render_panel_close()
+		);
 	}
 };
 
@@ -900,29 +1043,6 @@ imogi_pos.UmkDashboard = class UmkDashboard extends imogi_pos.DashboardBase {
 		this.render_payment_list(data.by_payment || []);
 		this.render_source_list(data.by_source || []);
 		this.render_footer(data);
-	}
-
-	render_payment_list(rows) {
-		const el = this.wrapper.find(".imogi-payment-chart");
-		if (!rows.length) {
-			el.html(
-				this.render_panel_open(__("Metode Pembayaran"), "fa-credit-card") +
-					this.render_empty(__("Belum ada transaksi.")) +
-					this.render_panel_close()
-			);
-			return;
-		}
-		el.html(
-			this.render_panel_open(__("Metode Pembayaran"), "fa-credit-card") +
-				`<div class="imogi-dash-bars">${this.render_bars(rows, {
-					label_key: "mode_of_payment",
-					value_key: "amount",
-					tone: "success",
-					meta_fn: (r) =>
-						`<strong>${format_currency(r.amount)}</strong> <span class="imogi-dash-muted">(${r.count}x)</span>`,
-				})}</div>` +
-				this.render_panel_close()
-		);
 	}
 
 	render_source_list(rows) {

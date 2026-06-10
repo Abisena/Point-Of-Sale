@@ -5,6 +5,7 @@ import secrets
 import frappe
 from frappe import _
 
+from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
 
 
@@ -46,6 +47,7 @@ def regenerate_order_api_credentials():
 		frappe.throw(_("Not permitted to manage Order API credentials"), frappe.PermissionError)
 
 	settings = frappe.get_single("IMOGI POS Settings")
+	require_feature_operational("api_access", settings)
 	api_key, api_secret = _generate_credentials()
 
 	settings.enable_order_api = 1

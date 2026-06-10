@@ -52,6 +52,8 @@ def is_kitchen_item(item_code: str) -> bool:
 
 
 def set_order_flags(order):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
 	if settings.business_type == "UMKM":
 		order.requires_kitchen = 0
@@ -61,14 +63,14 @@ def set_order_flags(order):
 	kitchen_types = [t.strip() for t in (settings.fulfillment_for_order_types or "").split("\n") if t.strip()]
 
 	order.requires_kitchen = 0
-	if settings.enable_kitchen_display:
+	if is_setting_enabled("enable_kitchen_display", settings):
 		for row in order.items:
 			if row.is_kitchen_item or is_kitchen_item(row.item_code):
 				order.requires_kitchen = 1
 				break
 
 	order.requires_fulfillment = 0
-	if settings.enable_fulfillment:
+	if is_setting_enabled("enable_fulfillment", settings):
 		types = kitchen_types or ["Takeaway", "Delivery"]
 		if order.order_type in types:
 			order.requires_fulfillment = 1
@@ -149,16 +151,18 @@ def create_pos_invoice_from_order(order):
 
 
 def create_kitchen_order(order):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
 	ko = frappe.new_doc("IMOGI Kitchen Order")
 	ko.pos_order = order.name
 	ko.company = order.company
 	ko.timer_minutes = 15
 
-	if settings.enable_kitchen_display:
-		station = frappe.db.get_value(
-			"IMOGI Kitchen Station", {"is_active": 1, "company": order.company}, "name"
-		)
+	if is_setting_enabled("enable_kitchen_display", settings):
+		from imogi_pos.imogi_pos.utils.central_kitchen import resolve_kitchen_station
+
+		station = resolve_kitchen_station(order, settings)
 		if station:
 			ko.kitchen_station = station
 

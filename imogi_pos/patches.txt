@@ -9,3 +9,4 @@ imogi_pos.patches.sync_branch_pricing_defaults
 imogi_pos.patches.grant_loyalty_permissions
 imogi_pos.patches.grant_wave3_permissions
 imogi_pos.patches.grant_wave4_permissions
+imogi_pos.patches.setup_role_gating_roles

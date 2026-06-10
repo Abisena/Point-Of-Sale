@@ -28,6 +28,9 @@ class IMOGIPOSOrder(Document):
 		self.calculate_totals()
 		set_order_flags(self)
 		self.validate_payments()
+		from imogi_pos.imogi_pos.utils.approval_hooks import complimentary_discount_check
+
+		complimentary_discount_check(self)
 
 	def before_submit(self):
 		if frappe.flags.get("syncing_from_pos_invoice"):
@@ -67,6 +70,8 @@ class IMOGIPOSOrder(Document):
 			discount_amount = subtotal * flt(self.discount_value) / 100
 		elif self.discount_type == "Amount" and flt(self.discount_value):
 			discount_amount = min(flt(self.discount_value), subtotal)
+		elif self.discount_type == "Complimentary":
+			discount_amount = subtotal
 
 		voucher_discount = flt(self.voucher_discount_amount)
 		loyalty_discount = flt(self.loyalty_discount_amount)
@@ -194,15 +199,17 @@ class IMOGIPOSOrder(Document):
 			self._complete_umkm_order()
 			return
 
+		from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 		settings = get_settings()
 
-		if self.requires_kitchen and settings.enable_kitchen_display and not self.kitchen_order:
+		if self.requires_kitchen and is_setting_enabled("enable_kitchen_display", settings) and not self.kitchen_order:
 			ko = create_kitchen_order(self)
 			self.db_set({"kitchen_order": ko.name, "status": "In Kitchen"})
 			self._notify_status()
 			return
 
-		if self.requires_fulfillment and settings.enable_fulfillment and not self.fulfillment_task:
+		if self.requires_fulfillment and is_setting_enabled("enable_fulfillment", settings) and not self.fulfillment_task:
 			ft = create_fulfillment_task(self)
 			self.db_set({"fulfillment_task": ft.name, "status": "In Fulfillment"})
 			self._notify_status()
@@ -251,8 +258,10 @@ class IMOGIPOSOrder(Document):
 				ko.submit()
 			ko.db_set("status", "Done")
 
+		from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 		settings = get_settings()
-		if self.requires_fulfillment and settings.enable_fulfillment:
+		if self.requires_fulfillment and is_setting_enabled("enable_fulfillment", settings):
 			ft = create_fulfillment_task(self)
 			self.db_set({"fulfillment_task": ft.name, "status": "In Fulfillment"})
 		else:
@@ -302,8 +311,19 @@ class IMOGIPOSOrder(Document):
 		return self.name
 
 	@frappe.whitelist()
-	def action_void_order(self, reason=None):
+	def action_void_order(self, reason=None, approval_code=None):
 		"""Cancel unpaid order or block void on paid orders (use refund instead)."""
+		from imogi_pos.imogi_pos.utils.approval import require_supervisor_approval
+		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+		require_feature_operational("void_order")
+		require_supervisor_approval(
+			"Void",
+			reference_name=self.name,
+			reason=reason,
+			amount=flt(self.grand_total),
+			approval_code=approval_code,
+		)
 		self.check_permission("write")
 
 		if self.status in ("Cancelled", "Refunded"):
@@ -329,8 +349,19 @@ class IMOGIPOSOrder(Document):
 		return self.name
 
 	@frappe.whitelist()
-	def action_refund_order(self, reason=None):
+	def action_refund_order(self, reason=None, approval_code=None):
 		"""Full refund via POS Invoice Return."""
+		from imogi_pos.imogi_pos.utils.approval import require_supervisor_approval
+		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+		require_feature_operational("refund")
+		require_supervisor_approval(
+			"Refund",
+			reference_name=self.name,
+			reason=reason,
+			amount=flt(self.grand_total),
+			approval_code=approval_code,
+		)
 		self.check_permission("write")
 
 		if self.status in ("Cancelled", "Refunded"):
@@ -390,6 +421,9 @@ class IMOGIPOSOrder(Document):
 	@frappe.whitelist()
 	def action_partial_refund(self, refund_items=None, reason=None):
 		"""Refund selected line items (partial refund)."""
+		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+		require_feature_operational("refund")
 		self.check_permission("write")
 
 		if self.status in ("Cancelled", "Refunded"):

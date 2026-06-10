@@ -9,9 +9,11 @@ from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
 
 
 def get_stamp_config(settings=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = settings or get_settings()
 	return {
-		"enabled": cint(settings.enable_stamp_card),
+		"enabled": is_setting_enabled("enable_stamp_card", settings),
 		"target": max(1, cint(settings.stamp_target) or 10),
 		"reward_discount_type": settings.stamp_reward_discount_type or "Percent",
 		"reward_discount_value": flt(settings.stamp_reward_discount_value) or 20,

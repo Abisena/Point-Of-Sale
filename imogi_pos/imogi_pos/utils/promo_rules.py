@@ -11,10 +11,11 @@ from imogi_pos.imogi_pos.utils.flow import resolve_company
 
 
 def is_promo_enabled(settings=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 	from imogi_pos.imogi_pos.utils.flow import get_settings
 
 	settings = settings or get_settings()
-	return cint(settings.enable_promo_rules)
+	return is_setting_enabled("enable_promo_rules", settings)
 
 
 def get_active_promo_rules(company=None):

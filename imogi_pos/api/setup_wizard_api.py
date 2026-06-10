@@ -31,6 +31,13 @@ def get_wizard_state():
 		return {"setup_complete": True}
 
 	doc = get_draft_session()
+	if not doc.subscription_tier:
+		doc.subscription_tier = "Free"
+		if cint(doc.current_step) > 1 or (doc.store_name or "").strip():
+			doc.current_step = min(10, cint(doc.current_step) + 1)
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()
+
 	if not doc.payments:
 		for row in list_payment_methods():
 			doc.append(
@@ -58,7 +65,7 @@ def save_wizard_step(data):
 	_require_access()
 	doc = get_draft_session()
 	doc = update_session(doc, data)
-	if cint(doc.current_step) >= 2 and (doc.store_name or "").strip() and doc.business_type:
+	if cint(doc.current_step) >= 3 and (doc.store_name or "").strip() and doc.business_type:
 		ensure_import_context()
 		doc.reload()
 	return {"session": session_to_dict(doc)}
@@ -98,13 +105,14 @@ def lookup_barcode(barcode):
 
 def _wizard_steps():
 	return [
-		{"no": 1, "key": "identity", "title": _("Identitas toko"), "hint": _("Nama, kota, WA")},
-		{"no": 2, "key": "business", "title": _("Jenis usaha"), "hint": _("Template & COA")},
-		{"no": 3, "key": "cashier", "title": _("Kasir pertama"), "hint": _("Akun & role")},
-		{"no": 4, "key": "products", "title": _("Produk awal"), "hint": _("Item + HPP")},
-		{"no": 5, "key": "supplier", "title": _("Vendor & Supplier"), "hint": _("Supplier default")},
-		{"no": 6, "key": "payment", "title": _("Pembayaran"), "hint": _("Metode & gateway")},
-		{"no": 7, "key": "printer", "title": _("Printer & Hardware"), "hint": _("Struk & koneksi")},
-		{"no": 8, "key": "ops", "title": _("Operasional"), "hint": _("Shift & target")},
-		{"no": 9, "key": "confirm", "title": _("Konfirmasi"), "hint": _("Review & launch")},
+		{"no": 1, "key": "subscription", "title": _("Paket langganan"), "hint": _("Free → Enterprise")},
+		{"no": 2, "key": "identity", "title": _("Identitas toko"), "hint": _("Nama, kota, WA")},
+		{"no": 3, "key": "business", "title": _("Jenis usaha"), "hint": _("Template & COA")},
+		{"no": 4, "key": "cashier", "title": _("Kasir pertama"), "hint": _("Akun & role")},
+		{"no": 5, "key": "products", "title": _("Produk awal"), "hint": _("Item + HPP")},
+		{"no": 6, "key": "supplier", "title": _("Vendor & Supplier"), "hint": _("Supplier default")},
+		{"no": 7, "key": "payment", "title": _("Pembayaran"), "hint": _("Metode & gateway")},
+		{"no": 8, "key": "printer", "title": _("Printer & Hardware"), "hint": _("Struk & koneksi")},
+		{"no": 9, "key": "ops", "title": _("Operasional"), "hint": _("Shift & target")},
+		{"no": 10, "key": "confirm", "title": _("Konfirmasi"), "hint": _("Review & launch")},
 	]

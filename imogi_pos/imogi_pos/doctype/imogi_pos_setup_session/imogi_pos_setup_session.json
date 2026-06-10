@@ -12,6 +12,8 @@
   "column_break_status",
   "completed_on",
   "completed_by",
+  "section_subscription",
+  "subscription_tier",
   "section_store",
   "store_name",
   "store_city",
@@ -91,6 +93,18 @@
    "label": "Diselesaikan Oleh",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_subscription",
+   "fieldtype": "Section Break",
+   "label": "Paket Langganan"
+  },
+  {
+   "default": "Free",
+   "fieldname": "subscription_tier",
+   "fieldtype": "Select",
+   "label": "Paket Langganan",
+   "options": "Free\nStarter\nProfessional\nEnterprise"
   },
   {
    "fieldname": "section_store",

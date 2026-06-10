@@ -504,6 +504,17 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 				this.clear_lock();
 				frappe.boot.imogi_pos_landing_target = "cashier";
 				frappe.boot.imogi_pos_has_open_shift = true;
+				const msg = r.message || {};
+				if (msg.branch_code) {
+					try {
+						localStorage.setItem("imogi_cashier_branch_v1", msg.branch_code);
+					} catch (e) {
+						/* ignore */
+					}
+				}
+				if (imogi_pos.active_cashier) {
+					imogi_pos.active_cashier._catalog_mem = {};
+				}
 				frappe.show_alert(
 					{ message: __("Shift berhasil dibuka. Selamat bekerja!"), indicator: "green" },
 					4

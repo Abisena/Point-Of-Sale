@@ -335,6 +335,11 @@ def _build_catalog_items(ctx, raw, template_rows, batch=None):
 	return _merge_catalog_items(templates, items)
 
 
+def invalidate_pos_catalog_cache():
+	"""Clear server-side catalog list cache (e.g. after Item image/price changes)."""
+	frappe.cache().delete_keys("v2|*")
+
+
 def _catalog_list_cache_key(ctx, branch, item_group, pos_category, start, limit):
 	return "v2|" + "|".join(
 		[

@@ -83,3 +83,9 @@ def check_low_stock():
 	frappe.logger("imogi_pos").info(
 		f"Low stock check: {len(all_low_items)} items across {len(by_warehouse)} warehouse(s)"
 	)
+
+
+def check_billing_expiry_scheduled():
+	from imogi_pos.imogi_pos.utils.subscription_billing import check_billing_expiry
+
+	check_billing_expiry()

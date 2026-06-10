@@ -12,10 +12,7 @@
 	--imogi-input-focus: var(--imogi-navy-700);
 }
 
-body.imogi-pos-themed,
-body:has(.imogi-cashier-page),
-body:has(.imogi-open-shift-page),
-body:has(.imogi-close-shift-page) {
+body.imogi-pos-themed {
 	background-attachment: fixed;
 	background-color: var(--imogi-navy-900);
 	background-image: url("/assets/imogi_pos/images/imogi-login-corner.svg"),
@@ -26,10 +23,7 @@ body:has(.imogi-close-shift-page) {
 	background-size: min(48vw, 520px), clamp(280px, 46vw, 560px), cover;
 }
 
-body.imogi-pos-themed .navbar,
-body:has(.imogi-cashier-page) .navbar,
-body:has(.imogi-open-shift-page) .navbar,
-body:has(.imogi-close-shift-page) .navbar {
+body.imogi-pos-themed .navbar {
 	background: rgba(7, 17, 31, 0.92) !important;
 	backdrop-filter: blur(10px);
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -39,89 +33,50 @@ body.imogi-pos-themed .navbar .navbar-brand,
 body.imogi-pos-themed .navbar > .container > .navbar-nav > .nav-item > .nav-link,
 body.imogi-pos-themed .navbar > .container > .collapse .navbar-nav > .nav-item > .nav-link,
 body.imogi-pos-themed .navbar > .container > .collapse .navbar-nav > .nav-item > .btn-reset:not(.dropdown-menu .btn-reset),
-body.imogi-pos-themed #navbar-breadcrumbs a,
-body:has(.imogi-cashier-page) .navbar .navbar-brand,
-body:has(.imogi-open-shift-page) .navbar .navbar-brand,
-body:has(.imogi-close-shift-page) .navbar .navbar-brand,
-body:has(.imogi-cashier-page) .navbar .nav-link,
-body:has(.imogi-open-shift-page) .navbar .nav-link,
-body:has(.imogi-close-shift-page) .navbar .nav-link,
-body:has(.imogi-cashier-page) #navbar-breadcrumbs a,
-body:has(.imogi-open-shift-page) #navbar-breadcrumbs a,
-body:has(.imogi-close-shift-page) #navbar-breadcrumbs a {
+body.imogi-pos-themed #navbar-breadcrumbs a {
 	color: rgba(255, 255, 255, 0.92) !important;
 }
 
-body.imogi-pos-themed #navbar-breadcrumbs li:not(:last-child)::after,
-body:has(.imogi-cashier-page) #navbar-breadcrumbs li:not(:last-child)::after,
-body:has(.imogi-open-shift-page) #navbar-breadcrumbs li:not(:last-child)::after,
-body:has(.imogi-close-shift-page) #navbar-breadcrumbs li:not(:last-child)::after {
+body.imogi-pos-themed #navbar-breadcrumbs li:not(:last-child)::after {
 	color: rgba(255, 255, 255, 0.45);
 }
 
-body.imogi-pos-themed .navbar .dropdown-menu,
-body:has(.imogi-cashier-page) .navbar .dropdown-menu,
-body:has(.imogi-open-shift-page) .navbar .dropdown-menu,
-body:has(.imogi-close-shift-page) .navbar .dropdown-menu {
+body.imogi-pos-themed .navbar .dropdown-menu {
 	background: #fff !important;
 	border: 1px solid #e4e4e7 !important;
 	box-shadow: 0 12px 32px rgba(7, 17, 31, 0.18) !important;
 }
 
 body.imogi-pos-themed .navbar .dropdown-menu .dropdown-item,
-body.imogi-pos-themed .navbar .dropdown-menu .btn-reset,
-body:has(.imogi-cashier-page) .navbar .dropdown-menu .dropdown-item,
-body:has(.imogi-cashier-page) .navbar .dropdown-menu .btn-reset,
-body:has(.imogi-open-shift-page) .navbar .dropdown-menu .dropdown-item,
-body:has(.imogi-open-shift-page) .navbar .dropdown-menu .btn-reset,
-body:has(.imogi-close-shift-page) .navbar .dropdown-menu .dropdown-item,
-body:has(.imogi-close-shift-page) .navbar .dropdown-menu .btn-reset {
+body.imogi-pos-themed .navbar .dropdown-menu .btn-reset {
 	color: #3f3f46 !important;
 }
 
 body.imogi-pos-themed .navbar .dropdown-menu .dropdown-item:hover,
-body.imogi-pos-themed .navbar .dropdown-menu .btn-reset:hover,
-body:has(.imogi-cashier-page) .navbar .dropdown-menu .dropdown-item:hover,
-body:has(.imogi-cashier-page) .navbar .dropdown-menu .btn-reset:hover,
-body:has(.imogi-open-shift-page) .navbar .dropdown-menu .dropdown-item:hover,
-body:has(.imogi-open-shift-page) .navbar .dropdown-menu .btn-reset:hover,
-body:has(.imogi-close-shift-page) .navbar .dropdown-menu .dropdown-item:hover,
-body:has(.imogi-close-shift-page) .navbar .dropdown-menu .btn-reset:hover {
+body.imogi-pos-themed .navbar .dropdown-menu .btn-reset:hover {
 	background: #f4f4f5 !important;
 	color: #18181b !important;
 }
 
-body.imogi-pos-themed .navbar .dropdown-divider,
-body:has(.imogi-cashier-page) .navbar .dropdown-divider,
-body:has(.imogi-open-shift-page) .navbar .dropdown-divider,
-body:has(.imogi-close-shift-page) .navbar .dropdown-divider {
+body.imogi-pos-themed .navbar .dropdown-divider {
 	border-top-color: #e4e4e7 !important;
 }
 
-body.imogi-pos-themed .navbar .search-bar input,
-body:has(.imogi-cashier-page) .navbar .search-bar input,
-body:has(.imogi-open-shift-page) .navbar .search-bar input,
-body:has(.imogi-close-shift-page) .navbar .search-bar input {
+body.imogi-pos-themed .navbar .search-bar input {
 	background: rgba(255, 255, 255, 0.12) !important;
 	border-color: rgba(255, 255, 255, 0.18) !important;
 	color: #fff !important;
 }
 
-body:has(.imogi-cashier-page) .navbar .search-bar input::placeholder,
-body:has(.imogi-open-shift-page) .navbar .search-bar input::placeholder,
-body:has(.imogi-close-shift-page) .navbar .search-bar input::placeholder {
+body.imogi-pos-themed .navbar .search-bar input::placeholder {
 	color: rgba(255, 255, 255, 0.55);
 }
 
-body:has(.imogi-cashier-page) .navbar .search-bar .search-icon,
-body:has(.imogi-open-shift-page) .navbar .search-bar .search-icon,
-body:has(.imogi-close-shift-page) .navbar .search-bar .search-icon {
+body.imogi-pos-themed .navbar .search-bar .search-icon {
 	color: rgba(255, 255, 255, 0.65);
 }
 
-body:has(.imogi-cashier-page) .navbar-brand .app-logo,
-body:has(.imogi-open-shift-page) .navbar-brand .app-logo,
-body:has(.imogi-close-shift-page) .navbar-brand .app-logo {
+body.imogi-pos-themed .navbar-brand .app-logo {
 	background: rgba(255, 255, 255, 0.95);
 	border-radius: 6px;
 	height: 28px;
@@ -131,84 +86,75 @@ body:has(.imogi-close-shift-page) .navbar-brand .app-logo {
 	width: auto;
 }
 
-body.imogi-pos-themed .navbar-brand .app-logo {
-	background: rgba(255, 255, 255, 0.95);
-	border-radius: 6px;
-	padding: 2px 4px;
-}
-
-body.imogi-pos-themed .layout-main-section-wrapper,
-body:has(.imogi-cashier-page) .layout-main-section-wrapper,
-body:has(.imogi-open-shift-page) .layout-main-section-wrapper,
-body:has(.imogi-close-shift-page) .layout-main-section-wrapper {
+body.imogi-pos-themed .layout-main-section-wrapper {
 	background: transparent !important;
 }
 
-body:has(.imogi-cashier-page) .imogi-cashier-page .layout-main-section-wrapper,
-body:has(.imogi-cashier-page) .imogi-cashier-page .layout-main-section,
-body:has(.imogi-cashier-page) .imogi-cashier-page .page-body,
-body:has(.imogi-open-shift-page) .page-body,
-body:has(.imogi-close-shift-page) .page-body {
+.imogi-cashier-page .layout-main-section-wrapper,
+.imogi-cashier-page .layout-main-section,
+.imogi-cashier-page .page-body,
+.imogi-open-shift-page .page-body,
+.imogi-close-shift-page .page-body {
 	background: transparent !important;
 }
 
 /* Primary buttons */
-body:has(.imogi-cashier-page) .imogi-cashier-btn-primary,
-body:has(.imogi-cashier-page) .imogi-cashier-pay,
-body:has(.imogi-cashier-page) .imogi-cashier-dock-badge,
-body:has(.imogi-cashier-page) .imogi-cashier-hold-count,
-body:has(.imogi-cashier-page) .imogi-cashier-group-btn.is-active,
-body:has(.imogi-cashier-page) .imogi-cashier-order-type-btn.is-active,
-body:has(.imogi-open-shift-page) .imogi-shift-btn-primary,
-body:has(.imogi-open-shift-page) .imogi-shift-store-icon,
-body:has(.imogi-close-shift-page) .imogi-close-btn-primary.is-balanced {
+.imogi-cashier-page .imogi-cashier-btn-primary,
+.imogi-cashier-page .imogi-cashier-pay,
+.imogi-cashier-page .imogi-cashier-dock-badge,
+.imogi-cashier-page .imogi-cashier-hold-count,
+.imogi-cashier-page .imogi-cashier-group-btn.is-active,
+.imogi-cashier-page .imogi-cashier-order-type-btn.is-active,
+.imogi-open-shift-page .imogi-shift-btn-primary,
+.imogi-open-shift-page .imogi-shift-store-icon,
+.imogi-close-shift-page .imogi-close-btn-primary.is-balanced {
 	background: var(--imogi-primary) !important;
 	border-color: var(--imogi-primary) !important;
 	color: #fff !important;
 }
 
-body:has(.imogi-cashier-page) .imogi-cashier-btn-primary:hover,
-body:has(.imogi-cashier-page) .imogi-cashier-btn-primary:focus,
-body:has(.imogi-cashier-page) .imogi-cashier-pay:hover,
-body:has(.imogi-cashier-page) .imogi-cashier-pay:focus,
-body:has(.imogi-open-shift-page) .imogi-shift-btn-primary:hover,
-body:has(.imogi-open-shift-page) .imogi-shift-btn-primary:focus,
-body:has(.imogi-close-shift-page) .imogi-close-btn-primary.is-balanced:hover {
+.imogi-cashier-page .imogi-cashier-btn-primary:hover,
+.imogi-cashier-page .imogi-cashier-btn-primary:focus,
+.imogi-cashier-page .imogi-cashier-pay:hover,
+.imogi-cashier-page .imogi-cashier-pay:focus,
+.imogi-open-shift-page .imogi-shift-btn-primary:hover,
+.imogi-open-shift-page .imogi-shift-btn-primary:focus,
+.imogi-close-shift-page .imogi-close-btn-primary.is-balanced:hover {
 	background: var(--imogi-primary-hover) !important;
 	color: #fff !important;
 }
 
 /* Themed inputs */
-body:has(.imogi-cashier-page) .imogi-cashier-search,
-body:has(.imogi-cashier-page) .imogi-cashier-customer-row input,
-body:has(.imogi-cashier-page) .imogi-cashier-discount-row input,
-body:has(.imogi-cashier-page) .imogi-cashier-discount-row select,
-body:has(.imogi-open-shift-page) .imogi-shift-input,
-body:has(.imogi-open-shift-page) .imogi-shift-denom-qty,
-body:has(.imogi-close-shift-page) .imogi-close-input,
-body:has(.imogi-close-shift-page) .imogi-close-denom-qty {
+.imogi-cashier-page .imogi-cashier-search,
+.imogi-cashier-page .imogi-cashier-customer-row input,
+.imogi-cashier-page .imogi-cashier-discount-row input,
+.imogi-cashier-page .imogi-cashier-discount-row select,
+.imogi-open-shift-page .imogi-shift-input,
+.imogi-open-shift-page .imogi-shift-denom-qty,
+.imogi-close-shift-page .imogi-close-input,
+.imogi-close-shift-page .imogi-close-denom-qty {
 	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-body:has(.imogi-cashier-page) .imogi-cashier-search:hover:not(:focus),
-body:has(.imogi-cashier-page) .imogi-cashier-customer-row input:hover:not(:focus),
-body:has(.imogi-cashier-page) .imogi-cashier-discount-row input:hover:not(:focus),
-body:has(.imogi-open-shift-page) .imogi-shift-input:hover:not(:focus),
-body:has(.imogi-open-shift-page) .imogi-shift-denom-qty:hover:not(:focus),
-body:has(.imogi-close-shift-page) .imogi-close-input:hover:not(:focus),
-body:has(.imogi-close-shift-page) .imogi-close-denom-qty:hover:not(:focus) {
+.imogi-cashier-page .imogi-cashier-search:hover:not(:focus),
+.imogi-cashier-page .imogi-cashier-customer-row input:hover:not(:focus),
+.imogi-cashier-page .imogi-cashier-discount-row input:hover:not(:focus),
+.imogi-open-shift-page .imogi-shift-input:hover:not(:focus),
+.imogi-open-shift-page .imogi-shift-denom-qty:hover:not(:focus),
+.imogi-close-shift-page .imogi-close-input:hover:not(:focus),
+.imogi-close-shift-page .imogi-close-denom-qty:hover:not(:focus) {
 	background: #fff !important;
 	border-color: var(--imogi-input-hover) !important;
 	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
 }
 
-body:has(.imogi-cashier-page) .imogi-cashier-search:focus,
-body:has(.imogi-cashier-page) .imogi-cashier-customer-row input:focus,
-body:has(.imogi-cashier-page) .imogi-cashier-discount-row input:focus,
-body:has(.imogi-open-shift-page) .imogi-shift-input:focus,
-body:has(.imogi-open-shift-page) .imogi-shift-denom-qty:focus,
-body:has(.imogi-close-shift-page) .imogi-close-input:focus,
-body:has(.imogi-close-shift-page) .imogi-close-denom-qty:focus {
+.imogi-cashier-page .imogi-cashier-search:focus,
+.imogi-cashier-page .imogi-cashier-customer-row input:focus,
+.imogi-cashier-page .imogi-cashier-discount-row input:focus,
+.imogi-open-shift-page .imogi-shift-input:focus,
+.imogi-open-shift-page .imogi-shift-denom-qty:focus,
+.imogi-close-shift-page .imogi-close-input:focus,
+.imogi-close-shift-page .imogi-close-denom-qty:focus {
 	background: #fff !important;
 	border-color: var(--imogi-input-focus) !important;
 	box-shadow: 0 0 0 3px rgba(26, 51, 82, 0.18) !important;
@@ -216,23 +162,16 @@ body:has(.imogi-close-shift-page) .imogi-close-denom-qty:focus {
 }
 
 /* Cards — solid white body, navy headers */
-body.imogi-pos-themed .imogi-cashier-panel,
-body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-card,
-body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-summary-card,
-body.imogi-pos-themed .imogi-close-shift-page .imogi-close-card,
-body.imogi-pos-themed .imogi-close-shift-page .imogi-close-verify-card,
-body:has(.imogi-cashier-page) .imogi-cashier-panel,
-body:has(.imogi-open-shift-page) .imogi-shift-card,
-body:has(.imogi-open-shift-page) .imogi-shift-summary-card,
-body:has(.imogi-close-shift-page) .imogi-close-card,
-body:has(.imogi-close-shift-page) .imogi-close-verify-card {
+.imogi-cashier-page .imogi-cashier-panel,
+.imogi-open-shift-page .imogi-shift-card,
+.imogi-open-shift-page .imogi-shift-summary-card,
+.imogi-close-shift-page .imogi-close-card,
+.imogi-close-shift-page .imogi-close-verify-card {
 	background: #fff !important;
 	border-color: #e4e4e7 !important;
 	box-shadow: 0 12px 32px rgba(7, 17, 31, 0.12);
 }
 
-body.imogi-pos-themed .imogi-cashier-shift-bar,
-body.imogi-pos-themed .imogi-cashier-page > .imogi-cashier-shift-bar,
 .imogi-cashier-page > .imogi-cashier-shift-bar,
 .imogi-cashier-shift-bar {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
@@ -241,30 +180,23 @@ body.imogi-pos-themed .imogi-cashier-page > .imogi-cashier-shift-bar,
 	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
 }
 
-body.imogi-pos-themed .imogi-cashier-panel-head,
-body.imogi-pos-themed .imogi-open-shift-page .imogi-shift-header,
-body.imogi-pos-themed .imogi-close-shift-page .imogi-close-header,
-body:has(.imogi-cashier-page) .imogi-cashier-panel-head,
-body:has(.imogi-open-shift-page) .imogi-shift-header,
-body:has(.imogi-close-shift-page) .imogi-close-header {
+.imogi-cashier-page .imogi-cashier-panel-head,
+.imogi-open-shift-page .imogi-shift-header,
+.imogi-close-shift-page .imogi-close-header {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
 	border-color: rgba(255, 255, 255, 0.12) !important;
 	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
 }
 
-body.imogi-pos-themed .imogi-cashier-shift-text,
-body.imogi-pos-themed .imogi-cashier-shift-text a,
 .imogi-cashier-shift-text,
 .imogi-cashier-shift-text a {
 	color: #fff !important;
 }
 
-body.imogi-pos-themed .imogi-cashier-shift-text .fa,
 .imogi-cashier-shift-text .fa {
 	color: rgba(255, 255, 255, 0.72) !important;
 }
 
-body.imogi-pos-themed .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
 .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn {
 	background: rgba(255, 255, 255, 0.12) !important;
 	border: 1px solid rgba(255, 255, 255, 0.24) !important;
@@ -273,45 +205,21 @@ body.imogi-pos-themed .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
 	font-weight: 700 !important;
 }
 
-body.imogi-pos-themed .imogi-cashier-panel-head h5,
-body.imogi-pos-themed .imogi-shift-header-title,
-body.imogi-pos-themed .imogi-close-header-title,
-body:has(.imogi-cashier-page) .imogi-cashier-panel-head h5,
-body:has(.imogi-open-shift-page) .imogi-shift-header-title,
-body:has(.imogi-close-shift-page) .imogi-close-header-title {
+.imogi-cashier-page .imogi-cashier-panel-head h5,
+.imogi-open-shift-page .imogi-shift-header-title,
+.imogi-close-shift-page .imogi-close-header-title {
 	color: #fff !important;
 }
 
-body.imogi-pos-themed .imogi-cashier-shift-text a,
-body:has(.imogi-cashier-page) .imogi-cashier-shift-text a {
-	color: #fff !important;
-}
-
-body.imogi-pos-themed .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
-body:has(.imogi-cashier-page) .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn {
-	background: rgba(255, 255, 255, 0.12) !important;
-	border: 1px solid rgba(255, 255, 255, 0.24) !important;
-	border-radius: 8px !important;
-	color: #fff !important;
-	font-weight: 700 !important;
-}
-
-body.imogi-pos-themed .imogi-cashier-head-icon,
-body.imogi-pos-themed .imogi-cashier-meta,
-body.imogi-pos-themed .imogi-shift-header-sub,
-body.imogi-pos-themed .imogi-close-header-sub,
-body:has(.imogi-cashier-page) .imogi-cashier-head-icon,
-body:has(.imogi-cashier-page) .imogi-cashier-meta,
-body:has(.imogi-open-shift-page) .imogi-shift-header-sub,
-body:has(.imogi-close-shift-page) .imogi-close-header-sub {
+.imogi-cashier-page .imogi-cashier-head-icon,
+.imogi-cashier-page .imogi-cashier-meta,
+.imogi-open-shift-page .imogi-shift-header-sub,
+.imogi-close-shift-page .imogi-close-header-sub {
 	color: rgba(255, 255, 255, 0.72) !important;
 }
 
 @media (max-width: 768px) {
-	body.imogi-pos-themed,
-	body:has(.imogi-cashier-page),
-	body:has(.imogi-open-shift-page),
-	body:has(.imogi-close-shift-page) {
+	body.imogi-pos-themed {
 		background-size: min(70vw, 400px), min(78vw, 340px), cover;
 	}
 }

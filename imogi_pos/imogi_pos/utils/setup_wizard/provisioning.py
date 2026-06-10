@@ -385,7 +385,11 @@ def apply_imogi_settings(session, company, warehouse, pos_profile):
 	flow = get_flow_profile(session.business_type)
 	template = get_business_template(session.business_type)
 
+	from imogi_pos.imogi_pos.utils.feature_registry import normalize_tier
+
 	settings = frappe.get_single("IMOGI POS Settings")
+	if getattr(session, "subscription_tier", None):
+		settings.subscription_tier = normalize_tier(session.subscription_tier)
 	settings.default_company = company
 	settings.default_warehouse = warehouse
 	settings.default_pos_profile = pos_profile

@@ -251,7 +251,7 @@ def sync_to_pos_closing_entry(doc):
 	frappe.flags.ignore_permissions = True
 	try:
 		closing.submit()
-	except frappe.LinkValidationError:
+	except (frappe.LinkValidationError, frappe.PermissionError):
 		frappe.throw(_extract_closing_failure_message(), title=_("Gagal Tutup Shift"))
 	except frappe.ValidationError as exc:
 		if "Reference Name" in str(exc):

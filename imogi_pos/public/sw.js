@@ -5,6 +5,7 @@ const SHELL_ASSETS = [
 	"/assets/imogi_pos/css/imogi_pos.css",
 	"/assets/imogi_pos/js/imogi_pos_boot.js",
 	"/assets/imogi_pos/js/imogi_pos_loyalty.js",
+	"/assets/imogi_pos/js/imogi_pos_feature_upgrade.js",
 	"/assets/imogi_pos/js/imogi_pos_pwa.js",
 	"/assets/imogi_pos/js/imogi_pos_qris_payment.js",
 	"/assets/imogi_pos/js/imogi_pos_thermal_print.js",

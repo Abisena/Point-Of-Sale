@@ -69,6 +69,11 @@ def save_hold(
 	pos_profile=None,
 ):
 	_require_cashier_access()
+	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational, validate_order_type
+
+	require_feature_operational("hold_order")
+	if order_type:
+		validate_order_type(order_type)
 	parsed = json.loads(cart) if isinstance(cart, str) else cart
 	if not parsed:
 		frappe.throw(_("Keranjang kosong"))

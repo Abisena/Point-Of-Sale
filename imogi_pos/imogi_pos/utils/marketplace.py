@@ -15,8 +15,10 @@ MARKETPLACE_CHANNELS = ("GrabFood", "GoFood", "ShopeeFood")
 
 
 def is_marketplace_enabled(settings=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = settings or get_settings()
-	return cint(settings.enable_marketplace_orders)
+	return is_setting_enabled("enable_marketplace_orders", settings)
 
 
 def verify_marketplace_signature(payload, signature, settings=None):
@@ -33,6 +35,8 @@ def verify_marketplace_signature(payload, signature, settings=None):
 
 def ingest_marketplace_order(payload, company=None):
 	"""Create awaiting-payment order from marketplace webhook payload."""
+	if not is_marketplace_enabled():
+		frappe.throw(_("Marketplace orders are disabled"), title=_("Fitur Nonaktif"))
 	settings = get_settings()
 	company = resolve_company(company, settings)
 	if not is_marketplace_enabled(settings):

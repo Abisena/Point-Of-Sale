@@ -337,6 +337,80 @@ def retire_orphan_variants(template_code, active_combos, stats=None):
 		_remove_variant_item(variant_code, stats)
 
 
+def sync_template_attributes_from_variants(template_code):
+	"""Repair template rows that have variants but an empty Attributes table (blocks Item save/image)."""
+	if not template_code or not frappe.db.exists("Item", template_code):
+		return False
+	if not frappe.db.get_value("Item", template_code, "has_variants"):
+		return False
+	if frappe.get_all("Item Variant Attribute", filters={"parent": template_code}, limit_page_length=1):
+		return False
+
+	attr_values = {}
+	for variant_code in frappe.get_all("Item", filters={"variant_of": template_code}, pluck="name"):
+		for row in frappe.get_all(
+			"Item Variant Attribute",
+			filters={"parent": variant_code},
+			fields=["attribute", "attribute_value"],
+		):
+			if row.attribute and row.attribute_value:
+				attr_values.setdefault(row.attribute, set()).add(row.attribute_value)
+
+	if not attr_values:
+		return False
+
+	for attribute_name, values in attr_values.items():
+		ensure_item_attribute(attribute_name, sorted(values))
+
+	item = frappe.get_doc("Item", template_code)
+	if not item.variant_based_on:
+		item.variant_based_on = "Item Attribute"
+	item.attributes = []
+	for attribute_name in sorted(attr_values.keys()):
+		item.append("attributes", {"attribute": attribute_name})
+	item.flags.ignore_validate = True
+	item.save(ignore_permissions=True)
+	clear_attribute_value_cache()
+	return True
+
+
+def repair_variant_based_on():
+	"""Set variant_based_on on templates where it was left empty (blocks Item form save)."""
+	names = frappe.db.sql(
+		"""
+		SELECT name FROM `tabItem`
+		WHERE has_variants = 1 AND IFNULL(variant_based_on, '') = ''
+		""",
+		pluck=True,
+	)
+	for name in names:
+		frappe.db.set_value("Item", name, "variant_based_on", "Item Attribute", update_modified=False)
+	if names:
+		frappe.db.commit()
+	return names
+
+
+def repair_broken_variant_templates():
+	"""One-shot repair for templates with has_variants but no attribute rows."""
+	repair_variant_based_on()
+	broken = frappe.db.sql(
+		"""
+		SELECT name FROM `tabItem`
+		WHERE has_variants = 1 AND disabled = 0
+			AND name NOT IN (
+				SELECT DISTINCT parent FROM `tabItem Variant Attribute` WHERE parent IS NOT NULL
+			)
+		""",
+		as_dict=True,
+	)
+	fixed = []
+	for row in broken:
+		if sync_template_attributes_from_variants(row.name):
+			fixed.append(row.name)
+	repair_variant_based_on()
+	return fixed
+
+
 def upsert_template_item(base_name, attribute_values_map, block_meta, settings, update_existing=1):
 	"""Create or update a variant template item."""
 	for attribute_name, values in attribute_values_map.items():
@@ -371,6 +445,9 @@ def upsert_template_item(base_name, attribute_values_map, block_meta, settings, 
 	else:
 		item.flags.ignore_validate = True
 		item.save(ignore_permissions=True)
+
+	if not item.attributes:
+		sync_template_attributes_from_variants(item_code)
 
 	return action, item_code
 

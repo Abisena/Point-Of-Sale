@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-06-09 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "phone",
+  "party_size",
+  "queued_at",
+  "seated_at",
+  "restaurant_table",
+  "company",
+  "status",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Tamu",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Telepon"
+  },
+  {
+   "fieldname": "party_size",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Jumlah Tamu"
+  },
+  {
+   "fieldname": "queued_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Antrian Sejak"
+  },
+  {
+   "fieldname": "seated_at",
+   "fieldtype": "Datetime",
+   "label": "Duduk Pada"
+  },
+  {
+   "fieldname": "restaurant_table",
+   "fieldtype": "Link",
+   "label": "Meja",
+   "options": "IMOGI Restaurant Table"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "default": "Waiting",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Waiting\nSeated\nCancelled"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Catatan"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Waiting List",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Sales User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

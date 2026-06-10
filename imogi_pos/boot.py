@@ -81,8 +81,10 @@ def get_cashier_landing(user=None):
 	if not should_use_cashier_home(user):
 		return None
 
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
 	settings = get_settings()
-	if not cint(settings.enable_pos_shift):
+	if not is_setting_enabled("enable_pos_shift", settings):
 		return "cashier"
 
 	if _get_pos_opening(user):
@@ -110,6 +112,19 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_logo_url = IMOGI_POS_LOGO
 	settings = get_settings()
 	bootinfo.imogi_pos_setup_complete = bool(settings.setup_complete)
+	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
+
+	bootinfo.imogi_pos_subscription_tier = get_subscription_tier(settings)
+	from imogi_pos.imogi_pos.utils.workspace_tier_gating import serialize_workspace_link_access
+
+	bootinfo.imogi_pos_workspace_tier_access = serialize_workspace_link_access(
+		bootinfo.imogi_pos_subscription_tier
+	)
+	from imogi_pos.imogi_pos.utils.role_gating import serialize_user_role_context
+
+	bootinfo.imogi_pos_role_gating_enabled = bool(getattr(settings, "enable_role_gating", 0))
+	bootinfo.imogi_pos_approval_workflow_enabled = bool(getattr(settings, "enable_approval_workflow", 0))
+	bootinfo.imogi_pos_role_context = serialize_user_role_context(frappe.session.user, settings)
 	bootinfo.imogi_pos_business_type = settings.business_type or ""
 	bootinfo.imogi_pos_workspace_route = get_workspace_route(settings.business_type)
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
@@ -121,11 +136,13 @@ def boot_session(bootinfo):
 		return
 
 	bootinfo.imogi_pos_cashier_home = True
-	bootinfo.imogi_pos_enable_shift = cint(settings.enable_pos_shift)
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
+	bootinfo.imogi_pos_enable_shift = is_setting_enabled("enable_pos_shift", settings)
 	bootinfo.imogi_pos_default_company = resolve_company(None, settings) if settings.setup_complete else (settings.default_company or "")
 	bootinfo.imogi_pos_thermal_mode = settings.thermal_print_mode or "Browser"
-	bootinfo.imogi_pos_payment_gateway_enabled = cint(settings.enable_payment_gateway)
-	bootinfo.imogi_pos_loyalty_enabled = cint(settings.enable_loyalty)
+	bootinfo.imogi_pos_payment_gateway_enabled = is_setting_enabled("enable_payment_gateway", settings)
+	bootinfo.imogi_pos_loyalty_enabled = is_setting_enabled("enable_loyalty", settings)
 	bootinfo.imogi_pos_default_pos_profile = settings.default_pos_profile or ""
 	bootinfo.imogi_pos_has_open_shift = bool(_get_pos_opening()) if bootinfo.imogi_pos_enable_shift else False
 	bootinfo.imogi_pos_landing_target = get_cashier_landing()

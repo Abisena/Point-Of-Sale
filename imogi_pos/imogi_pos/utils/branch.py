@@ -187,17 +187,18 @@ def get_accessible_branches(user=None, company=None, include_inactive=0, all_com
 	allowed_profiles = _allowed_pos_profiles(user)
 	manager = _user_can_access_all_branches(user)
 
-	if company:
-		filters["company"] = company
-	elif cint(all_companies) and manager:
-		pass
-	elif not manager and not allowed_profiles:
+	if manager:
+		if company:
+			filters["company"] = company
+	elif allowed_profiles:
+		filters["pos_profile"] = ["in", allowed_profiles]
+		if company:
+			filters["company"] = company
+	else:
+		# Cashier without explicit POS Profile grants: default company only.
 		default_co = frappe.defaults.get_user_default("Company") or settings.default_company
 		if default_co:
 			filters["company"] = default_co
-
-	if allowed_profiles and not manager:
-		filters["pos_profile"] = ["in", allowed_profiles]
 
 	rows = frappe.get_all(
 		"IMOGI Branch",
@@ -283,8 +284,13 @@ def ensure_default_branch(settings=None):
 	return doc.name
 
 
-def resolve_active_branch(branch_code=None, pos_profile=None, user=None):
-	"""Pick branch + POS context for the current cashier session."""
+def resolve_active_branch(branch_code=None, pos_profile=None, user=None, strict=False):
+	"""Pick branch + POS context for the current cashier session.
+
+	When *strict* is False (default bootstrap), a stale branch from localStorage or user
+	default that the cashier can no longer access falls back to the first allowed branch.
+	When *strict* is True (explicit branch switch), missing access raises PermissionError.
+	"""
 	user = user or frappe.session.user
 	settings = get_settings()
 	ensure_default_branch(settings)
@@ -297,19 +303,23 @@ def resolve_active_branch(branch_code=None, pos_profile=None, user=None):
 		if default_code:
 			branch = get_branch(branch_code=default_code)
 
-	company_scope = branch["company"] if branch else None
-	accessible = get_accessible_branches(user=user, company=company_scope)
+	accessible = get_accessible_branches(user=user)
 	accessible_map = {row["branch_code"]: row for row in accessible}
+	stale_branch_code = None
 	if branch and branch["branch_code"] not in accessible_map:
-		# Retry without company filter (cross-company cashier permissions)
-		accessible = get_accessible_branches(user=user)
-		accessible_map = {row["branch_code"]: row for row in accessible}
-		if branch["branch_code"] not in accessible_map:
-			frappe.throw(_("Anda tidak punya akses ke cabang {0}").format(branch["branch_name"]), frappe.PermissionError)
+		if strict:
+			frappe.throw(
+				_("Anda tidak punya akses ke cabang {0}").format(branch["branch_name"]),
+				frappe.PermissionError,
+			)
+		stale_branch_code = branch["branch_code"]
+		branch = None
 
 	if not branch and accessible:
 		defaults = [row for row in accessible if cint(row.get("is_default"))]
 		branch = defaults[0] if defaults else accessible[0]
+		if stale_branch_code:
+			set_user_default_branch_code(branch["branch_code"], user)
 
 	if not branch:
 		# Legacy single-store fallback before branch records exist

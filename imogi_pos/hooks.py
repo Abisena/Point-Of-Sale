@@ -43,8 +43,12 @@ app_include_js = [
 	"/assets/imogi_pos/js/imogi_pos_thermal_print.js",
 	"/assets/imogi_pos/js/imogi_pos_qris_payment.js",
 	"/assets/imogi_pos/js/imogi_pos_loyalty.js",
+	"/assets/imogi_pos/js/imogi_pos_feature_upgrade.js",
+	"/assets/imogi_pos/js/imogi_pos_tier_picker.js",
+	"/assets/imogi_pos/js/imogi_pos_cashier_extras.js",
 	"/assets/imogi_pos/js/imogi_pos_pwa.js",
 	"/assets/imogi_pos/js/imogi_pos_offline.js",
+	"/assets/imogi_pos/js/imogi_pos_workspace.js",
 ]
 
 # include js, css files in header of web template
@@ -194,6 +198,18 @@ doc_events = {
 	"Sales Invoice": {
 		"before_submit": "imogi_pos.imogi_pos.utils.pos_consolidation.before_consolidated_sales_invoice_submit",
 	},
+	"Item": {
+		"on_update": "imogi_pos.imogi_pos.utils.catalog_cache.invalidate_catalog_cache_on_item_update",
+	},
+	"Purchase Order": {
+		"before_submit": "imogi_pos.imogi_pos.utils.approval_hooks.purchase_order_before_submit",
+	},
+	"Stock Entry": {
+		"before_submit": "imogi_pos.imogi_pos.utils.approval_hooks.stock_entry_before_submit",
+	},
+	"IMOGI Kitchen Order": {
+		"after_insert": "imogi_pos.imogi_pos.utils.planned_features.on_kitchen_order_created",
+	},
 }
 
 # Scheduled Tasks
@@ -203,6 +219,9 @@ scheduler_events = {
 	"cron": {
 		"* * * * *": ["imogi_pos.tasks.check_low_stock_scheduled"],
 	},
+	"daily": [
+		"imogi_pos.tasks.check_billing_expiry_scheduled",
+	],
 }
 
 # Testing
@@ -213,9 +232,9 @@ scheduler_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "imogi_pos.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.desk.desktop.get_desktop_page": "imogi_pos.overrides.desktop.get_desktop_page",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

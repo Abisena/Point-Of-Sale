@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hdr_flow\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI Flow — Cut &amp; Cups</b></span>\",\"col\":12}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":3}},{\"id\":\"sc_kds\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Kitchen Display\",\"col\":3}},{\"id\":\"sc_ful\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fulfillment Queue\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Process Steps</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 01-02 Order & Payment\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 03-04 Kitchen & Fulfillment\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Step 05-07 Service & Analytics\",\"col\":4}}]",
+ "content": "[{\"id\":\"hdr_flow\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — Restoran &amp; Cafe</b></span><br><span class=\\\"text-muted\\\">Semua modul IMOGI dalam satu workspace — tanpa perlu search.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":2}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":2}},{\"id\":\"sc_kds\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Kitchen Display\",\"col\":2}},{\"id\":\"sc_ful\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fulfillment Queue\",\"col\":2}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":2}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":2}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Order & Pembayaran\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Kitchen & Fulfillment\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Meja & Layanan\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Operasional\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c7\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan & Analitik\",\"col\":4}},{\"id\":\"c8\",\"type\":\"card\",\"data\":{\"card_name\":\"Inventori & Pembelian\",\"col\":4}},{\"id\":\"c9\",\"type\":\"card\",\"data\":{\"card_name\":\"Keuangan & Audit\",\"col\":4}}]",
  "creation": "2026-06-04 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -15,20 +15,10 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Step 01-02 Order & Payment",
-   "link_count": 4,
+   "label": "Order & Pembayaran",
+   "link_count": 6,
    "onboard": 0,
    "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "IMOGI POS Order",
-   "link_count": 0,
-   "link_to": "IMOGI POS Order",
-   "link_type": "DocType",
-   "onboard": 1,
-   "type": "Link"
   },
   {
    "hidden": 0,
@@ -43,6 +33,25 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "IMOGI POS Order",
+   "link_count": 0,
+   "link_to": "IMOGI POS Order",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Invoice",
+   "link_count": 0,
+   "link_to": "POS Invoice",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Restaurant Table",
    "link_count": 0,
    "link_to": "IMOGI Restaurant Table",
@@ -52,35 +61,26 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "IMOGI POS Settings",
+   "label": "Approval Request",
    "link_count": 0,
-   "link_to": "IMOGI POS Settings",
+   "link_to": "IMOGI POS Approval Request",
    "link_type": "DocType",
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "IMOGI Branch",
+   "label": "Gateway Payment",
    "link_count": 0,
-   "link_to": "IMOGI Branch",
+   "link_to": "IMOGI POS Gateway Payment",
    "link_type": "DocType",
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Tambah Company & Cabang",
-   "link_count": 0,
-   "link_to": "imogi-pos-add-branch",
-   "link_type": "Page",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Step 03-04 Kitchen & Fulfillment",
-   "link_count": 5,
+   "label": "Kitchen & Fulfillment",
+   "link_count": 6,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -133,14 +133,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Step 05-07 Service & Analytics",
-   "link_count": 5,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "Delivery Task",
    "link_count": 0,
    "link_to": "IMOGI Delivery Task",
@@ -150,11 +142,222 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "POS Invoice",
+   "label": "Meja & Layanan",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Combo Package",
    "link_count": 0,
-   "link_to": "POS Invoice",
+   "link_to": "IMOGI POS Combo Package",
    "link_type": "DocType",
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Table Reservation",
+   "link_count": 0,
+   "link_to": "IMOGI POS Table Reservation",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Waiting List",
+   "link_count": 0,
+   "link_to": "IMOGI POS Waiting List",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item / Produk",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty & Promo",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Member",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Member",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Tier",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Tier",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Voucher",
+   "link_count": 0,
+   "link_to": "IMOGI POS Voucher",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Promo Rule",
+   "link_count": 0,
+   "link_to": "IMOGI POS Promo Rule",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loyalty Transaction",
+   "link_count": 0,
+   "link_to": "IMOGI POS Loyalty Transaction",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Shift & Operasional",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Buka Shift (Kasir)",
+   "link_count": 0,
+   "link_to": "imogi-pos-open-shift",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tutup Shift (Kasir)",
+   "link_count": 0,
+   "link_to": "imogi-pos-close-shift",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Shift Opening",
+   "link_count": 0,
+   "link_to": "IMOGI POS Shift Opening",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Shift Closing",
+   "link_count": 0,
+   "link_to": "IMOGI POS Shift Closing",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "POS Closing Entry",
+   "link_count": 0,
+   "link_to": "POS Closing Entry",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pengaturan Sistem",
+   "link_count": 6,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI POS Settings",
+   "link_count": 0,
+   "link_to": "IMOGI POS Settings",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Matrix Paket & Fitur",
+   "link_count": 0,
+   "link_to": "imogi-pos-feature-matrix",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "IMOGI Branch",
+   "link_count": 0,
+   "link_to": "IMOGI Branch",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tambah Company & Cabang",
+   "link_count": 0,
+   "link_to": "imogi-pos-add-branch",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup Wizard",
+   "link_count": 0,
+   "link_to": "imogi-pos-setup",
+   "link_type": "Page",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Offline Checkout Log",
+   "link_count": 0,
+   "link_to": "IMOGI POS Offline Checkout",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Laporan & Analitik",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
   },
   {
    "hidden": 0,
@@ -186,14 +389,183 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Item",
+   "label": "Inventori & Pembelian",
+   "link_count": 9,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "BOM / Recipe",
    "link_count": 0,
-   "link_to": "Item",
+   "link_to": "BOM",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock Entry",
+   "link_count": 0,
+   "link_to": "Stock Entry",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Stock Ledger",
+   "link_count": 0,
+   "link_to": "Stock Ledger",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock Reconciliation",
+   "link_count": 0,
+   "link_to": "Stock Reconciliation",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Batch",
+   "link_count": 0,
+   "link_to": "Batch",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supplier",
+   "link_count": 0,
+   "link_to": "Supplier",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Material Request",
+   "link_count": 0,
+   "link_to": "Material Request",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Order",
+   "link_count": 0,
+   "link_to": "Purchase Order",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Receipt",
+   "link_count": 0,
+   "link_to": "Purchase Receipt",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Keuangan & Audit",
+   "link_count": 9,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Entry",
+   "link_count": 0,
+   "link_to": "Payment Entry",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Invoice",
+   "link_count": 0,
+   "link_to": "Purchase Invoice",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Royalty Accrual",
+   "link_count": 0,
+   "link_to": "IMOGI POS Royalty Accrual",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subscription Event",
+   "link_count": 0,
+   "link_to": "IMOGI POS Subscription Event",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Profit and Loss",
+   "link_count": 0,
+   "link_to": "Profit and Loss Statement",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Cash Flow",
+   "link_count": 0,
+   "link_to": "Cash Flow",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Sales Register",
+   "link_count": 0,
+   "link_to": "Sales Register",
+   "link_type": "Report",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Version Log",
+   "link_count": 0,
+   "link_to": "Version",
+   "link_type": "DocType",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Activity Log",
+   "link_count": 0,
+   "link_to": "Activity Log",
    "link_type": "DocType",
    "type": "Link"
   }
  ],
- "modified": "2026-06-04 00:00:00.000000",
+ "modified": "2026-06-09 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Imogi POS",
  "name": "Imogi POS",
@@ -206,6 +578,12 @@
  "roles": [],
  "sequence_id": 1.0,
  "shortcuts": [
+  {
+   "color": "Orange",
+   "label": "IMOGI Kasir",
+   "link_to": "imogi-pos-cashier",
+   "type": "Page"
+  },
   {
    "color": "Orange",
    "label": "IMOGI POS Order",
@@ -229,6 +607,12 @@
    "label": "POS Dashboard",
    "link_to": "imogi-pos-dashboard",
    "type": "Page"
+  },
+  {
+   "color": "Grey",
+   "label": "IMOGI POS Settings",
+   "link_to": "IMOGI POS Settings",
+   "type": "DocType"
   }
  ],
  "title": "Imogi POS"

@@ -353,7 +353,11 @@ const IMOGI_POS_THEMED_ROUTES = new Set([
 ]);
 
 function imogi_pos_is_themed_route(route = frappe.get_route?.() || []) {
-	return IMOGI_POS_THEMED_ROUTES.has(route[0]);
+	if (IMOGI_POS_THEMED_ROUTES.has(route[0])) {
+		return true;
+	}
+	// Route can lag behind URL during SPA navigation — use path as fallback.
+	return imogi_pos_on_cashier_flow_page();
 }
 
 function imogi_pos_apply_desk_logo() {
@@ -415,6 +419,7 @@ $(document).on("app_ready", () => {
 
 	if (frappe.router?.on) {
 		frappe.router.on("change", () => {
+			imogi_pos_sync_desk_theme();
 			setTimeout(() => {
 				imogi_pos_sync_desk_theme();
 				if (imogi_pos_redirect_to_setup_if_needed()) {
@@ -428,11 +433,13 @@ $(document).on("app_ready", () => {
 				}
 				imogi_pos_redirect_cashier_home();
 			}, 50);
+			setTimeout(imogi_pos_sync_desk_theme, 200);
 		});
 	}
 
 	$(document).on("page-change", () => {
 		imogi_pos_sync_desk_theme();
+		setTimeout(imogi_pos_sync_desk_theme, 50);
 		setTimeout(() => {
 			if (imogi_pos_guard_opening_entry_lock()) {
 				return;

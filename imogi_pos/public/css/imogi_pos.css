@@ -1314,12 +1314,40 @@
    ═══════════════════════════════════════════════════════════ */
 
 .imogi-settings-page .form-layout {
-	max-width: 1140px;
+	max-width: none;
 }
 
-/* ── Settings tab navigation ── */
+.imogi-settings-body {
+	align-items: start;
+	display: grid;
+	gap: 20px;
+	grid-template-columns: 220px minmax(0, 1fr);
+	margin-bottom: 24px;
+}
+
+.imogi-settings-content {
+	min-width: 0;
+}
+
+.imogi-settings-content .form-layout {
+	max-width: none;
+}
+
+/* ── Settings tab navigation (sidebar) ── */
 .imogi-settings-tab-nav-wrap {
-	margin-bottom: 18px;
+	margin-bottom: 0;
+	position: sticky;
+	top: 56px;
+}
+
+.imogi-settings-sidebar-label {
+	color: #94a3b8;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	margin-bottom: 8px;
+	padding-left: 6px;
+	text-transform: uppercase;
 }
 
 .imogi-settings-tab-nav {
@@ -1327,9 +1355,10 @@
 	border: 1px solid #e2e8f0;
 	border-radius: 14px;
 	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	padding: 6px;
+	flex-direction: column;
+	flex-wrap: nowrap;
+	gap: 4px;
+	padding: 8px;
 }
 
 .imogi-settings-tab-btn {
@@ -1340,14 +1369,15 @@
 	color: #64748b;
 	cursor: pointer;
 	display: inline-flex;
-	flex: 1 1 auto;
+	flex: none;
 	font-size: 13px;
 	font-weight: 700;
 	gap: 8px;
-	justify-content: center;
-	min-width: 88px;
-	padding: 10px 14px;
+	justify-content: flex-start;
+	min-width: 0;
+	padding: 10px 12px;
 	transition: all 0.15s ease;
+	width: 100%;
 }
 
 .imogi-settings-tab-btn:hover {
@@ -1379,10 +1409,14 @@
 }
 
 .imogi-settings-tab-desc {
-	color: #94a3b8;
+	background: #fff;
+	border: 1px solid #e8ecf1;
+	border-radius: 10px;
+	color: #64748b;
 	font-size: 12px;
-	margin-top: 8px;
-	padding-left: 4px;
+	line-height: 1.45;
+	margin-top: 10px;
+	padding: 10px 12px;
 }
 
 .imogi-mini-stats--grid {
@@ -1394,7 +1428,8 @@
 .imogi-section-loyalty .imogi-loyalty-dock,
 .imogi-section-payment .imogi-payment-dock,
 .imogi-section-integrations .imogi-integrations-dock,
-.imogi-section-franchise .imogi-franchise-dock {
+.imogi-section-franchise .imogi-franchise-dock,
+.imogi-section-billing .imogi-billing-dock {
 	background: #f8fafc;
 	border: 1px solid #e2e8f0;
 	border-radius: 12px;
@@ -1405,11 +1440,25 @@
 	min-width: 220px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+	.imogi-settings-body {
+		grid-template-columns: 1fr;
+	}
+
+	.imogi-settings-tab-nav-wrap {
+		position: static;
+	}
+
+	.imogi-settings-tab-nav {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
 	.imogi-settings-tab-btn {
-		flex: 1 1 calc(33.333% - 6px);
-		min-width: 0;
+		flex: 1 1 calc(33.333% - 4px);
+		justify-content: center;
 		padding: 8px 6px;
+		width: auto;
 	}
 
 	.imogi-settings-tab-label {
@@ -1677,17 +1726,21 @@
 }
 
 /* ── Page hero ── */
+.imogi-settings-page .form-section[data-fieldname="setup_section"] {
+	margin-bottom: 16px;
+}
+
 .imogi-page-hero {
 	background: #fff;
 	border: 1px solid #e8ecf1;
 	border-radius: 16px;
-	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 	display: grid;
-	gap: 20px;
+	gap: 16px;
 	grid-template-columns: 1fr auto;
-	margin-bottom: 20px;
+	margin-bottom: 0;
 	overflow: hidden;
-	padding: 22px 24px;
+	padding: 20px 22px;
 	position: relative;
 }
 
@@ -1789,10 +1842,16 @@
 }
 
 .imogi-quick-links {
-	display: flex;
-	flex-direction: column;
+	display: grid;
 	gap: 8px;
+	grid-template-columns: 1fr;
 	justify-content: center;
+}
+
+@media (min-width: 901px) {
+	.imogi-quick-links {
+		min-width: 168px;
+	}
 }
 
 .imogi-quick-link {

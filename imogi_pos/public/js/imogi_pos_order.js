@@ -103,6 +103,10 @@ frappe.ui.form.on("IMOGI POS Order", {
 		}
 
 		add_void_refund_buttons(frm, status, is_umkm);
+		if (!is_umkm) {
+			add_move_table_button(frm, status);
+			add_merge_table_button(frm, status);
+		}
 	},
 
 	discount_type(frm) {
@@ -231,9 +235,14 @@ function add_void_refund_buttons(frm, status, is_umkm) {
 		status === "Awaiting Payment" ||
 		(status === "Draft" && !frm.doc.pos_invoice);
 
-	if (can_void) {
+	const role_ctx = frappe.boot?.imogi_pos_role_context || {};
+	const effective = new Set(role_ctx.effective_roles || []);
+	const role_gating_on = !!frappe.boot?.imogi_pos_role_gating_enabled;
+	const can_supervise = !role_gating_on || role_ctx.bypass || effective.has("Supervisor");
+
+	if (can_void && can_supervise) {
 		frm.add_custom_button(is_umkm ? __("Batalkan Order") : __("Void Order"), () => {
-			prompt_and_call(frm, "action_void_order", __("Alasan pembatalan (opsional)"));
+			prompt_and_call(frm, "action_void_order", __("Alasan pembatalan (opsional)"), "Void");
 		}).addClass("btn-danger");
 	}
 
@@ -242,9 +251,9 @@ function add_void_refund_buttons(frm, status, is_umkm) {
 		flt(frm.doc.refunded_amount) < flt(frm.doc.grand_total) &&
 		["Paid", "Completed", "Partially Refunded"].includes(status);
 
-	if (can_refund) {
+	if (can_refund && can_supervise) {
 		frm.add_custom_button(is_umkm ? __("Refund Penuh") : __("Refund Order"), () => {
-			prompt_and_call(frm, "action_refund_order", __("Alasan refund (opsional)"));
+			prompt_and_call(frm, "action_refund_order", __("Alasan refund (opsional)"), "Refund");
 		}).addClass("btn-danger");
 
 		frm.add_custom_button(is_umkm ? __("Refund Sebagian") : __("Partial Refund"), () => {
@@ -313,7 +322,76 @@ function open_partial_refund_dialog(frm) {
 	);
 }
 
-function prompt_and_call(frm, method, prompt_label) {
+function approval_workflow_on() {
+	return !!cint(frappe.boot?.imogi_pos_approval_workflow_enabled);
+}
+
+function prompt_supervisor_approval(approval_type, reference_name, amount, reason, on_approved) {
+	frappe.prompt(
+		[
+			{
+				fieldname: "pin",
+				fieldtype: "Password",
+				label: __("PIN Supervisor"),
+				reqd: 1,
+			},
+		],
+		(values) => {
+			frappe.call({
+				method: "imogi_pos.api.approval_api.request_approval",
+				args: {
+					approval_type,
+					reference_name,
+					reason: reason || "",
+					amount: amount || 0,
+				},
+				callback(req) {
+					const name = (req.message || {}).name;
+					frappe.call({
+						method: "imogi_pos.api.approval_api.approve_with_pin",
+						args: { request_name: name, pin: values.pin },
+						callback() {
+							on_approved(name);
+						},
+					});
+				},
+			});
+		},
+		__("Approval Supervisor"),
+		__("Setujui")
+	);
+}
+
+function prompt_and_call(frm, method, prompt_label, approval_type) {
+	const run_action = (values, approval_code) => {
+		frappe.call({
+			method,
+			doc: frm.doc,
+			args: { reason: values.reason, approval_code: approval_code || undefined },
+			freeze: true,
+			callback(r) {
+				if (r.exc) {
+					const msg = (r._server_messages || "").toString();
+					if (
+						approval_type &&
+						approval_workflow_on() &&
+						(msg.includes("Perlu Approval") || msg.includes("approval"))
+					) {
+						prompt_supervisor_approval(
+							approval_type,
+							frm.doc.name,
+							flt(frm.doc.grand_total),
+							values.reason,
+							(code) => run_action(values, code)
+						);
+					}
+					return;
+				}
+				frm.reload_doc();
+			},
+		});
+	};
+
 	frappe.prompt(
 		[
 			{
@@ -323,17 +401,88 @@ function prompt_and_call(frm, method, prompt_label) {
 			},
 		],
 		(values) => {
-			frappe.call({
-				method,
-				doc: frm.doc,
-				args: { reason: values.reason },
-				freeze: true,
-				callback() {
-					frm.reload_doc();
-				},
-			});
+			if (approval_type && approval_workflow_on()) {
+				prompt_supervisor_approval(
+					approval_type,
+					frm.doc.name,
+					flt(frm.doc.grand_total),
+					values.reason,
+					(code) => run_action(values, code)
+				);
+				return;
+			}
+			run_action(values);
 		},
 		is_umkm_mode() ? __("Konfirmasi") : __("Confirm"),
 		__("Lanjutkan")
 	);
+}
+
+function add_merge_table_button(frm, status) {
+	if (!frm.doc.restaurant_table || frm.doc.docstatus !== 1) return;
+	if (["Completed", "Cancelled", "Refunded"].includes(status)) return;
+
+	frm.add_custom_button(__("Gabung Meja"), () => {
+		frappe.prompt(
+			[
+				{
+					fieldname: "secondary_order",
+					fieldtype: "Link",
+					label: __("Order sekunder"),
+					options: "IMOGI POS Order",
+					reqd: 1,
+				},
+			],
+			(values) => {
+				frappe.call({
+					method: "imogi_pos.api.planned_features_api.merge_tables",
+					args: {
+						primary_order: frm.doc.name,
+						secondary_order: values.secondary_order,
+					},
+					freeze: true,
+					callback() {
+						frm.reload_doc();
+					},
+				});
+			},
+			__("Gabung Order Meja"),
+			__("Gabungkan")
+		);
+	});
+}
+
+function add_move_table_button(frm, status) {
+	if (!frm.doc.restaurant_table || frm.doc.docstatus !== 1) return;
+	if (["Completed", "Cancelled", "Refunded"].includes(status)) return;
+
+	frm.add_custom_button(__("Pindah Meja"), () => {
+		frappe.prompt(
+			[
+				{
+					fieldname: "new_table",
+					fieldtype: "Link",
+					label: __("Meja tujuan"),
+					options: "IMOGI Restaurant Table",
+					reqd: 1,
+				},
+			],
+			(values) => {
+				frappe.call({
+					method: "imogi_pos.api.table_api.move_restaurant_table",
+					args: {
+						order_name: frm.doc.name,
+						new_table: values.new_table,
+						company: frm.doc.company,
+					},
+					freeze: true,
+					callback() {
+						frm.reload_doc();
+					},
+				});
+			},
+			__("Pindah Meja"),
+			__("Pindahkan")
+		);
+	});
 }

@@ -37,6 +37,7 @@ def session_to_dict(doc):
 		"name": doc.name,
 		"status": doc.status,
 		"current_step": doc.current_step,
+		"subscription_tier": doc.subscription_tier or "Free",
 		"store_name": doc.store_name,
 		"store_city": doc.store_city,
 		"owner_whatsapp": doc.owner_whatsapp,
@@ -65,6 +66,7 @@ def update_session(doc, data):
 	data = frappe.parse_json(data) if isinstance(data, str) else (data or {})
 	for field in (
 		"current_step",
+		"subscription_tier",
 		"store_name",
 		"store_city",
 		"owner_whatsapp",
@@ -103,6 +105,7 @@ def update_session(doc, data):
 def get_summary(doc):
 	payments = [p.mode_of_payment for p in doc.payments if cint(p.enabled)]
 	return {
+		"subscription_tier": doc.subscription_tier or "Free",
 		"store_name": doc.store_name,
 		"store_city": doc.store_city,
 		"owner_whatsapp": doc.owner_whatsapp,
