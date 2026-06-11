@@ -107,7 +107,18 @@ def _status_label(status):
 
 @frappe.whitelist()
 def get_sales_target_progress_api(reference_date=None, pos_profile=None, branch=None):
-	frappe.only_for(("IMOGI Cashier", "Sales Manager", "Sales User", "Accounts Manager", "Administrator"))
+	frappe.only_for(
+		(
+			"IMOGI Owner",
+			"IMOGI Manager",
+			"IMOGI Cashier",
+			"IMOGI Supervisor",
+			"Sales Manager",
+			"Sales User",
+			"Accounts Manager",
+			"Administrator",
+		)
+	)
 	from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 
 	branch_ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)

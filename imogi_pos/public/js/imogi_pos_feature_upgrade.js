@@ -66,7 +66,8 @@ imogi_pos.feature_upgrade.can_view_matrix = function () {
 	return (
 		frappe.user.has_role("Administrator") ||
 		frappe.user.has_role("System Manager") ||
-		frappe.user.has_role("Sales Manager")
+		frappe.user.has_role("Sales Manager") ||
+		frappe.user.has_role("IMOGI Owner")
 	);
 };
 

@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hdr_flow\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — Restoran &amp; Cafe</b></span><br><span class=\\\"text-muted\\\">Semua modul IMOGI dalam satu workspace — tanpa perlu search.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":2}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":2}},{\"id\":\"sc_kds\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Kitchen Display\",\"col\":2}},{\"id\":\"sc_ful\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fulfillment Queue\",\"col\":2}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":2}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":2}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Order & Pembayaran\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Kitchen & Fulfillment\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Meja & Layanan\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Operasional\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c7\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan & Analitik\",\"col\":4}},{\"id\":\"c8\",\"type\":\"card\",\"data\":{\"card_name\":\"Inventori & Pembelian\",\"col\":4}},{\"id\":\"c9\",\"type\":\"card\",\"data\":{\"card_name\":\"Keuangan & Audit\",\"col\":4}}]",
+ "content": "[{\"id\":\"hdr_flow\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — Restoran &amp; Cafe</b></span><br><span class=\\\"text-muted\\\">Semua modul IMOGI dalam satu workspace — tanpa perlu search.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":2}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Riwayat Order\",\"col\":2}},{\"id\":\"sc_kds\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Kitchen Display\",\"col\":2}},{\"id\":\"sc_ful\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fulfillment Queue\",\"col\":2}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":2}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":2}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Order & Pembayaran\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Kitchen & Fulfillment\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Meja & Layanan\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Operasional\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c7\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan & Analitik\",\"col\":4}},{\"id\":\"c8\",\"type\":\"card\",\"data\":{\"card_name\":\"Inventori & Pembelian\",\"col\":4}},{\"id\":\"c9\",\"type\":\"card\",\"data\":{\"card_name\":\"Keuangan & Audit\",\"col\":4}}]",
  "creation": "2026-06-04 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -33,9 +33,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "IMOGI POS Order",
+   "label": "Riwayat Order",
    "link_count": 0,
-   "link_to": "IMOGI POS Order",
+   "link_to": "Riwayat Order",
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
@@ -586,8 +586,8 @@
   },
   {
    "color": "Orange",
-   "label": "IMOGI POS Order",
-   "link_to": "IMOGI POS Order",
+   "label": "Riwayat Order",
+   "link_to": "Riwayat Order",
    "type": "DocType"
   },
   {

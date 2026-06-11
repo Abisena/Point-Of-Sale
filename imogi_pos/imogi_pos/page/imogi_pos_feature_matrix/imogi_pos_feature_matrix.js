@@ -104,6 +104,10 @@ function inject_feature_matrix_css() {
 	);
 }
 
+function imogi_fm_tier_gating_disabled() {
+	return imogi_pos.is_subscription_tier_disabled ? imogi_pos.is_subscription_tier_disabled() : true;
+}
+
 imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 	constructor(page) {
 		this.page = page;
@@ -113,19 +117,23 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 		this.filter_status = "all";
 		this.search = "";
 		this.data = null;
+		this.no_tier_mode = imogi_fm_tier_gating_disabled();
 		this.make();
 		this.load();
 	}
 
 	make() {
+		const hero_copy = this.no_tier_mode
+			? __("Referensi modul, role matrix, dan status implementasi. Akses fitur di ERPNext dikontrol oleh role + toggle di IMOGI POS Settings.")
+			: __(
+					"Visibility akses fitur berdasarkan paket langganan. Kolom centang = fitur tersedia di tier tersebut (kumulatif)."
+			  );
 		this.wrapper.html(`
 			<div class="imogi-fm-shell">
 				<div class="imogi-fm-hero">
 					<div>
 						<h3>${__("Matrix Role & Module POS F&B")}</h3>
-						<p>${__(
-							"Visibility akses fitur berdasarkan paket langganan. Kolom centang = fitur tersedia di tier tersebut (kumulatif)."
-						)}</p>
+						<p>${hero_copy}</p>
 					</div>
 					<div class="imogi-fm-hero-actions">
 						<div class="imogi-fm-tier-pill imogi-fm-current-tier"></div>
@@ -135,7 +143,10 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 				<div class="imogi-fm-stats"></div>
 				<div class="imogi-fm-toolbar">
 					<input type="search" class="imogi-fm-search" placeholder="${__("Cari fitur atau modul...")}" />
-					<select class="imogi-fm-preview">
+					${
+						this.no_tier_mode
+							? ""
+							: `<select class="imogi-fm-preview">
 						<option value="">${__("Preview tier: Aktif (site)")}</option>
 						${IMOGI_TIER_COLUMNS.map(
 							(t) => `<option value="${t}">${__("Preview tier")}: ${t}</option>`
@@ -144,7 +155,8 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 					<select class="imogi-fm-filter">
 						<option value="all">${__("Semua tier")}</option>
 						${IMOGI_TIER_COLUMNS.map((t) => `<option value="${t}">${t}</option>`).join("")}
-					</select>
+					</select>`
+					}
 				</div>
 				<div class="imogi-fm-tier-chips"></div>
 				<div class="imogi-fm-table-wrap">
@@ -218,6 +230,24 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 		const summary = d.summary || {};
 		const per = summary.per_tier || {};
 		const by_status = summary.by_status || {};
+		if (this.no_tier_mode) {
+			this.$current_tier.html(__("ERPNext penuh — tanpa paket langganan"));
+			this.$stats.html(`
+				<div class="imogi-fm-stat"><div class="imogi-fm-stat-label">${__("Total Fitur")}</div><div class="imogi-fm-stat-value">${
+					summary.total_features || 0
+				}</div></div>
+				<div class="imogi-fm-stat is-status-built"><div class="imogi-fm-stat-label">${__("Sudah ada")}</div><div class="imogi-fm-stat-value">${
+					by_status.built || 0
+				}</div></div>
+				<div class="imogi-fm-stat is-status-partial"><div class="imogi-fm-stat-label">${__("Sebagian")}</div><div class="imogi-fm-stat-value">${
+					by_status.partial || 0
+				}</div></div>
+				<div class="imogi-fm-stat is-status-planned"><div class="imogi-fm-stat-label">${__("Belum ada")}</div><div class="imogi-fm-stat-value">${
+					by_status.planned || 0
+				}</div></div>
+			`);
+			return;
+		}
 		const preview = d.preview_tier
 			? ` · ${__("Preview")}: <strong>${frappe.utils.escape_html(d.preview_tier)}</strong>`
 			: "";
@@ -277,10 +307,12 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 		let last_cat = "";
 		const rows = [];
 
+		const col_span = this.no_tier_mode ? 5 : 11;
+
 		features.forEach((row) => {
 			if (row.category !== last_cat) {
 				last_cat = row.category;
-				rows.push(`<tr class="imogi-fm-cat-row"><td colspan="11">${frappe.utils.escape_html(row.category)}</td></tr>`);
+				rows.push(`<tr class="imogi-fm-cat-row"><td colspan="${col_span}">${frappe.utils.escape_html(row.category)}</td></tr>`);
 			}
 			const tier_cell_class = {
 				Free: "imogi-fm-tier-free",
@@ -288,17 +320,19 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 				Professional: "imogi-fm-tier-pro",
 				Enterprise: "imogi-fm-tier-ent",
 			};
-			const tier_cells = IMOGI_TIER_COLUMNS.map((tier) => {
-				const on = imogi_tier_includes(tier, row.min_tier);
-				const cls = [
-					"imogi-fm-col-tier",
-					tier_cell_class[tier],
-					tier === preview ? "is-preview" : "",
-				]
-					.filter(Boolean)
-					.join(" ");
-				return `<td class="${cls}">${on ? '<span class="imogi-fm-check">✓</span>' : '<span class="imogi-fm-dash">—</span>'}</td>`;
-			}).join("");
+			const tier_cells = this.no_tier_mode
+				? ""
+				: IMOGI_TIER_COLUMNS.map((tier) => {
+						const on = imogi_tier_includes(tier, row.min_tier);
+						const cls = [
+							"imogi-fm-col-tier",
+							tier_cell_class[tier],
+							tier === preview ? "is-preview" : "",
+						]
+							.filter(Boolean)
+							.join(" ");
+						return `<td class="${cls}">${on ? '<span class="imogi-fm-check">✓</span>' : '<span class="imogi-fm-dash">—</span>'}</td>`;
+				  }).join("");
 
 			rows.push(`<tr>
 				<td class="imogi-fm-sticky-left">${frappe.utils.escape_html(row.category)}</td>
@@ -307,9 +341,26 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 				${tier_cells}
 				<td class="imogi-fm-col-center"><span class="imogi-fm-status is-${row.status}">${IMOGI_STATUS_LABELS[row.status] || row.status}</span></td>
 				<td class="imogi-fm-col-center ${row.operational ? "imogi-fm-op-yes" : "imogi-fm-op-no"}">${row.operational ? __("Ya") : __("Tidak")}</td>
-				<td class="imogi-fm-trigger">${frappe.utils.escape_html(row.trigger_upgrade || "—")}</td>
+				${
+					this.no_tier_mode
+						? ""
+						: `<td class="imogi-fm-trigger">${frappe.utils.escape_html(row.trigger_upgrade || "—")}</td>`
+				}
 			</tr>`);
 		});
+
+		const tier_headers = this.no_tier_mode
+			? ""
+			: IMOGI_TIER_COLUMNS.map((t) => {
+					const cls = [
+						"imogi-fm-col-tier",
+						IMOGI_TIER_HEADER_CLASS[t],
+						t === preview ? "is-preview" : "",
+					]
+						.filter(Boolean)
+						.join(" ");
+					return `<th class="${cls}">${t}</th>`;
+			  }).join("");
 
 		this.$table_wrap.html(`
 			<table class="imogi-fm-table">
@@ -318,19 +369,10 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 						<th class="imogi-fm-sticky-left">${__("Kategori")}</th>
 						<th class="imogi-fm-col-feature">${__("Modul / Fitur")}</th>
 						<th>${__("Role")}</th>
-						${IMOGI_TIER_COLUMNS.map((t) => {
-							const cls = [
-								"imogi-fm-col-tier",
-								IMOGI_TIER_HEADER_CLASS[t],
-								t === preview ? "is-preview" : "",
-							]
-								.filter(Boolean)
-								.join(" ");
-							return `<th class="${cls}">${t}</th>`;
-						}).join("")}
+						${tier_headers}
 						<th class="imogi-fm-col-center">${__("Status")}</th>
 						<th class="imogi-fm-col-center">${__("Operasional")}</th>
-						<th>${__("Trigger Upgrade")}</th>
+						${this.no_tier_mode ? "" : `<th>${__("Trigger Upgrade")}</th>`}
 					</tr>
 				</thead>
 				<tbody>${rows.join("")}</tbody>
@@ -343,7 +385,7 @@ frappe.pages["imogi-pos-feature-matrix"].on_page_load = function (wrapper) {
 	inject_feature_matrix_css();
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: __("Matrix Paket & Fitur"),
+		title: __("Matrix Role & Fitur"),
 		single_column: true,
 	});
 	page.main.addClass("imogi-fm-page");

@@ -30,6 +30,58 @@ def get_branch_selling_price_list(branch_code=None, branch=None, pos_profile=Non
 	return get_master_selling_price_list()
 
 
+def _fetch_item_price_rate(item_code, price_list):
+	if not item_code or not price_list:
+		return 0
+	rate = frappe.db.get_value(
+		"Item Price",
+		{"item_code": item_code, "price_list": price_list, "selling": 1},
+		"price_list_rate",
+	)
+	return flt(rate) if rate is not None and flt(rate) > 0 else 0
+
+
+def resolve_selling_price_rate(item_code, price_list=None, company=None):
+	"""Resolve selling rate from branch list, then master / Standard Selling fallback."""
+	settings = get_settings()
+	company = company or settings.default_company
+	price_lists = []
+	if price_list:
+		price_lists.append(price_list)
+	master = get_master_selling_price_list(settings, company=company)
+	if master and master not in price_lists:
+		price_lists.append(master)
+	pos_default = get_selling_price_list(company)
+	if pos_default and pos_default not in price_lists:
+		price_lists.append(pos_default)
+
+	for pl in price_lists:
+		rate = _fetch_item_price_rate(item_code, pl)
+		if rate > 0:
+			return rate
+		template = frappe.db.get_value("Item", item_code, "variant_of")
+		if template:
+			rate = _fetch_item_price_rate(template, pl)
+			if rate > 0:
+				return rate
+
+	rate = flt(frappe.db.get_value("Item", item_code, "standard_rate"))
+	if rate > 0:
+		return rate
+
+	if cint(frappe.db.get_value("Item", item_code, "has_variants")):
+		variant_rates = frappe.get_all(
+			"Item",
+			filters={"variant_of": item_code, "disabled": 0, "is_sales_item": 1},
+			pluck="standard_rate",
+		)
+		positive = [flt(value) for value in variant_rates if flt(value) > 0]
+		if positive:
+			return min(positive)
+
+	return 0
+
+
 def collect_branch_price_lists(company=None, include_master=1):
 	settings = get_settings()
 	company = company or settings.default_company

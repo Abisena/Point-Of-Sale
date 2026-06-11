@@ -4,7 +4,7 @@ import frappe
 
 IMOGI_FORM_DOCTYPES = (
 	"IMOGI POS Settings",
-	"IMOGI POS Order",
+	"Riwayat Order",
 )
 
 

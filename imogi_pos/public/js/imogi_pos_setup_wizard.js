@@ -2,6 +2,14 @@ frappe.provide("imogi_pos");
 
 const IMOGI_WIZARD_STEPS = 10;
 
+function imogi_wizard_step_count(steps_meta) {
+	return (steps_meta && steps_meta.length) || IMOGI_WIZARD_STEPS;
+}
+
+function imogi_wizard_step_key(steps_meta, step_no) {
+	return (steps_meta || []).find((s) => s.no === step_no)?.key || "subscription";
+}
+
 imogi_pos.SetupWizard9 = class SetupWizard9 {
 	constructor(wrapper) {
 		this.$wrapper = $(wrapper).find(".layout-main-section");
@@ -27,10 +35,14 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 						return;
 					}
 					this.session = data.session || {};
+					this.enterprise_deployment = !!data.enterprise_deployment;
 					this.templates = data.business_templates || [];
 					this.payment_methods = data.payment_methods || [];
 					this.steps_meta = data.steps || [];
 					this.step = cint(this.session.current_step) || 1;
+					if (this.enterprise_deployment) {
+						this.session.subscription_tier = this.session.subscription_tier || "Enterprise";
+					}
 					this.render_shell();
 				},
 			});
@@ -48,9 +60,9 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 					<ul class="imogi-wizard-steps"></ul>
 					<div class="imogi-wizard-progress">
 						<div class="imogi-wizard-progress-bar">
-							<div class="imogi-wizard-progress-fill" style="width:${(this.step / IMOGI_WIZARD_STEPS) * 100}%"></div>
+							<div class="imogi-wizard-progress-fill" style="width:${(this.step / imogi_wizard_step_count(this.steps_meta)) * 100}%"></div>
 						</div>
-						<small class="text-muted d-block mt-2">${this.step} ${__("dari")} ${IMOGI_WIZARD_STEPS} ${__("langkah")}</small>
+						<small class="text-muted d-block mt-2">${this.step} ${__("dari")} ${imogi_wizard_step_count(this.steps_meta)} ${__("langkah")}</small>
 					</div>
 				</aside>
 				<div class="imogi-wizard-main">
@@ -59,7 +71,7 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 						<span class="imogi-wizard-footer-hint"></span>
 						<div class="imogi-wizard-footer-actions">
 							<button class="btn btn-default btn-wiz-back" ${this.step === 1 ? "disabled" : ""}>${__("Kembali")}</button>
-							<button class="btn btn-primary btn-wiz-next">${this.step === IMOGI_WIZARD_STEPS ? __("Selesai — buka kasir") : __("Lanjut →")}</button>
+							<button class="btn btn-primary btn-wiz-next">${this.step === imogi_wizard_step_count(this.steps_meta) ? __("Selesai — buka kasir") : __("Lanjut →")}</button>
 						</div>
 					</div>
 				</div>
@@ -94,23 +106,25 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 
 	render_step() {
 		const $c = this.$wrapper.find(".imogi-wizard-content");
+		const step_key = imogi_wizard_step_key(this.steps_meta, this.step);
 		const renderers = {
-			1: () => this.render_step_subscription($c),
-			2: () => this.render_step1($c),
-			3: () => this.render_step2($c),
-			4: () => this.render_step3($c),
-			5: () => this.render_step4($c),
-			6: () => this.render_step5($c),
-			7: () => this.render_step6($c),
-			8: () => this.render_step7($c),
-			9: () => this.render_step8($c),
-			10: () => this.render_step9($c),
+			subscription: () => this.render_step_subscription($c),
+			identity: () => this.render_step1($c),
+			business: () => this.render_step2($c),
+			cashier: () => this.render_step3($c),
+			products: () => this.render_step4($c),
+			supplier: () => this.render_step5($c),
+			payment: () => this.render_step6($c),
+			printer: () => this.render_step7($c),
+			ops: () => this.render_step8($c),
+			confirm: () => this.render_step9($c),
 		};
-		(renderers[this.step] || renderers[1])();
-		this.$wrapper.find(".imogi-wizard-progress-fill").css("width", `${(this.step / IMOGI_WIZARD_STEPS) * 100}%`);
+		(renderers[step_key] || renderers.identity)();
+		const total_steps = imogi_wizard_step_count(this.steps_meta);
+		this.$wrapper.find(".imogi-wizard-progress-fill").css("width", `${(this.step / total_steps) * 100}%`);
 		this.$wrapper.find(".btn-wiz-back").prop("disabled", this.step === 1);
 		this.$wrapper.find(".btn-wiz-next").text(
-			this.step === IMOGI_WIZARD_STEPS ? __("Selesai — buka kasir") : __("Lanjut →")
+			this.step === total_steps ? __("Selesai — buka kasir") : __("Lanjut →")
 		);
 	}
 
@@ -137,7 +151,7 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 
 	_header($c, title, desc) {
 		$c.html(`
-			<div class="imogi-wizard-kicker">${__("Langkah")} ${this.step} ${__("dari")} ${IMOGI_WIZARD_STEPS}</div>
+			<div class="imogi-wizard-kicker">${__("Langkah")} ${this.step} ${__("dari")} ${imogi_wizard_step_count(this.steps_meta)}</div>
 			<h3>${title}</h3>
 			<p class="imogi-wizard-desc">${desc}</p>
 			<div class="imogi-wizard-body"></div>
@@ -535,9 +549,12 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 					__("Konfirmasi"),
 					__("Periksa kembali sebelum sistem dikonfigurasi. Semua bisa diubah nanti.")
 				);
+				const tier_row = this.enterprise_deployment
+					? ""
+					: `<tr><td>${__("Paket langganan")}</td><td>${frappe.utils.escape_html(s.subscription_tier || "Free")}</td></tr>`;
 				$b.html(`
 					<table class="imogi-wizard-table imogi-confirm-table"><tbody>
-						<tr><td>${__("Paket langganan")}</td><td>${frappe.utils.escape_html(s.subscription_tier || "Free")}</td></tr>
+						${tier_row}
 						<tr><td>${__("Nama toko")}</td><td>${frappe.utils.escape_html(s.store_name || "-")}</td></tr>
 						<tr><td>${__("Kota")}</td><td>${frappe.utils.escape_html(s.store_city || "-")}</td></tr>
 						<tr><td>${__("WA owner")}</td><td>${frappe.utils.escape_html(s.owner_whatsapp || "-")}</td></tr>
@@ -588,28 +605,30 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 	}
 
 	go(delta) {
-		if (delta > 0 && this.step === 1 && !this.session.subscription_tier) {
+		const step_key = imogi_wizard_step_key(this.steps_meta, this.step);
+		const total_steps = imogi_wizard_step_count(this.steps_meta);
+		if (delta > 0 && step_key === "subscription" && !this.session.subscription_tier) {
 			frappe.msgprint(__("Pilih paket langganan"));
 			return;
 		}
-		if (delta > 0 && this.step === 2) {
+		if (delta > 0 && step_key === "identity") {
 			const name = this.$wrapper.find('[data-f="store_name"]').val();
 			if (!name || !name.trim()) {
 				frappe.msgprint(__("Nama toko wajib diisi"));
 				return;
 			}
 		}
-		if (delta > 0 && this.step === 3 && !this.session.business_type) {
+		if (delta > 0 && step_key === "business" && !this.session.business_type) {
 			frappe.msgprint(__("Pilih jenis usaha"));
 			return;
 		}
 
 		this.save_step(() => {
-			if (delta > 0 && this.step === IMOGI_WIZARD_STEPS) {
+			if (delta > 0 && this.step === total_steps) {
 				this.finish();
 				return;
 			}
-			this.step = Math.max(1, Math.min(IMOGI_WIZARD_STEPS, this.step + delta));
+			this.step = Math.max(1, Math.min(total_steps, this.step + delta));
 			this.session.current_step = this.step;
 			this.render_shell();
 		});

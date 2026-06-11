@@ -79,7 +79,7 @@ def _build_order(
 	if not items:
 		frappe.throw(_("At least one item is required"))
 
-	order = frappe.new_doc("IMOGI POS Order")
+	order = frappe.new_doc("Riwayat Order")
 	order.company = company
 	order.pos_profile = settings.default_pos_profile
 	order.order_channel = order_channel or "Web"
@@ -157,7 +157,7 @@ def create_order(
 	discount_value=None,
 	company=None,
 ):
-	"""Create and submit an IMOGI POS Order. Optional auto_pay with payments JSON."""
+	"""Create and submit an Riwayat Order. Optional auto_pay with payments JSON."""
 	validate_order_api_access()
 	ensure_setup_ready(company)
 
@@ -180,7 +180,7 @@ def create_order(
 	)
 	if order_source and order_source != order.order_source:
 		frappe.db.set_value(
-			"IMOGI POS Order",
+			"Riwayat Order",
 			order.name,
 			"order_source",
 			order_source,
@@ -204,7 +204,7 @@ def pay_order(order_name, payments=None, company=None):
 	validate_order_api_access()
 	ensure_setup_ready(company)
 
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 
 	payments = _parse_json(payments, "payments") or []
@@ -233,7 +233,7 @@ def _apply_payments(order, payments):
 @frappe.whitelist(allow_guest=True)
 def get_order_status(order_name):
 	validate_order_api_access()
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("read")
 	return _serialize_order(order)
 
@@ -241,7 +241,7 @@ def get_order_status(order_name):
 @frappe.whitelist(allow_guest=True)
 def void_order(order_name, reason=None):
 	validate_order_api_access()
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 	order.action_void_order(reason=reason)
 	order.reload()
@@ -254,7 +254,7 @@ def void_order(order_name, reason=None):
 @frappe.whitelist(allow_guest=True)
 def refund_order(order_name, reason=None):
 	validate_order_api_access()
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 	order.action_refund_order(reason=reason)
 	order.reload()
@@ -270,7 +270,7 @@ def partial_refund_order(order_name, refund_items=None, reason=None, company=Non
 	validate_order_api_access()
 	ensure_setup_ready(company)
 
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 	order.action_partial_refund(refund_items=refund_items, reason=reason)
 	order.reload()

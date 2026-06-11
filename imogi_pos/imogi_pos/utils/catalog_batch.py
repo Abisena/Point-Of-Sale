@@ -109,18 +109,29 @@ class CatalogBatchContext:
 			expanded.update(self.variants_by_template.get(code) or [])
 
 		if expanded:
-			rows = frappe.db.sql(
-				"""
-				SELECT item_code, price_list_rate
-				FROM `tabItem Price`
-				WHERE price_list = %s AND selling = 1 AND item_code IN %s
-				""",
-				(self.price_list, tuple(expanded)),
-				as_dict=True,
-			)
-			self.prices = {
-				row.item_code: flt(row.price_list_rate) for row in rows if flt(row.price_list_rate) > 0
-			}
+			price_lists = [self.price_list] if self.price_list else []
+			from imogi_pos.imogi_pos.utils.branch_pricing import get_master_selling_price_list
+
+			master = get_master_selling_price_list()
+			if master and master not in price_lists:
+				price_lists.append(master)
+
+			self.prices = {}
+			for pl in price_lists:
+				rows = frappe.db.sql(
+					"""
+					SELECT item_code, price_list_rate
+					FROM `tabItem Price`
+					WHERE price_list = %s AND selling = 1 AND item_code IN %s
+					""",
+					(pl, tuple(expanded)),
+					as_dict=True,
+				)
+				for row in rows:
+					if flt(row.price_list_rate) <= 0:
+						continue
+					if flt(self.prices.get(row.item_code)) <= 0:
+						self.prices[row.item_code] = flt(row.price_list_rate)
 
 		for code in codes:
 			if flt(self.prices.get(code)) > 0:

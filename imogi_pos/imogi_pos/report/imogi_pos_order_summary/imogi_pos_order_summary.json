@@ -14,18 +14,14 @@
  "name": "IMOGI POS Order Summary",
  "owner": "Administrator",
  "prepared_report": 0,
- "ref_doctype": "IMOGI POS Order",
+ "ref_doctype": "Riwayat Order",
  "report_name": "IMOGI POS Order Summary",
  "report_type": "Script Report",
  "roles": [
-  {
-   "role": "Sales Manager"
-  },
-  {
-   "role": "Sales User"
-  },
-  {
-   "role": "System Manager"
-  }
+  {"role": "IMOGI Owner"},
+  {"role": "IMOGI Area Manager"},
+  {"role": "Sales Manager"},
+  {"role": "Sales User"},
+  {"role": "System Manager"}
  ]
 }

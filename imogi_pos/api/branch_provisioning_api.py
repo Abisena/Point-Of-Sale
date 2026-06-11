@@ -16,7 +16,15 @@ from imogi_pos.imogi_pos.utils.branch_provisioning import (
 
 
 def _require_provision_access():
-	frappe.only_for(("System Manager", "Sales Manager", "Administrator"))
+	frappe.only_for(
+		(
+			"System Manager",
+			"Sales Manager",
+			"Administrator",
+			"IMOGI Owner",
+			"IMOGI Area Manager",
+		)
+	)
 
 
 @frappe.whitelist()

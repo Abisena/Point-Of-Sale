@@ -17,7 +17,7 @@ def get_columns():
 			"label": _("Order"),
 			"fieldname": "name",
 			"fieldtype": "Link",
-			"options": "IMOGI POS Order",
+			"options": "Riwayat Order",
 			"width": 130,
 		},
 		{"label": _("Waktu"), "fieldname": "creation", "fieldtype": "Datetime", "width": 150},
@@ -64,7 +64,7 @@ def get_data(filters):
 	orders = frappe.db.sql(
 		f"""
 		select name, creation, order_source, status, grand_total
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where {where}
 		order by creation asc
 		""",

@@ -61,5 +61,5 @@ def notify_order_status(order_name, status):
 		"order_status",
 		_("Order {0} is now {1}").format(order_name, status),
 		roles=["IMOGI Cashier", "Sales Manager", "System Manager"],
-		doc={"doctype": "IMOGI POS Order", "name": order_name},
+		doc={"doctype": "Riwayat Order", "name": order_name},
 	)

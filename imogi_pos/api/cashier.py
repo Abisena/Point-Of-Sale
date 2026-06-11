@@ -22,7 +22,7 @@ from imogi_pos.imogi_pos.utils.webhook import emit_order_webhook
 def _require_cashier_access():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Login required"), frappe.AuthenticationError)
-	if not frappe.has_permission("IMOGI POS Order", "write"):
+	if not frappe.has_permission("Riwayat Order", "write"):
 		frappe.throw(_("Not permitted to use cashier"), frappe.PermissionError)
 
 
@@ -156,7 +156,7 @@ def _create_cashier_order(
 		settings=settings,
 	)
 
-	order = frappe.new_doc("IMOGI POS Order")
+	order = frappe.new_doc("Riwayat Order")
 	order.company = company
 	order.pos_profile = pos_profile
 	order.order_channel = order_channel or "Walk-in"
@@ -408,7 +408,7 @@ def checkout(
 
 		existing = get_existing_offline_order(offline_client_id)
 		if existing and existing.order:
-			order = frappe.get_doc("IMOGI POS Order", existing.order)
+			order = frappe.get_doc("Riwayat Order", existing.order)
 			return _serialize_order(order)
 
 	payments_list = _parse_json(payments, "payments") or []
@@ -848,13 +848,13 @@ def scan_barcode(barcode, pos_profile=None, branch=None):
 def get_receipt_url(order_name):
 	"""Print view URL for order receipt."""
 	_require_cashier_access()
-	if not frappe.db.exists("IMOGI POS Order", order_name):
+	if not frappe.db.exists("Riwayat Order", order_name):
 		frappe.throw(_("Order {0} not found").format(order_name))
 
 	settings = get_settings()
 	print_format = settings.receipt_print_format or "IMOGI POS Receipt"
 	return {
-		"url": f"/printview?doctype=IMOGI POS Order&name={order_name}&format={print_format}&trigger_print=1",
+		"url": f"/printview?doctype=Riwayat Order&name={order_name}&format={print_format}&trigger_print=1",
 		"print_format": print_format,
 	}
 
@@ -865,7 +865,7 @@ def get_awaiting_orders(limit=10):
 	_require_cashier_access()
 	limit = min(cint(limit) or 10, 50)
 	return frappe.get_all(
-		"IMOGI POS Order",
+		"Riwayat Order",
 		filters={"status": "Awaiting Payment", "docstatus": 1},
 		fields=["name", "grand_total", "customer", "modified", "order_channel"],
 		order_by="modified desc",

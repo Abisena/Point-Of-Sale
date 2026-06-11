@@ -372,9 +372,7 @@ function inject_cashier_css() {
 		.imogi-cashier-order-type-btn .fa { font-size: 12px; }
 		.imogi-cashier-order-type-btn.is-active { background: #0f1f35; border-color: #0f1f35; color: #fff; }
 		.imogi-cashier-customer-row, .imogi-cashier-discount-row { align-items: center; display: flex; gap: 8px; margin-bottom: 8px; }
-		.imogi-cashier-customer-row input { flex: 1; min-width: 0; }
-		.imogi-cashier-customer-add { flex-shrink: 0; font-size: 16px !important; font-weight: 800 !important; height: 30px; line-height: 1; padding: 0 !important; width: 30px; }
-		.imogi-cashier-customer-clear { flex-shrink: 0; }
+		.imogi-cashier-customer-row input { flex: 1; min-width: 0; width: 100%; }
 		.imogi-cashier-customer-row input, .imogi-cashier-discount-row select, .imogi-cashier-discount-row input { font-size: 12px !important; }
 		.imogi-cashier-subtotal-row { align-items: baseline; color: #64748b; display: flex; font-size: 13px; justify-content: space-between; margin-bottom: 6px; }
 		.imogi-cashier-total-row { align-items: baseline; display: flex; justify-content: space-between; margin-bottom: 10px; }
@@ -409,7 +407,6 @@ function inject_cashier_css() {
 		.imogi-cashier-promo-hint { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #047857; font-size: 11px; font-weight: 700; margin-bottom: 8px; padding: 8px 10px; }
 		@media (pointer: coarse) {
 			.imogi-cashier-group-btn, .imogi-qty-btn, .imogi-pay-quick-btn, .imogi-cashier-order-type-btn { min-height: 44px; }
-			.imogi-cashier-customer-add, .imogi-cashier-customer-clear { min-height: 44px; min-width: 44px; }
 		}
 		.imogi-pay-breakdown-row { align-items: baseline; color: #64748b; display: flex; font-size: 12px; justify-content: space-between; margin-bottom: 4px; }
 		.imogi-pay-breakdown-row strong { color: #0f1f35; font-variant-numeric: tabular-nums; }
@@ -540,6 +537,12 @@ imogi_pos.CashierPage = class CashierPage {
 					<button type="button" class="imogi-status-chip imogi-chip-target" title="${__(
 						"Target omzet"
 					)}"></button>
+					<button type="button" class="imogi-status-chip imogi-chip-history is-visible" title="${__(
+						"Riwayat order"
+					)}">
+						<i class="fa fa-history"></i>
+						<span>${__("Riwayat")}</span>
+					</button>
 					<button type="button" class="imogi-status-chip imogi-chip-marketplace" title="${__(
 						"Order marketplace"
 					)}"></button>
@@ -618,12 +621,6 @@ imogi_pos.CashierPage = class CashierPage {
 							<input type="search" class="form-control input-sm imogi-cashier-customer-search" placeholder="${__(
 								"Cari atau ketik nama customer..."
 							)}" autocomplete="off" />
-							<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-customer-add" title="${__(
-								"Customer baru"
-							)}">+</button>
-							<button type="button" class="btn btn-xs btn-default imogi-cashier-customer-clear" title="${__(
-								"Hapus"
-							)}">×</button>
 						</div>
 						<div class="imogi-cashier-customer-label text-muted small mb-2"></div>
 						<div class="imogi-cashier-total-row">
@@ -669,10 +666,15 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$shift_bar = this.wrapper.find(".imogi-cashier-shift-bar");
 		this.$status_strip = this.wrapper.find(".imogi-cashier-status-strip");
 		this.$target_chip = this.wrapper.find(".imogi-chip-target");
+		this.$history_chip = this.wrapper.find(".imogi-chip-history");
 		this.$marketplace_chip = this.wrapper.find(".imogi-chip-marketplace");
 		this.$offline_chip = this.wrapper.find(".imogi-chip-offline");
 		this.$offline_badge = this.wrapper.find(".imogi-cashier-offline-badge");
 		this.$target_chip.on("click", () => this.open_target_detail());
+		this.$history_chip.on("click", () => {
+			if (!this.require_feature("order_history")) return;
+			frappe.set_route("imogi-pos-order-history");
+		});
 		this.$marketplace_chip.on("click", () => {
 			if (!this.require_feature("grabfood_integration")) return;
 			this.open_marketplace_orders();
@@ -738,18 +740,6 @@ imogi_pos.CashierPage = class CashierPage {
 			const term = e.target.value.trim();
 			if (term) this.search_customer(term);
 		});
-		this.wrapper.find(".imogi-cashier-customer-add").on("click", () => {
-			if (!this.require_feature("customer")) return;
-			const prefill = this.wrapper.find(".imogi-cashier-customer-search").val().trim();
-			this.prompt_create_customer(prefill);
-		});
-		this.wrapper.find(".imogi-cashier-customer-clear").on("click", () => {
-			this.selected_customer = null;
-			this.customer_loyalty = null;
-			this.wrapper.find(".imogi-cashier-customer-search").val("");
-			this.render_customer_label();
-		});
-
 		this.wrapper.find(".imogi-cashier-search").on("input", (e) => {
 			clearTimeout(this.search_timer);
 			this.search = e.target.value.trim();
@@ -787,6 +777,8 @@ imogi_pos.CashierPage = class CashierPage {
 			if (!code || code === this.get_active_branch_code()) return;
 			this.switch_branch(code);
 		});
+
+		this.sync_status_strip();
 	}
 
 	get_active_branch_code() {
@@ -963,22 +955,30 @@ imogi_pos.CashierPage = class CashierPage {
 
 	apply_feature_gates() {
 		const typeFeatures = IMOGI_ORDER_TYPE_FEATURES;
-		this.wrapper.find(".imogi-cashier-order-type-btn").each((_, el) => {
-			const $btn = $(el);
-			const type = $btn.data("type");
-			const allowed = this.feature_allowed(typeFeatures[type]);
-			$btn.toggleClass("is-tier-locked", !allowed).prop("disabled", !allowed);
-		});
-		this.wrapper.find(".imogi-cashier-order-type-row").show();
-		if (!this.feature_allowed(typeFeatures[this.order_type])) {
-			const fallback = IMOGI_ORDER_TYPES.find((row) => this.feature_allowed(typeFeatures[row.value]));
-			if (fallback) this.set_order_type(fallback.value, true);
+		const availableTypes = IMOGI_ORDER_TYPES.filter((row) =>
+			this.feature_allowed(typeFeatures[row.value])
+		);
+		const $orderTypeRow = this.wrapper.find(".imogi-cashier-order-type-row");
+		if (!availableTypes.length) {
+			// Free tier: basic pos_order checkout without order-type tier features.
+			$orderTypeRow.hide();
+		} else {
+			$orderTypeRow.show();
+			this.wrapper.find(".imogi-cashier-order-type-btn").each((_, el) => {
+				const $btn = $(el);
+				const type = $btn.data("type");
+				const allowed = this.feature_allowed(typeFeatures[type]);
+				$btn.toggleClass("is-tier-locked", !allowed).prop("disabled", !allowed);
+			});
+			if (!this.feature_allowed(typeFeatures[this.order_type])) {
+				this.set_order_type(availableTypes[0].value, true);
+			}
 		}
 
 		const customerOn = this.feature_allowed("customer");
 		const $customerRow = this.wrapper.find(".imogi-cashier-customer-row");
 		$customerRow.toggleClass("is-tier-locked", !customerOn);
-		$customerRow.find("input, button").prop("disabled", !customerOn);
+		$customerRow.find("input").prop("disabled", !customerOn);
 		$customerRow.show();
 		if (!customerOn) {
 			this.selected_customer = this.context?.default_customer || null;
@@ -998,6 +998,10 @@ imogi_pos.CashierPage = class CashierPage {
 		} else {
 			this.$marketplace_chip?.removeClass("is-tier-locked");
 		}
+
+		this.$history_chip?.toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
+		this.$history_chip?.addClass("is-visible");
+		this.sync_status_strip();
 	}
 
 	load_context() {

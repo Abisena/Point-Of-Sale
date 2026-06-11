@@ -1,13 +1,54 @@
 frappe.provide("imogi_pos");
 
+// ERPNext desk: no SaaS subscription tiers (Free/Starter/Pro = web SKUs only).
+imogi_pos.ERP_ENTERPRISE_ONLY = true;
+imogi_pos.SUBSCRIPTION_TIERS_DISABLED = true;
+
+imogi_pos.is_subscription_tier_disabled = function () {
+	return !!(
+		imogi_pos.SUBSCRIPTION_TIERS_DISABLED ||
+		frappe.boot?.imogi_pos_subscription_tiers_disabled ||
+		frappe.boot?.imogi_pos_erp_enterprise_only
+	);
+};
+
+imogi_pos.is_erp_enterprise_deployment = function () {
+	return imogi_pos.is_subscription_tier_disabled();
+};
+
+// Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
+(function imogi_pos_bust_page_cache() {
+	const CACHE_VERSION = "20260611-no-free-tier-dashboard";
+	const VERSION_KEY = "_imogi_pos_page_cache_version";
+	const PAGES = [
+		"imogi-pos-cashier",
+		"imogi-pos-dashboard",
+		"imogi-pos-order-history",
+		"imogi-pos-menu",
+		"imogi-pos-menu-category",
+		"imogi-pos-sales-report",
+		"imogi-pos-feature-matrix",
+	];
+	try {
+		if (localStorage.getItem(VERSION_KEY) !== CACHE_VERSION) {
+			PAGES.forEach((name) => localStorage.removeItem("_page:" + name));
+			localStorage.setItem(VERSION_KEY, CACHE_VERSION);
+		}
+	} catch (e) {
+		/* private browsing */
+	}
+})();
+
 imogi_pos.opening_entry_locked = false;
 imogi_pos.opening_entry_docname = null;
 
 const IMOGI_CASHIER_ROLE = "IMOGI Cashier";
 const IMOGI_MANAGER_ROLES = ["System Manager", "Administrator"];
 const IMOGI_CASHIER_PATH = "/app/imogi-pos-cashier";
+const IMOGI_ORDER_HISTORY_PATH = "/app/imogi-pos-order-history";
 const IMOGI_OPEN_SHIFT_PATH = "/app/imogi-pos-open-shift";
 const IMOGI_CLOSE_SHIFT_PATH = "/app/imogi-pos-close-shift";
+const IMOGI_POS_ORDER_DOCTYPE = "Riwayat Order";
 const IMOGI_OPEN_SHIFT_PAGE = "imogi-pos-open-shift";
 const IMOGI_CLOSE_SHIFT_PAGE = "imogi-pos-close-shift";
 const IMOGI_SHIFT_OPENING_DOCTYPE = "IMOGI POS Shift Opening";
@@ -138,6 +179,29 @@ function imogi_pos_on_cashier_flow_page() {
 	);
 }
 
+function imogi_pos_on_order_history_page() {
+	const path = imogi_pos_current_path();
+	if (path === IMOGI_ORDER_HISTORY_PATH || path.startsWith(`${IMOGI_ORDER_HISTORY_PATH}/`)) {
+		return true;
+	}
+	const route = frappe.get_route?.() || [];
+	return route[0] === "imogi-pos-order-history";
+}
+
+function imogi_pos_on_pos_order_form() {
+	const route = frappe.get_route?.() || [];
+	return route[0] === "Form" && route[1] === IMOGI_POS_ORDER_DOCTYPE;
+}
+
+/** Cashier may open these without fullscreen guard sending them back to Kasir. */
+function imogi_pos_on_cashier_allowed_page() {
+	return (
+		imogi_pos_on_cashier_flow_page() ||
+		imogi_pos_on_order_history_page() ||
+		imogi_pos_on_pos_order_form()
+	);
+}
+
 function imogi_pos_logout_cashier() {
 	frappe.confirm(__("Logout dan ganti user kasir?"), () => {
 		imogi_pos.opening_entry_locked = false;
@@ -154,7 +218,7 @@ function imogi_pos_guard_cashier_fullscreen() {
 	if (!imogi_pos_requires_shift_workflow()) {
 		return false;
 	}
-	if (imogi_pos_on_cashier_flow_page()) {
+	if (imogi_pos_on_cashier_allowed_page()) {
 		return false;
 	}
 
@@ -213,7 +277,11 @@ function imogi_pos_on_desk_landing() {
 	if (path === "/app" || path === "/app/home" || path.startsWith("/app/home/")) {
 		return true;
 	}
-	if (path === "/app/imogi-pos" || path === "/app/imogi-pos-dashboard") {
+	if (
+		path === "/app/imogi-pos" ||
+		path.endsWith("/app/imogi-pos") ||
+		path === "/app/imogi-pos-dashboard"
+	) {
 		return true;
 	}
 	const route = frappe.get_route?.() || [];
@@ -350,6 +418,7 @@ const IMOGI_POS_THEMED_ROUTES = new Set([
 	"imogi-pos-cashier",
 	"imogi-pos-open-shift",
 	"imogi-pos-close-shift",
+	"imogi-pos-order-history",
 ]);
 
 function imogi_pos_is_themed_route(route = frappe.get_route?.() || []) {
@@ -429,6 +498,14 @@ $(document).on("app_ready", () => {
 					return;
 				}
 				if (imogi_pos_guard_cashier_fullscreen()) {
+					return;
+				}
+				if (
+					frappe.boot?.imogi_pos_dedicated_cashier &&
+					(imogi_pos_current_path() === "/app/imogi-pos" ||
+						imogi_pos_current_path().endsWith("/app/imogi-pos"))
+				) {
+					window.location.replace(IMOGI_CASHIER_PATH);
 					return;
 				}
 				imogi_pos_redirect_cashier_home();

@@ -67,43 +67,9 @@ def _filter_items_by_groups(items, ctx):
 
 
 def _get_item_price_rate(item_code, ctx):
-	price_list = ctx["price_list"]
-	if not price_list:
-		return 0
+	from imogi_pos.imogi_pos.utils.branch_pricing import resolve_selling_price_rate
 
-	rate = frappe.db.get_value(
-		"Item Price",
-		{"item_code": item_code, "price_list": price_list, "selling": 1},
-		"price_list_rate",
-	)
-	if rate is not None and flt(rate) > 0:
-		return flt(rate)
-
-	template = frappe.db.get_value("Item", item_code, "variant_of")
-	if template:
-		rate = frappe.db.get_value(
-			"Item Price",
-			{"item_code": template, "price_list": price_list, "selling": 1},
-			"price_list_rate",
-		)
-		if rate is not None and flt(rate) > 0:
-			return flt(rate)
-
-	rate = flt(frappe.db.get_value("Item", item_code, "standard_rate"))
-	if rate:
-		return rate
-
-	if cint(frappe.db.get_value("Item", item_code, "has_variants")):
-		variant_rates = frappe.get_all(
-			"Item",
-			filters={"variant_of": item_code, "disabled": 0, "is_sales_item": 1},
-			pluck="standard_rate",
-		)
-		positive = [flt(value) for value in variant_rates if flt(value) > 0]
-		if positive:
-			return min(positive)
-
-	return 0
+	return resolve_selling_price_rate(item_code, ctx.get("price_list"), company=ctx.get("company"))
 
 
 def _serialize_item(row, extra=None, warehouse=None):

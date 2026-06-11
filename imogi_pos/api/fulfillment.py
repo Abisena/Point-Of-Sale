@@ -17,7 +17,7 @@ def get_fulfillment_queue():
 			ft.assigned_to,
 			po.order_type, po.order_channel, po.customer_name, po.grand_total
 		from `tabIMOGI Fulfillment Task` ft
-		left join `tabIMOGI POS Order` po on po.name = ft.pos_order
+		left join `tabRiwayat Order` po on po.name = ft.pos_order
 		where ft.status not in ('Done', 'Cancelled')
 			and ft.docstatus < 2
 		order by ft.creation asc
@@ -63,5 +63,5 @@ def complete_fulfillment_from_queue(fulfillment_task):
 	if not ft.pos_order:
 		frappe.throw(_("Fulfillment task is not linked to a POS order"))
 
-	pos_order = frappe.get_doc("IMOGI POS Order", ft.pos_order)
+	pos_order = frappe.get_doc("Riwayat Order", ft.pos_order)
 	return pos_order.action_complete_fulfillment()

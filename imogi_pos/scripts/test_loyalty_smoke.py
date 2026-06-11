@@ -75,7 +75,7 @@ def _enable_loyalty(settings):
 def _build_test_order(items, customer, company, totals, voucher_code):
 	from imogi_pos.imogi_pos.utils.loyalty import apply_promotions_to_order
 
-	order = frappe.new_doc("IMOGI POS Order")
+	order = frappe.new_doc("Riwayat Order")
 	order.company = company
 	order.pos_profile = get_settings().default_pos_profile
 	order.order_channel = "Walk-in"

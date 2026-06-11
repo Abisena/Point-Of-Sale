@@ -386,6 +386,9 @@ imogi_pos.tier_picker.apply_tier = function (tier, options = {}) {
 				indicator: "green",
 			});
 			frappe.boot.imogi_pos_subscription_tier = msg.after || tier;
+			if (imogi_pos.apply_workspace_tier_context && msg.tier_access) {
+				imogi_pos.apply_workspace_tier_context(msg);
+			}
 			on_done(msg);
 		},
 	});

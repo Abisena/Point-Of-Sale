@@ -52,12 +52,12 @@ def ingest_marketplace_order(payload, company=None):
 		frappe.throw(_("external_order_id is required"))
 
 	existing = frappe.db.get_value(
-		"IMOGI POS Order",
+		"Riwayat Order",
 		{"external_order_id": external_id, "marketplace_platform": platform},
 		"name",
 	)
 	if existing:
-		order = frappe.get_doc("IMOGI POS Order", existing)
+		order = frappe.get_doc("Riwayat Order", existing)
 		return _serialize_marketplace_order(order)
 
 	pos_profile = data.get("pos_profile") or settings.default_pos_profile
@@ -66,7 +66,7 @@ def ingest_marketplace_order(payload, company=None):
 	if customer and not frappe.db.exists("Customer", customer):
 		customer = None
 
-	order = frappe.new_doc("IMOGI POS Order")
+	order = frappe.new_doc("Riwayat Order")
 	order.company = company
 	order.pos_profile = pos_profile
 	order.order_channel = platform
@@ -111,7 +111,7 @@ def complete_marketplace_order(
 	items=None,
 ):
 	"""Apply cashier payment to an existing marketplace order instead of creating a duplicate."""
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 	if order.order_source != "Marketplace" or order.status != "Awaiting Payment" or order.docstatus != 1:
 		frappe.throw(_("Order is not a pending marketplace order"))
@@ -192,7 +192,7 @@ def complete_marketplace_order(
 def list_pending_marketplace_orders(company=None, limit=20):
 	company = resolve_company(company)
 	rows = frappe.get_all(
-		"IMOGI POS Order",
+		"Riwayat Order",
 		filters={
 			"company": company,
 			"order_source": "Marketplace",

@@ -1,5 +1,6 @@
 {
- "actions": [],
+ "allow_copy": 0,
+ "description": "Riwayat transaksi order dari kasir POS. Order dibuat via Kasir — halaman ini hanya untuk melihat riwayat.",
  "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2026-06-04 00:00:00.000000",
@@ -420,7 +421,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "IMOGI POS Order",
+   "options": "Riwayat Order",
    "print_hide": 1,
    "read_only": 1
   }
@@ -451,7 +452,7 @@
  "modified": "2026-06-04 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Imogi POS",
- "name": "IMOGI POS Order",
+ "name": "Riwayat Order",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
@@ -469,7 +470,8 @@
    "write": 1
   },
   {
-   "create": 1,
+   "create": 0,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -477,16 +479,16 @@
    "report": 1,
    "role": "Sales Manager",
    "share": 1,
-   "submit": 1,
-   "write": 1
+   "submit": 0,
+   "write": 0
   },
   {
-   "create": 1,
+   "create": 0,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Sales User",
-   "write": 1
+   "write": 0
   }
  ],
  "sort_field": "modified",

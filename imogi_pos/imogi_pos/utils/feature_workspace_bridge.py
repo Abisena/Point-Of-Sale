@@ -3,7 +3,79 @@
 
 from __future__ import annotations
 
+from imogi_pos.imogi_pos.utils.dashboard_focus import dashboard_route_with_focus
+
 FEATURE_WORKSPACE_ROUTES: dict[str, dict] = {
+	"pos_order": {"label": "POS Order / Kasir", "route": "imogi-pos-cashier"},
+	"order_history": {"label": "Riwayat Order", "route": "imogi-pos-order-history"},
+	"customer": {"label": "Customer", "route": "imogi-pos-cashier"},
+	"take_away": {"label": "Take Away", "route": "imogi-pos-cashier"},
+	"delivery_order": {"label": "Delivery Order", "route": "imogi-pos-cashier"},
+	"hold_order": {"label": "Hold Order", "route": "imogi-pos-cashier"},
+	"multi_payment": {"label": "Multi Payment", "route": "imogi-pos-cashier"},
+	"split_bill": {"label": "Split Bill", "route": "imogi-pos-cashier"},
+	"open_shift": {"label": "Buka Shift", "route": "imogi-pos-open-shift"},
+	"close_shift": {"label": "Tutup Shift", "route": "imogi-pos-close-shift"},
+	"cash_in_out": {"label": "Cash In/Out", "route": "imogi-pos-close-shift"},
+	"dashboard_sales": {
+		"label": "Dashboard & Analitik",
+		"route": dashboard_route_with_focus("dashboard_sales"),
+	},
+	"sales_report": {"label": "Laporan Penjualan", "route": "imogi-pos-sales-report"},
+	"sales_by_hour": {
+		"label": "Sales by Hour",
+		"route": dashboard_route_with_focus("sales_by_hour"),
+	},
+	"sales_by_category": {
+		"label": "Sales by Category",
+		"route": dashboard_route_with_focus("sales_by_category"),
+	},
+	"top_menu": {"label": "Menu Terlaris", "route": dashboard_route_with_focus("top_menu")},
+	"food_cost_report": {
+		"label": "Food Cost Report",
+		"route": dashboard_route_with_focus("food_cost_report"),
+	},
+	"waste_report": {"label": "Waste Report", "route": dashboard_route_with_focus("waste_report")},
+	"sales_by_payment": {
+		"label": "Sales by Payment Method",
+		"route": dashboard_route_with_focus("sales_by_payment"),
+	},
+	"discount_report": {
+		"label": "Discount Report",
+		"route": dashboard_route_with_focus("discount_report"),
+	},
+	"refund_report": {
+		"label": "Refund Report",
+		"route": dashboard_route_with_focus("refund_report"),
+	},
+	"qris": {"label": "QRIS / Gateway Payment", "route": "List/IMOGI POS Gateway Payment"},
+	"gofood_integration": {"label": "GoFood Integration", "route": "imogi-pos-settings"},
+	"grabfood_integration": {"label": "GrabFood Integration", "route": "imogi-pos-settings"},
+	"accounting_integration": {"label": "Integrasi Akuntansi", "route": "List/Sales Invoice"},
+	"dashboard_operational": {
+		"label": "Dashboard Operasional",
+		"route": dashboard_route_with_focus("dashboard_operational"),
+	},
+	"modifier": {"label": "Modifier Produk", "route": "List/Item"},
+	"add_on": {"label": "Add-On Produk", "route": "imogi-pos-menu"},
+	"kitchen_performance": {
+		"label": "Kitchen Performance",
+		"route": dashboard_route_with_focus("kitchen_performance"),
+	},
+	"table_turnover_report": {
+		"label": "Table Turnover",
+		"route": dashboard_route_with_focus("table_turnover_report"),
+	},
+	"customer_visit_report": {
+		"label": "Customer Visit",
+		"route": dashboard_route_with_focus("customer_visit_report"),
+	},
+	"cashback": {"label": "Cashback", "route": "imogi-pos-settings"},
+	"birthday_promo": {"label": "Birthday Promo", "route": "imogi-pos-settings"},
+	"central_kitchen": {"label": "Central Kitchen", "route": "imogi-pos-settings"},
+	"central_menu_management": {"label": "Central Menu", "route": "imogi-pos-settings"},
+	"central_purchasing": {"label": "Central Purchasing", "route": "List/Material Request"},
+	"multi_outlet": {"label": "Multi Outlet", "route": "List/IMOGI Branch"},
 	"recipe_management": {"label": "BOM / Resep", "route": "List/BOM"},
 	"food_costing": {"label": "BOM / Food Cost", "route": "List/BOM"},
 	"portion_control": {"label": "BOM / Porsi", "route": "List/BOM"},
@@ -32,7 +104,6 @@ FEATURE_WORKSPACE_ROUTES: dict[str, dict] = {
 	"ingredient_substitution": {"label": "BOM Substitusi", "route": "List/BOM"},
 	"recipe_versioning": {"label": "Versi BOM", "route": "List/Version"},
 	"central_inventory": {"label": "Stok Cabang", "route": "List/IMOGI Branch"},
-	"central_purchasing": {"label": "Material Request HQ", "route": "List/Material Request"},
 	"spoilage_management": {"label": "Spoilage / Waste", "route": "List/Stock Entry"},
 	"expired_monitoring": {"label": "Batch Expiry", "route": "List/Batch"},
 	"stock_forecast": {"label": "Stock Ledger", "route": "query-report/Stock Ledger"},

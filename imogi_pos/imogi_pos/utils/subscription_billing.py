@@ -85,6 +85,11 @@ def _period_is_valid(settings) -> bool:
 
 def resolve_effective_tier(settings=None) -> str:
 	"""Tier from billing state when SaaS sync is enabled."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		return "Enterprise"
+
 	settings = settings or get_settings()
 	manual_tier = normalize_tier(getattr(settings, "subscription_tier", None) or "Enterprise")
 
@@ -234,6 +239,10 @@ def sync_tier_from_billing(settings=None) -> dict:
 
 def enforce_billing_tier_on_settings(doc):
 	"""Keep tier aligned with billing when auto-apply is on."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		return
 	if not is_billing_sync_enabled(doc):
 		return
 	if not cint(getattr(doc, "billing_auto_apply_tier", 1)):

@@ -32,7 +32,7 @@ def _extract_api_credentials():
 def validate_order_api_access():
 	"""Allow logged-in POS users or external callers with IMOGI API token."""
 	if frappe.session.user and frappe.session.user != "Guest":
-		if frappe.has_permission("IMOGI POS Order", "write"):
+		if frappe.has_permission("Riwayat Order", "write"):
 			return
 		frappe.throw(_("Not permitted to access Order API"), frappe.PermissionError)
 

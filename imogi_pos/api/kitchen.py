@@ -30,7 +30,7 @@ def get_kitchen_queue(station_type=None):
 			po.order_type, po.order_channel, po.customer_name, po.grand_total,
 			ks.station_type
 		from `tabIMOGI Kitchen Order` ko
-		left join `tabIMOGI POS Order` po on po.name = ko.pos_order
+		left join `tabRiwayat Order` po on po.name = ko.pos_order
 		left join `tabIMOGI Kitchen Station` ks on ks.name = ko.kitchen_station
 		where ko.status in ('Pending', 'Preparing')
 			and ko.docstatus < 2
@@ -78,5 +78,5 @@ def complete_kitchen_from_display(kitchen_order):
 		frappe.throw(_("Kitchen order is not linked to a POS order"))
 
 	ko.db_set("status", "Done")
-	pos_order = frappe.get_doc("IMOGI POS Order", ko.pos_order)
+	pos_order = frappe.get_doc("Riwayat Order", ko.pos_order)
 	return pos_order.action_complete_kitchen()

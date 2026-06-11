@@ -6,14 +6,14 @@ from frappe.utils import flt
 
 
 def sync_imogi_order_from_pos_invoice(doc, method=None):
-	"""Option B — mirror ERPNext POS Invoice into IMOGI POS Order for unified dashboard."""
+	"""Option B — mirror ERPNext POS Invoice into Riwayat Order for unified dashboard."""
 	if not doc.is_pos or doc.is_return or doc.docstatus != 1:
 		return
 
 	if doc.get("imogi_pos_order"):
 		return
 
-	existing = frappe.db.get_value("IMOGI POS Order", {"pos_invoice": doc.name}, "name")
+	existing = frappe.db.get_value("Riwayat Order", {"pos_invoice": doc.name}, "name")
 	if existing:
 		frappe.db.set_value(
 			"POS Invoice",
@@ -58,7 +58,7 @@ def cancel_imogi_order_from_pos_invoice(doc, method=None):
 	if not doc.get("imogi_pos_order"):
 		return
 
-	order = frappe.get_doc("IMOGI POS Order", doc.imogi_pos_order)
+	order = frappe.get_doc("Riwayat Order", doc.imogi_pos_order)
 	if order.docstatus != 1:
 		return
 
@@ -67,7 +67,7 @@ def cancel_imogi_order_from_pos_invoice(doc, method=None):
 		order.cancel()
 	except frappe.ValidationError:
 		frappe.log_error(
-			title=_("Could not cancel IMOGI POS Order for invoice {0}").format(doc.name),
+			title=_("Could not cancel Riwayat Order for invoice {0}").format(doc.name),
 			message=frappe.get_traceback(),
 		)
 	finally:
@@ -75,7 +75,7 @@ def cancel_imogi_order_from_pos_invoice(doc, method=None):
 
 
 def _build_order_from_pos_invoice(invoice):
-	order = frappe.new_doc("IMOGI POS Order")
+	order = frappe.new_doc("Riwayat Order")
 	order.naming_series = "ORD-.YYYY.-"
 	order.company = invoice.company
 	order.pos_profile = invoice.pos_profile

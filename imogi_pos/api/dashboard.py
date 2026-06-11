@@ -16,6 +16,15 @@ from imogi_pos.imogi_pos.utils.low_stock import get_low_stock_items
 from imogi_pos.imogi_pos.utils.sales_target import get_sales_target_progress
 
 
+def _require_dashboard_access():
+	"""Owner dashboard API — tier + role gate (blocks Manager/Cashier cross-access)."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Not permitted"), frappe.AuthenticationError)
+	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+	require_feature_operational("dashboard_sales")
+
+
 def _day_bounds(date=None):
 	day = getdate(date) if date else getdate(today())
 	return day, add_days(day, 1)
@@ -107,6 +116,7 @@ def _get_pos_shift_status(company=None):
 
 @frappe.whitelist()
 def get_dashboard_metrics(date=None, branch=None, pos_profile=None, company=None):
+	_require_dashboard_access()
 	settings = get_settings()
 	day_start, day_end = _day_bounds(date)
 	scope = _resolve_dashboard_scope(branch=branch, pos_profile=pos_profile, company=company)
@@ -174,7 +184,7 @@ def _get_top_products(day_start, day_end, company=None, pos_profile=None, limit=
 			coalesce(sum(oi.qty), 0) as qty,
 			coalesce(sum(oi.amount), 0) as sales
 		from `tabIMOGI POS Order Item` oi
-		inner join `tabIMOGI POS Order` o on o.name = oi.parent
+		inner join `tabRiwayat Order` o on o.name = oi.parent
 		where o.status = 'Completed'
 			and o.creation >= %(day_start)s and o.creation < %(day_end)s
 			{scope_clause}
@@ -199,7 +209,7 @@ def _get_awaiting_orders(company=None, pos_profile=None, limit=10):
 	if pos_profile:
 		filters["pos_profile"] = pos_profile
 	return frappe.get_all(
-		"IMOGI POS Order",
+		"Riwayat Order",
 		filters=filters,
 		fields=["name", "grand_total", "customer", "modified", "order_channel", "pos_profile"],
 		order_by="modified desc",
@@ -213,7 +223,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	orders = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -222,7 +232,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	completed = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where status = 'Completed' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -231,7 +241,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	in_kitchen = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where status = 'In Kitchen' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -240,7 +250,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	in_service = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where status = 'In Service' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -250,7 +260,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 	sales = frappe.db.sql(
 		f"""
 		select coalesce(sum(grand_total), 0)
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status not in ('Cancelled', 'Draft')
 			and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
@@ -261,7 +271,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 	by_channel = frappe.db.sql(
 		f"""
 		select order_channel, count(*) as count
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where creation >= %(day_start)s and creation < %(day_end)s and status != 'Cancelled'
 		{scope_clause}
 		group by order_channel
@@ -273,7 +283,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 	by_type = frappe.db.sql(
 		f"""
 		select order_type, count(*) as count
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where creation >= %(day_start)s and creation < %(day_end)s and status != 'Cancelled'
 		{scope_clause}
 		group by order_type
@@ -308,7 +318,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	orders = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -317,7 +327,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	completed = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where status = 'Completed' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -326,7 +336,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 
 	awaiting = frappe.db.sql(
 		f"""
-		select count(*) from `tabIMOGI POS Order`
+		select count(*) from `tabRiwayat Order`
 		where status = 'Awaiting Payment' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -336,7 +346,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 	sales = frappe.db.sql(
 		f"""
 		select coalesce(sum(grand_total), 0)
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status = 'Completed' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		""",
@@ -350,7 +360,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 		f"""
 		select coalesce(order_source, 'IMOGI POS') as order_source, count(*) as count,
 			coalesce(sum(grand_total), 0) as sales
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status = 'Completed' and creation >= %(day_start)s and creation < %(day_end)s
 		{scope_clause}
 		group by order_source
@@ -363,7 +373,7 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 		f"""
 		select pay.mode_of_payment, coalesce(sum(pay.amount), 0) as amount, count(*) as count
 		from `tabIMOGI POS Order Payment` pay
-		inner join `tabIMOGI POS Order` o on o.name = pay.parent
+		inner join `tabRiwayat Order` o on o.name = pay.parent
 		where o.status = 'Completed' and o.creation >= %(day_start)s and o.creation < %(day_end)s
 		{pay_scope_clause}
 		group by pay.mode_of_payment

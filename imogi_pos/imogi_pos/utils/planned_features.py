@@ -12,8 +12,8 @@ from imogi_pos.imogi_pos.utils.flow import get_settings, release_restaurant_tabl
 
 def merge_restaurant_orders(primary_order: str, secondary_order: str) -> dict:
 	"""Gabung item dari order sekunder ke order utama."""
-	primary = frappe.get_doc("IMOGI POS Order", primary_order)
-	secondary = frappe.get_doc("IMOGI POS Order", secondary_order)
+	primary = frappe.get_doc("Riwayat Order", primary_order)
+	secondary = frappe.get_doc("Riwayat Order", secondary_order)
 	primary.check_permission("write")
 	secondary.check_permission("write")
 
@@ -61,7 +61,7 @@ def get_food_cost_report(date_from=None, date_to=None, company=None) -> dict:
 		"""
 		select coalesce(sum(oi.amount), 0) as sales
 		from `tabIMOGI POS Order Item` oi
-		inner join `tabIMOGI POS Order` o on o.name = oi.parent
+		inner join `tabRiwayat Order` o on o.name = oi.parent
 		where o.status = 'Completed' and o.company = %(company)s
 			and o.creation >= %(start)s and o.creation < %(end)s
 		""",
@@ -73,7 +73,7 @@ def get_food_cost_report(date_from=None, date_to=None, company=None) -> dict:
 		"""
 		select coalesce(sum(bi.amount * oi.qty / nullif(b.quantity, 0)), 0) as ingredient_cost
 		from `tabIMOGI POS Order Item` oi
-		inner join `tabIMOGI POS Order` o on o.name = oi.parent
+		inner join `tabRiwayat Order` o on o.name = oi.parent
 		inner join `tabBOM` b on b.item = oi.item_code and b.is_default = 1 and b.docstatus = 1
 		inner join `tabBOM Item` bi on bi.parent = b.name
 		where o.status = 'Completed' and o.company = %(company)s
@@ -135,7 +135,7 @@ def get_table_turnover_report(date_from=None, date_to=None, company=None) -> dic
 			count(o.name) as turns,
 			coalesce(sum(o.grand_total), 0) as sales
 		from `tabIMOGI Restaurant Table` rt
-		left join `tabIMOGI POS Order` o on o.restaurant_table = rt.name
+		left join `tabRiwayat Order` o on o.restaurant_table = rt.name
 			and o.status = 'Completed'
 			and o.creation >= %(start)s and o.creation < %(end)s
 		where rt.company = %(company)s
@@ -159,7 +159,7 @@ def get_customer_visit_report(date_from=None, date_to=None, company=None) -> dic
 			count(*) as visits,
 			coalesce(sum(grand_total), 0) as spend,
 			max(creation) as last_visit
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status = 'Completed' and company = %(company)s
 			and customer is not null and customer != ''
 			and creation >= %(start)s and creation < %(end)s
@@ -205,7 +205,7 @@ def get_discount_analysis(date_from=None, date_to=None, company=None) -> dict:
 		select coalesce(discount_type, 'Amount') as discount_type,
 			count(*) as orders,
 			coalesce(sum(discount_amount), 0) as total_discount
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status not in ('Cancelled', 'Draft')
 			and coalesce(discount_amount, 0) > 0
 			and company = %(company)s
@@ -227,7 +227,7 @@ def get_void_analysis(date_from=None, date_to=None, company=None) -> dict:
 	rows = frappe.db.sql(
 		"""
 		select name, customer_name, grand_total, remarks, modified, owner
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status = 'Cancelled' and company = %(company)s
 			and modified >= %(start)s and modified < %(end)s
 		order by modified desc

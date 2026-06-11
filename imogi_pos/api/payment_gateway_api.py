@@ -8,6 +8,7 @@ from frappe.utils import cint
 
 from imogi_pos.api.cashier import _require_cashier_access
 from imogi_pos.imogi_pos.utils.payment_gateway import (
+	_qr_string_to_png_bytes,
 	create_gateway_payment,
 	get_gateway_settings,
 	get_webhook_url,
@@ -81,11 +82,33 @@ def get_gateway_payment(payment_name):
 
 
 @frappe.whitelist()
+def get_qr_image(payment_name):
+	"""Return QRIS PNG for <img src> (works even when client JS is cached)."""
+	_require_cashier_access()
+	doc = frappe.get_doc("IMOGI POS Gateway Payment", payment_name)
+	doc.check_permission("read")
+	payload = {}
+	try:
+		payload = json.loads(doc.qris_payload or "{}")
+	except Exception:
+		payload = {}
+	qr_string = (payload.get("qr_string") or "").strip()
+	if not qr_string and payload.get("qr_url") and not str(payload.get("qr_url")).startswith(("http://", "https://")):
+		qr_string = str(payload.get("qr_url")).strip()
+	png = _qr_string_to_png_bytes(qr_string)
+	if not png:
+		frappe.throw(_("QR code tidak tersedia"))
+	frappe.local.response.filename = f"qris-{payment_name}.png"
+	frappe.local.response.filecontent = png
+	frappe.local.response.type = "binary"
+
+
+@frappe.whitelist()
 def get_gateway_order(order_name):
 	_require_cashier_access()
 	from imogi_pos.api.order import _serialize_order
 
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("read")
 	return _serialize_order(order)
 

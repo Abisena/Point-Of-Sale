@@ -58,7 +58,7 @@ def get_data(filters):
 				count(*) as order_count,
 				coalesce(sum(case when status = 'Completed' then 1 else 0 end), 0) as completed_count,
 				coalesce(sum(case when status = 'Completed' then grand_total else 0 end), 0) as sales_total
-			from `tabIMOGI POS Order`
+			from `tabRiwayat Order`
 			where docstatus < 2
 				and pos_profile = %s
 				and date(creation) >= %s and date(creation) <= %s

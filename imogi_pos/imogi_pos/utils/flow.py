@@ -6,7 +6,8 @@ from frappe.utils import add_to_date, flt, get_datetime, now_datetime
 
 
 def get_settings():
-	return frappe.get_single("IMOGI POS Settings")
+	"""Singleton POS config for runtime gating — not a user-facing settings form."""
+	return frappe.get_cached_doc("IMOGI POS Settings", "IMOGI POS Settings", ignore_permissions=True)
 
 
 def resolve_company(company=None, settings=None):

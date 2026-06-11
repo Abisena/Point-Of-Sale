@@ -3336,6 +3336,10 @@
 	grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
 }
 
+.imogi-hero-grid--mode-only {
+	grid-template-columns: minmax(0, 1fr);
+}
+
 @media (max-width: 960px) {
 	.imogi-hero-grid {
 		grid-template-columns: 1fr;

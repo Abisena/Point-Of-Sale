@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Contoh tes IMOGI POS Order API (Python + requests).
+Contoh tes Riwayat Order API (Python + requests).
 
 Setup:
   1. IMOGI POS Settings → aktifkan Order API → Save
@@ -145,7 +145,7 @@ def print_json(data: Any) -> None:
 
 
 def main() -> None:
-	parser = argparse.ArgumentParser(description="Test IMOGI POS Order API")
+	parser = argparse.ArgumentParser(description="Test Riwayat Order API")
 	sub = parser.add_subparsers(dest="command", required=True)
 
 	p_create = sub.add_parser("create", help="Create order (optional auto pay)")

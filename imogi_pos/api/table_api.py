@@ -56,7 +56,7 @@ def move_restaurant_table(order_name, new_table, company=None):
 	if not order_name or not new_table:
 		frappe.throw(_("Order dan meja tujuan wajib diisi"))
 
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
 	if order.status in ("Completed", "Cancelled", "Refunded"):
 		frappe.throw(_("Order sudah selesai — tidak bisa pindah meja"))

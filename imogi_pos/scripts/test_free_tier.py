@@ -34,7 +34,7 @@ BLOCKED_ON_FREE = (
 WORKSPACE_VISIBLE = (
 	("Page", "imogi-pos-cashier"),
 	("Page", "imogi-pos-dashboard"),
-	("DocType", "IMOGI POS Order"),
+	("DocType", "Riwayat Order"),
 	("DocType", "IMOGI POS Settings"),
 	("Report", "IMOGI POS Order Summary"),
 )
@@ -137,14 +137,37 @@ def run():
 		]
 		check("filter_cards", card_links == ["imogi-pos-cashier"], str(card_links))
 
+		settings.subscription_tier = "Professional"
 		settings.enable_loyalty = 1
 		settings.enable_pos_shift = 1
+		settings.save(ignore_permissions=True)
+		frappe.db.commit()
+		settings.reload()
 		settings.subscription_tier = "Free"
-		enforce_settings_tier_limits(settings)
+		settings.save(ignore_permissions=True)
+		frappe.db.commit()
+		settings.reload()
 		check("downgrade_loyalty_off", not settings.enable_loyalty)
 		check("downgrade_shift_off", not settings.enable_pos_shift)
 
-		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+		from imogi_pos.imogi_pos.utils.feature_gating import (
+			require_feature_operational,
+			validate_checkout_features,
+			validate_order_type,
+		)
+
+		for order_type in ("Takeaway", "Dine-in", "Delivery"):
+			try:
+				validate_order_type(order_type, settings)
+				check(f"checkout_order_type_{order_type}", True)
+			except Exception as exc:
+				check(f"checkout_order_type_{order_type}", False, str(exc))
+
+		try:
+			validate_checkout_features(order_type="Takeaway", settings=settings)
+			check("checkout_features_takeaway", True)
+		except Exception as exc:
+			check("checkout_features_takeaway", False, str(exc))
 
 		for feature_id, should_block in (
 			("pos_order", False),
@@ -161,6 +184,48 @@ def run():
 				f"api_require_{feature_id}",
 				blocked if should_block else not blocked,
 				"blocked" if blocked else "allowed",
+			)
+
+		def _user_for_role(role):
+			for user in frappe.get_all(
+				"Has Role", filters={"role": role, "parenttype": "User"}, pluck="parent"
+			):
+				if user in ("Administrator", "Guest"):
+					continue
+				if frappe.db.get_value("User", user, "enabled"):
+					return user
+			return None
+
+		from imogi_pos.api.dashboard import get_dashboard_metrics
+
+		owner_user = _user_for_role("IMOGI Owner")
+		manager_user = _user_for_role("IMOGI Manager")
+		cashier_user = _user_for_role("IMOGI Cashier")
+
+		if owner_user:
+			frappe.set_user(owner_user)
+			try:
+				get_dashboard_metrics()
+				check("api_dashboard_owner", True)
+			except Exception as exc:
+				check("api_dashboard_owner", False, str(exc))
+
+		for role_label, user in (("manager", manager_user), ("cashier", cashier_user)):
+			if not user:
+				continue
+			frappe.set_user(user)
+			blocked = False
+			try:
+				get_dashboard_metrics()
+			except Exception:
+				blocked = True
+			check(f"api_dashboard_{role_label}_blocked", blocked)
+
+		if cashier_user:
+			frappe.set_user(cashier_user)
+			check(
+				"api_cashier_no_settings_read",
+				not frappe.has_permission("IMOGI POS Settings", "read"),
 			)
 
 		frappe.set_user("Administrator")

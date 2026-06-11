@@ -71,6 +71,12 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_payment_dock_summary(frm);
 		render_integrations_dock_summary(frm);
 		render_franchise_dock_summary(frm);
+		if (is_erp_enterprise_deployment()) {
+			frappe.publish_realtime("imogi_pos_settings_updated", {
+				enable_pos_shift: cint(frm.doc.enable_pos_shift),
+			});
+			return;
+		}
 		frappe.call({
 			method: "imogi_pos.api.feature_api.get_workspace_tier_context",
 			callback(r) {
@@ -119,6 +125,22 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	default_company(frm) {
 		render_receipt_preview(frm);
+	},
+
+	enable_pos_shift(frm) {
+		render_shift_dock_summary(frm);
+	},
+
+	default_pos_profile(frm) {
+		render_shift_dock_summary(frm);
+	},
+
+	default_opening_time(frm) {
+		render_shift_dock_summary(frm);
+	},
+
+	default_closing_time(frm) {
+		render_shift_dock_summary(frm);
 	},
 
 	business_type(frm) {
@@ -325,7 +347,7 @@ const SETTINGS_TABS = [
 		id: "general",
 		label: __("Dasar"),
 		icon: "fa-sliders",
-		desc: __("Mode operasional, paket langganan, dan identitas toko"),
+		desc: __("Mode operasional dan identitas toko"),
 		sections: ["store_identity_section", "branch_pricing_section", "general_section", "flow_section"],
 	},
 	{
@@ -367,14 +389,14 @@ const SETTINGS_TABS = [
 		id: "integrations",
 		label: __("Integrasi"),
 		icon: "fa-plug",
-		desc: __("Order API, offline cashier, marketplace & billing"),
+		desc: __("Order API, offline cashier, dan marketplace"),
 		sections: ["api_section", "integrations_section", "billing_section"],
 	},
 	{
 		id: "roles",
 		label: __("Role & Akses"),
 		icon: "fa-users",
-		desc: __("Role gating, approval workflow & central kitchen"),
+		desc: __("Owner / Manager / Kasir, approval workflow & central kitchen"),
 		sections: ["operations_section"],
 	},
 	{
@@ -528,6 +550,28 @@ const SETTINGS_FORM_LAYOUT = [
 	"order_api_info",
 ];
 
+const SETTINGS_BILLING_FIELD_NAMES = [
+	"enable_saas_billing_sync",
+	"billing_provider",
+	"billing_external_id",
+	"billing_plan_code",
+	"billing_status",
+	"billing_period_end",
+	"billing_last_synced",
+	"billing_auto_apply_tier",
+	"billing_webhook_secret",
+	"sync_subscription_tier",
+];
+
+function is_erp_enterprise_deployment() {
+	return imogi_pos.is_erp_enterprise_deployment ? imogi_pos.is_erp_enterprise_deployment() : true;
+}
+
+function hide_enterprise_subscription_ui(frm) {
+	set_settings_section_visible(frm, "billing_section", false);
+	SETTINGS_BILLING_FIELD_NAMES.forEach((fieldname) => frm.toggle_display(fieldname, false));
+}
+
 const SETTINGS_ALWAYS_HIDDEN_FIELDS = new Set([
 	"business_type",
 	"business_template",
@@ -631,6 +675,13 @@ function inject_imogi_settings_css() {
 		.imogi-settings-page .frappe-control[data-imogi-tier-locked="1"] .control-label::after {
 			content: " 🔒"; font-size: 11px; opacity: 0.75;
 		}
+		.imogi-shift-settings-dock{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-top:14px;padding:14px 16px}
+		.imogi-shift-form-grid{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:10px}
+		.imogi-shift-quick-links{align-items:center;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px}
+		.imogi-shift-quick-links a{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;display:inline-flex;font-size:11px;font-weight:600;gap:5px;padding:6px 10px;text-decoration:none!important}
+		.imogi-shift-quick-links a:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
+		.imogi-shift-status{align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;display:flex;font-size:12px;font-weight:600;gap:8px;margin-top:10px;padding:8px 12px}
+		.imogi-shift-status.is-off{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
 	`, "imogi-settings-inline-css-v6");
 }
 
@@ -660,18 +711,25 @@ function init_settings_page(frm) {
 	build_franchise_dock(frm);
 	build_import_dock(frm);
 	build_target_dock(frm);
-	build_billing_dock(frm);
 	build_subscription_tier_dock(frm);
+	if (is_erp_enterprise_deployment()) {
+		hide_enterprise_subscription_ui(frm);
+	} else {
+		build_billing_dock(frm);
+		apply_billing_ui_state(frm);
+		fetch_settings_tier_locks(frm);
+	}
 	style_form_sections(frm);
 	style_setting_cards(frm);
 	build_sidebar_help(frm);
 	build_trust_cards(frm);
 	activate_settings_tab(frm, __imogi_settings_active_tab);
-	apply_billing_ui_state(frm);
-	fetch_settings_tier_locks(frm);
 }
 
 function apply_billing_ui_state(frm) {
+	if (is_erp_enterprise_deployment()) {
+		return;
+	}
 	const sync_on = cint(frm.doc.enable_saas_billing_sync);
 	const auto_apply = cint(frm.doc.billing_auto_apply_tier);
 	frm.set_df_property("subscription_tier", "read_only", sync_on && auto_apply);
@@ -813,6 +871,9 @@ function render_billing_dock_summary(frm) {
 }
 
 function fetch_settings_tier_locks(frm) {
+	if (is_erp_enterprise_deployment()) {
+		return;
+	}
 	const tier = frm.doc.subscription_tier || "";
 	frappe.call({
 		method: "imogi_pos.api.feature_api.get_settings_tier_locks",
@@ -827,6 +888,9 @@ function fetch_settings_tier_locks(frm) {
 }
 
 function apply_settings_tier_locks(frm, data) {
+	if (is_erp_enterprise_deployment()) {
+		return;
+	}
 	if (!data || !data.locks) return;
 
 	render_tier_lock_banner(frm, data);
@@ -952,10 +1016,18 @@ function set_settings_section_visible(frm, fieldname, show) {
 function get_visible_settings_tabs(frm) {
 	const is_umkm = frm.doc.business_type === "UMKM";
 	return SETTINGS_TABS.filter((tab) => {
-		if (is_umkm && ["tax", "roles"].includes(tab.id)) {
+		if (is_umkm && tab.id === "tax") {
 			return false;
 		}
 		return true;
+	}).map((tab) => {
+		if (!is_erp_enterprise_deployment() || tab.id !== "integrations") {
+			return tab;
+		}
+		return {
+			...tab,
+			sections: tab.sections.filter((section) => section !== "billing_section"),
+		};
 	});
 }
 
@@ -1116,6 +1188,7 @@ function activate_settings_tab(frm, tabId) {
 	toggle_general_tab_sections(frm, tabId);
 	if (tabId === "general") {
 		layout_store_identity(frm);
+		layout_shift_settings(frm);
 		render_receipt_preview(frm);
 	}
 	if (SETTINGS_TABS.find((t) => t.id === tabId)?.placeholder) {
@@ -1861,14 +1934,8 @@ function render_mode_summary(frm) {
 	field.$wrapper.closest(".frappe-control").addClass("imogi-mode-summary-host");
 	field.$wrapper.closest(".frappe-control").find(".control-label").hide();
 
-	const tier = frm.doc.subscription_tier || frappe.boot.imogi_pos_subscription_tier || "Enterprise";
-	const tier_class = `is-tier-${String(tier).toLowerCase()}`;
-	const perks = (IMOGI_TIER_PERKS[tier] || IMOGI_TIER_PERKS.Enterprise)
-		.map((p) => `<li><i class="fa fa-check"></i>${frappe.utils.escape_html(p)}</li>`)
-		.join("");
-
 	field.$wrapper.html(`
-		<div class="imogi-hero-grid">
+		<div class="imogi-hero-grid imogi-hero-grid--mode-only">
 			<div class="imogi-mode-panel ${is_umkm ? "is-umkm" : "is-restaurant"}">
 				<div class="imogi-panel-head">
 					<div class="imogi-panel-title">${__("Mode Operasional")}</div>
@@ -1893,46 +1960,28 @@ function render_mode_summary(frm) {
 					</div>
 				</div>
 			</div>
-			<div class="imogi-tier-panel ${tier_class}">
-				<div class="imogi-tier-panel-visual" aria-hidden="true">
-					<div class="imogi-tier-card-3d">
-						<span class="imogi-tier-card-3d-label">${__("Paket")}</span>
-						<strong class="imogi-tier-panel-name">${frappe.utils.escape_html(tier)}</strong>
-					</div>
-				</div>
-				<div class="imogi-tier-panel-body">
-					<div class="imogi-tier-panel-head">
-						<span class="imogi-tier-crown"><i class="fa fa-diamond"></i></span>
-						<div>
-							<div class="imogi-tier-panel-kicker">${__("Paket Aktif")}</div>
-							<div class="imogi-tier-panel-name">${frappe.utils.escape_html(tier)}</div>
-						</div>
-					</div>
-					<ul class="imogi-tier-panel-perks">${perks}</ul>
-					<p class="imogi-tier-panel-note"></p>
-					<div class="imogi-tier-panel-actions">
-						<button type="button" class="btn btn-sm imogi-btn-orange imogi-hero-tier-upgrade-btn">${__("Kelola Langganan")}</button>
-						<button type="button" class="btn btn-sm btn-default imogi-hero-tier-matrix-btn" data-route="imogi-pos-feature-matrix">${__("Matriks Fitur")}</button>
-					</div>
-				</div>
-			</div>
 		</div>`);
 
-	const $host = field.$wrapper;
+	bind_mode_summary_handlers(frm, field.$wrapper);
+}
+
+function bind_mode_summary_handlers(frm, $host) {
 	$host.off("click.imogi-hero");
 	$host.on("click.imogi-hero", ".imogi-settings-action", function (e) {
 		e.preventDefault();
 		frappe.set_route($(this).data("route"));
 	});
-	$host.on("click.imogi-hero", ".imogi-hero-tier-upgrade-btn", (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		open_subscription_tier_picker(frm);
-	});
-	$host.on("click.imogi-hero", ".imogi-hero-tier-matrix-btn", (e) => {
-		e.preventDefault();
-		frappe.set_route($(e.currentTarget).data("route") || "imogi-pos-feature-matrix");
-	});
+	if (!is_erp_enterprise_deployment()) {
+		$host.on("click.imogi-hero", ".imogi-hero-tier-upgrade-btn", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			open_subscription_tier_picker(frm);
+		});
+		$host.on("click.imogi-hero", ".imogi-hero-tier-matrix-btn", (e) => {
+			e.preventDefault();
+			frappe.set_route($(e.currentTarget).data("route") || "imogi-pos-feature-matrix");
+		});
+	}
 	$host.on("click.imogi-hero", ".imogi-mode-tab:not(.is-active)", function (e) {
 		e.preventDefault();
 		const mode = $(this).data("mode");
@@ -1943,10 +1992,6 @@ function render_mode_summary(frm) {
 			message: __("Mode bisnis diatur saat setup awal. Jalankan ulang Setup Wizard untuk mengganti mode."),
 		});
 	});
-
-	if (frm._imogi_tier_locks) {
-		render_tier_lock_banner(frm, frm._imogi_tier_locks);
-	}
 }
 
 const STORE_IDENTITY_FIELDS = [
@@ -1955,6 +2000,14 @@ const STORE_IDENTITY_FIELDS = [
 	"store_city",
 	"target_monthly_sales",
 	"owner_whatsapp",
+];
+
+const SHIFT_SETTINGS_FIELDS = [
+	"enable_pos_shift",
+	"default_pos_profile",
+	"default_warehouse",
+	"default_opening_time",
+	"default_closing_time",
 ];
 
 function layout_store_identity(frm) {
@@ -2011,6 +2064,72 @@ function layout_store_identity(frm) {
 				</div>
 			</div>`);
 	}
+}
+
+function layout_shift_settings(frm) {
+	const ctx = get_settings_section(frm, "store_identity_section");
+	if (!ctx || !ctx.$wrapper) return;
+
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	let $dock = $body.find(".imogi-shift-settings-dock");
+	if (!$dock.length) {
+		$dock = $(`
+			<div class="imogi-shift-settings-dock">
+				<div class="imogi-settings-card-head">
+					<span class="imogi-settings-card-icon"><i class="fa fa-clock-o"></i></span>
+					<div>
+						<div class="imogi-settings-card-title">${__("Shift Kasir & Opening/Closing Entry")}</div>
+						<div class="imogi-settings-card-sub">${__(
+							"Wajib buka/tutup shift, profil kasir ERPNext, dan jam operasional default."
+						)}</div>
+					</div>
+				</div>
+				<div class="imogi-shift-status"></div>
+				<div class="imogi-shift-form-grid"></div>
+				<div class="imogi-shift-quick-links">
+					<a href="/app/imogi-pos-open-shift"><i class="fa fa-sign-in"></i> ${__("Buka Shift")}</a>
+					<a href="/app/imogi-pos-close-shift"><i class="fa fa-sign-out"></i> ${__("Tutup Shift")}</a>
+					<a href="/app/pos-opening-entry"><i class="fa fa-list"></i> ${__("POS Opening Entry")}</a>
+					<a href="/app/pos-closing-entry"><i class="fa fa-list-alt"></i> ${__("POS Closing Entry")}</a>
+				</div>
+			</div>`);
+		$body.append($dock);
+	}
+
+	const $grid = $dock.find(".imogi-shift-form-grid");
+	SHIFT_SETTINGS_FIELDS.forEach((fieldname) => {
+		frm.toggle_display(fieldname, true);
+		const field = frm.get_field(fieldname);
+		if (!field || !field.$wrapper) return;
+		const $ctrl = field.$wrapper.closest(".frappe-control");
+		$ctrl.addClass("imogi-shift-field");
+		$grid.append($ctrl);
+	});
+
+	render_shift_dock_summary(frm);
+}
+
+function render_shift_dock_summary(frm) {
+	const $status = frm.$wrapper.find(".imogi-shift-status");
+	if (!$status.length) return;
+
+	const shift_on = cint(frm.doc.enable_pos_shift);
+	const open_time = frm.doc.default_opening_time || "—";
+	const close_time = frm.doc.default_closing_time || "—";
+	const profile = frm.doc.default_pos_profile || __("Belum diatur");
+
+	$status
+		.toggleClass("is-off", !shift_on)
+		.html(
+			shift_on
+				? `<i class="fa fa-check-circle"></i> ${__(
+						"Shift aktif — kasir wajib Buka Shift (POS Opening Entry) sebelum transaksi. Profil: {0} · Jam {1}–{2}",
+						[frappe.utils.escape_html(profile), open_time, close_time]
+				  )}`
+				: `<i class="fa fa-info-circle"></i> ${__(
+						"Shift nonaktif — kasir bisa transaksi tanpa buka/tutup kas. Aktifkan toggle di bawah untuk UMKM/restoran yang pakai rekonsiliasi kas harian."
+				  )}`
+		);
 }
 
 function render_receipt_preview(frm) {

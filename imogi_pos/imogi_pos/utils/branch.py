@@ -416,7 +416,7 @@ def get_branch_sales_breakdown_with_meta(day_start, day_end, company=None, user=
 				count(*) as orders_today,
 				coalesce(sum(case when status = 'Completed' then 1 else 0 end), 0) as completed_today,
 				coalesce(sum(case when status = 'Completed' then grand_total else 0 end), 0) as sales_today
-			from `tabIMOGI POS Order`
+			from `tabRiwayat Order`
 			where docstatus < 2
 				and pos_profile = %s
 				and creation >= %s and creation < %s

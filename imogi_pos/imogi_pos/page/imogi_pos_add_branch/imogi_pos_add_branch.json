@@ -12,7 +12,9 @@
  "page_name": "imogi-pos-add-branch",
  "roles": [
   {"role": "System Manager"},
-  {"role": "Sales Manager"}
+  {"role": "Sales Manager"},
+  {"role": "IMOGI Owner"},
+  {"role": "IMOGI Area Manager"}
  ],
  "standard": "Yes",
  "system_page": 0,

@@ -13,4 +13,14 @@ def has_app_permission():
 	if set(frappe.get_roles()) & allowed_roles:
 		return True
 
+	imogi_roles = {
+		"IMOGI Owner",
+		"IMOGI Area Manager",
+		"IMOGI Manager",
+		"IMOGI Cashier",
+		"IMOGI Supervisor",
+	}
+	if set(frappe.get_roles()) & imogi_roles:
+		return True
+
 	return frappe.has_permission("POS Invoice", ptype="read")

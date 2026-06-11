@@ -36,11 +36,14 @@ app_include_css = [
 ]
 app_include_js = [
 	"/assets/imogi_pos/js/imogi_pos_boot.js",
+	"/assets/imogi_pos/js/imogi_pos_dashboard_focus.js",
+	"/assets/imogi_pos/js/imogi_pos_page_shell.js",
 	"/assets/imogi_pos/js/imogi_pos_settings_api.js",
 	"/assets/imogi_pos/js/imogi_customer_quick_entry.js",
 	"/assets/imogi_pos/js/imogi_pos_shift.js",
 	"/assets/imogi_pos/js/imogi_pos_variant_modal.js",
 	"/assets/imogi_pos/js/imogi_pos_thermal_print.js",
+	"/assets/imogi_pos/js/qrcode.min.js",
 	"/assets/imogi_pos/js/imogi_pos_qris_payment.js",
 	"/assets/imogi_pos/js/imogi_pos_loyalty.js",
 	"/assets/imogi_pos/js/imogi_pos_feature_upgrade.js",
@@ -66,14 +69,14 @@ web_include_css = "/assets/imogi_pos/css/imogi_pos_login.css"
 # page_js = {"page" : "public/js/file.js"}
 
 doctype_js = {
-	"IMOGI POS Order": "public/js/imogi_pos_order.js",
+	"Riwayat Order": "public/js/imogi_pos_order.js",
 	"IMOGI POS Settings": "public/js/imogi_pos_settings.js",
 	"IMOGI POS Shift Opening": "public/js/imogi_pos_shift_opening.js",
 	"IMOGI Branch": "public/js/imogi_branch.js",
 	"POS Opening Entry": "public/js/imogi_pos_opening_entry.js",
 	"POS Closing Entry": "public/js/imogi_pos_closing_entry.js",
 }
-doctype_list_js = {"IMOGI POS Order": "public/js/imogi_pos_order_list.js"}
+doctype_list_js = {"Riwayat Order": "public/js/imogi_pos_order_list.js"}
 
 fixtures = [
 	{
@@ -163,6 +166,9 @@ on_login = "imogi_pos.auth.on_login"
 # -----------
 # Permissions evaluated in scripted ways
 
+permission_query_conditions = {
+	"IMOGI Area Manager Assignment": "imogi_pos.imogi_pos.utils.area_manager.assignment_permission_query",
+}
 # permission_query_conditions = {
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
@@ -178,6 +184,7 @@ on_login = "imogi_pos.auth.on_login"
 override_doctype_class = {
 	"POS Invoice": "imogi_pos.overrides.pos_invoice.ImogiPOSInvoice",
 	"POS Invoice Merge Log": "imogi_pos.overrides.pos_invoice_merge_log.ImogiPOSInvoiceMergeLog",
+	"Riwayat Order": "imogi_pos.imogi_pos.doctype.riwayat_order.riwayat_order.RiwayatOrder",
 }
 
 # Document Events

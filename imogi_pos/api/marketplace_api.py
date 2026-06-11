@@ -47,7 +47,7 @@ def marketplace_webhook():
 def import_marketplace_order(order_name):
 	"""Cashier loads marketplace order items into context."""
 	_require_cashier_access()
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("read")
 	if order.order_source != "Marketplace" or order.status != "Awaiting Payment":
 		frappe.throw(_("Order is not a pending marketplace order"))

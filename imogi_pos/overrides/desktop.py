@@ -27,7 +27,9 @@ def get_desktop_page(page):
 			"custom_blocks": workspace.custom_blocks,
 		}
 		if workspace.page_name == WORKSPACE_NAME:
-			payload = apply_workspace_tier_filters(payload)
+			payload = apply_workspace_tier_filters(
+				payload, content_json=workspace.doc.content, user=frappe.session.user
+			)
 		return payload
 	except DoesNotExistError:
 		frappe.log_error("Workspace Missing")

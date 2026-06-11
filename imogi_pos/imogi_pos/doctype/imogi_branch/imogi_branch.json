@@ -205,6 +205,15 @@
   {
    "read": 1,
    "role": "IMOGI Cashier"
+  },
+  {
+   "read": 1,
+   "role": "IMOGI Manager"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "IMOGI Area Manager"
   }
  ],
  "sort_field": "sort_order",

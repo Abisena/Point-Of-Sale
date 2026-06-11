@@ -43,7 +43,7 @@ def _cleanup(tag):
 	import frappe
 
 	for doctype, field, value in (
-		("IMOGI POS Order", "order_source", f"{TEST_PREFIX}{tag}"),
+		("Riwayat Order", "order_source", f"{TEST_PREFIX}{tag}"),
 		("IMOGI Branch", "branch_code", None),
 	):
 		if doctype == "IMOGI Branch":
@@ -162,7 +162,7 @@ def run():
 			pos_profile=pos_profile,
 			company=test_company,
 		)
-		frappe.db.set_value("IMOGI POS Order", order.name, "order_source", f"{TEST_PREFIX}{tag}")
+		frappe.db.set_value("Riwayat Order", order.name, "order_source", f"{TEST_PREFIX}{tag}")
 		assert order.company == test_company, f"order company={order.company}"
 		_log("create_order", f"{order.name} company={order.company} status={order.status}")
 

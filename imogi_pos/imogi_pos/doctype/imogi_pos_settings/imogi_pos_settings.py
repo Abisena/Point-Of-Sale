@@ -29,15 +29,13 @@ class IMOGIPOSSettings(Document):
 				self.order_api_user = "Administrator"
 
 	def on_update(self):
+		from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
 		from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
 
-		frappe.publish_realtime(
-			"imogi_pos_settings_updated",
-			{
-				"enable_pos_shift": self.enable_pos_shift,
-				"subscription_tier": get_subscription_tier(self),
-			},
-		)
+		payload = {"enable_pos_shift": self.enable_pos_shift}
+		if not is_subscription_tier_disabled():
+			payload["subscription_tier"] = get_subscription_tier(self)
+		frappe.publish_realtime("imogi_pos_settings_updated", payload)
 
 	@frappe.whitelist()
 	def generate_order_api_key(self):

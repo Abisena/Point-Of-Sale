@@ -90,8 +90,8 @@
   {
    "fieldname": "order",
    "fieldtype": "Link",
-   "label": "IMOGI POS Order",
-   "options": "IMOGI POS Order",
+   "label": "Riwayat Order",
+   "options": "Riwayat Order",
    "read_only": 1
   },
   {

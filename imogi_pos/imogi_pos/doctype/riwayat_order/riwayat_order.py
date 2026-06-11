@@ -22,7 +22,7 @@ from imogi_pos.imogi_pos.utils.flow import (
 )
 
 
-class IMOGIPOSOrder(Document):
+class RiwayatOrder(Document):
 	def validate(self):
 		self.set_currency()
 		self.calculate_totals()

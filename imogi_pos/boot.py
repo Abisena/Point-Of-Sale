@@ -10,7 +10,13 @@ from imogi_pos.imogi_pos.utils.workspace import get_workspace_route
 from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO
 
 CASHIER_ROLE = "IMOGI Cashier"
+OWNER_ROLE = "IMOGI Owner"
+AREA_MANAGER_ROLE = "IMOGI Area Manager"
+MANAGER_ROLE = "IMOGI Manager"
+AREA_MANAGER_HOME_PAGE = "imogi-pos-dashboard"
 CASHIER_HOME_PAGE = "imogi-pos-cashier"
+OWNER_HOME_PAGE = "imogi-pos-dashboard"
+MANAGER_HOME_PAGE = "imogi-pos-menu"
 CASHIER_HOME_ROUTE = f"/app/{CASHIER_HOME_PAGE}"
 OPEN_SHIFT_PAGE = "imogi-pos-open-shift"
 OPEN_SHIFT_HOME_ROUTE = f"/app/{OPEN_SHIFT_PAGE}"
@@ -115,23 +121,56 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_setup_complete = bool(settings.setup_complete)
 	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
 
-	bootinfo.imogi_pos_subscription_tier = get_subscription_tier(settings)
+	from imogi_pos.imogi_pos.utils.deployment_mode import (
+		is_erp_enterprise_deployment,
+		is_subscription_tier_disabled,
+	)
+
+	bootinfo.imogi_pos_erp_enterprise_only = is_erp_enterprise_deployment()
+	bootinfo.imogi_pos_subscription_tiers_disabled = is_subscription_tier_disabled()
+	bootinfo.imogi_pos_subscription_tier = (
+		None if is_subscription_tier_disabled() else get_subscription_tier(settings)
+	)
 	from imogi_pos.imogi_pos.utils.workspace_tier_gating import serialize_workspace_link_access
 
 	bootinfo.imogi_pos_workspace_tier_access = serialize_workspace_link_access(
-		bootinfo.imogi_pos_subscription_tier
+		bootinfo.imogi_pos_subscription_tier, user=frappe.session.user
 	)
 	from imogi_pos.imogi_pos.utils.role_gating import serialize_user_role_context
 
 	bootinfo.imogi_pos_role_gating_enabled = bool(getattr(settings, "enable_role_gating", 0))
 	bootinfo.imogi_pos_approval_workflow_enabled = bool(getattr(settings, "enable_approval_workflow", 0))
 	bootinfo.imogi_pos_role_context = serialize_user_role_context(frappe.session.user, settings)
+	from imogi_pos.imogi_pos.utils.area_manager import get_assigned_branch_context
+
+	bootinfo.imogi_pos_area_manager_context = get_assigned_branch_context(frappe.session.user)
+	from imogi_pos.imogi_pos.utils.dashboard_focus import get_dashboard_focus_by_label
+
+	bootinfo.imogi_pos_dashboard_focus_by_label = get_dashboard_focus_by_label()
 	bootinfo.imogi_pos_business_type = settings.business_type or ""
 	bootinfo.imogi_pos_workspace_route = get_workspace_route(settings.business_type)
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
+	bootinfo.imogi_pos_dedicated_cashier = should_use_cashier_home()
 
 	if not settings.setup_complete and not should_use_cashier_home():
 		bootinfo.home_page = "imogi-pos-setup"
+		return
+
+	roles = set(frappe.get_roles(frappe.session.user))
+	if OWNER_ROLE in roles and not roles & MANAGER_ROLES:
+		bootinfo.home_page = OWNER_HOME_PAGE
+		return
+	if (
+		AREA_MANAGER_ROLE in roles
+		and OWNER_ROLE not in roles
+		and not roles & MANAGER_ROLES
+		and CASHIER_ROLE not in roles
+	):
+		bootinfo.home_page = AREA_MANAGER_HOME_PAGE
+		return
+	if MANAGER_ROLE in roles and not roles & MANAGER_ROLES and CASHIER_ROLE not in roles:
+		bootinfo.home_page = MANAGER_HOME_PAGE
+		return
 
 	if not should_use_cashier_home():
 		return

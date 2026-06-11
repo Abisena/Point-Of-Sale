@@ -32,7 +32,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "POS Order",
-   "options": "IMOGI POS Order",
+   "options": "Riwayat Order",
    "reqd": 1
   },
   {

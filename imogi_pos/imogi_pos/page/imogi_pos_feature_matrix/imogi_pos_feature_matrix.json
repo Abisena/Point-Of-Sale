@@ -13,7 +13,8 @@
  "roles": [
   {"role": "System Manager"},
   {"role": "Administrator"},
-  {"role": "Sales Manager"}
+  {"role": "Sales Manager"},
+  {"role": "IMOGI Owner"}
  ],
  "standard": "Yes",
  "system_page": 0,

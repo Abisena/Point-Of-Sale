@@ -34,13 +34,14 @@ SETTINGS_FEATURE_MAP = {
 	"enable_fulfillment": "delivery_order",
 	"enable_order_api": "api_access",
 	"multi_branch": "multi_outlet",
+	"enable_central_kitchen": "central_kitchen",
 }
 
 SETTINGS_BUTTON_FIELDS = {
 	"generate_order_api_key": "api_access",
 	"sync_branch_prices": "multi_outlet",
 	"hq_ensure_branch_price_lists": "multi_outlet",
-	"hq_push_menu_from_branch": "multi_outlet",
+	"hq_push_menu_from_branch": "central_menu_management",
 }
 
 SETTINGS_KEYS_BY_FEATURE: dict[str, tuple[str, ...]] = {}
@@ -56,6 +57,8 @@ ORDER_TYPE_FEATURES = {
 }
 
 CASHIER_FEATURE_IDS = (
+	"pos_order",
+	"order_history",
 	"hold_order",
 	"customer",
 	"dine_in",
@@ -65,6 +68,8 @@ CASHIER_FEATURE_IDS = (
 	"point_reward",
 	"voucher",
 	"open_shift",
+	"close_shift",
+	"cash_in_out",
 	"grabfood_integration",
 	"multi_outlet",
 	"multi_payment",
@@ -132,15 +137,18 @@ def get_feature_block_reason(
 	feature_id: str, settings=None, tier: str | None = None, user: str | None = None
 ) -> str | None:
 	"""Return None when feature is usable; else ``tier``, ``role``, ``settings``, or ``planned``."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
 	feature = get_feature(feature_id)
 	if not feature:
 		return "tier"
 	if feature["status"] == FEATURE_STATUS_PLANNED:
 		return "planned"
 	settings = settings or get_settings()
-	tier = tier or get_subscription_tier(settings)
-	if not is_tier_at_least(tier, feature["min_tier"]):
-		return "tier"
+	if not is_subscription_tier_disabled():
+		tier = tier or get_subscription_tier(settings)
+		if not is_tier_at_least(tier, feature["min_tier"]):
+			return "tier"
 	from imogi_pos.imogi_pos.utils.role_gating import get_role_block_reason as _role_reason
 
 	if _role_reason(feature_id, user=user, settings=settings):
@@ -172,9 +180,18 @@ def serialize_cashier_feature_meta(settings=None, user=None) -> dict:
 
 
 def validate_order_type(order_type: str | None, settings=None):
+	"""Gate order types only when the tier includes that order-type feature.
+
+	Free tier has ``pos_order`` but not dine-in / takeaway / delivery features.
+	Checkout still records a default order type without blocking payment.
+	"""
 	feature_id = ORDER_TYPE_FEATURES.get((order_type or "").strip())
-	if feature_id:
-		require_feature_operational(feature_id, settings)
+	if not feature_id:
+		return
+	settings = settings or get_settings()
+	if not is_feature_in_plan(feature_id, get_subscription_tier(settings)):
+		return
+	require_feature_operational(feature_id, settings)
 
 
 def validate_checkout_features(
@@ -228,6 +245,28 @@ def _serialize_field_lock(fieldname: str, feature_id: str, tier: str) -> dict:
 
 def get_settings_field_locks(tier: str | None = None) -> dict:
 	"""Per-field tier lock metadata for IMOGI POS Settings form."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		locks = {
+			fieldname: {
+				"fieldname": fieldname,
+				"allowed": True,
+				"feature_id": feature_id,
+				"label": (get_feature(feature_id) or {}).get("label") or feature_id,
+				"min_tier": None,
+				"message": None,
+			}
+			for fieldname, feature_id in {**SETTINGS_FEATURE_MAP, **SETTINGS_BUTTON_FIELDS}.items()
+		}
+		return {
+			"tier": None,
+			"tiers": [],
+			"tier_disabled": True,
+			"locks": locks,
+			"matrix_route": "imogi-pos-feature-matrix",
+		}
+
 	tier = normalize_tier(tier or get_subscription_tier())
 	locks = {}
 	for fieldname, feature_id in SETTINGS_FEATURE_MAP.items():
@@ -244,6 +283,11 @@ def get_settings_field_locks(tier: str | None = None) -> dict:
 
 def enforce_settings_tier_limits(doc):
 	"""Block enabling gated toggles; auto-disable them when subscription tier is downgraded."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		return
+
 	tier = get_subscription_tier(doc)
 	before = doc.get_doc_before_save()
 	prev_tier = get_subscription_tier(before) if before else None

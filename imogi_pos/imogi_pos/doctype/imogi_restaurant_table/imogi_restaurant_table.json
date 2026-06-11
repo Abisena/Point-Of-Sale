@@ -46,7 +46,7 @@
    "fieldname": "current_order",
    "fieldtype": "Link",
    "label": "Current Order",
-   "options": "IMOGI POS Order",
+   "options": "Riwayat Order",
    "read_only": 1
   },
   {

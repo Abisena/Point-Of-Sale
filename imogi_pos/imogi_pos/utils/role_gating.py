@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 
-from imogi_pos.imogi_pos.utils.feature_registry import get_feature
+from imogi_pos.imogi_pos.utils.feature_registry import get_feature, get_subscription_tier, is_tier_at_least
 from imogi_pos.imogi_pos.utils.flow import get_settings
 
 MATRIX_ROLES = (
@@ -35,6 +35,9 @@ FRAPPE_ROLE_TO_MATRIX: dict[str, str] = {
 	"Sales User": "Manager",
 	"Accounts Manager": "Finance",
 	"Accounts User": "Finance",
+	"IMOGI Owner": "Owner",
+	"IMOGI Area Manager": "Area Manager",
+	"IMOGI Manager": "Manager",
 	"IMOGI Cashier": "Kasir",
 	"IMOGI Waiter": "Waiter",
 	"IMOGI Supervisor": "Supervisor",
@@ -105,6 +108,18 @@ ROLE_PRIVILEGES: dict[str, frozenset[str]] = {
 
 BYPASS_ROLE_GATING_ROLES = frozenset({"Administrator", "System Manager"})
 
+# Free-tier pages: exact matrix role only (no Owner→Manager→Kasir inheritance).
+FREE_TIER_STRICT_FEATURE_IDS = frozenset(
+	{
+		"dashboard_sales",
+		"sales_report",
+		"menu",
+		"menu_category",
+		"pos_order",
+		"order_history",
+	}
+)
+
 
 def is_role_gating_enabled(settings=None) -> bool:
 	settings = settings or get_settings()
@@ -154,8 +169,6 @@ def get_effective_feature_roles(user: str | None = None) -> set[str]:
 
 
 def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settings=None) -> bool:
-	if not is_role_gating_enabled(settings):
-		return True
 	if user_bypasses_role_gating(user):
 		return True
 
@@ -165,6 +178,18 @@ def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settin
 
 	required = (feature.get("role") or "").strip()
 	if not required:
+		return True
+
+	# Free tier (web SKU only): strict role separation without inheritance.
+	if feature_id in FREE_TIER_STRICT_FEATURE_IDS:
+		from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+		if not is_subscription_tier_disabled():
+			tier = get_subscription_tier(settings)
+			if not is_tier_at_least(tier, "Starter"):
+				return required in get_user_matrix_roles(user)
+
+	if not is_role_gating_enabled(settings):
 		return True
 
 	return required in get_effective_feature_roles(user)

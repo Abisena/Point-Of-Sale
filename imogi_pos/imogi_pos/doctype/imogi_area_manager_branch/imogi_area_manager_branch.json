@@ -1,0 +1,47 @@
+{
+ "creation": "2026-06-10 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "branch",
+  "branch_name",
+  "city"
+ ],
+ "fields": [
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Cabang",
+   "options": "IMOGI Branch",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "branch.branch_name",
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Cabang",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "branch.city",
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kota",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-06-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI Area Manager Branch",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

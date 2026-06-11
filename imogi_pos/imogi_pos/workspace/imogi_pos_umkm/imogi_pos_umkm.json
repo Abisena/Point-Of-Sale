@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"hdr_umkm\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — UMKM</b></span><br><span class=\\\"text-muted\\\">Akses cepat tanpa search — pilih modul di bawah.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":3}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Order\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Operasional Harian\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Tutup Hari\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Master & Cabang\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan\",\"col\":4}}]",
+ "content": "[{\"id\":\"hdr_umkm\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>IMOGI POS — UMKM</b></span><br><span class=\\\"text-muted\\\">Akses cepat tanpa search — pilih modul di bawah.</span>\",\"col\":12}},{\"id\":\"sc_cashier\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI Kasir\",\"col\":3}},{\"id\":\"sc_order\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Riwayat Order\",\"col\":3}},{\"id\":\"sc_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Dashboard\",\"col\":3}},{\"id\":\"sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"IMOGI POS Settings\",\"col\":3}},{\"id\":\"sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr_cards\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Modul IMOGI POS</b></span>\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"card_name\":\"Operasional Harian\",\"col\":4}},{\"id\":\"c2\",\"type\":\"card\",\"data\":{\"card_name\":\"Shift & Tutup Hari\",\"col\":4}},{\"id\":\"c3\",\"type\":\"card\",\"data\":{\"card_name\":\"Loyalty & Promo\",\"col\":4}},{\"id\":\"c4\",\"type\":\"card\",\"data\":{\"card_name\":\"Master & Cabang\",\"col\":4}},{\"id\":\"c5\",\"type\":\"card\",\"data\":{\"card_name\":\"Pengaturan Sistem\",\"col\":4}},{\"id\":\"c6\",\"type\":\"card\",\"data\":{\"card_name\":\"Laporan\",\"col\":4}}]",
  "creation": "2026-06-05 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -33,9 +33,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "IMOGI POS Order",
+   "label": "Riwayat Order",
    "link_count": 0,
-   "link_to": "IMOGI POS Order",
+   "link_to": "Riwayat Order",
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
@@ -301,8 +301,8 @@
   },
   {
    "color": "Orange",
-   "label": "IMOGI POS Order",
-   "link_to": "IMOGI POS Order",
+   "label": "Riwayat Order",
+   "link_to": "Riwayat Order",
    "type": "DocType"
   },
   {

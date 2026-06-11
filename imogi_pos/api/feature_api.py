@@ -21,12 +21,13 @@ from imogi_pos.imogi_pos.utils.subscription_billing import (
 
 
 def _require_matrix_access():
+	"""Matrix is read-only for Owner (upgrade path); admin roles retain full access."""
 	if frappe.session.user == "Administrator":
 		return
 	roles = set(frappe.get_roles())
-	if roles & {"System Manager", "Sales Manager"}:
+	if roles & {"System Manager", "Sales Manager", "IMOGI Owner"}:
 		return
-	frappe.only_for("System Manager")
+	frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 @frappe.whitelist()
@@ -76,13 +77,17 @@ def get_settings_tier_locks(tier=None):
 @frappe.whitelist()
 def get_workspace_tier_context():
 	"""Fresh subscription tier + workspace link access (avoids stale frappe.boot)."""
-	frappe.has_permission("IMOGI POS Settings", "read", throw=True)
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Login required"), frappe.AuthenticationError)
 	from imogi_pos.imogi_pos.utils.workspace_tier_gating import serialize_workspace_link_access
 
-	tier = get_subscription_tier()
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	tier = None if is_subscription_tier_disabled() else get_subscription_tier()
 	return {
 		"tier": tier,
-		"tier_access": serialize_workspace_link_access(tier),
+		"tier_disabled": is_subscription_tier_disabled(),
+		"tier_access": serialize_workspace_link_access(tier, user=frappe.session.user),
 	}
 
 
@@ -121,6 +126,14 @@ def get_tier_upgrade_quote(tier):
 @frappe.whitelist()
 def set_subscription_tier(tier, payment_method=None, payment_reference=None):
 	"""Manually change subscription tier (when billing auto-apply is off)."""
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_erp_enterprise_deployment
+
+	if is_erp_enterprise_deployment():
+		frappe.throw(
+			_("Instalasi ERPNext IMOGI POS menggunakan paket Enterprise tetap."),
+			title=_("Paket Tidak Dapat Diubah"),
+		)
+
 	frappe.has_permission("IMOGI POS Settings", "write", throw=True)
 	from frappe.utils import cint
 
@@ -159,10 +172,13 @@ def set_subscription_tier(tier, payment_method=None, payment_reference=None):
 
 	frappe.publish_realtime("imogi_pos_settings_updated", {"subscription_tier": tier})
 
+	workspace_ctx = get_workspace_tier_context()
+
 	return {
 		"before": before,
 		"after": tier,
 		"tier": tier,
 		"payment_method": payment_method,
 		"payment_reference": payment_reference,
+		**workspace_ctx,
 	}

@@ -5,18 +5,20 @@ from frappe import _
 from frappe.utils import add_days, flt, getdate, today
 
 from imogi_pos.api.dashboard import _day_bounds, _scoped_clauses
-from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational, require_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
 
 
 def _require_report_access():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
-	if not (
-		frappe.has_permission("IMOGI POS Order", "read")
-		or frappe.has_permission("IMOGI POS Settings", "read")
+	settings = get_settings()
+	user = frappe.session.user
+	if is_feature_operational("sales_report", settings, user=user) or is_feature_operational(
+		"dashboard_sales", settings, user=user
 	):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+		return
+	require_feature_operational("sales_report", settings, user=user)
 
 
 def _report_bounds(date_from=None, date_to=None):
@@ -51,7 +53,7 @@ def get_sales_by_hour(date=None, date_from=None, date_to=None, company=None, pos
 		select hour(creation) as hour_slot,
 			count(*) as order_count,
 			coalesce(sum(grand_total), 0) as sales
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status not in ('Cancelled', 'Draft')
 			and creation >= %(day_start)s and creation < %(day_end)s
 			{scope_clause}
@@ -78,7 +80,7 @@ def get_sales_by_category(date=None, date_from=None, date_to=None, company=None,
 			coalesce(sum(oi.qty), 0) as qty,
 			coalesce(sum(oi.amount), 0) as sales
 		from `tabIMOGI POS Order Item` oi
-		inner join `tabIMOGI POS Order` o on o.name = oi.parent
+		inner join `tabRiwayat Order` o on o.name = oi.parent
 		left join `tabItem` i on i.name = oi.item_code
 		left join `tabItem Group` ig on ig.name = i.item_group
 		where o.status = 'Completed'
@@ -106,7 +108,7 @@ def get_discount_report(date=None, date_from=None, date_to=None, company=None, p
 		f"""
 		select name, customer, grand_total, discount_amount, discount_type, discount_value,
 			voucher_discount_amount, loyalty_discount_amount, promo_discount_amount, creation
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status not in ('Cancelled', 'Draft')
 			and (
 				coalesce(discount_amount, 0) > 0
@@ -150,7 +152,7 @@ def get_refund_report(date=None, date_from=None, date_to=None, company=None, pos
 		f"""
 		select name, customer, grand_total, refunded_amount, status, return_pos_invoice,
 			remarks, modified, creation
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where status in ('Refunded', 'Partially Refunded')
 			and modified >= %(day_start)s and modified < %(day_end)s
 			{scope_clause}

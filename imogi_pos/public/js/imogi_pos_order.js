@@ -1,11 +1,30 @@
-frappe.ui.form.on("IMOGI POS Order", {
+frappe.ui.form.on("Riwayat Order", {
 	onload(frm) {
+		if (frm.is_new()) {
+			frappe.set_route("List", "Riwayat Order");
+			return;
+		}
 		if (!is_umkm_mode()) return;
 		apply_umkm_defaults(frm);
 		toggle_umkm_form_fields(frm);
 	},
 
 	refresh(frm) {
+		if (frm.is_new()) {
+			frappe.set_route("List", "Riwayat Order");
+			return;
+		}
+
+		const desk_history_readonly = !imogi_pos_is_riwayat_order_admin();
+		if (desk_history_readonly) {
+			frm.disable_form();
+			frm.page.clear_inner_toolbar();
+			if (frm.doc.docstatus === 1) {
+				frm.add_custom_button(__("Print"), () => frm.print()).addClass("btn-default");
+			}
+			return;
+		}
+
 		const is_umkm = is_umkm_mode();
 		if (is_umkm) {
 			apply_umkm_defaults(frm);
@@ -429,7 +448,7 @@ function add_merge_table_button(frm, status) {
 					fieldname: "secondary_order",
 					fieldtype: "Link",
 					label: __("Order sekunder"),
-					options: "IMOGI POS Order",
+					options: "Riwayat Order",
 					reqd: 1,
 				},
 			],
@@ -485,4 +504,8 @@ function add_move_table_button(frm, status) {
 			__("Pindahkan")
 		);
 	});
+}
+
+function imogi_pos_is_riwayat_order_admin() {
+	return frappe.user.has_role("System Manager") || frappe.user.has_role("Administrator");
 }

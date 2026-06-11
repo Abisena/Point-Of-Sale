@@ -62,7 +62,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": None,
-		"module": "Item / import_menu",
+		"module": "imogi-pos-menu",
 	},
 	{
 		"id": "menu_category",
@@ -73,7 +73,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": None,
-		"module": "Item Group",
+		"module": "imogi-pos-menu-category",
 	},
 	{
 		"id": "modifier",
@@ -217,7 +217,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol transaksi",
-		"module": "IMOGI POS Order.action_refund_order",
+		"module": "Riwayat Order.action_refund_order",
 	},
 	{
 		"id": "void_order",
@@ -228,7 +228,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol transaksi",
-		"module": "IMOGI POS Order.action_void_order",
+		"module": "Riwayat Order.action_void_order",
 	},
 	{
 		"id": "order_history",
@@ -239,7 +239,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": None,
-		"module": "IMOGI POS Order",
+		"module": "imogi-pos-order-history",
 	},
 	# ── TABLE SERVICE (5) ───────────────────────────────────────────────────
 	{
@@ -763,7 +763,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": None,
-		"module": "IMOGI POS Order Summary",
+		"module": "imogi-pos-sales-report",
 	},
 	{
 		"id": "sales_by_hour",
@@ -1137,6 +1137,10 @@ def tier_rank(tier: str | None) -> int:
 
 
 def is_tier_at_least(current_tier: str | None, min_tier: str) -> bool:
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		return True
 	return tier_rank(current_tier) >= tier_rank(min_tier)
 
 
@@ -1152,6 +1156,10 @@ def get_feature(feature_id: str) -> dict | None:
 
 
 def is_feature_in_plan(feature_id: str, tier: str | None = None) -> bool:
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if is_subscription_tier_disabled():
+		return get_feature(feature_id) is not None
 	feature = get_feature(feature_id)
 	if not feature:
 		return False

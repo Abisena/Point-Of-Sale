@@ -14,10 +14,12 @@
  "name": "IMOGI UMKM Daily Sales",
  "owner": "Administrator",
  "prepared_report": 0,
- "ref_doctype": "IMOGI POS Order",
+ "ref_doctype": "Riwayat Order",
  "report_name": "IMOGI UMKM Daily Sales",
  "report_type": "Script Report",
  "roles": [
+  {"role": "IMOGI Owner"},
+  {"role": "IMOGI Area Manager"},
   {"role": "Sales Manager"},
   {"role": "Sales User"},
   {"role": "System Manager"}

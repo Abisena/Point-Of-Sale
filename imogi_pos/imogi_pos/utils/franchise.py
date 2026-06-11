@@ -68,7 +68,7 @@ def get_franchise_sales_summary(company=None, from_date=None, to_date=None):
 				COALESCE(SUM(grand_total), 0) AS gross_sales,
 				COALESCE(SUM(royalty_amount), 0) AS royalty_total,
 				COUNT(*) AS order_count
-			FROM `tabIMOGI POS Order`
+			FROM `tabRiwayat Order`
 			WHERE company = %(company)s
 				AND pos_profile = %(pos_profile)s
 				AND docstatus = 1

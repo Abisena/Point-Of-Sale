@@ -13,7 +13,7 @@ def execute(filters=None):
 
 def get_columns():
 	return [
-		{"label": _("Order"), "fieldname": "name", "fieldtype": "Link", "options": "IMOGI POS Order", "width": 140},
+		{"label": _("Order"), "fieldname": "name", "fieldtype": "Link", "options": "Riwayat Order", "width": 140},
 		{"label": _("Date"), "fieldname": "creation", "fieldtype": "Datetime", "width": 150},
 		{"label": _("Channel"), "fieldname": "order_channel", "fieldtype": "Data", "width": 90},
 		{"label": _("Type"), "fieldname": "order_type", "fieldtype": "Data", "width": 90},
@@ -59,7 +59,7 @@ def get_data(filters):
 		f"""
 		select name, creation, order_channel, order_type, status, customer_name,
 			grand_total, pos_invoice, kitchen_order, delivery_task
-		from `tabIMOGI POS Order`
+		from `tabRiwayat Order`
 		where {where}
 		order by creation desc
 		limit 500

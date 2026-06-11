@@ -109,7 +109,7 @@ def _ensure_receipt_print_format():
 
 	doc = frappe.new_doc("Print Format")
 	doc.name = name
-	doc.doc_type = "IMOGI POS Order"
+	doc.doc_type = "Riwayat Order"
 	doc.standard = "Yes"
 	doc.custom_format = 1
 	doc.print_format_type = "Jinja"
@@ -140,6 +140,8 @@ def _create_default_settings():
 		return
 
 	settings = frappe.new_doc("IMOGI POS Settings")
+	settings.subscription_tier = "Enterprise"
+	settings.enable_saas_billing_sync = 0
 	settings.setup_complete = 0
 	settings.enable_kitchen_display = 0
 	settings.enable_fulfillment = 0
@@ -180,6 +182,9 @@ def _create_sample_kitchen_station():
 
 def _create_imogi_roles():
 	roles = [
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
 		"IMOGI Cashier",
 		"IMOGI Waiter",
 		"IMOGI Supervisor",
@@ -195,14 +200,71 @@ def _create_imogi_roles():
 				ignore_permissions=True
 			)
 
+	frappe.db.set_value("Role", "IMOGI Owner", "home_page", "imogi-pos-dashboard")
+	frappe.db.set_value("Role", "IMOGI Manager", "home_page", "imogi-pos-menu")
+	frappe.db.set_value("Role", "IMOGI Area Manager", "home_page", "imogi-pos-dashboard")
 	frappe.db.set_value("Role", "IMOGI Cashier", "home_page", "imogi-pos-cashier")
 	frappe.db.set_value("Role", "IMOGI Waiter", "home_page", "imogi-pos-cashier")
 	frappe.db.set_value("Role", "IMOGI Supervisor", "home_page", "imogi-pos-dashboard")
 	frappe.db.set_value("Role", "IMOGI Chef", "home_page", "kitchen-display")
 
 	_perms = {
+		"IMOGI Owner": [
+			("IMOGI POS Settings", {"read": 1, "write": 1}),
+			("IMOGI Area Manager Assignment", {"read": 1, "write": 1, "create": 1, "delete": 1}),
+			("Riwayat Order", {"read": 1}),
+			("POS Invoice", {"read": 1}),
+			("Page", {"read": 1}),
+			("Report", {"read": 1}),
+			("Company", {"read": 1}),
+			("IMOGI Branch", {"read": 1}),
+			("POS Profile", {"read": 1}),
+		],
+		"IMOGI Manager": [
+			("IMOGI POS Settings", {"read": 1}),
+			("Item", {"read": 1, "write": 1, "create": 1}),
+			("Item Group", {"read": 1, "write": 1, "create": 1}),
+			("Item Price", {"read": 1, "write": 1, "create": 1}),
+			("BOM", {"read": 1, "write": 1, "create": 1}),
+			("Page", {"read": 1}),
+			("Report", {"read": 1}),
+			("Company", {"read": 1}),
+			("IMOGI Branch", {"read": 1}),
+			("Warehouse", {"read": 1}),
+			("POS Profile", {"read": 1}),
+			("IMOGI POS Combo Package", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Member", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Voucher", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Tier", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Promo Rule", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Transaction", {"read": 1}),
+		],
+		"IMOGI Area Manager": [
+			("IMOGI POS Settings", {"read": 1}),
+			("IMOGI Area Manager Assignment", {"read": 1}),
+			("Item", {"read": 1, "write": 1, "create": 1}),
+			("Item Group", {"read": 1, "write": 1, "create": 1}),
+			("Item Price", {"read": 1, "write": 1, "create": 1}),
+			("BOM", {"read": 1, "write": 1, "create": 1}),
+			("Page", {"read": 1}),
+			("Report", {"read": 1}),
+			("Company", {"read": 1}),
+			("IMOGI Branch", {"read": 1, "write": 1}),
+			("Warehouse", {"read": 1}),
+			("POS Profile", {"read": 1}),
+			("Material Request", {"read": 1, "write": 1, "create": 1}),
+			("Purchase Order", {"read": 1, "write": 1, "create": 1}),
+			("Purchase Receipt", {"read": 1, "write": 1, "create": 1}),
+			("Stock Entry", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Combo Package", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Member", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Voucher", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Tier", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Promo Rule", {"read": 1, "write": 1, "create": 1}),
+			("IMOGI POS Loyalty Transaction", {"read": 1}),
+		],
 		"IMOGI Waiter": [
-			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+			("Riwayat Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("IMOGI Restaurant Table", {"read": 1, "write": 1}),
 			("Customer", {"read": 1, "create": 1}),
 			("Contact", {"read": 1, "create": 1}),
@@ -214,7 +276,7 @@ def _create_imogi_roles():
 			("Warehouse", {"read": 1}),
 		],
 		"IMOGI Supervisor": [
-			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
+			("Riwayat Order", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
 			("IMOGI POS Approval Request", {"read": 1, "write": 1, "create": 1}),
 			("IMOGI Restaurant Table", {"read": 1, "write": 1}),
 			("POS Invoice", {"read": 1}),
@@ -228,11 +290,11 @@ def _create_imogi_roles():
 		"IMOGI Chef": [
 			("IMOGI Kitchen Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("IMOGI Kitchen Station", {"read": 1}),
-			("IMOGI POS Order", {"read": 1}),
+			("Riwayat Order", {"read": 1}),
 			("Page", {"read": 1}),
 		],
 		"IMOGI Cashier": [
-			("IMOGI POS Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+			("Riwayat Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("IMOGI POS Shift Opening", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("IMOGI POS Shift Closing", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 			("POS Invoice", {"read": 1}),
@@ -255,15 +317,15 @@ def _create_imogi_roles():
 		],
 		"IMOGI Kitchen Staff": [
 			("IMOGI Kitchen Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
-			("IMOGI POS Order", {"read": 1, "write": 1}),
+			("Riwayat Order", {"read": 1, "write": 1}),
 		],
 		"IMOGI Fulfillment Staff": [
 			("IMOGI Fulfillment Task", {"read": 1, "write": 1, "create": 1, "submit": 1}),
-			("IMOGI POS Order", {"read": 1, "write": 1}),
+			("Riwayat Order", {"read": 1, "write": 1}),
 		],
 		"IMOGI Rider": [
 			("IMOGI Delivery Task", {"read": 1, "write": 1, "submit": 1}),
-			("IMOGI POS Order", {"read": 1}),
+			("Riwayat Order", {"read": 1}),
 		],
 		"Sales Manager": [
 			("IMOGI Branch", {"read": 1, "write": 1, "create": 1}),

@@ -36,8 +36,8 @@
    "fieldname": "order",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "IMOGI POS Order",
-   "options": "IMOGI POS Order",
+   "label": "Riwayat Order",
+   "options": "Riwayat Order",
    "read_only": 1
   },
   {

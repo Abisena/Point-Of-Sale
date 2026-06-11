@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:user",
+ "creation": "2026-06-10 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "area_label",
+  "is_active",
+  "column_break_main",
+  "notes",
+  "branches_section",
+  "assigned_branches"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User Area Manager",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Label area operasional, mis. Jakarta Selatan atau Jawa Barat.",
+   "fieldname": "area_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Area",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktif"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Catatan"
+  },
+  {
+   "fieldname": "branches_section",
+   "fieldtype": "Section Break",
+   "label": "Outlet / Cabang Ditugaskan"
+  },
+  {
+   "fieldname": "assigned_branches",
+   "fieldtype": "Table",
+   "label": "Cabang",
+   "options": "IMOGI Area Manager Branch",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI Area Manager Assignment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "IMOGI Owner",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "IMOGI Area Manager",
+   "write": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "area_label",
+ "track_changes": 1
+}

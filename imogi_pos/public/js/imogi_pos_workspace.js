@@ -16,7 +16,100 @@ function imogi_pos_is_workspace_link_allowed(link_type, link_to) {
 	return !!row.allowed;
 }
 
+function imogi_pos_is_imogi_workspace_page(page) {
+	const name = (page && (page.name || page.title)) || "";
+	return imogi_pos_workspace_page_names().includes(name);
+}
+
+function imogi_pos_is_imogi_workspace_active() {
+	const page = frappe.workspace?._page;
+	if (page && imogi_pos_is_imogi_workspace_page(page)) {
+		return true;
+	}
+	return imogi_pos_on_imogi_workspace();
+}
+
+function imogi_pos_filter_workspace_page_data(page_data) {
+	if (!page_data) {
+		return page_data;
+	}
+	const access = frappe.boot?.imogi_pos_workspace_tier_access;
+	if (!access?.links) {
+		return page_data;
+	}
+
+	const is_allowed = (link_type, link_to) =>
+		imogi_pos_is_workspace_link_allowed(link_type, link_to);
+
+	const filtered = { ...page_data };
+	if (filtered.shortcuts?.items) {
+		filtered.shortcuts = {
+			...filtered.shortcuts,
+			items: filtered.shortcuts.items.filter((item) => is_allowed(item.type, item.link_to)),
+		};
+	}
+	if (filtered.cards?.items) {
+		filtered.cards = {
+			...filtered.cards,
+			items: filtered.cards.items
+				.map((card) => ({
+					...card,
+					links: (card.links || []).filter((link) =>
+						is_allowed(link.link_type, link.link_to)
+					),
+				}))
+				.filter((card) => (card.links || []).length),
+		};
+	}
+	return filtered;
+}
+
+function imogi_pos_apply_filtered_workspace_content(workspace) {
+	const filtered_content = workspace?.page_data?.imogi_pos_filtered_content;
+	if (!filtered_content) {
+		return false;
+	}
+	try {
+		workspace.content = JSON.parse(filtered_content);
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
+
+function imogi_pos_patch_workspace_loader() {
+	const WorkspaceClass = frappe.views?.Workspace;
+	if (!WorkspaceClass || WorkspaceClass.prototype.__imogi_pos_tier_patch) {
+		return;
+	}
+
+	const original_get_data = WorkspaceClass.prototype.get_data;
+	const original_prepare_editorjs = WorkspaceClass.prototype.prepare_editorjs;
+
+	WorkspaceClass.prototype.get_data = function (page) {
+		return original_get_data.call(this, page).then((data) => {
+			if (!imogi_pos_is_imogi_workspace_page(page) || !data?.message) {
+				return data;
+			}
+			data.message = imogi_pos_filter_workspace_page_data(data.message);
+			this.page_data = data.message;
+			this.pages[page.name] = data.message;
+			return data;
+		});
+	};
+
+	WorkspaceClass.prototype.prepare_editorjs = function () {
+		if (imogi_pos_is_imogi_workspace_active()) {
+			imogi_pos_apply_filtered_workspace_content(this);
+		}
+		return original_prepare_editorjs.call(this);
+	};
+
+	WorkspaceClass.prototype.__imogi_pos_tier_patch = true;
+}
+
 imogi_pos.is_workspace_link_allowed = imogi_pos_is_workspace_link_allowed;
+imogi_pos.filter_workspace_page_data = imogi_pos_filter_workspace_page_data;
 
 function imogi_pos_on_imogi_workspace() {
 	const path = (window.location.pathname || "").replace(/\/$/, "");
@@ -32,6 +125,10 @@ function imogi_pos_workspace_page_names() {
 }
 
 function imogi_pos_update_workspace_tier_banner(tier) {
+	if (imogi_pos.is_subscription_tier_disabled && imogi_pos.is_subscription_tier_disabled()) {
+		$(".imogi-ws-tier-banner").remove();
+		return;
+	}
 	if (!imogi_pos_on_imogi_workspace()) {
 		return;
 	}
@@ -87,10 +184,23 @@ function imogi_pos_apply_workspace_tier_context(ctx) {
 	if (!ctx) {
 		return Promise.resolve();
 	}
+
+	if (ctx.tier_disabled || (imogi_pos.is_subscription_tier_disabled && imogi_pos.is_subscription_tier_disabled())) {
+		frappe.boot.imogi_pos_subscription_tier = null;
+		frappe.boot.imogi_pos_workspace_tier_access = ctx.tier_access || { tier_disabled: true, links: {} };
+		imogi_pos_update_workspace_tier_banner(null);
+		return Promise.resolve();
+	}
+
+	const prevTier = frappe.boot?.imogi_pos_subscription_tier;
 	frappe.boot.imogi_pos_subscription_tier = ctx.tier;
 	frappe.boot.imogi_pos_workspace_tier_access = ctx.tier_access;
 	imogi_pos_update_workspace_tier_banner(ctx.tier);
-	return imogi_pos_reload_workspace_if_active();
+
+	if (prevTier !== ctx.tier && imogi_pos_on_imogi_workspace()) {
+		return imogi_pos_reload_workspace_if_active();
+	}
+	return Promise.resolve();
 }
 
 function imogi_pos_refresh_workspace_tier_context() {
@@ -110,7 +220,24 @@ function imogi_pos_refresh_workspace_tier_context() {
 imogi_pos.refresh_workspace_tier_context = imogi_pos_refresh_workspace_tier_context;
 imogi_pos.apply_workspace_tier_context = imogi_pos_apply_workspace_tier_context;
 
+function imogi_pos_redirect_dedicated_cashier_from_workspace() {
+	if (!frappe.boot?.imogi_pos_dedicated_cashier) {
+		return false;
+	}
+	if (!imogi_pos_on_imogi_workspace()) {
+		return false;
+	}
+	window.location.replace("/app/imogi-pos-cashier");
+	return true;
+}
+
 $(document).on("app_ready", () => {
+	imogi_pos_patch_workspace_loader();
+	if (imogi_pos_redirect_dedicated_cashier_from_workspace()) {
+		return;
+	}
+	imogi_pos_update_workspace_tier_banner(frappe.boot?.imogi_pos_subscription_tier);
+
 	frappe.realtime.on("imogi_pos_settings_updated", (data) => {
 		if (data?.subscription_tier) {
 			frappe.boot.imogi_pos_subscription_tier = data.subscription_tier;
@@ -118,14 +245,4 @@ $(document).on("app_ready", () => {
 		}
 		imogi_pos_refresh_workspace_tier_context();
 	});
-
-	if (frappe.router?.on) {
-		frappe.router.on("change", () => {
-			setTimeout(() => {
-				if (imogi_pos_on_imogi_workspace()) {
-					imogi_pos_refresh_workspace_tier_context();
-				}
-			}, 200);
-		});
-	}
 });

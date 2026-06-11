@@ -1,4 +1,5 @@
-frappe.listview_settings["IMOGI POS Order"] = {
+frappe.listview_settings["Riwayat Order"] = {
+	hide_name_column: false,
 	add_fields: [
 		"status",
 		"grand_total",
@@ -7,7 +8,13 @@ frappe.listview_settings["IMOGI POS Order"] = {
 		"order_channel",
 		"order_type",
 		"order_source",
+		"creation",
+		"pos_profile",
 	],
+	onload(listview) {
+		listview.page.btn_primary?.hide();
+		listview.page.set_title(__("Riwayat Order"));
+	},
 	get_indicator(doc) {
 		const colors = {
 			Draft: "orange",
@@ -36,6 +43,9 @@ frappe.listview_settings["IMOGI POS Order"] = {
 		grand_total(value) {
 			return value ? format_currency(value) : "";
 		},
+		creation(value) {
+			return value ? frappe.datetime.str_to_user(value) : "";
+		},
 	},
 };
 
@@ -46,4 +56,8 @@ function imogi_pos_format_order_id(name) {
 
 function imogi_pos_get_source_short(order_source) {
 	return order_source === "ERPNext POS" ? __("ERPNext") : __("IMOGI");
+}
+
+function imogi_pos_is_riwayat_order_admin() {
+	return frappe.user.has_role("System Manager") || frappe.user.has_role("Administrator");
 }

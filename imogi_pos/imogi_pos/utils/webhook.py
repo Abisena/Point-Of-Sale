@@ -21,7 +21,7 @@ def emit_order_webhook(order_name, event=None):
 	"""Serialize order and queue webhook if enabled."""
 	from imogi_pos.api.order import _serialize_order
 
-	order = frappe.get_doc("IMOGI POS Order", order_name)
+	order = frappe.get_doc("Riwayat Order", order_name)
 	webhook_event = event or STATUS_EVENTS.get(order.status, "order.status_changed")
 	dispatch_order_webhook(order_name, webhook_event, _serialize_order(order))
 

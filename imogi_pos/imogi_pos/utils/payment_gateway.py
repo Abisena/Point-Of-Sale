@@ -1,9 +1,10 @@
 # Copyright (c) 2026, Imogi and contributors
 """Midtrans / Xendit QRIS payment helpers for IMOGI Kasir."""
 
+import base64
+import io
 import json
 import re
-import base64
 
 import frappe
 import requests
@@ -14,7 +15,7 @@ from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 from imogi_pos.imogi_pos.utils.flow import get_settings
 
 
-PAID_STATUSES = frozenset({"settlement", "capture", "success", "paid", "completed", "succeeded"})
+PAID_STATUSES = frozenset({"settlement", "capture", "success", "paid", "completed", "succeeded", "inactive"})
 FAILED_STATUSES = frozenset({"deny", "cancel", "expire", "failure", "failed", "expired"})
 
 
@@ -62,6 +63,57 @@ def _unique_external_id(prefix="IMOGI"):
 	return f"{prefix}-{frappe.generate_hash(length=12)}"
 
 
+def _normalize_qr_fields(qr_url="", qr_string=""):
+	qr_url = (qr_url or "").strip()
+	qr_string = (qr_string or "").strip()
+	if qr_url and not qr_url.startswith(("http://", "https://")):
+		if not qr_string:
+			qr_string = qr_url
+		qr_url = ""
+	return qr_url, qr_string
+
+
+def _qr_string_to_png_bytes(qr_string):
+	qr_string = (qr_string or "").strip()
+	if not qr_string or qr_string.startswith(("http://", "https://")):
+		return b""
+	try:
+		import qrcode
+		from qrcode.constants import ERROR_CORRECT_L
+
+		qr = qrcode.QRCode(error_correction=ERROR_CORRECT_L, box_size=8, border=2)
+		qr.add_data(qr_string)
+		qr.make(fit=True)
+		buf = io.BytesIO()
+		qr.make_image(fill_color="black", back_color="white").save(buf, format="PNG")
+		return buf.getvalue()
+	except Exception:
+		frappe.log_error(title="IMOGI POS QR render failed")
+		return b""
+
+
+def _qr_string_to_data_url(qr_string):
+	png = _qr_string_to_png_bytes(qr_string)
+	if not png:
+		return ""
+	return "data:image/png;base64," + base64.b64encode(png).decode()
+
+
+def _payment_qr_image_url(payment_name):
+	"""Relative URL — always same-origin so session cookie is sent with <img> requests."""
+	return f"/api/method/imogi_pos.api.payment_gateway_api.get_qr_image?payment_name={payment_name}"
+
+
+def _serialize_qr_response(qr_url="", qr_string="", payment_name=None):
+	qr_url, qr_string = _normalize_qr_fields(qr_url, qr_string)
+	image_url = _payment_qr_image_url(payment_name) if payment_name and qr_string else ""
+	return {
+		"qr_url": image_url or qr_url,
+		"qr_string": qr_string,
+		"qr_image": _qr_string_to_data_url(qr_string),
+	}
+
+
 def _midtrans_base_url(sandbox):
 	return "https://api.sandbox.midtrans.com" if sandbox else "https://api.midtrans.com"
 
@@ -99,39 +151,94 @@ def _create_midtrans_qris(external_id, amount, currency="IDR", sandbox=1):
 	}
 
 
+def _is_public_https_url(url):
+	if not url:
+		return False
+	low = url.lower()
+	if not low.startswith("https://"):
+		return False
+	if "localhost" in low or "127.0.0.1" in low:
+		return False
+	return True
+
+
+def _format_xendit_error(data, fallback=""):
+	parts = []
+	message = (data.get("message") or "").strip()
+	error_code = (data.get("error_code") or "").strip()
+	if error_code:
+		parts.append(error_code)
+	if message:
+		parts.append(message)
+	for err in data.get("errors") or []:
+		if isinstance(err, dict):
+			field = err.get("field") or err.get("path") or ""
+			detail = err.get("message") or err.get("detail") or str(err)
+			parts.append(f"{field}: {detail}".strip(": "))
+		else:
+			parts.append(str(err))
+	return " — ".join(p for p in parts if p) or fallback or _("Unknown Xendit error")
+
+
+def _validate_xendit_callback_url(callback):
+	if not callback:
+		frappe.throw(
+			_(
+				"Webhook URL Xendit belum dikonfigurasi. "
+				"Tambahkan host_name HTTPS publik di site_config.json, lalu restart bench."
+			)
+		)
+	if not _is_public_https_url(callback):
+		frappe.throw(
+			_(
+				"Xendit membutuhkan callback URL HTTPS yang dapat diakses publik (bukan localhost). "
+				"URL saat ini: {0}. "
+				"Untuk development, gunakan ngrok atau set host_name di site_config.json."
+			).format(callback)
+		)
+
+
 def _create_xendit_qris(external_id, amount, currency="IDR"):
 	cfg = get_gateway_settings()
 	token = base64.b64encode(f"{cfg['server_key']}:".encode()).decode()
-	headers = {"Authorization": f"Basic {token}"}
+	headers = {"Authorization": f"Basic {token}", "Content-Type": "application/json"}
 	callback = get_webhook_url("Xendit")
+	_validate_xendit_callback_url(callback)
+	# Xendit /qr_codes (QRIS) only accepts external_id, type, callback_url, amount — no currency field.
 	payload = {
 		"external_id": external_id,
 		"type": "DYNAMIC",
 		"amount": int(round(flt(amount))),
-		"currency": currency or "IDR",
+		"callback_url": callback,
 	}
-	if callback:
-		payload["callback_url"] = callback
 	url = f"{_xendit_base_url()}/qr_codes"
 	resp = requests.post(url, json=payload, headers=headers, timeout=30)
 	data = resp.json() if resp.content else {}
 	if resp.status_code >= 400:
-		message = data.get("message") or resp.text
-		frappe.throw(_("Xendit error: {0}").format(message))
+		frappe.log_error(
+			title="Xendit QRIS create failed",
+			message=json.dumps({"status": resp.status_code, "payload": payload, "response": data}, default=str),
+		)
+		frappe.throw(_("Xendit error: {0}").format(_format_xendit_error(data, resp.text)))
 	return {
 		"external_id": external_id,
 		"transaction_id": data.get("id"),
-		"qr_url": data.get("qr_string") or data.get("callback_url"),
+		"qr_url": "",
 		"qr_string": data.get("qr_string") or "",
 		"raw": data,
 	}
 
 
 def get_webhook_url(provider=None):
+	path = f"/api/method/imogi_pos.api.payment_gateway_api.gateway_webhook?provider={provider or ''}"
+	host_name = (frappe.conf.host_name or frappe.conf.hostname or "").strip().rstrip("/")
+	if host_name:
+		if not host_name.startswith(("http://", "https://")):
+			host_name = f"https://{host_name}"
+		if host_name.startswith("https://"):
+			return f"{host_name}{path}"
 	try:
-		return frappe.utils.get_url(
-			f"/api/method/imogi_pos.api.payment_gateway_api.gateway_webhook?provider={provider or ''}"
-		)
+		return frappe.utils.get_url(path)
 	except Exception:
 		return ""
 
@@ -203,16 +310,16 @@ def create_gateway_payment(
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 
-	return {
+	result = {
 		"name": doc.name,
 		"external_id": external_id,
 		"amount": amount,
 		"currency": currency,
 		"provider": cfg["provider"],
-		"qr_string": charge.get("qr_string") or "",
-		"qr_url": charge.get("qr_url") or "",
 		"status": doc.status,
 	}
+	result.update(_serialize_qr_response(charge.get("qr_url"), charge.get("qr_string"), payment_name=doc.name))
+	return result
 
 
 def _cart_total(items, discount_type=None, discount_value=None):
@@ -225,6 +332,40 @@ def _cart_total(items, discount_type=None, discount_value=None):
 	elif discount_type == "Amount":
 		subtotal -= discount_value
 	return max(0, flt(subtotal))
+
+
+def _xendit_auth_headers():
+	cfg = get_gateway_settings()
+	token = base64.b64encode(f"{cfg['server_key']}:".encode()).decode()
+	return {"Authorization": f"Basic {token}"}
+
+
+def _xendit_qr_status(external_id):
+	"""Poll Xendit QRIS status by external_id (QR inactive or payment completed)."""
+	headers = _xendit_auth_headers()
+	base = _xendit_base_url()
+
+	resp = requests.get(f"{base}/qr_codes/{external_id}", headers=headers, timeout=20)
+	if resp.status_code == 200:
+		data = resp.json() if resp.content else {}
+		qr_status = (data.get("status") or "").strip().upper()
+		if qr_status == "INACTIVE":
+			return "COMPLETED"
+
+	resp = requests.get(
+		f"{base}/qr_codes/payments",
+		headers=headers,
+		params={"external_id": external_id, "limit": 5},
+		timeout=20,
+	)
+	if resp.status_code == 200:
+		data = resp.json() if resp.content else {}
+		payments = data if isinstance(data, list) else (data.get("data") or data.get("payments") or [])
+		for payment in payments:
+			if (payment.get("status") or "").strip().upper() == "COMPLETED":
+				return "COMPLETED"
+
+	return ""
 
 
 def _midtrans_status(external_id, sandbox=1):
@@ -254,8 +395,7 @@ def refresh_gateway_payment(name):
 		data = _midtrans_status(doc.external_id, sandbox=cfg["sandbox"])
 		raw_status = data.get("transaction_status") or data.get("status_code")
 	elif doc.provider == "Xendit":
-		# Xendit dynamic QR — poll by external_id via payments API fallback
-		raw_status = doc.status
+		raw_status = _xendit_qr_status(doc.external_id)
 
 	new_status = _normalize_status(raw_status)
 	if new_status == "Paid" and doc.status != "Paid":
@@ -290,7 +430,7 @@ def mark_gateway_paid(doc, remarks=None):
 
 def _complete_gateway_payment(doc):
 	if doc.order:
-		return frappe.get_doc("IMOGI POS Order", doc.order)
+		return frappe.get_doc("Riwayat Order", doc.order)
 
 	snapshot = json.loads(doc.cart_snapshot or "{}")
 	items = snapshot.get("items") or []
@@ -323,18 +463,18 @@ def serialize_gateway_payment(doc):
 		payload = json.loads(doc.qris_payload or "{}")
 	except Exception:
 		payload = {}
-	return {
+	result = {
 		"name": doc.name,
 		"status": doc.status,
 		"provider": doc.provider,
 		"external_id": doc.external_id,
 		"amount": flt(doc.amount),
 		"currency": doc.currency,
-		"qr_string": payload.get("qr_string") or "",
-		"qr_url": payload.get("qr_url") or "",
 		"order": doc.order,
 		"paid_at": doc.paid_at,
 	}
+	result.update(_serialize_qr_response(payload.get("qr_url"), payload.get("qr_string"), payment_name=doc.name))
+	return result
 
 
 def handle_gateway_webhook(provider, payload):
@@ -346,10 +486,13 @@ def handle_gateway_webhook(provider, payload):
 		except Exception:
 			data = frappe.parse_json(payload)
 
+	qr_code = data.get("qr_code") or {}
 	external_id = (
 		data.get("order_id")
 		or data.get("external_id")
+		or qr_code.get("external_id")
 		or (data.get("data") or {}).get("reference_id")
+		or (data.get("data") or {}).get("external_id")
 		or data.get("id")
 	)
 	if not external_id:
