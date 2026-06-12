@@ -112,21 +112,22 @@ def _workspace_link_label_features() -> dict[tuple[str, str, str], str]:
 	return mapping
 
 # Owner: upgrade langganan & matriks fitur. Admin: setup wizard.
-WORKSPACE_OWNER_UPGRADE_KEYS = frozenset(
-	{
-		("DocType", "IMOGI POS Settings"),
-		("Page", "imogi-pos-feature-matrix"),
-	}
-)
+WORKSPACE_OWNER_UPGRADE_KEYS = frozenset({("Page", "imogi-pos-feature-matrix")})
 WORKSPACE_ADMIN_ONLY_KEYS = frozenset({("Page", "imogi-pos-setup")})
 WORKSPACE_AREA_ASSIGNMENT_KEY = ("DocType", "IMOGI Area Manager Assignment")
+
+# Owner provisioning / cabang — visible to IMOGI Owner even though matrix role is Area Manager.
+WORKSPACE_OWNER_BRANCH_FEATURES = frozenset({"multi_outlet"})
 
 # Legacy workspace card titles → current WORKSPACE_SECTIONS labels
 WORKSPACE_CARD_ALIASES: dict[str, str] = {
 	"Order & Pembayaran": "Operasional Harian",
 	"Shift & Operasional": "Shift & Tutup Hari",
 	"Master & Cabang": "Pengaturan Sistem",
-	"Laporan": "Laporan & Analitik",
+	"Laporan": "Dashboard & Laporan",
+	"Laporan & Analitik": "Dashboard & Laporan",
+	"Tier Free": "Dashboard & Laporan",
+	"Integrasi Owner": "Integrasi & Payment",
 }
 
 
@@ -266,7 +267,7 @@ def is_workspace_item_allowed_for_user(
 ) -> bool:
 	"""Tier + role filter for IMOGI POS workspace links."""
 	from imogi_pos.imogi_pos.utils.role_gating import (
-		is_role_allowed_for_feature,
+		is_workspace_role_allowed_for_feature,
 		user_bypasses_role_gating,
 	)
 
@@ -299,7 +300,9 @@ def is_workspace_item_allowed_for_user(
 	)
 	if not resolved:
 		return _is_frappe_link_permitted(link_type, link_to, user)
-	if not is_role_allowed_for_feature(resolved, user=user, settings=settings):
+	if resolved in WORKSPACE_OWNER_BRANCH_FEATURES and _user_is_imogi_owner(user):
+		return _is_frappe_link_permitted(link_type, link_to, user)
+	if not is_workspace_role_allowed_for_feature(resolved, user=user, settings=settings):
 		return False
 	return _is_frappe_link_permitted(link_type, link_to, user)
 

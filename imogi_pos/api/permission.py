@@ -19,6 +19,13 @@ def has_app_permission():
 		"IMOGI Manager",
 		"IMOGI Cashier",
 		"IMOGI Supervisor",
+		"IMOGI Finance",
+		"IMOGI Inventory",
+		"IMOGI Purchasing",
+		"IMOGI Chef",
+		"IMOGI Waiter",
+		"IMOGI Kitchen Staff",
+		"IMOGI Auditor",
 	}
 	if set(frappe.get_roles()) & imogi_roles:
 		return True

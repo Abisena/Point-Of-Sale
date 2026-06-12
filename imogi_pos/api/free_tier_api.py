@@ -10,7 +10,7 @@ from frappe.utils import add_days, flt, getdate, today
 from imogi_pos.imogi_pos.utils.bom_stock import POS_CATEGORIES
 from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
 from imogi_pos.imogi_pos.utils.branch_pricing import resolve_selling_price_rate
-from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+from imogi_pos.imogi_pos.utils.feature_gating import require_feature_doctype_access
 from imogi_pos.imogi_pos.utils.sales_report_limits import (
 	resolve_sales_report_period,
 	sales_report_limits_payload,
@@ -40,7 +40,7 @@ def _branch_scope(branch=None, pos_profile=None):
 def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=None, status=None, limit=50):
 	"""Cashier order history for imogi-pos-order-history page."""
 	_require_login()
-	require_feature_operational("order_history")
+	require_feature_doctype_access("order_history")
 
 	scope = _branch_scope(branch, pos_profile)
 	limit = min(int(limit or 50), 200)
@@ -67,7 +67,7 @@ def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=No
 def list_menu_items(search=None, category=None, branch=None, pos_profile=None, limit=100):
 	"""Manager menu list for imogi-pos-menu page."""
 	_require_login()
-	require_feature_operational("menu")
+	require_feature_doctype_access("menu")
 
 	scope = _branch_scope(branch, pos_profile)
 	limit = min(int(limit or 100), 300)
@@ -121,7 +121,7 @@ def list_menu_items(search=None, category=None, branch=None, pos_profile=None, l
 def list_menu_categories(branch=None, pos_profile=None):
 	"""Manager category overview for imogi-pos-menu-category page."""
 	_require_login()
-	require_feature_operational("menu_category")
+	require_feature_doctype_access("menu_category")
 
 	scope = _branch_scope(branch, pos_profile)
 	categories = []
@@ -155,7 +155,7 @@ def list_menu_categories(branch=None, pos_profile=None):
 def get_sales_report_limits():
 	"""Date filter rules for Laporan Penjualan page."""
 	_require_login()
-	require_feature_operational("sales_report")
+	require_feature_doctype_access("sales_report")
 	return sales_report_limits_payload()
 
 
@@ -163,7 +163,7 @@ def get_sales_report_limits():
 def get_sales_report(branch=None, pos_profile=None, from_date=None, to_date=None, period=None):
 	"""Owner sales report summary for imogi-pos-sales-report page."""
 	_require_login()
-	require_feature_operational("sales_report")
+	require_feature_doctype_access("sales_report")
 
 	scope = _branch_scope(branch, pos_profile)
 	from_day, to_day, normalized_period = resolve_sales_report_period(period, from_date, to_date)

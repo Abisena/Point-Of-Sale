@@ -1184,8 +1184,11 @@ def is_feature_operational(
 	if feature["status"] == FEATURE_STATUS_PLANNED:
 		return False
 	settings = settings or get_settings()
-	if not is_tier_at_least(tier or get_subscription_tier(settings), feature["min_tier"]):
-		return False
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	if not is_subscription_tier_disabled():
+		if not is_tier_at_least(tier or get_subscription_tier(settings), feature["min_tier"]):
+			return False
 	from imogi_pos.imogi_pos.utils.role_gating import is_role_allowed_for_feature
 
 	if not is_role_allowed_for_feature(feature_id, user=user, settings=settings):

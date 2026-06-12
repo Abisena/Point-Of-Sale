@@ -35,9 +35,16 @@ FRAPPE_ROLE_TO_MATRIX: dict[str, str] = {
 	"Sales User": "Manager",
 	"Accounts Manager": "Finance",
 	"Accounts User": "Finance",
+	"Purchase Manager": "Purchasing",
+	"Purchase User": "Purchasing",
+	"Stock Manager": "Inventory",
+	"Stock User": "Inventory",
 	"IMOGI Owner": "Owner",
 	"IMOGI Area Manager": "Area Manager",
 	"IMOGI Manager": "Manager",
+	"IMOGI Finance": "Finance",
+	"IMOGI Inventory": "Inventory",
+	"IMOGI Purchasing": "Purchasing",
 	"IMOGI Cashier": "Kasir",
 	"IMOGI Waiter": "Waiter",
 	"IMOGI Supervisor": "Supervisor",
@@ -45,6 +52,7 @@ FRAPPE_ROLE_TO_MATRIX: dict[str, str] = {
 	"IMOGI Chef": "Chef",
 	"IMOGI Fulfillment Staff": "Waiter",
 	"IMOGI Rider": "Kasir",
+	"IMOGI Auditor": "Auditor",
 }
 
 # Matrix persona → feature roles it may use (inheritance / escalation)
@@ -193,6 +201,24 @@ def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settin
 		return True
 
 	return required in get_effective_feature_roles(user)
+
+
+def is_workspace_role_allowed_for_feature(
+	feature_id: str, user: str | None = None, settings=None
+) -> bool:
+	"""Workspace links: exact matrix role only (no inheritance; always enforced)."""
+	if user_bypasses_role_gating(user):
+		return True
+
+	feature = get_feature(feature_id)
+	if not feature:
+		return False
+
+	required = (feature.get("role") or "").strip()
+	if not required:
+		return True
+
+	return required in get_user_matrix_roles(user)
 
 
 def get_role_block_reason(feature_id: str, user: str | None = None, settings=None) -> str | None:

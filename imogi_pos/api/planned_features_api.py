@@ -5,7 +5,7 @@ from frappe import _
 from frappe.utils import get_datetime, now_datetime
 
 from imogi_pos.api.reports_api import _require_report_access
-from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+from imogi_pos.imogi_pos.utils.feature_gating import require_feature_doctype_access, require_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
 from imogi_pos.imogi_pos.utils.planned_features import (
 	apply_birthday_promo,
@@ -250,14 +250,14 @@ def create_spoilage_api(item_code, qty, warehouse=None, reason=None):
 @frappe.whitelist()
 def get_central_inventory_api(company=None):
 	_require_ops_access()
-	require_feature_operational("central_inventory")
+	require_feature_doctype_access("central_inventory")
 	return get_central_inventory_summary(company)
 
 
 @frappe.whitelist()
 def create_central_purchase_request_api(items, company=None):
 	_require_ops_access()
-	require_feature_operational("central_purchasing")
+	require_feature_doctype_access("central_purchasing")
 	return {"material_request": create_central_purchase_request(items, company)}
 
 

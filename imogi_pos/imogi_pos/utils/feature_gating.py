@@ -281,6 +281,18 @@ def get_settings_field_locks(tier: str | None = None) -> dict:
 	}
 
 
+def require_feature_doctype_access(feature_id: str, ptype: str | None = None, settings=None, user=None):
+	"""Tier/role gate plus Frappe DocType permission for integration APIs."""
+	from imogi_pos.imogi_pos.utils.role_permissions import FEATURE_DOCTYPE_ACCESS
+
+	require_feature_operational(feature_id, settings, user=user)
+	mapping = FEATURE_DOCTYPE_ACCESS.get(feature_id)
+	if not mapping:
+		return
+	doctype, default_ptype = mapping
+	frappe.has_permission(doctype, ptype or default_ptype, throw=True)
+
+
 def enforce_settings_tier_limits(doc):
 	"""Block enabling gated toggles; auto-disable them when subscription tier is downgraded."""
 	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
