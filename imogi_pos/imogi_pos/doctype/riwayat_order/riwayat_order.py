@@ -23,6 +23,10 @@ from imogi_pos.imogi_pos.utils.flow import (
 
 
 class RiwayatOrder(Document):
+	def before_insert(self):
+		if not self.cashier and frappe.session.user and frappe.session.user != "Guest":
+			self.cashier = frappe.session.user
+
 	def validate(self):
 		self.set_currency()
 		self.calculate_totals()

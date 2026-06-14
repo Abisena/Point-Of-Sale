@@ -19,6 +19,33 @@ def _fail(label, detail=""):
 	return {"status": "FAIL", "detail": detail, "label": label}
 
 
+def _count_bom_stock_entries():
+	if frappe.db.has_column("Stock Entry", "remarks"):
+		return frappe.db.count(
+			"Stock Entry",
+			{"docstatus": 1, "remarks": ["like", "IMOGI BOM POS:%"]},
+		)
+	return frappe.db.sql(
+		"""
+		select count(*)
+		from `tabStock Entry`
+		where docstatus = 1 and purpose = 'Material Issue'
+		"""
+	)[0][0]
+
+
+def _count_auto_low_stock_mr():
+	if frappe.db.has_column("Material Request", "remarks"):
+		return frappe.db.count(
+			"Material Request",
+			{"docstatus": 1, "remarks": ["like", "%IMOGI Auto Low Stock%"]},
+		)
+	return frappe.db.count(
+		"Material Request",
+		{"docstatus": 1, "material_request_type": "Purchase"},
+	)
+
+
 def run():
 	settings = frappe.get_single("IMOGI POS Settings")
 	company = settings.default_company or frappe.db.get_single_value("Global Defaults", "default_company")
@@ -88,10 +115,7 @@ def run():
 	)
 	results.append(_ok("Stock items", str(stock_items)))
 
-	bom_stock_entries = frappe.db.count(
-		"Stock Entry",
-		[["remarks", "like", "IMOGI BOM POS:%"], ["docstatus", "=", 1]],
-	)
+	bom_stock_entries = _count_bom_stock_entries()
 	results.append(
 		_ok("BOM Stock Entries (Material Issue)", str(bom_stock_entries))
 		if bom_stock_entries
@@ -118,10 +142,7 @@ def run():
 		if cint(settings.enable_auto_purchase_request)
 		else _warn("Auto Purchase Request (low stock)", "enable_auto_purchase_request=0")
 	)
-	auto_mr = frappe.db.count(
-		"Material Request",
-		[["remarks", "like", "%IMOGI Auto Low Stock%"], ["docstatus", "=", 1]],
-	)
+	auto_mr = _count_auto_low_stock_mr()
 	results.append(
 		_ok("Auto low-stock Material Requests", str(auto_mr))
 		if auto_mr

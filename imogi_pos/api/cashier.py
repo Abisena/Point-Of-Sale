@@ -159,6 +159,7 @@ def _create_cashier_order(
 	order = frappe.new_doc("Riwayat Order")
 	order.company = company
 	order.pos_profile = pos_profile
+	order.cashier = frappe.session.user
 	order.order_channel = order_channel or "Walk-in"
 	order.order_type = order_type or "Takeaway"
 	order.order_source = "IMOGI POS"

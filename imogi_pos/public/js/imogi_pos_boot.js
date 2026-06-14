@@ -32,7 +32,7 @@ imogi_pos.is_erp_enterprise_deployment = function () {
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260614-order-history-detail-v1";
+	const CACHE_VERSION = "20260614-order-history-cashier-v1";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",

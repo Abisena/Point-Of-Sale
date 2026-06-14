@@ -8,7 +8,7 @@ from frappe import _
 from frappe.utils import add_days, flt, getdate, today
 
 from imogi_pos.imogi_pos.utils.bom_stock import POS_CATEGORIES
-from imogi_pos.imogi_pos.utils.branch import resolve_active_branch
+from imogi_pos.imogi_pos.utils.branch import get_branch, resolve_active_branch
 from imogi_pos.imogi_pos.utils.branch_pricing import resolve_selling_price_rate
 from imogi_pos.imogi_pos.utils.feature_gating import require_feature_doctype_access
 from imogi_pos.imogi_pos.utils.sales_report_limits import (
@@ -36,13 +36,146 @@ def _branch_scope(branch=None, pos_profile=None):
 	}
 
 
+def _effective_order_cashier(order):
+	return (order.cashier or order.owner or "").strip()
+
+
+def _order_history_access(branch=None, pos_profile=None):
+	"""Scope Riwayat Order list/detail by role: kasir own rows, owner all branches."""
+	from imogi_pos.boot import (
+		AREA_MANAGER_ROLE,
+		MANAGER_ROLE,
+		MANAGER_ROLES,
+		OWNER_ROLE,
+		requires_cashier_shift,
+	)
+	from imogi_pos.imogi_pos.utils.area_manager import get_assigned_branch_codes, user_is_area_manager
+
+	user = frappe.session.user
+	roles = set(frappe.get_roles(user))
+	scope = _branch_scope(branch, pos_profile)
+
+	access = {
+		"scope": scope,
+		"filter_cashier": None,
+		"filter_pos_profile": None,
+		"filter_pos_profiles": None,
+		"view_all_branches": False,
+		"view_mode": "branch",
+	}
+
+	if requires_cashier_shift(user):
+		access["filter_cashier"] = user
+		access["filter_pos_profile"] = scope.get("pos_profile")
+		access["view_mode"] = "own"
+	elif roles & MANAGER_ROLES or OWNER_ROLE in roles:
+		access["view_all_branches"] = True
+		access["view_mode"] = "all"
+	elif user_is_area_manager(user):
+		if scope.get("pos_profile"):
+			access["filter_pos_profile"] = scope["pos_profile"]
+		else:
+			profiles = []
+			for code in get_assigned_branch_codes(user):
+				branch_row = get_branch(branch_code=code)
+				if branch_row and branch_row.get("pos_profile"):
+					profiles.append(branch_row["pos_profile"])
+			if profiles:
+				access["filter_pos_profiles"] = profiles
+		access["view_mode"] = "area"
+	elif MANAGER_ROLE in roles or "Sales Manager" in roles:
+		access["filter_pos_profile"] = scope.get("pos_profile")
+		access["view_mode"] = "branch"
+	else:
+		access["filter_pos_profile"] = scope.get("pos_profile")
+
+	return access
+
+
+def _assert_order_history_access(order, access):
+	if access.get("filter_cashier"):
+		if _effective_order_cashier(order) != access["filter_cashier"]:
+			frappe.throw(_("Order {0} not found").format(order.name), frappe.DoesNotExistError)
+
+	if access.get("view_all_branches"):
+		return
+
+	pos_profile = order.pos_profile
+	if not pos_profile:
+		return
+
+	if access.get("filter_pos_profile") and pos_profile != access["filter_pos_profile"]:
+		frappe.throw(_("Order {0} not found").format(order.name), frappe.DoesNotExistError)
+
+	allowed_profiles = access.get("filter_pos_profiles") or []
+	if allowed_profiles and pos_profile not in allowed_profiles:
+		frappe.throw(_("Order {0} not found").format(order.name), frappe.DoesNotExistError)
+
+
+def _fetch_order_history_rows(filters, access, limit=50):
+	conditions = ["ro.docstatus < 2"]
+	values = {}
+
+	if filters.get("from_date"):
+		conditions.append("ro.creation >= %(from_date)s")
+		values["from_date"] = filters["from_date"]
+	if filters.get("to_date"):
+		conditions.append("ro.creation <= %(to_date)s")
+		values["to_date"] = filters["to_date"]
+	if filters.get("status"):
+		conditions.append("ro.status = %(status)s")
+		values["status"] = filters["status"]
+
+	if access.get("filter_cashier"):
+		conditions.append(
+			"COALESCE(NULLIF(ro.cashier, ''), ro.owner) = %(cashier)s"
+		)
+		values["cashier"] = access["filter_cashier"]
+
+	if not access.get("view_all_branches"):
+		if access.get("filter_pos_profiles"):
+			conditions.append("ro.pos_profile in %(pos_profiles)s")
+			values["pos_profiles"] = tuple(access["filter_pos_profiles"])
+		elif access.get("filter_pos_profile"):
+			conditions.append("ro.pos_profile = %(pos_profile)s")
+			values["pos_profile"] = access["filter_pos_profile"]
+
+	where = " and ".join(conditions)
+	return frappe.db.sql(
+		f"""
+		select
+			ro.name,
+			ro.creation,
+			ro.order_channel,
+			ro.order_type,
+			ro.status,
+			ro.customer_name,
+			ro.grand_total,
+			ro.pos_invoice,
+			ro.kitchen_order,
+			ro.delivery_task,
+			ro.pos_profile,
+			COALESCE(NULLIF(ro.cashier, ''), ro.owner) as cashier,
+			COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) as cashier_name
+		from `tabRiwayat Order` ro
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+		order by ro.creation desc
+		limit {int(limit)}
+		""",
+		values,
+		as_dict=True,
+	)
+
+
 @frappe.whitelist()
 def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=None, status=None, limit=50):
 	"""Cashier order history for imogi-pos-order-history page."""
 	_require_login()
 	require_feature_doctype_access("order_history")
 
-	scope = _branch_scope(branch, pos_profile)
+	access = _order_history_access(branch, pos_profile)
+	scope = access["scope"]
 	limit = min(int(limit or 50), 200)
 	filters = {}
 	if from_date:
@@ -51,15 +184,12 @@ def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=No
 		filters["to_date"] = add_days(getdate(to_date), 1)
 	if status:
 		filters["status"] = status
-	if scope.get("pos_profile"):
-		filters["pos_profile"] = scope["pos_profile"]
 
-	from imogi_pos.imogi_pos.report.imogi_pos_order_summary.imogi_pos_order_summary import get_data
-
-	rows = get_data(filters)[:limit]
+	rows = _fetch_order_history_rows(filters, access, limit=limit)
 	return {
 		"orders": rows,
 		"scope": scope,
+		"view_mode": access["view_mode"],
 	}
 
 
@@ -72,20 +202,23 @@ def get_order_history_detail(order_name, branch=None, pos_profile=None):
 	if not order_name:
 		frappe.throw(_("order_name is required"))
 
-	scope = _branch_scope(branch, pos_profile)
+	access = _order_history_access(branch, pos_profile)
+	scope = access["scope"]
 	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("read")
-
-	if scope.get("pos_profile") and order.pos_profile and order.pos_profile != scope["pos_profile"]:
-		frappe.throw(_("Order {0} not found").format(order_name), frappe.DoesNotExistError)
+	_assert_order_history_access(order, access)
 
 	from imogi_pos.api.order import _serialize_order
 
 	detail = _serialize_order(order)
+	cashier_user = _effective_order_cashier(order)
+	cashier_name = order.cashier_name or frappe.db.get_value("User", cashier_user, "full_name") if cashier_user else ""
 	detail.update(
 		{
 			"customer_name": order.customer_name,
 			"pos_profile": order.pos_profile,
+			"cashier": cashier_user,
+			"cashier_name": cashier_name or cashier_user,
 			"remarks": order.remarks,
 			"voucher_code": order.voucher_code,
 			"voucher_discount_amount": flt(order.voucher_discount_amount),

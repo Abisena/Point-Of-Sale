@@ -32,3 +32,4 @@ imogi_pos.patches.setup_demo_integration_users
 imogi_pos.patches.setup_demo_role_users
 imogi_pos.patches.sync_workspace_simplified
 imogi_pos.patches.restore_imogi_area_manager_branch
+imogi_pos.patches.backfill_riwayat_order_cashier

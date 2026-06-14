@@ -17,6 +17,8 @@
   "column_break_order",
   "customer",
   "customer_name",
+  "cashier",
+  "cashier_name",
   "customer_phone",
   "customer_email",
   "restaurant_table",
@@ -136,6 +138,22 @@
    "fieldname": "customer_name",
    "fieldtype": "Data",
    "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cashier",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Kasir",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "cashier.full_name",
+   "fieldname": "cashier_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Kasir",
    "read_only": 1
   },
   {
