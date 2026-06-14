@@ -186,10 +186,12 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_kitchen_display(frm) {
 		toggle_settings_by_business_type(frm);
+		render_kitchen_dock_summary(frm);
 	},
 
 	enable_fulfillment(frm) {
 		toggle_settings_by_business_type(frm);
+		render_kitchen_dock_summary(frm);
 	},
 
 	import_products(frm) {
@@ -645,12 +647,13 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v6")) return;
+	if (document.getElementById("imogi-settings-inline-css-v7")) return;
 	document.getElementById("imogi-settings-inline-css")?.remove();
 	document.getElementById("imogi-settings-inline-css-v2")?.remove();
 	document.getElementById("imogi-settings-inline-css-v3")?.remove();
 	document.getElementById("imogi-settings-inline-css-v4")?.remove();
 	document.getElementById("imogi-settings-inline-css-v5")?.remove();
+	document.getElementById("imogi-settings-inline-css-v6")?.remove();
 	frappe.dom.set_style(`
 		.imogi-settings-page .imogi-mode-summary-host .control-label,
 		.imogi-settings-page .form-section[data-fieldname="setup_section"] .section-head,
@@ -683,7 +686,16 @@ function inject_imogi_settings_css() {
 		.imogi-shift-quick-links a:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
 		.imogi-shift-status{align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;display:flex;font-size:12px;font-weight:600;gap:8px;margin-top:10px;padding:8px 12px}
 		.imogi-shift-status.is-off{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
-	`, "imogi-settings-inline-css-v6");
+		.imogi-kitchen-settings-dock{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-top:14px;padding:14px 16px}
+		.imogi-kitchen-form-grid{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:10px}
+		.imogi-kitchen-form-grid .frappe-control[data-fieldname="kitchen_item_groups"],
+		.imogi-kitchen-form-grid .frappe-control[data-fieldname="fulfillment_for_order_types"]{grid-column:1/-1}
+		.imogi-kitchen-quick-links{align-items:center;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px}
+		.imogi-kitchen-quick-links a{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;display:inline-flex;font-size:11px;font-weight:600;gap:5px;padding:6px 10px;text-decoration:none!important}
+		.imogi-kitchen-quick-links a:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
+		.imogi-kitchen-status{align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;display:flex;font-size:12px;font-weight:600;gap:8px;margin-top:10px;padding:8px 12px}
+		.imogi-kitchen-status.is-off{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
+	`, "imogi-settings-inline-css-v7");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -1202,6 +1214,7 @@ function activate_settings_tab(frm, tabId) {
 	if (tabId === "general") {
 		layout_store_identity(frm);
 		layout_shift_settings(frm);
+		layout_kitchen_settings(frm);
 		render_receipt_preview(frm);
 	}
 	if (SETTINGS_TABS.find((t) => t.id === tabId)?.placeholder) {
@@ -2006,11 +2019,36 @@ function bind_mode_summary_handlers(frm, $host) {
 		e.preventDefault();
 		const mode = $(this).data("mode");
 		if (mode === frm.doc.business_type) return;
-		frappe.msgprint({
-			title: __("Ubah Mode Operasional"),
-			indicator: "blue",
-			message: __("Mode bisnis diatur saat setup awal. Jalankan ulang Setup Wizard untuk mengganti mode."),
-		});
+		const mode_label = mode === "UMKM" ? __("UMKM") : __("Restoran / Cafe");
+		frappe.confirm(
+			__(
+				"Ganti mode operasional ke <b>{0}</b>? Workspace, alur order (KDS/fulfillment), dan pengaturan terkait akan disesuaikan.",
+				[mode_label]
+			),
+			() => {
+				frappe.call({
+					method: "imogi_pos.api.setup.change_operational_mode",
+					args: { business_type: mode },
+					freeze: true,
+					freeze_message: __("Mengganti mode operasional..."),
+					callback(r) {
+						if (r.exc) return;
+						const msg = r.message || {};
+						frappe.show_alert({
+							message: __("Mode operasional: {0}", [msg.business_type || mode]),
+							indicator: "green",
+						});
+						frappe.ui.toolbar.clear_cache().then(() => {
+							if (msg.redirect) {
+								frappe.set_route(msg.redirect.replace(/^\/app\//, ""));
+							} else {
+								frm.reload_doc();
+							}
+						});
+					},
+				});
+			}
+		);
 	});
 }
 
@@ -2028,6 +2066,13 @@ const SHIFT_SETTINGS_FIELDS = [
 	"default_warehouse",
 	"default_opening_time",
 	"default_closing_time",
+];
+
+const KITCHEN_SETTINGS_FIELDS = [
+	"enable_kitchen_display",
+	"enable_fulfillment",
+	"kitchen_item_groups",
+	"fulfillment_for_order_types",
 ];
 
 function layout_store_identity(frm) {
@@ -2127,6 +2172,75 @@ function layout_shift_settings(frm) {
 	});
 
 	render_shift_dock_summary(frm);
+}
+
+function layout_kitchen_settings(frm) {
+	const ctx = get_settings_section(frm, "store_identity_section");
+	if (!ctx || !ctx.$wrapper) return;
+
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	let $dock = $body.find(".imogi-kitchen-settings-dock");
+	if (!$dock.length) {
+		$dock = $(`
+			<div class="imogi-kitchen-settings-dock">
+				<div class="imogi-settings-card-head">
+					<span class="imogi-settings-card-icon"><i class="fa fa-cutlery"></i></span>
+					<div>
+						<div class="imogi-settings-card-title">${__("Kitchen & Fulfillment")}</div>
+						<div class="imogi-settings-card-sub">${__(
+							"Kitchen Display (KDS), packing takeaway/delivery, dan item group dapur. Opsional untuk UMKM."
+						)}</div>
+					</div>
+				</div>
+				<div class="imogi-kitchen-status"></div>
+				<div class="imogi-kitchen-form-grid"></div>
+				<div class="imogi-kitchen-quick-links">
+					<a href="/app/kitchen-display"><i class="fa fa-desktop"></i> ${__("Kitchen Display")}</a>
+				</div>
+			</div>`);
+		$body.append($dock);
+	}
+
+	const $grid = $dock.find(".imogi-kitchen-form-grid");
+	KITCHEN_SETTINGS_FIELDS.forEach((fieldname) => {
+		frm.toggle_display(fieldname, true);
+		const field = frm.get_field(fieldname);
+		if (!field || !field.$wrapper) return;
+		const $ctrl = field.$wrapper.closest(".frappe-control");
+		$ctrl.addClass("imogi-kitchen-field");
+		$grid.append($ctrl);
+	});
+
+	const flow_ctx = get_settings_section(frm, "flow_section");
+	if (flow_ctx && flow_ctx.$wrapper) {
+		flow_ctx.$wrapper.hide();
+	}
+
+	render_kitchen_dock_summary(frm);
+}
+
+function render_kitchen_dock_summary(frm) {
+	const $status = frm.$wrapper.find(".imogi-kitchen-status");
+	if (!$status.length) return;
+
+	const kds_on = cint(frm.doc.enable_kitchen_display);
+	const fulfillment_on = cint(frm.doc.enable_fulfillment);
+
+	$status
+		.toggleClass("is-off", !kds_on && !fulfillment_on)
+		.html(
+			kds_on || fulfillment_on
+				? `<i class="fa fa-check-circle"></i> ${__(
+						kds_on && fulfillment_on
+							? "KDS aktif · Fulfillment aktif"
+							: kds_on
+							? "KDS aktif — pesanan masuk layar dapur"
+							: "Fulfillment aktif — packing takeaway/delivery"
+				  )}`
+				: `<i class="fa fa-info-circle"></i> ${__(
+						"Nonaktif — aktifkan Kitchen Display jika pesanan perlu masuk dapur (KDS)."
+				  )}`
+		);
 }
 
 function render_shift_dock_summary(frm) {
@@ -2245,7 +2359,7 @@ function show_settings_placeholder(frm, tabId) {
 
 function toggle_general_tab_sections(frm, tabId) {
 	if (tabId !== "general") return;
-	["branch_pricing_section", "general_section", "flow_section"].forEach((section) => {
+	["branch_pricing_section", "general_section"].forEach((section) => {
 		set_settings_section_visible(frm, section, false);
 	});
 	[

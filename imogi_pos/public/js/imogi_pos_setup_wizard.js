@@ -10,8 +10,84 @@ function imogi_wizard_step_key(steps_meta, step_no) {
 	return (steps_meta || []).find((s) => s.no === step_no)?.key || "subscription";
 }
 
+imogi_pos.SetupModeChange = class SetupModeChange {
+	constructor(wrapper, status) {
+		this.$wrapper = $(wrapper).find(".layout-main-section");
+		this.status = status || {};
+		frappe.require("/assets/imogi_pos/css/imogi_pos_setup_wizard.css", () => this.render());
+	}
+
+	render() {
+		const current = this.status.business_type || "UMKM";
+		const is_umkm = current === "UMKM";
+		this.$wrapper.html(`
+			<div class="imogi-wizard-shell imogi-mode-change-shell">
+				<div class="imogi-wizard-main mx-auto" style="max-width:720px;">
+					<div class="imogi-wizard-content">
+						<h4>${__("Ubah Mode Operasional")}</h4>
+						<p class="text-muted">${__(
+							"Setup awal sudah selesai. Pilih mode di bawah — tidak perlu menjalankan ulang semua langkah wizard."
+						)}</p>
+						<div class="imogi-mode-summary imogi-mode-summary--compact mt-3">
+							<div class="imogi-mode-tabs">
+								<button type="button" class="imogi-mode-tab ${is_umkm ? "is-active" : ""}" data-mode="UMKM">${__("UMKM")}</button>
+								<button type="button" class="imogi-mode-tab ${!is_umkm ? "is-active" : ""}" data-mode="Restaurant / Cafe">${__("Restoran / Cafe")}</button>
+							</div>
+							<div class="imogi-mode-summary-body mt-3">
+								<div class="imogi-mode-summary-title">${is_umkm ? __("Mode UMKM") : __("Mode Restoran / Cafe")}</div>
+								<p class="text-muted mb-0">${is_umkm
+									? __("Satu operator — order & bayar langsung selesai.")
+									: __("Alur F&B lengkap: KDS, fulfillment, dan service.")}</p>
+							</div>
+						</div>
+						<div class="mt-4">
+							<button type="button" class="btn btn-primary btn-save-mode">${__("Simpan mode")}</button>
+							<button type="button" class="btn btn-default ml-2 btn-go-settings">${__("Buka Settings")}</button>
+							<button type="button" class="btn btn-default ml-2 btn-go-workspace">${__("Kembali ke workspace")}</button>
+						</div>
+					</div>
+				</div>
+			</div>`);
+
+		let selected = current;
+		this.$wrapper.find(".imogi-mode-tab").on("click", (e) => {
+			const mode = $(e.currentTarget).data("mode");
+			selected = mode;
+			this.$wrapper.find(".imogi-mode-tab").removeClass("is-active");
+			$(e.currentTarget).addClass("is-active");
+		});
+
+		this.$wrapper.find(".btn-save-mode").on("click", () => {
+			if (selected === current) {
+				frappe.msgprint(__("Mode sudah {0}.", [current]));
+				return;
+			}
+			frappe.call({
+				method: "imogi_pos.api.setup.change_operational_mode",
+				args: { business_type: selected },
+				freeze: true,
+				freeze_message: __("Mengganti mode operasional..."),
+				callback: (r) => {
+					if (r.exc) return;
+					const msg = r.message || {};
+					frappe.show_alert({
+						message: __("Mode operasional: {0}", [msg.business_type || selected]),
+						indicator: "green",
+					});
+					frappe.ui.toolbar.clear_cache().then(() => {
+						frappe.set_route((msg.redirect || "/app/imogi-pos").replace(/^\/app\//, ""));
+					});
+				},
+			});
+		});
+		this.$wrapper.find(".btn-go-settings").on("click", () => frappe.set_route("Form", "IMOGI POS Settings"));
+		this.$wrapper.find(".btn-go-workspace").on("click", () => frappe.set_route("imogi-pos"));
+	}
+};
+
 imogi_pos.SetupWizard9 = class SetupWizard9 {
 	constructor(wrapper) {
+		this.page_wrapper = wrapper;
 		this.$wrapper = $(wrapper).find(".layout-main-section");
 		this.step = 1;
 		this.session = {};
@@ -31,7 +107,15 @@ imogi_pos.SetupWizard9 = class SetupWizard9 {
 				callback: (r) => {
 					const data = r.message || {};
 					if (data.setup_complete) {
-						frappe.set_route("imogi-pos");
+						frappe.call({
+							method: "imogi_pos.api.setup.get_setup_status",
+							callback: (status_r) => {
+								new imogi_pos.SetupModeChange(
+									this.page_wrapper,
+									status_r.message || {}
+								);
+							},
+						});
 						return;
 					}
 					this.session = data.session || {};

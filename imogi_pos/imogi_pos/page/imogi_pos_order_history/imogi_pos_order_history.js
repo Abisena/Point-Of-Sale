@@ -34,9 +34,14 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 			<div class="imogi-web-panel-body imogi-oh-body">
 				<div class="imogi-web-empty">${__("Memuat...")}</div>
 			</div>
+			<div class="imogi-oh-pagination-host"></div>
 		</div>
 	`);
 	$content.append($panel);
+
+	let current_page = 1;
+	const page_size = 10;
+	let total_rows = 0;
 
 	const status_class = (status) => {
 		const key = String(status || "")
@@ -204,28 +209,24 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 		});
 	};
 
-	const load = () => {
+	const load = (page_no = current_page) => {
+		current_page = page_no;
+		const search = ($panel.find(".imogi-oh-search").val() || "").trim();
 		frappe.call({
 			method: "imogi_pos.api.free_tier_api.list_order_history",
-			args: { limit: 100 },
+			args: { page: current_page, page_size, search },
 			callback(r) {
 				const payload = r.message || {};
 				const rows = payload.orders || [];
+				total_rows = payload.total || rows.length;
+				current_page = payload.page || current_page;
 				view_mode = payload.view_mode || view_mode;
 				page.main.find(".imogi-web-hero p").first().text(subtitle_for_mode(view_mode));
 				const show_branch = view_mode === "all" || view_mode === "area";
-				const term = ($panel.find(".imogi-oh-search").val() || "").trim().toLowerCase();
-				const filtered = term
-					? rows.filter(
-							(row) =>
-								String(row.name || "").toLowerCase().includes(term) ||
-								String(row.customer_name || "").toLowerCase().includes(term) ||
-								String(row.cashier_name || "").toLowerCase().includes(term) ||
-								String(row.cashier || "").toLowerCase().includes(term)
-					  )
-					: rows;
-				if (!filtered.length) {
+				if (!rows.length) {
 					$panel.find(".imogi-oh-body").html(`<div class="imogi-web-empty">${__("Belum ada order")}</div>`);
+					const pag = imogi_pos.page_shell.render_pagination(current_page, total_rows, page_size);
+					$panel.find(".imogi-oh-pagination-host").html(pag.html);
 					return;
 				}
 				const html = [`<table class="imogi-web-table"><thead><tr>
@@ -235,7 +236,7 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 					"Detail"
 				)}</th>
 				</tr></thead><tbody>`];
-				filtered.forEach((row) => {
+				rows.forEach((row) => {
 					html.push(`<tr>
 						<td><a href="/app/riwayat-order/${encodeURIComponent(row.name)}">${frappe.utils.escape_html(row.name)}</a></td>
 						<td>${frappe.datetime.str_to_user(row.creation)}</td>
@@ -255,6 +256,9 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 				});
 				html.push("</tbody></table>");
 				$panel.find(".imogi-oh-body").html(html.join(""));
+
+				const pag = imogi_pos.page_shell.render_pagination(current_page, total_rows, page_size);
+				$panel.find(".imogi-oh-pagination-host").html(pag.html);
 			},
 		});
 	};
@@ -265,8 +269,13 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 		show_order_detail($(this).data("order"));
 	});
 
-	$panel.find(".imogi-oh-refresh").on("click", load);
-	$panel.find(".imogi-oh-search").on("input", frappe.utils.debounce(load, 300));
+	$panel.find(".imogi-oh-refresh").on("click", () => load(1));
+	$panel.find(".imogi-oh-search").on(
+		"input",
+		frappe.utils.debounce(() => load(1), 300)
+	);
+	$panel.on("click", ".imogi-web-page-prev:not([disabled])", () => load(current_page - 1));
+	$panel.on("click", ".imogi-web-page-next:not([disabled])", () => load(current_page + 1));
 	page.main.find(".imogi-oh-logout-btn").on("click", () => imogi_pos.logout_cashier?.({ shift_active: true }));
-	load();
+	load(1);
 };

@@ -1207,7 +1207,23 @@ def is_feature_operational(
 
 	if not is_role_allowed_for_feature(feature_id, user=user, settings=settings):
 		return False
-	return _settings_toggle_enabled(settings, feature.get("settings_key"))
+	return _feature_settings_enabled(settings, feature_id, feature)
+
+
+def _feature_settings_enabled(settings, feature_id: str, feature) -> bool:
+	"""Honor IMOGI POS Settings toggles mapped to a feature (not legacy settings_key only)."""
+	from frappe.utils import cint
+
+	from imogi_pos.imogi_pos.utils.feature_gating import SETTINGS_KEYS_BY_FEATURE
+
+	keys = SETTINGS_KEYS_BY_FEATURE.get(feature_id)
+	if keys:
+		return any(cint(getattr(settings, settings_key, 0)) for settings_key in keys)
+
+	settings_key = feature.get("settings_key")
+	if not settings_key:
+		return True
+	return bool(cint(getattr(settings, settings_key, 0)))
 
 
 def require_feature(feature_id: str, settings=None, tier: str | None = None):

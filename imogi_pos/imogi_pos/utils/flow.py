@@ -183,11 +183,8 @@ def create_kitchen_order(order):
 	if not ko.items:
 		frappe.throw(_("No kitchen items found on this order"))
 
+	ko.status = "Pending"
 	ko.insert(ignore_permissions=True)
-	ko.status = "Preparing"
-	ko.started_at = now_datetime()
-	ko.expected_ready_at = add_to_date(ko.started_at, minutes=ko.timer_minutes or 15)
-	ko.save(ignore_permissions=True)
 
 	from imogi_pos.imogi_pos.utils.notifications import notify_kitchen_new
 

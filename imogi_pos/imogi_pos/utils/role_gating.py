@@ -200,7 +200,28 @@ def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settin
 	if not is_role_gating_enabled(settings):
 		return True
 
+	if _cashier_checkout_feature_enabled(feature_id, user, settings):
+		return True
+
 	return required in get_effective_feature_roles(user)
+
+
+def _cashier_checkout_feature_enabled(feature_id: str, user: str | None, settings=None) -> bool:
+	"""Kasir may use checkout features when Owner enabled them in IMOGI POS Settings."""
+	from imogi_pos.boot import CASHIER_ROLE
+	from imogi_pos.imogi_pos.utils.feature_gating import _settings_enabled_for_feature
+	from imogi_pos.imogi_pos.utils.flow import get_settings
+
+	CHECKOUT_FEATURES = frozenset({"point_reward", "voucher", "qris"})
+	if feature_id not in CHECKOUT_FEATURES:
+		return False
+
+	user = _resolve_user(user)
+	if not user or user == "Guest" or CASHIER_ROLE not in frappe.get_roles(user):
+		return False
+
+	settings = settings or get_settings()
+	return _settings_enabled_for_feature(settings, feature_id)
 
 
 def is_workspace_role_allowed_for_feature(

@@ -60,9 +60,16 @@ def update_kitchen_status(kitchen_order, status):
 	if status not in ("Pending", "Preparing", "Ready", "Done"):
 		frappe.throw(_("Invalid kitchen status"))
 
-	ko.db_set("status", status)
-	if status == "Preparing" and not ko.started_at:
-		ko.db_set("started_at", now_datetime())
+	updates = {"status": status}
+	if status == "Preparing":
+		started_at = ko.started_at or now_datetime()
+		updates["started_at"] = started_at
+		timer = ko.timer_minutes or 15
+		from frappe.utils import add_to_date
+
+		updates["expected_ready_at"] = add_to_date(started_at, minutes=timer)
+
+	ko.db_set(updates)
 
 	frappe.publish_realtime("imogi_kitchen_updated", {"kitchen_order": kitchen_order, "status": status})
 	return ko.name

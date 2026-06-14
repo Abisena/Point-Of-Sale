@@ -10,7 +10,7 @@ frappe.pages["imogi-pos-setup"].on_page_load = function (wrapper) {
 			method: "imogi_pos.api.setup.get_setup_status",
 			callback(r) {
 				if (r.message && r.message.setup_complete) {
-					frappe.set_route("imogi-pos");
+					new imogi_pos.SetupModeChange(wrapper, r.message);
 					return;
 				}
 				new imogi_pos.SetupWizard9(wrapper);

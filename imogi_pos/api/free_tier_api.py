@@ -112,7 +112,7 @@ def _assert_order_history_access(order, access):
 		frappe.throw(_("Order {0} not found").format(order.name), frappe.DoesNotExistError)
 
 
-def _fetch_order_history_rows(filters, access, limit=50):
+def _order_history_where(filters, access):
 	conditions = ["ro.docstatus < 2"]
 	values = {}
 
@@ -125,11 +125,19 @@ def _fetch_order_history_rows(filters, access, limit=50):
 	if filters.get("status"):
 		conditions.append("ro.status = %(status)s")
 		values["status"] = filters["status"]
+	if filters.get("search"):
+		conditions.append(
+			"""(
+				ro.name like %(search)s
+				or ro.customer_name like %(search)s
+				or COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) like %(search)s
+				or COALESCE(NULLIF(ro.cashier, ''), ro.owner) like %(search)s
+			)"""
+		)
+		values["search"] = filters["search"]
 
 	if access.get("filter_cashier"):
-		conditions.append(
-			"COALESCE(NULLIF(ro.cashier, ''), ro.owner) = %(cashier)s"
-		)
+		conditions.append("COALESCE(NULLIF(ro.cashier, ''), ro.owner) = %(cashier)s")
 		values["cashier"] = access["filter_cashier"]
 
 	if not access.get("view_all_branches"):
@@ -140,7 +148,26 @@ def _fetch_order_history_rows(filters, access, limit=50):
 			conditions.append("ro.pos_profile = %(pos_profile)s")
 			values["pos_profile"] = access["filter_pos_profile"]
 
-	where = " and ".join(conditions)
+	return " and ".join(conditions), values
+
+
+def _count_order_history_rows(filters, access):
+	where, values = _order_history_where(filters, access)
+	return frappe.db.sql(
+		f"""
+		select count(*)
+		from `tabRiwayat Order` ro
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+		""",
+		values,
+	)[0][0]
+
+
+def _fetch_order_history_rows(filters, access, limit=50, offset=0):
+	where, values = _order_history_where(filters, access)
+	limit = max(1, int(limit or 50))
+	offset = max(0, int(offset or 0))
 	return frappe.db.sql(
 		f"""
 		select
@@ -161,7 +188,7 @@ def _fetch_order_history_rows(filters, access, limit=50):
 		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
 		where {where}
 		order by ro.creation desc
-		limit {int(limit)}
+		limit {limit} offset {offset}
 		""",
 		values,
 		as_dict=True,
@@ -169,14 +196,30 @@ def _fetch_order_history_rows(filters, access, limit=50):
 
 
 @frappe.whitelist()
-def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=None, status=None, limit=50):
+def list_order_history(
+	branch=None,
+	pos_profile=None,
+	from_date=None,
+	to_date=None,
+	status=None,
+	search=None,
+	page=1,
+	page_size=10,
+	limit=50,
+):
 	"""Cashier order history for imogi-pos-order-history page."""
 	_require_login()
 	require_feature_doctype_access("order_history")
 
 	access = _order_history_access(branch, pos_profile)
 	scope = access["scope"]
-	limit = min(int(limit or 50), 200)
+	page = max(1, int(page or 1))
+	page_size = min(max(1, int(page_size or 10)), 50)
+	# Backward compat: explicit limit without page_size uses old behaviour.
+	if frappe.form_dict.get("page_size") is None and frappe.form_dict.get("page") is None:
+		page_size = min(int(limit or 50), 200)
+		page = 1
+
 	filters = {}
 	if from_date:
 		filters["from_date"] = getdate(from_date)
@@ -184,10 +227,21 @@ def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=No
 		filters["to_date"] = add_days(getdate(to_date), 1)
 	if status:
 		filters["status"] = status
+	search_term = (search or "").strip()
+	if search_term:
+		filters["search"] = f"%{search_term}%"
 
-	rows = _fetch_order_history_rows(filters, access, limit=limit)
+	total = _count_order_history_rows(filters, access)
+	offset = (page - 1) * page_size
+	rows = _fetch_order_history_rows(filters, access, limit=page_size, offset=offset)
+	total_pages = max(1, (total + page_size - 1) // page_size)
+
 	return {
 		"orders": rows,
+		"total": total,
+		"page": page,
+		"page_size": page_size,
+		"total_pages": total_pages,
 		"scope": scope,
 		"view_mode": access["view_mode"],
 	}

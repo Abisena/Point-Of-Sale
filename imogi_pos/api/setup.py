@@ -103,6 +103,35 @@ def create_default_pos_profile(company, warehouse=None):
 
 
 @frappe.whitelist()
+def change_operational_mode(business_type):
+	"""Switch UMKM ↔ Restaurant / Cafe after initial setup (Settings or Setup page)."""
+	frappe.only_for(("System Manager", "Sales Manager"))
+
+	if business_type not in (BUSINESS_RESTAURANT, BUSINESS_UMKM):
+		frappe.throw(_("Invalid business type"))
+
+	settings = frappe.get_single("IMOGI POS Settings")
+	if settings.business_type == business_type:
+		return {
+			"changed": False,
+			"business_type": settings.business_type,
+			"flow": get_flow_summary(settings.business_type),
+			"redirect": f"/app/{get_workspace_route(settings.business_type)}",
+		}
+
+	apply_business_profile(business_type)
+	settings = frappe.get_single("IMOGI POS Settings")
+	frappe.db.commit()
+
+	return {
+		"changed": True,
+		"business_type": settings.business_type,
+		"flow": get_flow_summary(settings.business_type),
+		"redirect": f"/app/{get_workspace_route(settings.business_type)}",
+	}
+
+
+@frappe.whitelist()
 def complete_setup(
 	business_type,
 	default_company=None,
