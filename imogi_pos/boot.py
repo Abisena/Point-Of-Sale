@@ -197,6 +197,8 @@ def boot_session(bootinfo):
 
 	if bootinfo.imogi_pos_landing_target == "cashier":
 		bootinfo.home_page = CASHIER_HOME_PAGE
+	elif bootinfo.imogi_pos_landing_target == "opening-entry":
+		bootinfo.home_page = OPEN_SHIFT_PAGE
 
 	cached_opts = get_opening_route_options(
 		frappe.session.user,

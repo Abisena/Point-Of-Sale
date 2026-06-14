@@ -482,6 +482,7 @@ const SETTINGS_FORM_LAYOUT = [
 	"low_stock_check_interval",
 	"low_stock_alert_roles",
 	"reorder_level_field",
+	"enable_auto_purchase_request",
 	{ section: "receipt_section" },
 	"enable_receipt_print",
 	"thermal_print_mode",
@@ -1161,10 +1162,7 @@ function activate_settings_tab(frm, tabId) {
 	);
 
 	get_all_settings_tab_sections().forEach((sectionName) => {
-		let show = visible_sections.has(sectionName);
-		if (sectionName === "flow_section" && frm.doc.business_type === "UMKM") {
-			show = false;
-		}
+		const show = visible_sections.has(sectionName);
 		set_settings_section_visible(frm, sectionName, show);
 	});
 
@@ -1226,7 +1224,7 @@ function style_setting_cards(frm) {
 		receipt_section: { icon: "fa-print", title: __("Struk / Receipt") },
 		import_section: { icon: "fa-upload", title: __("Import Data Menu") },
 		analytics_section: { icon: "fa-line-chart", title: __("Pengaturan Dashboard") },
-		flow_section: { icon: "fa-cutlery", title: __("Alur Restoran / Cafe") },
+		flow_section: { icon: "fa-cutlery", title: __("Kitchen & Fulfillment") },
 		loyalty_section: { icon: "fa-star", title: __("Loyalty & Poin Member") },
 		stamp_section: { icon: "fa-ticket", title: __("Stamp Card") },
 		promo_section: { icon: "fa-tags", title: __("Promo Otomatis") },
@@ -2266,14 +2264,6 @@ function toggle_general_tab_sections(frm, tabId) {
 }
 
 function toggle_settings_by_business_type(frm) {
-	const is_umkm = frm.doc.business_type === "UMKM";
-	[
-		"flow_section",
-		"enable_kitchen_display",
-		"enable_fulfillment",
-		"kitchen_item_groups",
-		"fulfillment_for_order_types",
-	].forEach((fieldname) => frm.toggle_display(fieldname, !is_umkm));
 	if (frm.$wrapper.hasClass("imogi-settings-page")) {
 		build_settings_tabs(frm);
 	}

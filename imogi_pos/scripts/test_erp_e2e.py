@@ -120,6 +120,12 @@ def run(dry_run=0):
 		print("\n--- F) Demo role workspace access ---")
 		_verify_demo_role_workspace(errors)
 
+		# ── G) LOW STOCK → AUTO PURCHASE REQUEST ──
+		print("\n--- G) Low stock → Auto Purchase Request ---")
+		auto_mr = _verify_low_stock_auto_mr(ctx, errors)
+		if auto_mr:
+			results["auto_material_request"] = auto_mr
+
 	except Exception as exc:
 		frappe.db.rollback()
 		errors.append(str(exc))
@@ -451,3 +457,44 @@ def _verify_demo_role_workspace(errors: list[str]):
 		print(f"  [{'OK' if ok else 'FAIL'}] {email} → {label}: {status} (expect {expect})")
 		if not ok:
 			errors.append(f"{email} workspace {label}: got {status}, expect {expect}")
+
+
+def _verify_low_stock_auto_mr(ctx, errors: list[str]) -> str | None:
+	from imogi_pos.imogi_pos.utils.low_stock import (
+		create_auto_purchase_requests,
+		get_low_stock_items,
+		set_item_reorder_level,
+	)
+
+	settings = frappe.get_single("IMOGI POS Settings")
+	settings.enable_auto_purchase_request = 1
+	settings.save(ignore_permissions=True)
+
+	item_code = ctx["purchase_item"]
+	warehouse = ctx["warehouse"]
+	item_doc = frappe.get_doc("Item", item_code)
+	set_item_reorder_level(item_doc, warehouse, reorder_level=99999, reorder_qty=5)
+	item_doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	low_items = [r for r in get_low_stock_items(limit=50, warehouse=warehouse) if r["item_code"] == item_code]
+	if not low_items:
+		errors.append(f"Expected {item_code} in low stock after reorder level bump")
+		return None
+
+	created = create_auto_purchase_requests(low_items, settings=settings)
+	if not created:
+		errors.append("Expected auto Material Request for low stock item")
+		return None
+
+	frappe.db.commit()
+	mr_name = created[0]
+	print(f"  [OK] Auto Material Request {mr_name} for {item_code}")
+
+	dup = create_auto_purchase_requests(low_items, settings=settings)
+	if dup:
+		errors.append(f"Duplicate auto MR created: {dup}")
+	else:
+		print("  [OK] No duplicate MR while open request exists")
+
+	return mr_name

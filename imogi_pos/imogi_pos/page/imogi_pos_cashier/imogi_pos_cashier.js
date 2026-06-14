@@ -4,6 +4,15 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 	inject_cashier_css();
 	imogi_pos.sync_desk_theme?.();
 
+	if (
+		imogi_pos_requires_shift_workflow?.() &&
+		frappe.boot?.imogi_pos_landing_target === "opening-entry" &&
+		!cint(frappe.boot?.imogi_pos_has_open_shift)
+	) {
+		imogi_pos_go_to_opening_entry?.();
+		return;
+	}
+
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __("IMOGI Kasir"),
@@ -38,6 +47,14 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 frappe.pages["imogi-pos-cashier"].on_page_show = function (wrapper) {
 	document.body.classList.add("imogi-cashier-active");
 	imogi_pos.sync_desk_theme?.();
+	if (
+		imogi_pos_requires_shift_workflow?.() &&
+		frappe.boot?.imogi_pos_landing_target === "opening-entry" &&
+		!cint(frappe.boot?.imogi_pos_has_open_shift)
+	) {
+		imogi_pos_go_to_opening_entry?.();
+		return;
+	}
 	wrapper.cashier_page?.sync_shift_settings?.();
 };
 
@@ -84,12 +101,20 @@ function imogi_apply_shift_bar_theme($bar) {
 		textDecoration: "underline",
 	});
 
-	$bar.find(".imogi-cashier-close-shift-btn").css({
+	$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn").css({
 		background: "rgba(255, 255, 255, 0.12)",
 		border: "1px solid rgba(255, 255, 255, 0.24)",
 		borderRadius: "8px",
 		color: "#fff",
 		fontWeight: "700",
+	});
+
+	$bar.find(".imogi-cashier-shift-actions").css({
+		alignItems: "center",
+		display: "flex",
+		flexShrink: "0",
+		flexWrap: "wrap",
+		gap: "8px",
 	});
 }
 
@@ -114,6 +139,8 @@ function inject_cashier_css() {
 	document.getElementById("imogi-cashier-inline-css-v20")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v21")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v22")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v26")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v27")?.remove();
 	frappe.dom.set_style(`
 		.imogi-cashier-page .layout-main-section-wrapper,
 		.imogi-cashier-page .layout-main-section,
@@ -128,7 +155,10 @@ function inject_cashier_css() {
 		.imogi-cashier-shift-text { color: rgba(255,255,255,0.92) !important; font-size: 13px; font-weight: 700; }
 		.imogi-cashier-shift-text .fa { color: rgba(255,255,255,0.72) !important; }
 		.imogi-cashier-shift-text a { color: #fff !important; font-weight: 800; text-decoration: underline; }
-		.imogi-cashier-shift-bar .imogi-cashier-close-shift-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
+		.imogi-cashier-shift-actions { align-items: center; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+		.imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
+		.imogi-cashier-shift-bar .imogi-cashier-logout-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
+		.imogi-cashier-shift-bar .imogi-cashier-logout-btn .fa { margin-right: 4px; opacity: .85; }
 		.imogi-cashier-status-strip { align-items: center; display: none; flex-wrap: wrap; gap: 6px; }
 		.imogi-cashier-status-strip.is-visible { display: flex; }
 		.imogi-status-chip { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 999px; color: #334155; cursor: pointer; display: none; font-size: 11px; font-weight: 700; gap: 5px; line-height: 1; padding: 5px 10px; }
@@ -155,7 +185,6 @@ function inject_cashier_css() {
 				padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
 			}
 			.imogi-cashier-panel.imogi-cashier-products { border-radius: 16px; flex: 1; min-height: 0; }
-			.imogi-cashier-grid.items-container { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); padding-bottom: 12px; }
 			.imogi-cashier-panel.imogi-cashier-cart {
 				border-left: none;
 				border-radius: 16px 16px 0 0;
@@ -207,6 +236,8 @@ function inject_cashier_css() {
 				overflow-x: hidden;
 				overflow-y: auto;
 				overscroll-behavior: contain;
+				padding: 0;
+				text-align: left;
 				-webkit-overflow-scrolling: touch;
 			}
 			.imogi-cashier-cart-foot {
@@ -329,13 +360,109 @@ function inject_cashier_css() {
 		.imogi-cashier-search { background: #fafafa !important; border: 1px solid #e4e4e7 !important; border-radius: 10px !important; font-size: 15px !important; padding: 10px 14px !important; }
 		.imogi-cashier-search:focus { background: #fff !important; border-color: #a1a1aa !important; box-shadow: none !important; }
 		.imogi-cashier-groups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-		.imogi-cashier-group-btn { background: #fff; border: 1px solid #d4d4d8; border-radius: 999px; color: #71717a; cursor: pointer; font-size: 12px; font-weight: 700; padding: 7px 14px; }
+		.imogi-cashier-group-btn { align-items: center; background: #fff; border: 1px solid #d4d4d8; border-radius: 999px; color: #71717a; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 700; gap: 6px; padding: 7px 14px; }
+		.imogi-cashier-group-btn .fa { font-size: 11px; opacity: .85; }
 		.imogi-cashier-group-btn.is-active { background: #0f1f35; border-color: #0f1f35; color: #fff; }
+		.imogi-cashier-group-btn.is-active .fa { opacity: 1; }
+		.imogi-cashier-group-picker { display: none; position: relative; width: 100%; z-index: 1; }
+		.imogi-cashier-group-picker.is-open { z-index: 40; }
+		.imogi-cashier-group-picker-trigger {
+			align-items: center;
+			background: #fff;
+			border: 1px solid #e4e4e7;
+			border-radius: 12px;
+			box-shadow: 0 1px 2px rgba(15,31,53,.04);
+			color: #0f1f35;
+			cursor: pointer;
+			display: flex;
+			gap: 10px;
+			min-height: 44px;
+			padding: 0 12px;
+			text-align: left;
+			transition: border-color .15s ease, box-shadow .15s ease;
+			width: 100%;
+		}
+		.imogi-cashier-group-picker-trigger.is-open,
+		.imogi-cashier-group-picker-trigger:focus-visible {
+			border-color: #0f1f35;
+			box-shadow: 0 0 0 3px rgba(15,31,53,.1);
+			outline: none;
+		}
+		.imogi-cashier-group-picker-leading {
+			align-items: center;
+			background: #f8fafc;
+			border-radius: 8px;
+			color: #0f1f35;
+			display: inline-flex;
+			flex-shrink: 0;
+			font-size: 13px;
+			height: 28px;
+			justify-content: center;
+			width: 28px;
+		}
+		.imogi-cashier-group-picker-label {
+			flex: 1;
+			font-size: 14px;
+			font-weight: 700;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.imogi-cashier-group-picker-caret { color: #71717a; flex-shrink: 0; font-size: 11px; transition: transform .2s ease; }
+		.imogi-cashier-group-picker-trigger.is-open .imogi-cashier-group-picker-caret { transform: rotate(180deg); }
+		.imogi-cashier-group-picker-menu {
+			background: #fff;
+			border: 1px solid #e4e4e7;
+			border-radius: 12px;
+			box-shadow: 0 12px 32px rgba(15,31,53,.14);
+			display: none;
+			left: 0;
+			margin-top: 6px;
+			max-height: min(50vh, 280px);
+			overflow-y: auto;
+			padding: 6px;
+			position: absolute;
+			right: 0;
+			top: 100%;
+			-webkit-overflow-scrolling: touch;
+		}
+		.imogi-cashier-group-picker-menu.is-open { display: block; }
+		.imogi-cashier-group-picker-option {
+			align-items: center;
+			background: transparent;
+			border: none;
+			border-radius: 10px;
+			color: #334155;
+			cursor: pointer;
+			display: flex;
+			font-size: 14px;
+			font-weight: 600;
+			gap: 10px;
+			min-height: 42px;
+			padding: 8px 10px;
+			text-align: left;
+			width: 100%;
+		}
+		.imogi-cashier-group-picker-option:hover { background: #f8fafc; }
+		.imogi-cashier-group-picker-option.is-active { background: #0f1f35; color: #fff; }
+		.imogi-cashier-group-picker-option-icon {
+			align-items: center;
+			border-radius: 8px;
+			display: inline-flex;
+			flex-shrink: 0;
+			font-size: 12px;
+			height: 28px;
+			justify-content: center;
+			width: 28px;
+		}
+		.imogi-cashier-group-picker-option.is-active .imogi-cashier-group-picker-option-icon { background: rgba(255,255,255,.14); color: #fff; }
+		.imogi-cashier-group-picker-option:not(.is-active) .imogi-cashier-group-picker-option-icon { background: #f1f5f9; color: #475569; }
 		.imogi-cashier-panel.imogi-cashier-products { flex: 1; min-height: 0; overflow: hidden; }
 		.imogi-cashier-panel.imogi-cashier-cart { display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; overflow: hidden; }
 		.imogi-cashier-grid.items-container { align-content: start; display: grid; flex: 1 1 auto; gap: 12px; grid-auto-rows: max-content; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 14px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
 		.imogi-cashier-grid.items-container::after { content: ""; display: block; height: 1px; }
-		.imogi-cashier-cart-items { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 8px 12px; -webkit-overflow-scrolling: touch; }
+		.imogi-cashier-cart-items { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0; text-align: left; -webkit-overflow-scrolling: touch; }
 		.imogi-cashier-page .items-container .item-wrapper { background: #fff; border: 1px solid #e8ecf1; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,31,53,.06), 0 4px 12px rgba(15,31,53,.04); cursor: pointer; display: flex; flex-direction: column; height: auto; overflow: hidden; position: relative; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; user-select: none; }
 		.imogi-cashier-page .items-container .item-wrapper.is-out { opacity: .55; pointer-events: none; }
 		.imogi-cashier-page .items-container .item-wrapper:hover:not(.is-out) { border-color: #c7d2e0; box-shadow: 0 6px 20px rgba(15,31,53,.12); transform: translateY(-2px); }
@@ -353,17 +480,33 @@ function inject_cashier_css() {
 		.imogi-cashier-page .items-container .item-stock--out { color: #b91c1c; }
 		.imogi-cashier-page .items-container .item-stock--variant { color: #64748b; font-style: italic; }
 		.imogi-cashier-page .items-container .item-stock .indicator-pill { font-size: 10px; font-weight: 800; padding: 2px 8px; }
+		.item-quick-add { display: none; }
+		.imogi-cashier-page .items-container .item-quick-add {
+			align-items: center;
+			background: #ecfdf5;
+			border: 1px solid #6ee7b7;
+			border-radius: 999px;
+			color: #047857;
+			flex-shrink: 0;
+			font-size: 14px;
+			height: 34px;
+			justify-content: center;
+			margin: 0 10px 0 4px;
+			width: 34px;
+		}
 		.imogi-cashier-loading, .imogi-cashier-empty { align-items: center; color: #94a3b8; display: flex; flex-direction: column; gap: 10px; grid-column: 1/-1; justify-content: center; min-height: 220px; }
 		.imogi-cashier-cart-empty { color: #94a3b8; padding: 40px 16px; text-align: center; }
-		.imogi-cart-row { align-items: center; border-bottom: 1px solid #f1f5f9; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) 108px 100px; padding: 12px 6px; }
-		.imogi-cart-row-info { min-width: 0; overflow: hidden; }
-		.imogi-cart-row-name { color: #0f172a; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.imogi-cart-row-meta { color: #94a3b8; font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.imogi-cart-row-actions { align-items: center; display: flex; flex-shrink: 0; gap: 6px; justify-content: center; width: 108px; }
-		.imogi-qty-btn { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; color: #0f1f35; cursor: pointer; flex-shrink: 0; font-size: 16px; font-weight: 700; height: 34px; width: 34px; }
-		.imogi-qty-btn:hover { background: #fff; border-color: #0f1f35; color: #0f1f35; }
-		.imogi-cart-qty { display: inline-block; font-size: 14px; font-weight: 800; text-align: center; width: 32px; }
-		.imogi-cart-row-amount { color: #0f1f35; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 800; text-align: right; white-space: nowrap; width: 100px; }
+		.imogi-cart-row { align-items: stretch; border-bottom: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 14px; width: 100%; }
+		.imogi-cart-row-head { align-items: flex-start; display: flex; flex-direction: column; gap: 4px; min-width: 0; text-align: left; width: 100%; }
+		.imogi-cart-row-name { color: #0f172a; font-size: 14px; font-weight: 700; line-height: 1.35; text-align: left; width: 100%; word-break: break-word; }
+		.imogi-cart-row-meta { color: #94a3b8; font-size: 12px; line-height: 1.2; text-align: left; width: 100%; }
+		.imogi-cart-row-foot { align-items: center; display: flex; justify-content: flex-end; min-height: 40px; width: 100%; }
+		.imogi-cart-row-controls { align-items: center; display: inline-flex; flex-shrink: 0; gap: 10px; max-width: 100%; }
+		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; display: inline-flex; flex-shrink: 0; gap: 0; padding: 2px; }
+		.imogi-qty-btn { align-items: center; background: transparent; border: none; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; flex-shrink: 0; font-size: 18px; font-weight: 700; height: 36px; justify-content: center; line-height: 1; padding: 0; width: 36px; }
+		.imogi-qty-btn:hover { background: #fff; color: #0f1f35; }
+		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 36px; text-align: center; }
+		.imogi-cart-row-amount { align-items: center; color: #0f1f35; display: inline-flex; flex-shrink: 0; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: flex-end; line-height: 1; min-width: 96px; text-align: right; white-space: nowrap; }
 		.imogi-cashier-cart-foot { background: #fafafa; border-top: 1px solid #e4e4e7; flex-shrink: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
 		.imogi-cashier-order-type-row { margin-bottom: 8px; }
 		.imogi-cashier-order-type-label { color: #52525b; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
@@ -406,7 +549,9 @@ function inject_cashier_css() {
 		.imogi-pos-offline-bar.is-visible { display: block; }
 		.imogi-cashier-promo-hint { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #047857; font-size: 11px; font-weight: 700; margin-bottom: 8px; padding: 8px 10px; }
 		@media (pointer: coarse) {
-			.imogi-cashier-group-btn, .imogi-qty-btn, .imogi-pay-quick-btn, .imogi-cashier-order-type-btn { min-height: 44px; }
+			.imogi-cashier-group-btn, .imogi-pay-quick-btn, .imogi-cashier-order-type-btn { min-height: 44px; }
+			.imogi-cart-qty-group { min-height: 44px; padding: 3px; }
+			.imogi-qty-btn { height: 38px; width: 38px; }
 		}
 		.imogi-pay-breakdown-row { align-items: baseline; color: #64748b; display: flex; font-size: 12px; justify-content: space-between; margin-bottom: 4px; }
 		.imogi-pay-breakdown-row strong { color: #0f1f35; font-variant-numeric: tabular-nums; }
@@ -434,20 +579,101 @@ function inject_cashier_css() {
 		.imogi-success-action-btn.is-primary .imogi-success-action-icon { background: rgba(255,255,255,.12); color: #fff; font-size: 16px; height: auto; width: auto; }
 		.imogi-success-action-label { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; }
 		.imogi-success-action-btn.is-primary .imogi-success-action-label { font-size: 14px; }
-		body.imogi-cashier-active #alert-container,
-		body.imogi-cashier-active .alert-message-container {
+		body.imogi-cashier-active #alert-container {
+			align-items: stretch !important;
 			bottom: auto !important;
-			left: 12px !important;
-			right: 12px !important;
+			display: flex !important;
+			flex-direction: column !important;
+			gap: 8px !important;
+			left: auto !important;
+			max-width: min(360px, calc(100vw - 32px)) !important;
+			pointer-events: none !important;
+			right: 16px !important;
 			top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-			width: auto !important;
+			width: min(360px, calc(100vw - 32px)) !important;
+			z-index: 1060 !important;
+		}
+		body.imogi-cashier-active #alert-container .desk-alert {
+			margin: 0 !important;
+			pointer-events: auto !important;
+			width: 100% !important;
 		}
 		body.imogi-cashier-active #alert-container .alert-message,
-		body.imogi-cashier-active .alert-message-container .alert-message {
-			margin: 0 0 8px !important;
+		body.imogi-cashier-active #alert-container .alert-message-container .alert-message {
+			margin: 0 !important;
 			max-width: 100% !important;
 		}
-	`, "imogi-cashier-inline-css-v24");
+		.imogi-cashier-mobile-filters { display: none; }
+		.imogi-cashier-mobile-filter-block + .imogi-cashier-mobile-filter-block { margin-top: 8px; }
+		.imogi-cashier-mobile-filter-label { color: #71717a; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 5px; text-transform: uppercase; }
+		.imogi-cashier-mobile-order-types {
+			display: flex;
+			flex-wrap: nowrap;
+			gap: 6px;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding-bottom: 2px;
+			scrollbar-width: none;
+		}
+		.imogi-cashier-mobile-order-types::-webkit-scrollbar { display: none; }
+		.imogi-cashier-mobile-order-types .imogi-cashier-order-type-btn {
+			flex: 0 0 auto;
+			font-size: 11px;
+			gap: 5px;
+			min-height: 38px;
+			padding: 6px 12px;
+			white-space: nowrap;
+		}
+		@media (max-width: 992px) {
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-groups { display: none !important; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-filters { display: block; margin-top: 8px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-group-picker { display: block !important; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-toolbar { padding: 10px 12px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-grid.items-container {
+				display: flex !important;
+				flex-direction: column;
+				gap: 8px;
+				grid-template-columns: unset !important;
+				padding: 8px 10px 12px;
+			}
+			.imogi-cashier-page.is-mobile-layout .items-container .item-wrapper {
+				align-items: center !important;
+				flex-direction: row !important;
+				min-height: 84px;
+			}
+			.imogi-cashier-page.is-mobile-layout .items-container .item-wrapper:hover:not(.is-out) { transform: none !important; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-display,
+			.imogi-cashier-page.is-mobile-layout .items-container .item-media {
+				aspect-ratio: 1 !important;
+				flex-shrink: 0;
+				height: 72px !important;
+				margin: 8px 0 8px 8px !important;
+				min-height: 0;
+				width: 72px !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .items-container .item-media,
+			.imogi-cashier-page.is-mobile-layout .items-container .item-display {
+				border-radius: 10px;
+				overflow: hidden;
+			}
+			.imogi-cashier-page.is-mobile-layout .items-container .item-display { font-size: 1.05rem !important; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-img { border-radius: 10px; object-fit: cover; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-detail {
+				border-top: none !important;
+				flex: 1;
+				gap: 2px;
+				justify-content: center;
+				min-height: 0 !important;
+				padding: 8px 8px 8px 10px !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .items-container .item-name { font-size: 13px; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-rate { font-size: 13px; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-stock { font-size: 10px; margin-top: 2px; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-quick-add { display: inline-flex !important; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-loading,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-empty { min-height: 120px; width: 100%; }
+		}
+	`, "imogi-cashier-inline-css-v27");
 }
 
 function format_stock_pill(qty) {
@@ -474,6 +700,33 @@ const IMOGI_ORDER_TYPE_FEATURES = {
 	Takeaway: "take_away",
 	Delivery: "delivery_order",
 };
+
+const IMOGI_GROUP_ICON_RULES = [
+	{ match: (k) => !k || k === "semua" || k === "all", icon: "fa-th-large" },
+	{ match: (k) => k.includes("food") || k.includes("makan"), icon: "fa-cutlery" },
+	{ match: (k) => k.includes("beverage") || k.includes("minuman") || k.includes("drink"), icon: "fa-coffee" },
+	{ match: (k) => k.includes("dessert") || k.includes("kue") || k.includes("sweet"), icon: "fa-birthday-cake" },
+	{ match: (k) => k.includes("service") || k.includes("layanan") || k.includes("jasa"), icon: "fa-wrench" },
+	{ match: (k) => k.includes("snack") || k.includes("camilan"), icon: "fa-lemon-o" },
+	{ match: (k) => k.includes("package") || k.includes("paket"), icon: "fa-gift" },
+];
+
+function imogi_resolve_group_icon(label) {
+	const key = (label || "").trim().toLowerCase();
+	const rule = IMOGI_GROUP_ICON_RULES.find((row) => row.match(key));
+	return rule ? rule.icon : "fa-tag";
+}
+
+function imogi_render_order_type_buttons(active_type) {
+	return IMOGI_ORDER_TYPES.map(
+		(row) => `<button type="button" class="imogi-cashier-order-type-btn${
+			row.value === active_type ? " is-active" : ""
+		}" data-type="${row.value}">
+			<i class="fa ${row.icon}"></i>
+			<span>${row.label}</span>
+		</button>`
+	).join("");
+}
 
 function round_up_cash(amount, step) {
 	return Math.ceil(flt(amount) / step) * step;
@@ -506,6 +759,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this._catalog_mem = {};
 		this.variant_picker = new imogi_pos.VariantPicker(this);
 		this.make();
+		this.enable_mobile_layout_watch();
 		this.render_cart();
 		this._bind_catalog_refresh_on_focus();
 		this.load_context();
@@ -571,6 +825,25 @@ imogi_pos.CashierPage = class CashierPage {
 						<input type="search" class="form-control imogi-cashier-search" placeholder="${__(
 							"Cari produk atau scan barcode..."
 						)}" autocomplete="off" />
+						<div class="imogi-cashier-mobile-filters">
+							<div class="imogi-cashier-mobile-filter-block">
+								<div class="imogi-cashier-mobile-filter-label">${__("Kategori")}</div>
+								<div class="imogi-cashier-group-picker">
+									<button type="button" class="imogi-cashier-group-picker-trigger" aria-expanded="false" aria-haspopup="listbox">
+										<span class="imogi-cashier-group-picker-leading"><i class="fa fa-th-large"></i></span>
+										<span class="imogi-cashier-group-picker-label">${__("Semua")}</span>
+										<i class="fa fa-chevron-down imogi-cashier-group-picker-caret" aria-hidden="true"></i>
+									</button>
+									<div class="imogi-cashier-group-picker-menu" role="listbox"></div>
+								</div>
+							</div>
+							<div class="imogi-cashier-mobile-filter-block imogi-cashier-mobile-order-row">
+								<div class="imogi-cashier-mobile-filter-label">${__("Jenis Makan")}</div>
+								<div class="imogi-cashier-mobile-order-types">${imogi_render_order_type_buttons(
+									this.order_type
+								)}</div>
+							</div>
+						</div>
 						<div class="imogi-cashier-groups"></div>
 					</div>
 					<div class="imogi-cashier-grid items-container">
@@ -608,14 +881,7 @@ imogi_pos.CashierPage = class CashierPage {
 					<div class="imogi-cashier-cart-foot">
 						<div class="imogi-cashier-order-type-row">
 							<div class="imogi-cashier-order-type-label">${__("Tipe Order")}</div>
-							<div class="imogi-cashier-order-types">${IMOGI_ORDER_TYPES.map(
-								(row) => `<button type="button" class="imogi-cashier-order-type-btn${
-									row.value === this.order_type ? " is-active" : ""
-								}" data-type="${row.value}">
-									<i class="fa ${row.icon}"></i>
-									<span>${row.label}</span>
-								</button>`
-							).join("")}</div>
+							<div class="imogi-cashier-order-types">${imogi_render_order_type_buttons(this.order_type)}</div>
 						</div>
 						<div class="imogi-cashier-customer-row">
 							<input type="search" class="form-control input-sm imogi-cashier-customer-search" placeholder="${__(
@@ -652,6 +918,17 @@ imogi_pos.CashierPage = class CashierPage {
 
 		this.$grid = this.wrapper.find(".imogi-cashier-grid");
 		this.$groups = this.wrapper.find(".imogi-cashier-groups");
+		this.$group_picker = this.wrapper.find(".imogi-cashier-group-picker");
+		this.$group_picker_trigger = this.wrapper.find(".imogi-cashier-group-picker-trigger");
+		this.$group_picker_menu = this.wrapper.find(".imogi-cashier-group-picker-menu");
+		this.$group_picker_label = this.wrapper.find(".imogi-cashier-group-picker-label");
+		this.$group_picker_leading = this.wrapper.find(".imogi-cashier-group-picker-leading");
+		this.$group_picker_trigger.on("click", (e) => {
+			e.stopPropagation();
+			this.toggle_group_picker();
+		});
+		this.$group_picker.on("click", (e) => e.stopPropagation());
+		this.wrapper.on("click.imogi-group-picker", () => this.close_group_picker());
 		this.$branch_row = this.wrapper.find(".imogi-cashier-branch-row");
 		this.$branch_select = this.wrapper.find(".imogi-cashier-branch-select");
 		this.$cart_items = this.wrapper.find(".imogi-cashier-cart-items");
@@ -767,9 +1044,7 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		this.wrapper.find(".imogi-cart-clear").on("click", () => this.clear_cart());
-		$(window).on("resize.imogi-cashier", () => {
-			if (!this.is_mobile_layout()) this.close_mobile_cart();
-		});
+		$(window).on("resize.imogi-cashier", () => this.sync_mobile_layout());
 		this.$pay.on("click", () => this.open_payment_dialog());
 
 		this.$branch_select.on("change", (e) => {
@@ -912,7 +1187,8 @@ imogi_pos.CashierPage = class CashierPage {
 			this.$shift_bar.show();
 			this.render_shift_bar();
 			if (this.requires_shift_workflow && !this.pos_opening) {
-				this.prompt_open_shift();
+				this.open_shift();
+				return;
 			}
 		} else {
 			this.$shift_bar.hide();
@@ -959,16 +1235,22 @@ imogi_pos.CashierPage = class CashierPage {
 			this.feature_allowed(typeFeatures[row.value])
 		);
 		const $orderTypeRow = this.wrapper.find(".imogi-cashier-order-type-row");
+		const $mobileOrderRow = this.wrapper.find(".imogi-cashier-mobile-order-row");
 		if (!availableTypes.length) {
 			// Free tier: basic pos_order checkout without order-type tier features.
 			$orderTypeRow.hide();
+			$mobileOrderRow.hide();
 		} else {
 			$orderTypeRow.show();
+			$mobileOrderRow.show();
 			this.wrapper.find(".imogi-cashier-order-type-btn").each((_, el) => {
 				const $btn = $(el);
 				const type = $btn.data("type");
 				const allowed = this.feature_allowed(typeFeatures[type]);
-				$btn.toggleClass("is-tier-locked", !allowed).prop("disabled", !allowed);
+				$btn
+					.toggleClass("is-tier-locked", !allowed)
+					.prop("disabled", false)
+					.attr("aria-disabled", allowed ? "false" : "true");
 			});
 			if (!this.feature_allowed(typeFeatures[this.order_type])) {
 				this.set_order_type(availableTypes[0].value, true);
@@ -1106,10 +1388,16 @@ imogi_pos.CashierPage = class CashierPage {
 					)}">${frappe.utils.escape_html(this.pos_opening.name)}</a>
 					· ${__("sejak")} ${frappe.utils.escape_html(since)}
 				</div>
-				<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn">${__(
-					"Tutup Shift"
-				)}</button>
+				<div class="imogi-cashier-shift-actions">
+					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
+						"Logout sementara — shift tetap terbuka"
+					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
+					<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn">${__(
+						"Tutup Shift"
+					)}</button>
+				</div>
 			`);
+			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
 			this.$shift_bar.find(".imogi-cashier-close-shift-btn").on("click", () => this.close_shift());
 		} else if (this.requires_shift_workflow) {
 			this.$shift_bar.addClass("is-closed");
@@ -1117,11 +1405,17 @@ imogi_pos.CashierPage = class CashierPage {
 				<div class="imogi-cashier-shift-text"><i class="fa fa-lock"></i> ${__(
 					"Shift kasir belum dibuka — checkout dinonaktifkan"
 				)}</div>
-				<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
-					"Buka Shift"
-				)}</button>
+				<div class="imogi-cashier-shift-actions">
+					<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
+						"Buka Shift"
+					)}</button>
+					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
+						"Logout dan ganti user kasir"
+					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
+				</div>
 			`);
 			this.$shift_bar.find(".imogi-cashier-open-shift-btn").on("click", () => this.open_shift());
+			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
 		}
 		imogi_apply_shift_bar_theme(this.$shift_bar);
 	}
@@ -1144,6 +1438,11 @@ imogi_pos.CashierPage = class CashierPage {
 			branch: this.get_active_branch_code(),
 		};
 		frappe.set_route("imogi-pos-open-shift");
+	}
+
+	logout_cashier() {
+		const shift_active = !!(this.pos_opening && this.pos_opening.name);
+		imogi_pos.logout_cashier?.({ shift_active });
 	}
 
 	close_shift() {
@@ -1201,32 +1500,96 @@ imogi_pos.CashierPage = class CashierPage {
 		const groups = this.context.pos_categories?.length
 			? this.context.pos_categories
 			: this.context.item_groups || [];
+		this.use_pos_category = !!(this.context.pos_categories && this.context.pos_categories.length);
+
 		this.$groups.html(
 			groups
-				.map(
-					(g, i) =>
-						`<button type="button" class="imogi-cashier-group-btn ${
-							i === 0 ? "is-active" : ""
-						}" data-group="${frappe.utils.escape_html(g.name || "")}">${frappe.utils.escape_html(
-							g.label
-						)}</button>`
-				)
+				.map((g, i) => {
+					const icon = imogi_resolve_group_icon(g.label || g.name);
+					return `<button type="button" class="imogi-cashier-group-btn ${
+						i === 0 ? "is-active" : ""
+					}" data-group="${frappe.utils.escape_html(g.name || "")}" data-label="${frappe.utils.escape_html(
+						g.label || ""
+					)}">
+						<i class="fa ${icon}" aria-hidden="true"></i>
+						<span>${frappe.utils.escape_html(g.label)}</span>
+					</button>`;
+				})
 				.join("")
 		);
-		this.use_pos_category = !!(this.context.pos_categories && this.context.pos_categories.length);
+
+		this.$group_picker_menu.html(
+			groups
+				.map((g, i) => {
+					const icon = imogi_resolve_group_icon(g.label || g.name);
+					return `<button type="button" class="imogi-cashier-group-picker-option${
+						i === 0 ? " is-active" : ""
+					}" role="option" data-group="${frappe.utils.escape_html(g.name || "")}" data-label="${frappe.utils.escape_html(
+						g.label || ""
+					)}">
+						<span class="imogi-cashier-group-picker-option-icon"><i class="fa ${icon}"></i></span>
+						<span class="imogi-cashier-group-picker-option-label">${frappe.utils.escape_html(g.label)}</span>
+					</button>`;
+				})
+				.join("")
+		);
+		this.sync_group_picker_ui(groups[0]?.name || "", groups[0]?.label || __("Semua"));
+
 		this.$groups.find(".imogi-cashier-group-btn").on("click", (e) => {
-			this.$groups.find(".imogi-cashier-group-btn").removeClass("is-active");
-			$(e.currentTarget).addClass("is-active");
-			const value = $(e.currentTarget).data("group") || "";
-			if (this.use_pos_category) {
-				this.pos_category = value;
-				this.item_group = "";
-			} else {
-				this.item_group = value;
-				this.pos_category = "";
-			}
-			this.load_items();
+			const $btn = $(e.currentTarget);
+			this.apply_group_filter($btn.data("group") || "", $btn.data("label") || "");
 		});
+		this.$group_picker_menu.off("click.imogi").on("click.imogi", ".imogi-cashier-group-picker-option", (e) => {
+			const $opt = $(e.currentTarget);
+			this.apply_group_filter($opt.data("group") || "", $opt.data("label") || "");
+			this.close_group_picker();
+		});
+	}
+
+	open_group_picker() {
+		this.$group_picker?.addClass("is-open");
+		this.$group_picker_trigger?.addClass("is-open").attr("aria-expanded", "true");
+		this.$group_picker_menu?.addClass("is-open");
+	}
+
+	close_group_picker() {
+		this.$group_picker?.removeClass("is-open");
+		this.$group_picker_trigger?.removeClass("is-open").attr("aria-expanded", "false");
+		this.$group_picker_menu?.removeClass("is-open");
+	}
+
+	toggle_group_picker() {
+		if (this.$group_picker_trigger?.hasClass("is-open")) this.close_group_picker();
+		else this.open_group_picker();
+	}
+
+	sync_group_picker_ui(value, label) {
+		const safe_label = label || __("Semua");
+		const icon = imogi_resolve_group_icon(safe_label);
+		this.$group_picker_label?.text(safe_label);
+		this.$group_picker_leading?.html(`<i class="fa ${icon}"></i>`);
+		this.$group_picker_menu
+			?.find(".imogi-cashier-group-picker-option")
+			.removeClass("is-active")
+			.filter(function () {
+				return String($(this).data("group") || "") === String(value || "");
+			})
+			.addClass("is-active");
+	}
+
+	apply_group_filter(value, label) {
+		this.$groups.find(".imogi-cashier-group-btn").removeClass("is-active").filter(function () {
+			return String($(this).data("group") || "") === String(value || "");
+		}).addClass("is-active");
+		this.sync_group_picker_ui(value, label);
+		if (this.use_pos_category) {
+			this.pos_category = value;
+			this.item_group = "";
+		} else {
+			this.item_group = value;
+			this.pos_category = "";
+		}
+		this.load_items();
 	}
 
 	_catalog_args() {
@@ -1238,7 +1601,12 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	_catalog_cache_key(args) {
-		return JSON.stringify(args);
+		const { skip_cache, ...rest } = args || {};
+		return JSON.stringify(rest);
+	}
+
+	_invalidate_catalog_cache() {
+		this._catalog_mem = {};
 	}
 
 	_show_catalog_loading() {
@@ -1342,14 +1710,17 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 	}
 
-	load_items({ background = false } = {}) {
+	load_items({ background = false, force = false } = {}) {
 		if (!this.context) return;
 
 		const args = this._catalog_args();
+		if (force) {
+			args.skip_cache = 1;
+		}
 		const cache_key = this._catalog_cache_key(args);
 		const mem = this._catalog_mem[cache_key];
 
-		if (!background && mem?.items?.length) {
+		if (!force && !background && mem?.items?.length) {
 			const age = Date.now() - (mem.cached_at || 0);
 			if (age < IMOGI_CATALOG_MEM_TTL_MS) {
 				this._render_catalog_items(mem.items, { from_cache: true });
@@ -1626,6 +1997,7 @@ imogi_pos.CashierPage = class CashierPage {
 				<div class="item-rate">${format_currency(item.rate || 0, item.currency, precision) || 0} <span class="item-uom">/ ${frappe.utils.escape_html(uom)}</span></div>
 				${stock_line}
 			</div>
+			<span class="item-quick-add" aria-hidden="true"><i class="fa fa-plus"></i></span>
 		</div>`;
 	}
 
@@ -1912,6 +2284,23 @@ imogi_pos.CashierPage = class CashierPage {
 		return window.matchMedia("(max-width: 992px)").matches;
 	}
 
+	enable_mobile_layout_watch() {
+		this._mobile_layout_mql = window.matchMedia("(max-width: 992px)");
+		this._on_mobile_layout_change = () => this.sync_mobile_layout();
+		this._mobile_layout_mql.addEventListener("change", this._on_mobile_layout_change);
+		this.page?.on_page_hide?.(() => {
+			this._mobile_layout_mql?.removeEventListener("change", this._on_mobile_layout_change);
+		});
+		this.sync_mobile_layout();
+	}
+
+	sync_mobile_layout() {
+		const mobile = this.is_mobile_layout();
+		this.wrapper.toggleClass("is-mobile-layout", mobile);
+		this.page?.main?.toggleClass("is-mobile-layout", mobile);
+		if (!mobile) this.close_mobile_cart();
+	}
+
 	toggle_mobile_cart(open) {
 		if (!this.is_mobile_layout()) return;
 		this.mobile_cart_open = open === undefined ? !this.mobile_cart_open : !!open;
@@ -1945,10 +2334,13 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	sync_order_type_ui() {
+		const active = this.order_type;
 		this.wrapper
 			.find(".imogi-cashier-order-type-btn")
 			.removeClass("is-active")
-			.filter(`[data-type="${this.order_type}"]`)
+			.filter(function () {
+				return String($(this).data("type") || "") === String(active || "");
+			})
 			.addClass("is-active");
 	}
 
@@ -2187,18 +2579,23 @@ imogi_pos.CashierPage = class CashierPage {
 			this.cart
 				.map((row) => {
 					const amount = flt(row.rate) * flt(row.qty);
+					const unit_label = row.uom ? ` / ${frappe.utils.escape_html(row.uom)}` : "";
 					return `
 						<div class="imogi-cart-row" data-code="${frappe.utils.escape_html(row.item_code)}">
-							<div class="imogi-cart-row-info">
+							<div class="imogi-cart-row-head">
 								<div class="imogi-cart-row-name">${frappe.utils.escape_html(row.item_name)}</div>
-								<div class="imogi-cart-row-meta">${format_currency(row.rate)} × ${row.qty}</div>
+								<div class="imogi-cart-row-meta">${format_currency(row.rate)}${unit_label}</div>
 							</div>
-							<div class="imogi-cart-row-actions">
-								<button type="button" class="imogi-qty-btn" data-delta="-1">−</button>
-								<span class="imogi-cart-qty">${row.qty}</span>
-								<button type="button" class="imogi-qty-btn" data-delta="1">+</button>
+							<div class="imogi-cart-row-foot">
+								<div class="imogi-cart-row-controls">
+									<div class="imogi-cart-qty-group">
+										<button type="button" class="imogi-qty-btn" data-delta="-1" aria-label="${__("Kurangi")}">−</button>
+										<span class="imogi-cart-qty">${row.qty}</span>
+										<button type="button" class="imogi-qty-btn" data-delta="1" aria-label="${__("Tambah")}">+</button>
+									</div>
+									<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
+								</div>
 							</div>
-							<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
 						</div>`;
 				})
 				.join("")
@@ -2691,6 +3088,8 @@ imogi_pos.CashierPage = class CashierPage {
 		this.discount_type = "";
 		this.discount_value = 0;
 		this.render_cart();
+		this._invalidate_catalog_cache();
+		this.load_items({ force: true });
 	}
 
 	print_receipt(order, payment_info = {}) {
@@ -2834,7 +3233,8 @@ imogi_pos.CashierPage = class CashierPage {
 			if (me.selected_customer && imogi_pos.loyalty) {
 				imogi_pos.loyalty.load_customer(me, me.selected_customer);
 			}
-			me.load_items();
+			me._invalidate_catalog_cache();
+			me.load_items({ force: true });
 		};
 
 		dialog.$wrapper.addClass("imogi-pay-dialog imogi-pay-success-dialog");

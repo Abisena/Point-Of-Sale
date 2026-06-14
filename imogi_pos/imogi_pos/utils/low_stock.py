@@ -1,9 +1,11 @@
 # Copyright (c) 2026, Imogi and contributors
 
 import frappe
-from frappe.utils import flt
+from frappe.utils import add_days, cint, flt, today
 
 from imogi_pos.imogi_pos.utils.flow import get_settings
+
+AUTO_MR_REMARKS = "IMOGI Auto Low Stock"
 
 
 def get_item_reorder_level(item_code, warehouse):
@@ -29,6 +31,33 @@ def get_item_reorder_level(item_code, warehouse):
 		)
 		if level is not None:
 			return flt(level)
+		group = frappe.db.get_value("Warehouse", group, "parent_warehouse")
+
+	return 0
+
+
+def get_item_reorder_qty(item_code, warehouse):
+	"""Read default reorder quantity from ERPNext Item Reorder child table."""
+	if not item_code or not warehouse:
+		return 0
+
+	qty = frappe.db.get_value(
+		"Item Reorder",
+		{"parent": item_code, "warehouse": warehouse},
+		"warehouse_reorder_qty",
+	)
+	if qty is not None:
+		return flt(qty)
+
+	group = frappe.db.get_value("Warehouse", warehouse, "parent_warehouse")
+	while group:
+		qty = frappe.db.get_value(
+			"Item Reorder",
+			{"parent": item_code, "warehouse_group": group},
+			"warehouse_reorder_qty",
+		)
+		if qty is not None:
+			return flt(qty)
 		group = frappe.db.get_value("Warehouse", group, "parent_warehouse")
 
 	return 0
@@ -99,9 +128,106 @@ def get_low_stock_items(limit=20, warehouse=None):
 					"item_name": item.item_name,
 					"actual_qty": actual_qty,
 					"reorder_level": threshold,
+					"reorder_qty": get_item_reorder_qty(item.name, warehouse),
 					"warehouse": warehouse,
 				}
 			)
 
 	low_items.sort(key=lambda row: (row["actual_qty"], row["item_code"]))
 	return low_items[: max(int(limit or 20), 1)]
+
+
+def has_open_purchase_request(item_code, warehouse):
+	"""True when an open Purchase Material Request already exists for item + warehouse."""
+	if not item_code or not warehouse:
+		return False
+
+	return bool(
+		frappe.db.sql(
+			"""
+			select 1
+			from `tabMaterial Request Item` mri
+			inner join `tabMaterial Request` mr on mr.name = mri.parent
+			where mri.item_code = %(item_code)s
+			  and mri.warehouse = %(warehouse)s
+			  and mr.material_request_type = 'Purchase'
+			  and mr.docstatus < 2
+			  and (
+			    mr.docstatus = 0
+			    or (
+			      mr.docstatus = 1
+			      and mr.status not in ('Stopped', 'Received', 'Cancelled')
+			      and ifnull(mr.per_ordered, 0) < 100
+			    )
+			  )
+			limit 1
+			""",
+			{"item_code": item_code, "warehouse": warehouse},
+		)
+	)
+
+
+def suggested_purchase_qty(actual_qty, reorder_level, reorder_qty=None):
+	reorder_qty = flt(reorder_qty)
+	if reorder_qty > 0:
+		return reorder_qty
+	shortfall = flt(reorder_level) - flt(actual_qty)
+	return max(shortfall, 1)
+
+
+def create_auto_purchase_requests(low_items, settings=None):
+	"""Create submitted Purchase Material Requests for low-stock items (one MR per warehouse)."""
+	settings = settings or get_settings()
+	if not cint(getattr(settings, "enable_auto_purchase_request", 0)):
+		return []
+
+	company = settings.default_company or frappe.db.get_single_value("Global Defaults", "default_company")
+	if not company:
+		return []
+
+	by_warehouse: dict[str, list[dict]] = {}
+	for row in low_items or []:
+		warehouse = row.get("warehouse")
+		item_code = row.get("item_code")
+		if not warehouse or not item_code:
+			continue
+		if has_open_purchase_request(item_code, warehouse):
+			continue
+
+		qty = suggested_purchase_qty(
+			row.get("actual_qty"),
+			row.get("reorder_level"),
+			row.get("reorder_qty"),
+		)
+		if qty <= 0:
+			continue
+
+		by_warehouse.setdefault(warehouse, []).append(
+			{
+				"item_code": item_code,
+				"qty": qty,
+				"warehouse": warehouse,
+				"schedule_date": add_days(today(), 3),
+			}
+		)
+
+	created: list[str] = []
+	for warehouse, items in by_warehouse.items():
+		if not items:
+			continue
+		mr = frappe.get_doc(
+			{
+				"doctype": "Material Request",
+				"material_request_type": "Purchase",
+				"company": company,
+				"transaction_date": today(),
+				"schedule_date": add_days(today(), 3),
+				"remarks": AUTO_MR_REMARKS,
+				"items": items,
+			}
+		)
+		mr.insert(ignore_permissions=True)
+		mr.submit()
+		created.append(mr.name)
+
+	return created

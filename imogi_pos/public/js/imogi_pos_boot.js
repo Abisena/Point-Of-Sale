@@ -1,5 +1,19 @@
 frappe.provide("imogi_pos");
 
+// Desk /app has no frappe.ready (website only). Stale cached bundles may still call it.
+if (typeof frappe !== "undefined" && typeof frappe.ready !== "function") {
+	frappe.ready = function (fn) {
+		if (typeof fn !== "function") {
+			return;
+		}
+		if (frappe.boot?.ready) {
+			fn();
+			return;
+		}
+		$(document).one("app_ready", fn);
+	};
+}
+
 // ERPNext desk: no SaaS subscription tiers (Free/Starter/Pro = web SKUs only).
 imogi_pos.ERP_ENTERPRISE_ONLY = true;
 imogi_pos.SUBSCRIPTION_TIERS_DISABLED = true;
@@ -18,10 +32,12 @@ imogi_pos.is_erp_enterprise_deployment = function () {
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260611-no-free-tier-dashboard";
+	const CACHE_VERSION = "20260614-order-history-detail-v1";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",
+		"imogi-pos-open-shift",
+		"imogi-pos-close-shift",
 		"imogi-pos-dashboard",
 		"imogi-pos-order-history",
 		"imogi-pos-menu",
@@ -101,17 +117,22 @@ function imogi_pos_requires_shift_workflow() {
 	return imogi_pos_is_cashier_user();
 }
 
-function imogi_pos_after_shift_closed(message) {
+function imogi_pos_after_shift_closed(message, options = {}) {
 	frappe.boot.imogi_pos_has_open_shift = false;
-	frappe.route_options = {};
+	frappe.boot.imogi_pos_landing_target = "opening-entry";
+	frappe.route_options = imogi_pos_get_opening_route_options(options);
 
 	if (imogi_pos_requires_shift_workflow()) {
-		frappe.boot.imogi_pos_landing_target = "opening-entry";
+		try {
+			sessionStorage.setItem("imogi_pos_expect_opening", "1");
+		} catch (e) {
+			// ignore
+		}
 		frappe.show_alert(
 			{ message: message || __("Shift ditutup. Buka shift baru."), indicator: "green" },
 			4
 		);
-		setTimeout(() => frappe.set_route(IMOGI_OPEN_SHIFT_PAGE), 600);
+		window.location.replace(IMOGI_OPEN_SHIFT_PATH);
 		return;
 	}
 
@@ -202,8 +223,14 @@ function imogi_pos_on_cashier_allowed_page() {
 	);
 }
 
-function imogi_pos_logout_cashier() {
-	frappe.confirm(__("Logout dan ganti user kasir?"), () => {
+function imogi_pos_logout_cashier(options = {}) {
+	const shift_active = !!options.shift_active;
+	const message = shift_active
+		? __(
+				"Logout sementara? Shift kasir tetap terbuka — transaksi tidak hilang. Login kembali dengan akun yang sama untuk melanjutkan."
+		  )
+		: __("Logout dan ganti user kasir?");
+	frappe.confirm(message, () => {
 		imogi_pos.opening_entry_locked = false;
 		frappe.call({
 			method: "logout",
@@ -224,7 +251,9 @@ function imogi_pos_guard_cashier_fullscreen() {
 
 	frappe.show_alert(
 		{
-			message: __("Mode kasir aktif. Logout dari Opening Shift untuk ganti user."),
+			message: __(
+				"Mode kasir aktif. Gunakan tombol Logout di halaman Kasir untuk istirahat atau ganti user."
+			),
 			indicator: "orange",
 		},
 		4
@@ -352,7 +381,14 @@ function imogi_pos_apply_landing(target, overrides = {}) {
 		return;
 	}
 
-	if (target === "cashier" && imogi_pos_on_desk_landing()) {
+	if (target === "cashier") {
+		if (
+			imogi_pos_on_cashier_only_page() ||
+			imogi_pos_on_open_shift_page() ||
+			!imogi_pos_on_desk_landing()
+		) {
+			return;
+		}
 		window.location.replace(IMOGI_CASHIER_PATH);
 	}
 }
@@ -391,6 +427,7 @@ function imogi_pos_fetch_and_redirect() {
 				frappe.boot.imogi_pos_default_pos_profile = data.pos_profile;
 			}
 			frappe.boot.imogi_pos_landing_target = data.landing;
+			frappe.boot.imogi_pos_has_open_shift = data.landing === "cashier";
 			if (data.shift_opening_draft) {
 				frappe.boot.imogi_pos_shift_opening_draft = data.shift_opening_draft;
 			}
@@ -505,7 +542,12 @@ $(document).on("app_ready", () => {
 					(imogi_pos_current_path() === "/app/imogi-pos" ||
 						imogi_pos_current_path().endsWith("/app/imogi-pos"))
 				) {
-					window.location.replace(IMOGI_CASHIER_PATH);
+					const landing = imogi_pos_get_landing_target();
+					if (landing === "opening-entry") {
+						imogi_pos_go_to_opening_entry();
+					} else {
+						window.location.replace(IMOGI_CASHIER_PATH);
+					}
 					return;
 				}
 				imogi_pos_redirect_cashier_home();

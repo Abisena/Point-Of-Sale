@@ -64,6 +64,53 @@ def list_order_history(branch=None, pos_profile=None, from_date=None, to_date=No
 
 
 @frappe.whitelist()
+def get_order_history_detail(order_name, branch=None, pos_profile=None):
+	"""Full order payload for Riwayat Order detail modal."""
+	_require_login()
+	require_feature_doctype_access("order_history")
+
+	if not order_name:
+		frappe.throw(_("order_name is required"))
+
+	scope = _branch_scope(branch, pos_profile)
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("read")
+
+	if scope.get("pos_profile") and order.pos_profile and order.pos_profile != scope["pos_profile"]:
+		frappe.throw(_("Order {0} not found").format(order_name), frappe.DoesNotExistError)
+
+	from imogi_pos.api.order import _serialize_order
+
+	detail = _serialize_order(order)
+	detail.update(
+		{
+			"customer_name": order.customer_name,
+			"pos_profile": order.pos_profile,
+			"remarks": order.remarks,
+			"voucher_code": order.voucher_code,
+			"voucher_discount_amount": flt(order.voucher_discount_amount),
+			"loyalty_points_redeemed": flt(order.loyalty_points_redeemed),
+			"loyalty_discount_amount": flt(order.loyalty_discount_amount),
+			"loyalty_points_earned": flt(order.loyalty_points_earned),
+			"kitchen_order": order.kitchen_order,
+			"delivery_task": order.delivery_task,
+		}
+	)
+	detail["items"] = [
+		{
+			"item_code": row.item_code,
+			"item_name": row.item_name,
+			"qty": flt(row.qty),
+			"rate": flt(row.rate),
+			"amount": flt(row.amount),
+			"uom": row.uom,
+		}
+		for row in order.items
+	]
+	return detail
+
+
+@frappe.whitelist()
 def list_menu_items(search=None, category=None, branch=None, pos_profile=None, limit=100):
 	"""Manager menu list for imogi-pos-menu page."""
 	_require_login()

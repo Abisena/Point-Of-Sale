@@ -1,5 +1,5 @@
 # Copyright (c) 2026, Imogi and contributors
-"""Master IMOGI POS workspace links — role visibility applied at runtime (no subscription tiers)."""
+"""Master IMOGI POS workspace links — one label per target, role filter at runtime."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ WORKSPACE_SECTIONS = [
 				"label": "Dashboard & Analitik",
 				"link_type": "Page",
 				"link_to": "imogi-pos-dashboard",
-				"feature_id": "dashboard_sales",
 				"dashboard_focus": "sales",
 				"onboard": 1,
 			},
@@ -38,21 +37,29 @@ WORKSPACE_SECTIONS = [
 				"is_query_report": 1,
 				"feature_id": "sales_report",
 			},
+			{
+				"label": "Ringkasan Penjualan Cabang",
+				"link_type": "Report",
+				"link_to": "IMOGI Branch Sales Summary",
+				"is_query_report": 1,
+				"feature_id": "multi_outlet",
+			},
 		],
 	},
 	{
-		"label": "Operasional Harian",
+		"label": "Kasir & Penjualan",
 		"links": [
 			{"label": "IMOGI Kasir", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "pos_order", "onboard": 1},
-			{"label": "Riwayat Order", "link_type": "DocType", "link_to": "Riwayat Order", "feature_id": "order_history", "onboard": 1},
 			{
-				"label": "Dashboard Operasional",
+				"label": "Riwayat Order",
 				"link_type": "Page",
-				"link_to": "imogi-pos-dashboard",
-				"feature_id": "dashboard_operational",
-				"dashboard_focus": "operational",
+				"link_to": "imogi-pos-order-history",
+				"feature_id": "order_history",
+				"onboard": 1,
 			},
 			{"label": "POS Invoice", "link_type": "DocType", "link_to": "POS Invoice", "feature_id": "pos_order"},
+			{"label": "Buka Shift", "link_type": "Page", "link_to": "imogi-pos-open-shift", "feature_id": "open_shift"},
+			{"label": "Tutup Shift", "link_type": "Page", "link_to": "imogi-pos-close-shift", "feature_id": "close_shift"},
 		],
 	},
 	{
@@ -70,10 +77,18 @@ WORKSPACE_SECTIONS = [
 		"label": "Meja & Layanan",
 		"links": [
 			{"label": "Restaurant Table", "link_type": "DocType", "link_to": "IMOGI Restaurant Table", "feature_id": "table_management"},
-			{"label": "Combo Package", "link_type": "DocType", "link_to": "IMOGI POS Combo Package", "feature_id": "combo_package"},
 			{"label": "Table Reservation", "link_type": "DocType", "link_to": "IMOGI POS Table Reservation", "feature_id": "table_reservation"},
 			{"label": "Waiting List", "link_type": "DocType", "link_to": "IMOGI POS Waiting List", "feature_id": "waiting_list"},
+		],
+	},
+	{
+		"label": "Menu & Produk",
+		"links": [
+			{"label": "Menu Produk", "link_type": "Page", "link_to": "imogi-pos-menu", "feature_id": "menu", "onboard": 1},
+			{"label": "Kategori Menu", "link_type": "Page", "link_to": "imogi-pos-menu-category", "feature_id": "menu_category"},
 			{"label": "Item / Produk", "link_type": "DocType", "link_to": "Item", "feature_id": "menu"},
+			{"label": "Combo Package", "link_type": "DocType", "link_to": "IMOGI POS Combo Package", "feature_id": "combo_package"},
+			{"label": "BOM / Recipe", "link_type": "DocType", "link_to": "BOM", "feature_id": "recipe_management"},
 		],
 	},
 	{
@@ -89,8 +104,6 @@ WORKSPACE_SECTIONS = [
 	{
 		"label": "Shift & Tutup Hari",
 		"links": [
-			{"label": "Buka Shift (Kasir)", "link_type": "Page", "link_to": "imogi-pos-open-shift", "feature_id": "open_shift"},
-			{"label": "Tutup Shift (Kasir)", "link_type": "Page", "link_to": "imogi-pos-close-shift", "feature_id": "close_shift"},
 			{"label": "IMOGI Shift Opening", "link_type": "DocType", "link_to": "IMOGI POS Shift Opening", "feature_id": "open_shift"},
 			{"label": "IMOGI Shift Closing", "link_type": "DocType", "link_to": "IMOGI POS Shift Closing", "feature_id": "close_shift"},
 			{"label": "POS Opening Entry", "link_type": "DocType", "link_to": "POS Opening Entry", "feature_id": "open_shift"},
@@ -98,88 +111,12 @@ WORKSPACE_SECTIONS = [
 		],
 	},
 	{
-		"label": "Pengaturan Sistem",
-		"links": [
-			{"label": "IMOGI POS Settings", "link_type": "DocType", "link_to": "IMOGI POS Settings"},
-			{"label": "Matrix Paket & Fitur", "link_type": "Page", "link_to": "imogi-pos-feature-matrix"},
-			{"label": "IMOGI Branch", "link_type": "DocType", "link_to": "IMOGI Branch", "feature_id": "multi_outlet"},
-			{"label": "Tambah Company & Cabang", "link_type": "Page", "link_to": "imogi-pos-add-branch", "feature_id": "multi_outlet"},
-			{"label": "Setup Wizard", "link_type": "Page", "link_to": "imogi-pos-setup"},
-			{"label": "Approval Request", "link_type": "DocType", "link_to": "IMOGI POS Approval Request", "feature_id": "approval_void"},
-			{"label": "Gateway Payment", "link_type": "DocType", "link_to": "IMOGI POS Gateway Payment", "feature_id": "qris"},
-			{"label": "Offline Checkout Log", "link_type": "DocType", "link_to": "IMOGI POS Offline Checkout", "feature_id": "api_access"},
-			{"label": "Subscription Event", "link_type": "DocType", "link_to": "IMOGI POS Subscription Event", "feature_id": "api_access"},
-		],
-	},
-	{
-		"label": "Modul Kasir",
-		"links": [
-			{"label": "POS Order / Kasir", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "pos_order"},
-			{"label": "Riwayat Order", "link_type": "Page", "link_to": "imogi-pos-order-history", "feature_id": "order_history"},
-			{"label": "Customer", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "customer"},
-			{"label": "Take Away", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "take_away"},
-			{"label": "Delivery Order", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "delivery_order"},
-			{"label": "Hold Order", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "hold_order"},
-			{"label": "Multi Payment", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "multi_payment"},
-			{"label": "Split Bill", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "split_bill"},
-			{"label": "Buka Shift", "link_type": "Page", "link_to": "imogi-pos-open-shift", "feature_id": "open_shift"},
-			{"label": "Tutup Shift", "link_type": "Page", "link_to": "imogi-pos-close-shift", "feature_id": "close_shift"},
-			{"label": "Cash In/Out", "link_type": "Page", "link_to": "imogi-pos-close-shift", "feature_id": "cash_in_out"},
-		],
-	},
-	{
-		"label": "Modul Manager",
-		"links": [
-			{
-				"label": "Dashboard Operasional",
-				"link_type": "Page",
-				"link_to": "imogi-pos-dashboard",
-				"feature_id": "dashboard_operational",
-				"dashboard_focus": "operational",
-			},
-			{"label": "Menu Produk", "link_type": "Page", "link_to": "imogi-pos-menu", "feature_id": "menu"},
-			{"label": "Kategori Menu", "link_type": "Page", "link_to": "imogi-pos-menu-category", "feature_id": "menu_category"},
-			{"label": "Modifier Produk", "link_type": "DocType", "link_to": "Item", "feature_id": "modifier"},
-			{"label": "Add-On Produk", "link_type": "Page", "link_to": "imogi-pos-menu", "feature_id": "add_on"},
-			{"label": "Combo Package", "link_type": "DocType", "link_to": "IMOGI POS Combo Package", "feature_id": "combo_package"},
-			{"label": "Membership", "link_type": "DocType", "link_to": "IMOGI POS Loyalty Member", "feature_id": "membership"},
-			{"label": "Stock Forecast", "link_type": "Report", "link_to": "Stock Ledger", "is_query_report": 1, "feature_id": "stock_forecast"},
-			{"label": "Voucher", "link_type": "DocType", "link_to": "IMOGI POS Voucher", "feature_id": "voucher"},
-			{"label": "Point Reward", "link_type": "DocType", "link_to": "IMOGI POS Loyalty Transaction", "feature_id": "point_reward"},
-			{"label": "Cashback", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "cashback"},
-			{"label": "Birthday Promo", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "birthday_promo"},
-			{"label": "Membership Tier", "link_type": "DocType", "link_to": "IMOGI POS Loyalty Tier", "feature_id": "membership_tier"},
-		],
-	},
-	{
-		"label": "Multi Outlet (Area Manager)",
-		"links": [
-			{"label": "Penugasan Area Manager", "link_type": "DocType", "link_to": "IMOGI Area Manager Assignment"},
-			{"label": "Multi Outlet / Cabang", "link_type": "DocType", "link_to": "IMOGI Branch", "feature_id": "multi_outlet"},
-			{"label": "Tambah Company & Cabang", "link_type": "Page", "link_to": "imogi-pos-add-branch", "feature_id": "multi_outlet"},
-			{"label": "Ringkasan Penjualan Cabang", "link_type": "Report", "link_to": "IMOGI Branch Sales Summary", "is_query_report": 1, "feature_id": "multi_outlet"},
-			{"label": "Central Kitchen", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "central_kitchen"},
-			{"label": "Central Inventory", "link_type": "DocType", "link_to": "IMOGI Branch", "feature_id": "central_inventory"},
-			{"label": "Central Purchasing", "link_type": "DocType", "link_to": "Material Request", "feature_id": "central_purchasing"},
-			{"label": "Central Menu Management", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "central_menu_management"},
-		],
-	},
-	{
-		"label": "Integrasi & Payment",
-		"links": [
-			{"label": "QRIS / Payment Gateway", "link_type": "DocType", "link_to": "IMOGI POS Gateway Payment", "feature_id": "qris"},
-			{"label": "Integrasi Akuntansi", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "accounting_integration"},
-		],
-	},
-	{
 		"label": "Inventori & Stok",
 		"links": [
-			{"label": "BOM / Recipe", "link_type": "DocType", "link_to": "BOM", "feature_id": "recipe_management"},
 			{"label": "Stock Entry", "link_type": "DocType", "link_to": "Stock Entry", "feature_id": "waste_management"},
-			{"label": "Stock Ledger", "link_type": "Report", "link_to": "Stock Ledger", "is_query_report": 1, "feature_id": "stock_raw"},
 			{"label": "Stock Reconciliation", "link_type": "DocType", "link_to": "Stock Reconciliation", "feature_id": "stock_opname"},
+			{"label": "Stock Ledger", "link_type": "Report", "link_to": "Stock Ledger", "is_query_report": 1, "feature_id": "stock_raw"},
 			{"label": "Batch", "link_type": "DocType", "link_to": "Batch", "feature_id": "batch_tracking"},
-			{"label": "Bahan Baku", "link_type": "DocType", "link_to": "Item", "feature_id": "raw_material"},
 		],
 	},
 	{
@@ -196,14 +133,44 @@ WORKSPACE_SECTIONS = [
 		"links": [
 			{"label": "Kas & Bank", "link_type": "DocType", "link_to": "Payment Entry", "feature_id": "cash_bank"},
 			{"label": "Hutang Supplier", "link_type": "DocType", "link_to": "Purchase Invoice", "feature_id": "supplier_payable"},
-			{"label": "Piutang / Sales Invoice", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "customer_receivable"},
-			{"label": "Integrasi Akuntansi POS", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "accounting_integration"},
+			{"label": "Sales Invoice", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "accounting_integration"},
 			{"label": "Royalty Accrual", "link_type": "DocType", "link_to": "IMOGI POS Royalty Accrual", "feature_id": "supplier_payable"},
-			{"label": "Profit and Loss", "link_type": "Report", "link_to": "Profit and Loss Statement", "is_query_report": 1, "feature_id": "profit_loss"},
+			{
+				"label": "Profit and Loss",
+				"link_type": "Report",
+				"link_to": "Profit and Loss Statement",
+				"is_query_report": 1,
+				"feature_id": "profit_loss",
+			},
 			{"label": "Cash Flow", "link_type": "Report", "link_to": "Cash Flow", "is_query_report": 1, "feature_id": "cash_flow"},
 			{"label": "Sales Register", "link_type": "Report", "link_to": "Sales Register", "is_query_report": 1, "feature_id": "tax_report"},
 			{"label": "Version Log", "link_type": "DocType", "link_to": "Version", "feature_id": "audit_log"},
 			{"label": "Activity Log", "link_type": "DocType", "link_to": "Activity Log", "feature_id": "login_history"},
+		],
+	},
+	{
+		"label": "Multi Outlet",
+		"links": [
+			{"label": "Penugasan Area Manager", "link_type": "DocType", "link_to": "IMOGI Area Manager Assignment"},
+			{"label": "IMOGI Branch", "link_type": "DocType", "link_to": "IMOGI Branch", "feature_id": "multi_outlet"},
+			{"label": "Tambah Company & Cabang", "link_type": "Page", "link_to": "imogi-pos-add-branch", "feature_id": "multi_outlet"},
+		],
+	},
+	{
+		"label": "Integrasi & Payment",
+		"links": [
+			{"label": "QRIS / Payment Gateway", "link_type": "DocType", "link_to": "IMOGI POS Gateway Payment", "feature_id": "qris"},
+			{"label": "Offline Checkout Log", "link_type": "DocType", "link_to": "IMOGI POS Offline Checkout", "feature_id": "api_access"},
+			{"label": "Subscription Event", "link_type": "DocType", "link_to": "IMOGI POS Subscription Event", "feature_id": "api_access"},
+		],
+	},
+	{
+		"label": "Pengaturan Sistem",
+		"links": [
+			{"label": "IMOGI POS Settings", "link_type": "DocType", "link_to": "IMOGI POS Settings"},
+			{"label": "Matrix Paket & Fitur", "link_type": "Page", "link_to": "imogi-pos-feature-matrix"},
+			{"label": "Setup Wizard", "link_type": "Page", "link_to": "imogi-pos-setup"},
+			{"label": "Approval Request", "link_type": "DocType", "link_to": "IMOGI POS Approval Request", "feature_id": "approval_void"},
 		],
 	},
 ]
@@ -214,17 +181,13 @@ WORKSPACE_SHORTCUTS = [
 		"label": "Dashboard & Analitik",
 		"link_to": "imogi-pos-dashboard",
 		"type": "Page",
-		"feature_id": "dashboard_sales",
 		"dashboard_focus": "sales",
 	},
 	{"color": "Green", "label": "Laporan Penjualan", "link_to": "imogi-pos-sales-report", "type": "Page", "feature_id": "sales_report"},
-	{"color": "Purple", "label": "Menu Produk", "link_to": "imogi-pos-menu", "type": "Page", "feature_id": "menu"},
-	{"color": "Cyan", "label": "Kategori Menu", "link_to": "imogi-pos-menu-category", "type": "Page", "feature_id": "menu_category"},
 	{"color": "Orange", "label": "IMOGI Kasir", "link_to": "imogi-pos-cashier", "type": "Page", "feature_id": "pos_order"},
 	{"color": "Yellow", "label": "Riwayat Order", "link_to": "imogi-pos-order-history", "type": "Page", "feature_id": "order_history"},
-	{"color": "Orange", "label": "Riwayat Order", "link_to": "Riwayat Order", "type": "DocType", "feature_id": "order_history"},
+	{"color": "Purple", "label": "Menu Produk", "link_to": "imogi-pos-menu", "type": "Page", "feature_id": "menu"},
 	{"color": "Red", "label": "Kitchen Display", "link_to": "kitchen-display", "type": "Page", "feature_id": "kitchen_display"},
-	{"color": "Yellow", "label": "Fulfillment Queue", "link_to": "fulfillment-queue", "type": "Page", "feature_id": "delivery_order"},
 	{"color": "Grey", "label": "IMOGI POS Settings", "link_to": "IMOGI POS Settings", "type": "DocType"},
 ]
 
@@ -262,12 +225,12 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 	if variant == "umkm":
 		header = (
 			'<span class="h4"><b>IMOGI POS — UMKM</b></span><br>'
-			'<span class="text-muted">Semua modul IMOGI POS — akses menyesuaikan role pengguna.</span>'
+			'<span class="text-muted">Modul IMOGI POS — satu menu per halaman, akses menyesuaikan role.</span>'
 		)
 	else:
 		header = (
 			'<span class="h4"><b>IMOGI POS — Restoran &amp; Cafe</b></span><br>'
-			'<span class="text-muted">Semua modul IMOGI POS — akses menyesuaikan role pengguna.</span>'
+			'<span class="text-muted">Modul IMOGI POS — satu menu per halaman, akses menyesuaikan role.</span>'
 		)
 
 	blocks = [
@@ -288,8 +251,8 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 				{"id": "sc1", "type": "shortcut", "data": {"shortcut_name": "IMOGI Kasir", "col": 2}},
 				{"id": "sc2", "type": "shortcut", "data": {"shortcut_name": "Riwayat Order", "col": 2}},
 				{"id": "sc3", "type": "shortcut", "data": {"shortcut_name": "Kitchen Display", "col": 2}},
-				{"id": "sc4", "type": "shortcut", "data": {"shortcut_name": "Fulfillment Queue", "col": 2}},
-				{"id": "sc5", "type": "shortcut", "data": {"shortcut_name": "Dashboard & Analitik", "col": 2}},
+				{"id": "sc4", "type": "shortcut", "data": {"shortcut_name": "Dashboard & Analitik", "col": 2}},
+				{"id": "sc5", "type": "shortcut", "data": {"shortcut_name": "Menu Produk", "col": 2}},
 				{"id": "sc6", "type": "shortcut", "data": {"shortcut_name": "IMOGI POS Settings", "col": 2}},
 			]
 		)

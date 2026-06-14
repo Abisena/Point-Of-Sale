@@ -479,6 +479,7 @@ def get_items(
 	limit=20,
 	pos_profile=None,
 	branch=None,
+	skip_cache=0,
 ):
 	"""List sellable items for the default (or given) POS Profile."""
 	validate_order_api_access()
@@ -507,9 +508,10 @@ def get_items(
 	cache_key = None
 	if not search:
 		cache_key = _catalog_list_cache_key(ctx, branch, item_group, pos_category, start, limit)
-		cached = frappe.cache().get_value(cache_key)
-		if cached:
-			return cached
+		if not cint(skip_cache):
+			cached = frappe.cache().get_value(cache_key)
+			if cached:
+				return cached
 
 	if search:
 		result = search_by_term(search, ctx["warehouse"], price_list)
@@ -561,7 +563,7 @@ def get_items(
 		"item_group": item_group,
 		"pos_category": pos_category,
 	}
-	if cache_key:
+	if cache_key and not cint(skip_cache):
 		frappe.cache().set_value(cache_key, response, expires_in_sec=45)
 	return response
 
@@ -724,6 +726,7 @@ def get_item_variant_config(template_item_code, pos_profile=None, branch=None):
 	return {
 		"template_item_code": template.name,
 		"item_name": template.item_name,
+		"description": (template.description or "").strip(),
 		"image": template.image,
 		"base_rate": base_rate,
 		"currency": ctx["currency"],

@@ -1,5 +1,6 @@
 # Copyright (c) 2026, Imogi and contributors
 
+import frappe
 from frappe.utils import getdate, get_time
 
 from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import POSInvoiceMergeLog

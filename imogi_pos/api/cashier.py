@@ -546,10 +546,54 @@ def get_cashier_landing_status():
 	return {
 		"active": True,
 		"landing": get_cashier_landing(),
+		"has_open_shift": get_cashier_landing() == "cashier",
 		"requires_shift_workflow": True,
 		"company": company,
 		"pos_profile": settings.default_pos_profile,
 		"shift_opening_draft": get_pending_shift_opening(),
+	}
+
+
+@frappe.whitelist()
+def finalize_pending_shift_close():
+	"""Finish queued POS Closing Entry merge so Buka Shift page can load."""
+	_require_cashier_access()
+
+	from imogi_pos.boot import get_cashier_landing
+	from imogi_pos.imogi_pos.utils.shift_closing import _ensure_opening_closed_after_closing
+
+	opening = _get_pos_opening()
+	if not opening:
+		landing = get_cashier_landing()
+		return {"landing": landing, "already_open": landing == "cashier"}
+
+	opening_name = opening.get("name") if isinstance(opening, dict) else opening
+	opening_company = (
+		opening.get("company")
+		if isinstance(opening, dict)
+		else frappe.db.get_value("POS Opening Entry", opening_name, "company")
+	)
+
+	from imogi_pos.imogi_pos.utils.pos_consolidation import repair_mode_of_payment_accounts
+	from imogi_pos.imogi_pos.utils.shift_closing import _ensure_opening_closed_after_closing
+
+	repair_mode_of_payment_accounts(opening_company)
+
+	closing = frappe.db.get_value(
+		"POS Closing Entry",
+		{"pos_opening_entry": opening_name, "docstatus": 1},
+		["name", "status", "error_message"],
+		as_dict=True,
+		order_by="creation desc",
+	)
+	if closing:
+		_ensure_opening_closed_after_closing(opening_name, closing.name)
+
+	landing = get_cashier_landing()
+	return {
+		"landing": landing,
+		"already_open": landing == "cashier",
+		"pos_opening_entry": opening_name,
 	}
 
 
@@ -562,10 +606,14 @@ def get_shift_opening_page_context(pos_profile=None, branch=None):
 	if not _is_pos_shift_enabled():
 		frappe.throw(_("Shift kasir dinonaktifkan di IMOGI POS Settings"))
 
-	if _get_pos_opening():
-		opening = _get_pos_opening()
+	opening = _get_pos_opening()
+	if opening:
+		from imogi_pos.boot import get_cashier_landing
+
+		landing = get_cashier_landing()
 		return {
-			"already_open": True,
+			"already_open": landing == "cashier",
+			"landing": landing,
 			"pos_opening_entry": opening.get("name") if isinstance(opening, dict) else opening,
 		}
 

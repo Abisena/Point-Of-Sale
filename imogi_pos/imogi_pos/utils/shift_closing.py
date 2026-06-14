@@ -184,7 +184,21 @@ def create_and_submit_shift_closing(
 	doc.save()
 	doc.submit()
 	frappe.db.commit()
-	return {"name": doc.name, "pos_closing_entry": doc.pos_closing_entry}
+
+	closing_name = doc.pos_closing_entry or frappe.db.get_value(
+		"IMOGI POS Shift Closing", doc.name, "pos_closing_entry"
+	)
+	if closing_name:
+		_ensure_opening_closed_after_closing(doc.pos_opening_entry, closing_name)
+		frappe.db.commit()
+
+	from imogi_pos.boot import get_cashier_landing
+
+	return {
+		"name": doc.name,
+		"pos_closing_entry": doc.pos_closing_entry,
+		"landing": get_cashier_landing(user=user or frappe.session.user),
+	}
 
 
 def _extract_closing_failure_message():
@@ -196,7 +210,7 @@ def _extract_closing_failure_message():
 				message = entry.get("message") or str(entry)
 			else:
 				message = str(entry)
-			if "Reference Name" in message:
+			if "Reference Name" in message or "Could not find" in message:
 				continue
 			parts.append(message)
 		if parts:
@@ -206,6 +220,31 @@ def _extract_closing_failure_message():
 		"Gagal konsolidasi POS Invoice saat tutup shift. "
 		"Periksa stok item retail, atau pastikan item menu dengan BOM sudah benar."
 	)
+
+
+def get_latest_closing_failure_message(closing):
+	"""Return a user-facing message for a failed POS Closing Entry."""
+	if isinstance(closing, str):
+		closing = frappe.db.get_value(
+			"POS Closing Entry",
+			closing,
+			["name", "status", "error_message"],
+			as_dict=True,
+		)
+	if not closing:
+		return None
+
+	message = (closing.error_message or "").strip()
+	if message:
+		return message
+
+	if closing.status == "Failed":
+		return _(
+			"Gagal konsolidasi POS Invoice saat tutup shift. "
+			"Periksa konfigurasi Mode of Payment (QRIS harus ke akun Bank/Kas, bukan Piutang)."
+		)
+
+	return None
 
 
 def _resolve_shift_cashier_user(doc, opening):
@@ -226,6 +265,10 @@ def sync_to_pos_closing_entry(doc):
 	if not opening.user:
 		opening.db_set("user", cashier_user, update_modified=False)
 		opening.user = cashier_user
+
+	from imogi_pos.imogi_pos.utils.pos_consolidation import repair_mode_of_payment_accounts
+
+	repair_mode_of_payment_accounts(opening.company)
 
 	closing = make_closing_entry_from_opening(opening)
 	if not closing.user:
@@ -261,6 +304,133 @@ def sync_to_pos_closing_entry(doc):
 		frappe.flags.ignore_permissions = prev_ignore_permissions
 
 	return closing.name
+
+
+def on_pos_closing_entry_after_submit(doc, method=None):
+	"""Wait for invoice merge after POS Closing Entry is committed."""
+	if not doc.pos_opening_entry:
+		return
+
+	opening_name = doc.pos_opening_entry
+	closing_name = doc.name
+	frappe.db.after_commit.add(
+		lambda: _ensure_opening_closed_after_closing(opening_name, closing_name)
+	)
+
+
+def repair_pos_invoice_order_links(pos_invoices):
+	"""Drop stale Riwayat Order links so shift closing consolidation can save invoices."""
+	invoice_names = []
+	for row in pos_invoices or []:
+		if isinstance(row, str):
+			invoice_name = row
+		elif isinstance(row, dict):
+			invoice_name = row.get("pos_invoice")
+		else:
+			invoice_name = getattr(row, "pos_invoice", None)
+		if invoice_name:
+			invoice_names.append(invoice_name)
+
+	if not invoice_names:
+		return []
+
+	stale = frappe.db.sql(
+		"""
+		SELECT pi.name
+		FROM `tabPOS Invoice` pi
+		LEFT JOIN `tabRiwayat Order` ro ON ro.name = pi.imogi_pos_order
+		WHERE pi.name IN %(names)s
+			AND IFNULL(pi.imogi_pos_order, '') != ''
+			AND ro.name IS NULL
+		""",
+		{"names": invoice_names},
+		as_dict=True,
+	)
+	for row in stale:
+		frappe.db.set_value(
+			"POS Invoice",
+			row.name,
+			"imogi_pos_order",
+			None,
+			update_modified=False,
+		)
+	return [row.name for row in stale]
+
+
+def _ensure_opening_closed_after_closing(opening_name, closing_name):
+	"""POS Closing Entry may queue invoice merge; opening stays open until merge finishes."""
+	import time
+
+	from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import (
+		create_merge_logs,
+		get_invoice_customer_map,
+	)
+
+	opening = frappe.get_doc("POS Opening Entry", opening_name)
+	if opening.pos_closing_entry:
+		return opening.pos_closing_entry
+
+	closing = frappe.get_doc("POS Closing Entry", closing_name)
+	closing.reload()
+
+	if closing.status == "Failed":
+		from imogi_pos.imogi_pos.utils.pos_consolidation import repair_mode_of_payment_accounts
+
+		repair_mode_of_payment_accounts(opening.company)
+		frappe.db.set_value(
+			"POS Closing Entry",
+			closing_name,
+			{"status": "Queued", "error_message": ""},
+			update_modified=False,
+		)
+		closing.reload()
+
+	merge_started = frappe.db.exists(
+		"POS Invoice Merge Log",
+		{"pos_closing_entry": closing_name},
+	)
+
+	if closing.status == "Queued" and not merge_started:
+		repair_pos_invoice_order_links(closing.pos_transactions or [])
+		invoice_by_customer = get_invoice_customer_map(closing.pos_transactions or [])
+		create_merge_logs(invoice_by_customer, closing_entry=closing)
+	elif closing.docstatus == 1:
+		closing.reload()
+		if closing.status == "Submitted":
+			closing.update_opening_entry()
+		elif closing.status == "Queued" and merge_started:
+			# Background merge may have finished without linking opening.
+			if frappe.db.exists(
+				"POS Invoice Merge Log",
+				{"pos_closing_entry": closing_name, "docstatus": 1},
+			):
+				closing.reload()
+				if closing.status == "Submitted":
+					closing.update_opening_entry()
+
+	opening.reload()
+	if opening.pos_closing_entry:
+		return opening.pos_closing_entry
+
+	for attempt in range(120):
+		time.sleep(0.5)
+		frappe.db.commit()
+		opening.reload()
+		if opening.pos_closing_entry:
+			return opening.pos_closing_entry
+		closing.reload()
+		if closing.status == "Failed":
+			error = get_latest_closing_failure_message(closing) or _(
+				"Konsolidasi POS Invoice gagal saat tutup shift."
+			)
+			frappe.throw(error, title=_("Gagal Tutup Shift"))
+
+	frappe.throw(
+		_("Gagal menutup shift kasir. POS Opening Entry {0} masih terbuka.").format(
+			frappe.bold(opening_name)
+		),
+		title=_("Gagal Tutup Shift"),
+	)
 
 
 def validate_shift_closing(doc):

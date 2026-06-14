@@ -23,10 +23,8 @@ def apply_business_profile(business_type):
 	settings.business_type = business_type
 
 	if business_type == BUSINESS_UMKM:
-		settings.enable_kitchen_display = 0
-		settings.enable_fulfillment = 0
-		settings.kitchen_item_groups = ""
-		settings.fulfillment_for_order_types = ""
+		# Keep existing kitchen/fulfillment toggles — UMKM F&B may still use KDS.
+		pass
 	elif business_type == BUSINESS_RESTAURANT:
 		settings.enable_kitchen_display = 1
 		settings.enable_fulfillment = 1

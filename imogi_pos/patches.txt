@@ -29,3 +29,6 @@ imogi_pos.patches.grant_owner_report_roles
 imogi_pos.patches.grant_integration_role_permissions
 imogi_pos.patches.sync_workspace_strict_role_gating
 imogi_pos.patches.setup_demo_integration_users
+imogi_pos.patches.setup_demo_role_users
+imogi_pos.patches.sync_workspace_simplified
+imogi_pos.patches.restore_imogi_area_manager_branch

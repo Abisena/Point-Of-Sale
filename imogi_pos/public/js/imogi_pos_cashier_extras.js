@@ -371,6 +371,6 @@ imogi_pos.cashier_extras.prompt_supervisor_pin = function (page, done) {
 	);
 };
 
-frappe.ready(() => {
+$(document).on("app_ready", () => {
 	imogi_pos.cashier_extras.patch();
 });

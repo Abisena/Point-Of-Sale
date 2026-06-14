@@ -1,41 +1,5 @@
 frappe.provide("imogi_pos");
 
-const IMOGI_IDR_DENOMINATIONS = [
-	{ value: 100, label: "Rp 100" },
-	{ value: 200, label: "Rp 200" },
-	{ value: 500, label: "Rp 500" },
-	{ value: 1000, label: "Rp 1.000" },
-	{ value: 2000, label: "Rp 2.000" },
-	{ value: 5000, label: "Rp 5.000" },
-	{ value: 10000, label: "Rp 10.000" },
-	{ value: 20000, label: "Rp 20.000" },
-	{ value: 50000, label: "Rp 50.000" },
-	{ value: 100000, label: "Rp 100.000" },
-];
-
-frappe.pages["imogi-pos-open-shift"].on_page_load = function (wrapper) {
-	inject_open_shift_css();
-	imogi_pos.sync_desk_theme?.();
-
-	const page = frappe.ui.make_app_page({
-		parent: wrapper,
-		title: __("Opening Shift Kasir"),
-		single_column: true,
-	});
-
-	page.main.addClass("imogi-open-shift-page");
-	$(wrapper).find(".layout-main-section-wrapper").css("max-width", "100%");
-	$(wrapper).find(".page-head").hide();
-	wrapper.open_shift_page = new imogi_pos.OpenShiftPage(page);
-	imogi_pos.active_open_shift = wrapper.open_shift_page;
-	frappe.breadcrumbs.add("Imogi POS");
-};
-
-frappe.pages["imogi-pos-open-shift"].on_page_show = function (wrapper) {
-	imogi_pos.sync_desk_theme?.();
-	wrapper.open_shift_page?.refresh?.();
-};
-
 function imogi_open_shift_format_rp(val) {
 	return format_currency(flt(val), frappe.defaults.get_default("currency") || "IDR");
 }
@@ -45,14 +9,22 @@ function imogi_open_shift_format_date_long() {
 }
 
 function inject_open_shift_css() {
-	if (document.getElementById("imogi-open-shift-inline-css-v7")) return;
-	document.getElementById("imogi-open-shift-inline-css-v6")?.remove();
+	[
+		"imogi-open-shift-inline-css-v7",
+		"imogi-open-shift-inline-css-v8",
+		"imogi-open-shift-inline-css-v9",
+		"imogi-open-shift-inline-css-v10",
+	].forEach((id) => document.getElementById(id)?.remove());
+	if (typeof imogi_pos.inject_cash_denom_css === "function") {
+		imogi_pos.inject_cash_denom_css();
+	}
 	frappe.dom.set_style(`
 		.imogi-open-shift-page .layout-main-section-wrapper,
-		.imogi-open-shift-page .page-body { max-width: 100% !important; }
+		.imogi-open-shift-page .layout-main-section,
+		.imogi-open-shift-page .page-body { box-sizing: border-box; max-width: 100% !important; overflow-x: hidden !important; width: 100% !important; }
 		.imogi-open-shift-page .page-body { background: transparent; padding: 0 !important; }
 		.imogi-open-shift-page .layout-main-section { margin: 0 !important; }
-		.imogi-shift-shell { margin: 0 auto; max-width: 1080px; padding: 20px 24px 32px; width: 100%; }
+		.imogi-shift-shell { box-sizing: border-box; margin: 0 auto; max-width: 1080px; padding: 20px 24px 32px; width: 100%; }
 		.imogi-shift-header { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin-bottom: 20px; padding: 18px 22px; }
 		.imogi-shift-header-left { align-items: center; display: flex; gap: 14px; min-width: 0; }
 		.imogi-shift-store-icon { align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; color: #fff; display: flex; flex-shrink: 0; font-size: 20px; height: 48px; justify-content: center; width: 48px; }
@@ -73,13 +45,6 @@ function inject_open_shift_css() {
 		.imogi-shift-input:focus { background: #fff; border-color: #a1a1aa; box-shadow: none; outline: none; }
 		.imogi-shift-input[readonly] { color: #52525b; cursor: default; }
 		.imogi-shift-textarea { min-height: 88px; resize: vertical; }
-		.imogi-shift-denom-grid { display: grid; gap: 12px 16px; grid-template-columns: repeat(2, minmax(0,1fr)); }
-		@media (max-width: 640px) { .imogi-shift-denom-grid { grid-template-columns: 1fr; } }
-		.imogi-shift-denom-item label { color: #52525b; display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-		.imogi-shift-denom-control { align-items: center; display: flex; gap: 10px; }
-		.imogi-shift-denom-qty { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 10px; flex: 1; font-size: 14px; font-weight: 700; min-width: 0; padding: 10px 12px; text-align: left; }
-		.imogi-shift-denom-qty:focus { background: #fff; border-color: #a1a1aa; outline: none; }
-		.imogi-shift-denom-eq { color: #71717a; flex-shrink: 0; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 92px; text-align: right; white-space: nowrap; }
 		.imogi-shift-sidebar { position: sticky; top: 16px; }
 		.imogi-shift-summary-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; padding: 20px; }
 		.imogi-shift-summary-title { color: #0f1f35; font-size: 15px; font-weight: 800; margin-bottom: 18px; }
@@ -96,8 +61,91 @@ function inject_open_shift_css() {
 		.imogi-shift-btn-secondary { background: #fff !important; border: 1px solid #d4d4d8 !important; border-radius: 12px !important; color: #0f1f35 !important; font-size: 14px !important; font-weight: 700 !important; padding: 12px 16px !important; width: 100%; }
 		.imogi-shift-btn-link { background: none; border: none; color: #71717a; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 8px; padding: 0; text-decoration: underline; width: 100%; }
 		.imogi-shift-loading { align-items: center; color: #a1a1aa; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: 320px; }
-	`, "imogi-open-shift-inline-css-v7");
+		@media (max-width: 640px) {
+			.imogi-open-shift-page .page-container,
+			.imogi-open-shift-page .container.page-body,
+			.imogi-open-shift-page .main-section { padding-left: 0 !important; padding-right: 0 !important; }
+			.imogi-shift-shell { box-sizing: border-box; max-width: 100%; padding: 6px 8px 20px; width: 100%; }
+			.imogi-shift-header { align-items: stretch; border-radius: 14px; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 14px; }
+			.imogi-shift-header-left { gap: 10px; width: 100%; }
+			.imogi-shift-store-icon { height: 42px; width: 42px; }
+			.imogi-shift-header-title { font-size: 18px; }
+			.imogi-shift-header-sub { font-size: 12px; word-break: break-word; }
+			.imogi-shift-header-right { align-items: flex-start; flex-direction: column; gap: 8px; width: 100%; }
+			.imogi-shift-header-right span { font-size: 12px; }
+			.imogi-shift-btn-logout { width: 100%; }
+			.imogi-shift-layout { gap: 14px; }
+			.imogi-shift-card { border-radius: 14px; padding: 14px; }
+			.imogi-shift-card-title { font-size: 14px; margin-bottom: 12px; }
+			.imogi-shift-sidebar { position: static; }
+			.imogi-shift-summary-card { padding: 16px; }
+			.imogi-shift-balance-value { font-size: 24px; }
+		}
+	`, "imogi-open-shift-inline-css-v11");
 }
+
+function imogi_open_shift_show_fatal_error(message) {
+	frappe.dom?.unfreeze?.();
+	const $target = $(".imogi-open-shift-page .layout-main-section").first();
+	const html = `
+		<div class="imogi-shift-shell" style="padding:24px 16px">
+			<div class="imogi-shift-card" style="text-align:center">
+				<div class="text-danger" style="font-weight:700;margin-bottom:12px">${frappe.utils.escape_html(
+					message
+				)}</div>
+				<button type="button" class="btn btn-primary btn-sm imogi-open-shift-reload">${__("Muat ulang")}</button>
+			</div>
+		</div>
+	`;
+	if ($target.length) {
+		$target.html(html);
+	} else {
+		frappe.msgprint({ message, indicator: "red" });
+	}
+	$(document).off("click.imogi-open-shift-reload").on("click.imogi-open-shift-reload", ".imogi-open-shift-reload", () => {
+		try {
+			localStorage.removeItem("_page:imogi-pos-open-shift");
+		} catch (e) {
+			// ignore
+		}
+		window.location.reload();
+	});
+}
+
+frappe.pages["imogi-pos-open-shift"].on_page_load = function (wrapper) {
+	try {
+		frappe.dom?.unfreeze?.();
+		imogi_pos.ensure_shift_helpers?.();
+		inject_open_shift_css();
+		imogi_pos.sync_desk_theme?.();
+
+		const page = frappe.ui.make_app_page({
+			parent: wrapper,
+			title: __("Opening Shift Kasir"),
+			single_column: true,
+		});
+
+		page.main.addClass("imogi-open-shift-page");
+		$(wrapper).find(".layout-main-section-wrapper").css({
+			maxWidth: "100%",
+			overflowX: "hidden",
+			width: "100%",
+		});
+		$(wrapper).find(".layout-main-section").css({ margin: "0 auto", maxWidth: "100%", width: "100%" });
+		$(wrapper).find(".page-head").hide();
+		wrapper.open_shift_page = new imogi_pos.OpenShiftPage(page);
+		imogi_pos.active_open_shift = wrapper.open_shift_page;
+		frappe.breadcrumbs.add("Imogi POS");
+	} catch (e) {
+		console.error("[imogi-pos-open-shift]", e);
+		imogi_open_shift_show_fatal_error(__("Gagal memuat halaman Buka Shift. Coba muat ulang."));
+	}
+};
+
+frappe.pages["imogi-pos-open-shift"].on_page_show = function (wrapper) {
+	imogi_pos.sync_desk_theme?.();
+	wrapper.open_shift_page?.refresh?.();
+};
 
 imogi_pos.OpenShiftPage = class OpenShiftPage {
 	constructor(page) {
@@ -105,14 +153,12 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 		this.$wrapper = page.main;
 		this.context = null;
 		this.amounts = {};
-		this.denominations = {};
+		imogi_pos.ensure_shift_helpers?.();
+		this.denominations = imogi_pos.init_denominations_map();
 		this.remarks = "";
 		this.submitting = false;
 		this.saving_draft = false;
 		this._clock_timer = null;
-		IMOGI_IDR_DENOMINATIONS.forEach((d) => {
-			this.denominations[d.value] = 0;
-		});
 		this.render_shell();
 		this.enable_lock();
 		this.load_context();
@@ -167,34 +213,124 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 		const args = {};
 		if (opts.pos_profile) args.pos_profile = opts.pos_profile;
 		if (opts.branch) args.branch = opts.branch;
-		frappe.call({
-			method: "imogi_pos.api.cashier.get_shift_opening_page_context",
-			args,
-			callback: (r) => {
-				if (r.exc) {
-					this.$wrapper.find(".imogi-shift-loading").html(`
-						<div class="text-danger">${__("Gagal memuat opening shift.")}</div>
-					`);
+
+		const expectOpening = (() => {
+			try {
+				return sessionStorage.getItem("imogi_pos_expect_opening");
+			} catch (e) {
+				return null;
+			}
+		})();
+
+		const loadPageContext = () => {
+			frappe.call({
+				method: "imogi_pos.api.cashier.get_shift_opening_page_context",
+				args,
+				callback: (r) => this.handle_context_response(r),
+			});
+		};
+
+		if (expectOpening) {
+			frappe.call({
+				method: "imogi_pos.api.cashier.finalize_pending_shift_close",
+				callback: (r) => {
+					if (r.exc) {
+						loadPageContext();
+						return;
+					}
+					const data = r.message || {};
+					if (!data.already_open) {
+						try {
+							sessionStorage.removeItem("imogi_pos_expect_opening");
+						} catch (e) {
+							// ignore
+						}
+						this._opening_retry = 0;
+					}
+					loadPageContext();
+				},
+			});
+			return;
+		}
+
+		loadPageContext();
+	}
+
+	handle_context_response(r) {
+		if (r.exc) {
+			this.$wrapper.find(".imogi-shift-loading").html(`
+				<div class="text-danger">${__("Gagal memuat opening shift.")}</div>
+			`);
+			return;
+		}
+		if (r.message?.already_open) {
+			const expectOpening = (() => {
+				try {
+					return sessionStorage.getItem("imogi_pos_expect_opening");
+				} catch (e) {
+					return null;
+				}
+			})();
+
+			if (expectOpening) {
+				this._opening_retry = (this._opening_retry || 0) + 1;
+				if (this._opening_retry <= 12) {
+					this.$wrapper.find(".imogi-shift-loading div").text(
+						__("Menyelesaikan penutupan shift... ({0}/12)", [this._opening_retry])
+					);
+					setTimeout(() => this.load_context(), 1200);
 					return;
 				}
-				if (r.message?.already_open) {
-					this.clear_lock();
-					frappe.set_route("imogi-pos-cashier");
-					return;
+				try {
+					sessionStorage.removeItem("imogi_pos_expect_opening");
+				} catch (e) {
+					// ignore
 				}
-				this.reset_form_state();
-				this.context = r.message;
-				this.cash_mode = r.message.cash_mode;
-				this.remarks = r.message.remarks || "";
-				(r.message.payments || []).forEach((row) => {
-					this.amounts[row.mode_of_payment] = flt(row.opening_amount);
+				this.$wrapper.find(".imogi-shift-loading").html(`
+					<div class="text-danger">${__(
+						"Penutupan shift belum selesai. Tunggu beberapa saat lalu coba lagi."
+					)}</div>
+					<button type="button" class="btn btn-primary btn-sm imogi-shift-retry-close" style="margin-top:12px">
+						${__("Coba lagi")}
+					</button>
+				`);
+				this.$wrapper.find(".imogi-shift-retry-close").on("click", () => {
+					try {
+						sessionStorage.setItem("imogi_pos_expect_opening", "1");
+					} catch (e) {
+						// ignore
+					}
+					this._opening_retry = 0;
+					this.render_shell();
+					this.load_context();
 				});
-				if (this.cash_mode && this.amounts[this.cash_mode] === undefined) {
-					this.amounts[this.cash_mode] = 0;
-				}
-				this.render();
-			},
+				return;
+			}
+
+			if (r.message?.landing === "cashier") {
+				this.clear_lock();
+				frappe.set_route("imogi-pos-cashier");
+				return;
+			}
+		}
+
+		try {
+			sessionStorage.removeItem("imogi_pos_expect_opening");
+		} catch (e) {
+			// ignore
+		}
+		this._opening_retry = 0;
+		this.reset_form_state();
+		this.context = r.message;
+		this.cash_mode = r.message.cash_mode;
+		this.remarks = r.message.remarks || "";
+		(r.message.payments || []).forEach((row) => {
+			this.amounts[row.mode_of_payment] = flt(row.opening_amount);
 		});
+		if (this.cash_mode && this.amounts[this.cash_mode] === undefined) {
+			this.amounts[this.cash_mode] = 0;
+		}
+		this.render();
 	}
 
 	refresh() {
@@ -220,9 +356,7 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 		this.saving_draft = false;
 		this.amounts = {};
 		this.remarks = "";
-		IMOGI_IDR_DENOMINATIONS.forEach((d) => {
-			this.denominations[d.value] = 0;
-		});
+		this.denominations = imogi_pos.init_denominations_map();
 	}
 
 	get_cash_mode() {
@@ -230,11 +364,11 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	}
 
 	get_total_sheets() {
-		return IMOGI_IDR_DENOMINATIONS.reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
+		return imogi_pos.IDR_DENOMINATIONS.reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
 	}
 
 	get_denomination_total() {
-		return IMOGI_IDR_DENOMINATIONS.reduce(
+		return imogi_pos.IDR_DENOMINATIONS.reduce(
 			(sum, d) => sum + flt(this.denominations[d.value]) * d.value,
 			0
 		);
@@ -281,20 +415,7 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	}
 
 	render_denom_grid() {
-		return IMOGI_IDR_DENOMINATIONS.map((d) => {
-			const qty = flt(this.denominations[d.value]);
-			const subtotal = qty * d.value;
-			return `
-				<div class="imogi-shift-denom-item" data-denom="${d.value}">
-					<label>${d.label}</label>
-					<div class="imogi-shift-denom-control">
-						<input type="number" min="0" step="1" class="imogi-shift-denom-qty"
-							data-denom="${d.value}" value="${qty || ""}" placeholder="0">
-						<span class="imogi-shift-denom-eq">= ${imogi_open_shift_format_rp(subtotal)}</span>
-					</div>
-				</div>
-			`;
-		}).join("");
+		return imogi_pos.render_cash_denom_grid(this.denominations, imogi_open_shift_format_rp);
 	}
 
 	render_summary_html() {
@@ -362,7 +483,10 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 							<div class="imogi-shift-card-title"><i class="fa fa-money"></i> ${__(
 								"Hitung Uang Tunai"
 							)}</div>
-							<div class="imogi-shift-denom-grid">${this.render_denom_grid()}</div>
+							<p class="imogi-cash-denom-hint">${__(
+								"Ketuk nominal untuk tambah lembar. Tombol − untuk kurangi."
+							)}</p>
+							<div class="imogi-cash-denom-grid">${this.render_denom_grid()}</div>
 						</div>
 
 						<div class="imogi-shift-card">
@@ -417,11 +541,13 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	}
 
 	update_denom_item(denom) {
-		const qty = flt(this.denominations[denom]);
-		const subtotal = qty * denom;
-		const $item = this.$wrapper.find(`.imogi-shift-denom-item[data-denom="${denom}"]`);
-		$item.find(".imogi-shift-denom-eq").text(`= ${imogi_open_shift_format_rp(subtotal)}`);
-		this.update_summary();
+		imogi_pos.update_cash_denom_item(
+			this.$wrapper,
+			denom,
+			this.denominations,
+			imogi_open_shift_format_rp,
+			() => this.update_summary()
+		);
 	}
 
 	reset_form() {
@@ -437,11 +563,9 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	bind_events() {
 		const $shell = this.$wrapper;
 
-		$shell.find(".imogi-shift-denom-qty").on("input", (e) => {
-			const denom = flt(e.target.dataset.denom);
-			this.denominations[denom] = Math.max(0, flt(e.target.value));
-			this.update_denom_item(denom);
-		});
+		imogi_pos.bind_cash_denom_buttons($shell, this, imogi_open_shift_format_rp, () =>
+			this.update_summary()
+		);
 
 		$shell.find(".imogi-shift-remarks").on("input", (e) => {
 			this.remarks = e.target.value;

@@ -147,6 +147,7 @@ def _create_default_settings():
 	settings.enable_fulfillment = 0
 	settings.low_stock_check_interval = 180
 	settings.low_stock_alert_roles = "IMOGI Kitchen Staff, IMOGI Fulfillment Staff, Sales Manager"
+	settings.enable_auto_purchase_request = 1
 	settings.enable_realtime_notifications = 1
 	settings.dashboard_refresh_seconds = 30
 	if frappe.db.exists("Print Format", "IMOGI POS Receipt"):

@@ -113,6 +113,20 @@ def run():
 		if cint(settings.low_stock_check_interval)
 		else _warn("Low stock scheduler", "low_stock_check_interval=0")
 	)
+	results.append(
+		_ok("Auto Purchase Request (low stock)", "enabled")
+		if cint(settings.enable_auto_purchase_request)
+		else _warn("Auto Purchase Request (low stock)", "enable_auto_purchase_request=0")
+	)
+	auto_mr = frappe.db.count(
+		"Material Request",
+		[["remarks", "like", "%IMOGI Auto Low Stock%"], ["docstatus", "=", 1]],
+	)
+	results.append(
+		_ok("Auto low-stock Material Requests", str(auto_mr))
+		if auto_mr
+		else _warn("Auto low-stock Material Requests", "Belum ada MR otomatis dari low stock")
+	)
 
 	# ── PURCHASING ──
 	suppliers = frappe.db.count("Supplier", {"disabled": 0})

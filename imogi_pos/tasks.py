@@ -32,8 +32,8 @@ def _branch_warehouses(settings):
 
 
 def check_low_stock():
-	"""Step 06 — periodic low stock alerts per branch warehouse."""
-	from imogi_pos.imogi_pos.utils.low_stock import get_low_stock_items
+	"""Step 06 — periodic low stock alerts + optional auto Purchase Request per warehouse."""
+	from imogi_pos.imogi_pos.utils.low_stock import create_auto_purchase_requests, get_low_stock_items
 
 	settings = frappe.get_single("IMOGI POS Settings")
 	warehouses = _branch_warehouses(settings)
@@ -49,6 +49,10 @@ def check_low_stock():
 
 	if not all_low_items:
 		return
+
+	created_mrs = create_auto_purchase_requests(all_low_items, settings=settings)
+	if created_mrs:
+		frappe.db.commit()
 
 	all_low_items.sort(key=lambda row: (row.get("warehouse") or "", row.get("actual_qty", 0)))
 	by_warehouse = {}
@@ -76,12 +80,17 @@ def check_low_stock():
 		for user in recipients:
 			frappe.publish_realtime(
 				"imogi_low_stock_alert",
-				{"items": all_low_items[:20], "warehouses": list(by_warehouse.keys())},
+				{
+					"items": all_low_items[:20],
+					"warehouses": list(by_warehouse.keys()),
+					"material_requests": created_mrs,
+				},
 				user=user,
 			)
 
 	frappe.logger("imogi_pos").info(
 		f"Low stock check: {len(all_low_items)} items across {len(by_warehouse)} warehouse(s)"
+		+ (f"; auto MR: {', '.join(created_mrs)}" if created_mrs else "")
 	)
 
 

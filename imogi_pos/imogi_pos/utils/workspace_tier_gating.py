@@ -18,7 +18,7 @@ from imogi_pos.imogi_pos.utils.feature_registry import (
 WORKSPACE_LINK_FEATURES: dict[tuple[str, str], str | None] = {
 	# Pages
 	("Page", "imogi-pos-cashier"): "pos_order",
-	("Page", "imogi-pos-dashboard"): "dashboard_sales",
+	("Page", "imogi-pos-dashboard"): None,
 	("Page", "imogi-pos-sales-report"): "sales_report",
 	("Page", "imogi-pos-menu"): "menu",
 	("Page", "imogi-pos-menu-category"): "menu_category",
@@ -121,7 +121,11 @@ WORKSPACE_OWNER_BRANCH_FEATURES = frozenset({"multi_outlet"})
 
 # Legacy workspace card titles → current WORKSPACE_SECTIONS labels
 WORKSPACE_CARD_ALIASES: dict[str, str] = {
-	"Order & Pembayaran": "Operasional Harian",
+	"Order & Pembayaran": "Kasir & Penjualan",
+	"Operasional Harian": "Kasir & Penjualan",
+	"Modul Kasir": "Kasir & Penjualan",
+	"Modul Manager": "Menu & Produk",
+	"Multi Outlet (Area Manager)": "Multi Outlet",
 	"Shift & Operasional": "Shift & Tutup Hari",
 	"Master & Cabang": "Pengaturan Sistem",
 	"Laporan": "Dashboard & Laporan",

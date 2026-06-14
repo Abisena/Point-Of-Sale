@@ -65,8 +65,11 @@ web_include_css = "/assets/imogi_pos/css/imogi_pos_login.css"
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
+# include js in page — ensure shift helpers load with Buka/Tutup Shift (avoids stale app_include cache)
+page_js = {
+	"imogi-pos-open-shift": "public/js/imogi_pos_shift.js",
+	"imogi-pos-close-shift": "public/js/imogi_pos_shift.js",
+}
 
 doctype_js = {
 	"Riwayat Order": "public/js/imogi_pos_order.js",
@@ -192,8 +195,12 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+	"POS Closing Entry": {
+		"on_submit": "imogi_pos.imogi_pos.utils.shift_closing.on_pos_closing_entry_after_submit",
+	},
 	"POS Invoice": {
 		"on_submit": [
+			"imogi_pos.imogi_pos.utils.pos_bom_stock.invalidate_pos_catalog_cache_on_invoice_submit",
 			"imogi_pos.imogi_pos.utils.pos_bom_stock.consume_bom_for_pos_invoice_on_submit",
 			"imogi_pos.imogi_pos.utils.pos_invoice_sync.sync_imogi_order_from_pos_invoice",
 		],

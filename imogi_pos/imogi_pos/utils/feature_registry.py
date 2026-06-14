@@ -149,7 +149,7 @@ FEATURES: tuple[dict, ...] = (
 		"id": "dine_in",
 		"label": "Dine In",
 		"category": "ORDER TYPE",
-		"role": "Waiter",
+		"role": "Kasir",
 		"min_tier": "Starter",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,

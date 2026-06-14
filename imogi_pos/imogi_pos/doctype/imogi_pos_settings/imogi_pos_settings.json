@@ -49,6 +49,7 @@
   "low_stock_check_interval",
   "low_stock_alert_roles",
   "reorder_level_field",
+  "enable_auto_purchase_request",
   "receipt_section",
   "enable_receipt_print",
   "thermal_print_mode",
@@ -354,22 +355,19 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
    "fieldname": "flow_section",
    "fieldtype": "Section Break",
-   "label": "Alur Restoran / Cafe"
+   "label": "Kitchen & Fulfillment"
   },
   {
-   "default": "1",
-   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
-   "description": "Aktifkan jika pesanan perlu masuk dapur (Kitchen Display).",
+   "default": "0",
+   "description": "Aktifkan jika pesanan perlu masuk dapur (Kitchen Display System / KDS).",
    "fieldname": "enable_kitchen_display",
    "fieldtype": "Check",
    "label": "Kitchen Display"
   },
   {
-   "default": "1",
-   "depends_on": "eval:doc.business_type=='Restaurant / Cafe'",
+   "default": "0",
    "description": "Aktifkan untuk pesanan Takeaway / Delivery yang perlu packing.",
    "fieldname": "enable_fulfillment",
    "fieldtype": "Check",
@@ -377,7 +375,7 @@
   },
   {
    "default": "Consumable",
-   "depends_on": "eval:doc.business_type=='Restaurant / Cafe' && doc.enable_kitchen_display",
+   "depends_on": "eval:doc.enable_kitchen_display",
    "description": "Nama Item Group, pisahkan dengan koma. Contoh: Consumable, Food",
    "fieldname": "kitchen_item_groups",
    "fieldtype": "Small Text",
@@ -385,7 +383,7 @@
   },
   {
    "default": "Takeaway\nDelivery",
-   "depends_on": "eval:doc.business_type=='Restaurant / Cafe' && doc.enable_fulfillment",
+   "depends_on": "eval:doc.enable_fulfillment",
    "description": "Satu tipe order per baris.",
    "fieldname": "fulfillment_for_order_types",
    "fieldtype": "Small Text",
@@ -416,6 +414,13 @@
    "fieldtype": "Select",
    "label": "Batas Stok Berdasarkan",
    "options": "reorder_level\nprojected_qty"
+  },
+  {
+   "default": "1",
+   "description": "Buat Material Request (Purchase) otomatis saat stok item di bawah reorder level. Satu MR per gudang; tidak duplikat jika sudah ada MR terbuka.",
+   "fieldname": "enable_auto_purchase_request",
+   "fieldtype": "Check",
+   "label": "Purchase Request Otomatis (Low Stock)"
   },
   {
    "collapsible": 1,
