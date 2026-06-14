@@ -184,6 +184,9 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_receipt_header = settings.receipt_header or ""
 	bootinfo.imogi_pos_receipt_footer = settings.receipt_footer or __("Terima kasih")
 	bootinfo.imogi_pos_payment_gateway_enabled = is_setting_enabled("enable_payment_gateway", settings)
+	from imogi_pos.imogi_pos.utils.feature_registry import HIDDEN_UI_FEATURE_IDS
+
+	bootinfo.imogi_pos_hidden_features = sorted(HIDDEN_UI_FEATURE_IDS)
 	bootinfo.imogi_pos_loyalty_enabled = is_setting_enabled("enable_loyalty", settings)
 	bootinfo.imogi_pos_default_pos_profile = settings.default_pos_profile or ""
 	bootinfo.imogi_pos_has_open_shift = bool(_get_pos_opening()) if bootinfo.imogi_pos_enable_shift else False

@@ -992,8 +992,12 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$hold_btn.toggleClass("is-tier-locked", !holdOn).prop("disabled", !holdOn).show();
 		if (!holdOn) this.$hold_bar.removeClass("is-visible");
 
-		const marketplaceOn = this.feature_allowed("grabfood_integration");
-		if (!marketplaceOn && this.$marketplace_chip?.hasClass("is-visible")) {
+		const marketplaceOn =
+			this.feature_allowed("grabfood_integration") &&
+			!(frappe.boot?.imogi_pos_hidden_features || []).includes("grabfood_integration");
+		if (!marketplaceOn) {
+			this.$marketplace_chip?.removeClass("is-visible has-orders is-tier-locked");
+		} else if (!this.feature_allowed("grabfood_integration") && this.$marketplace_chip?.hasClass("is-visible")) {
 			this.$marketplace_chip.addClass("is-tier-locked");
 		} else {
 			this.$marketplace_chip?.removeClass("is-tier-locked");
@@ -1391,7 +1395,10 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	bind_marketplace_orders() {
-		if (!this.context?.enable_marketplace_orders) {
+		if (
+			!this.context?.enable_marketplace_orders ||
+			(frappe.boot?.imogi_pos_hidden_features || []).includes("grabfood_integration")
+		) {
 			this.$marketplace_chip?.removeClass("is-visible has-orders");
 			this.sync_status_strip();
 			return;

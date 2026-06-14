@@ -28,3 +28,4 @@ imogi_pos.patches.fix_report_ref_doctype_riwayat_order
 imogi_pos.patches.grant_owner_report_roles
 imogi_pos.patches.grant_integration_role_permissions
 imogi_pos.patches.sync_workspace_strict_role_gating
+imogi_pos.patches.setup_demo_integration_users

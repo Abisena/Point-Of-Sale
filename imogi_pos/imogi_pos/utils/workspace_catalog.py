@@ -168,8 +168,6 @@ WORKSPACE_SECTIONS = [
 		"label": "Integrasi & Payment",
 		"links": [
 			{"label": "QRIS / Payment Gateway", "link_type": "DocType", "link_to": "IMOGI POS Gateway Payment", "feature_id": "qris"},
-			{"label": "GoFood Integration", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "gofood_integration"},
-			{"label": "GrabFood Integration", "link_type": "DocType", "link_to": "IMOGI POS Settings", "feature_id": "grabfood_integration"},
 			{"label": "Integrasi Akuntansi", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "accounting_integration"},
 		],
 	},

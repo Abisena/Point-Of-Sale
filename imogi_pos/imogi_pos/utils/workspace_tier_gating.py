@@ -298,6 +298,11 @@ def is_workspace_item_allowed_for_user(
 	resolved = get_workspace_link_feature_id(
 		link_type, link_to, label=label, feature_id=feature_id
 	)
+	if resolved:
+		from imogi_pos.imogi_pos.utils.feature_registry import is_feature_ui_visible
+
+		if not is_feature_ui_visible(resolved):
+			return False
 	if not resolved:
 		return _is_frappe_link_permitted(link_type, link_to, user)
 	if resolved in WORKSPACE_OWNER_BRANCH_FEATURES and _user_is_imogi_owner(user):

@@ -26,6 +26,20 @@ FEATURE_STATUS_BUILT = "built"
 FEATURE_STATUS_PARTIAL = "partial"
 FEATURE_STATUS_PLANNED = "planned"
 
+# Hidden from workspace, feature matrix, and cashier UI until marketplace launch.
+HIDDEN_UI_FEATURE_IDS = frozenset(
+	{
+		"gofood_integration",
+		"grabfood_integration",
+	}
+)
+
+
+def is_feature_ui_visible(feature_id: str | None) -> bool:
+	if not feature_id:
+		return True
+	return feature_id not in HIDDEN_UI_FEATURE_IDS
+
 # fmt: off
 FEATURES: tuple[dict, ...] = (
 	# ── DASHBOARD (2) ─────────────────────────────────────────────────────────
@@ -1304,6 +1318,8 @@ def serialize_feature_matrix(tier: str | None = None) -> dict:
 	from imogi_pos.imogi_pos.utils.feature_workspace_bridge import get_feature_workspace_route
 
 	for feature in FEATURES:
+		if not is_feature_ui_visible(feature["id"]):
+			continue
 		bridge = get_feature_workspace_route(feature["id"])
 		features.append(
 			{

@@ -301,6 +301,7 @@ def _create_bom_material_issue(pos_invoice, item_row, sale_qty, remark):
 		return None
 
 	se.set_stock_entry_type()
+	se.flags.imogi_approval_ok = True  # auto BOM issue from POS sale — not manual adjustment
 	se.insert(ignore_permissions=True)
 	se.submit()
 	return se.name

@@ -685,6 +685,20 @@ function inject_imogi_settings_css() {
 	`, "imogi-settings-inline-css-v6");
 }
 
+function hide_marketplace_integration_ui(frm) {
+	const hidden = frappe.boot?.imogi_pos_hidden_features || [];
+	const hideMarketplace =
+		hidden.includes("grabfood_integration") || hidden.includes("gofood_integration");
+	["enable_marketplace_orders", "marketplace_webhook_secret"].forEach((fieldname) => {
+		frm.toggle_display(fieldname, !hideMarketplace);
+	});
+	if (hideMarketplace) {
+		frm.$wrapper
+			.find(".imogi-integrations-dock .imogi-api-dock-sub")
+			.text(__("Kasir tetap jalan tanpa internet."));
+	}
+}
+
 function can_manage_api(frm) {
 	if (
 		frappe.user.has_role("Administrator") ||
@@ -701,6 +715,7 @@ function init_settings_page(frm) {
 	["generate_order_api_key", "order_api_key", "order_api_secret", "order_api_info", "business_type", "business_template"].forEach(
 		(f) => frm.toggle_display(f, false)
 	);
+	hide_marketplace_integration_ui(frm);
 	render_mode_summary(frm);
 	toggle_settings_by_business_type(frm);
 	build_settings_tabs(frm);
@@ -1663,7 +1678,10 @@ function render_integrations_dock_summary(frm) {
 	if (!$panel.length) return;
 
 	const offline_on = cint(frm.doc.enable_offline_cashier);
-	const market_on = cint(frm.doc.enable_marketplace_orders);
+	const hidden = frappe.boot?.imogi_pos_hidden_features || [];
+	const hideMarketplace =
+		hidden.includes("grabfood_integration") || hidden.includes("gofood_integration");
+	const market_on = hideMarketplace ? 0 : cint(frm.doc.enable_marketplace_orders);
 
 	$panel.html(`
 		<div class="imogi-mini-stats imogi-mini-stats--grid">
@@ -1671,10 +1689,14 @@ function render_integrations_dock_summary(frm) {
 				<span class="imogi-mini-stat-label">${__("Offline Cashier")}</span>
 				<span class="imogi-pill ${offline_on ? "is-green" : "is-orange"}">${offline_on ? __("Aktif") : __("Nonaktif")}</span>
 			</div>
-			<div class="imogi-mini-stat">
+			${
+				hideMarketplace
+					? ""
+					: `<div class="imogi-mini-stat">
 				<span class="imogi-mini-stat-label">${__("Marketplace")}</span>
 				<span class="imogi-pill ${market_on ? "is-green" : "is-orange"}">${market_on ? __("Aktif") : __("Nonaktif")}</span>
-			</div>
+			</div>`
+			}
 			${
 				market_on
 					? `<div class="imogi-mini-stat">
