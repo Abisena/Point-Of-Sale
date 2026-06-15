@@ -16,7 +16,7 @@
   "fieldtype": "Select",
   "insert_after": "item_group",
   "label": "Kategori POS",
-  "options": "Food\nBeverage\nDessert\nService",
+  "options": "Food\nBeverage\nDessert\nService\nCombo Package",
   "description": "Kategori tampilan di kasir IMOGI POS",
   "name": "Item-imogi_pos_category"
  },
@@ -27,7 +27,7 @@
   "fieldtype": "Small Text",
   "insert_after": "imogi_pos_category",
   "label": "Add On (IMOGI POS)",
-  "description": "Nama add-on, pisahkan dengan koma. Contoh: Extra Chicken, Cheese",
+  "description": "Nama add-on, pisahkan dengan koma. Contoh: Extra Chicken, Cheese. Item add-on otomatis dibuat di grup Add-ons jika belum ada.",
   "name": "Item-imogi_pos_add_ons"
  },
  {

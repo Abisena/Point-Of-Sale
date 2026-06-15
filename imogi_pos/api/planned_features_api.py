@@ -12,7 +12,6 @@ from imogi_pos.imogi_pos.utils.planned_features import (
 	apply_cashback_amount,
 	create_central_purchase_request,
 	create_spoilage_entry,
-	expand_combo_items,
 	get_activity_timeline,
 	get_bom_substitutes,
 	get_central_inventory_summary,
@@ -164,10 +163,11 @@ def get_combos(company=None):
 @frappe.whitelist()
 def get_combo_items(combo_name):
 	from imogi_pos.api.cashier import _require_cashier_access
+	from imogi_pos.imogi_pos.utils.planned_features import expand_combo_for_cart
 
 	_require_cashier_access()
 	require_feature_operational("combo_package")
-	return {"items": expand_combo_items(combo_name)}
+	return expand_combo_for_cart(combo_name)
 
 
 @frappe.whitelist()

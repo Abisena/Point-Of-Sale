@@ -75,22 +75,18 @@ def apply_promo_rules(items, company=None):
 	"""Apply active promo rules to cart. Returns adjusted items + promo discount."""
 	items = [dict(row) for row in (items or [])]
 	if not is_promo_enabled():
-		return {"items": items, "promo_discount": 0, "applied_promos": []}
+		return {"items": items, "promo_discount": 0, "applied_promos": [], "pending_promos": []}
 
 	company = resolve_company(company)
 	rules = get_active_promo_rules(company)
 	applied = []
 	total_discount = 0
 
+	pending = []
+
 	for rule in rules:
 		min_qty = max(1, cint(rule.min_qty))
 		cart_qty = _cart_qty_for_rule(items, rule)
-		if cart_qty < min_qty:
-			continue
-
-		applications = int(cart_qty // min_qty)
-		if applications <= 0:
-			continue
 
 		discount = 0
 		label = rule.promo_name or rule.name
@@ -99,11 +95,29 @@ def apply_promo_rules(items, company=None):
 			trigger = rule.trigger_item_code
 			if not trigger:
 				continue
+			group_size = min_qty + 1
+			free_qty = int(cart_qty // group_size)
+			if free_qty <= 0:
+				if min_qty <= cart_qty < group_size:
+					pending.append(
+						{
+							"promo": rule.name,
+							"label": _("{0}: tambah {1} lagi untuk gratis 1").format(
+								label, int(group_size - cart_qty)
+							),
+						}
+					)
+				continue
 			rate = _item_rate(items, trigger)
-			discount = applications * rate
+			discount = free_qty * rate
 			label = _("{0}: beli {1} gratis 1").format(label, min_qty)
 
 		elif rule.rule_type == "Buy X Get Other Free":
+			if cart_qty < min_qty:
+				continue
+			applications = int(cart_qty // min_qty)
+			if applications <= 0:
+				continue
 			reward = rule.reward_item_code
 			if not reward:
 				continue
@@ -125,6 +139,8 @@ def apply_promo_rules(items, company=None):
 			label = _("{0}: beli {1} dapat {2}").format(label, min_qty, reward)
 
 		elif rule.rule_type == "Qty Discount Percent":
+			if cart_qty < min_qty:
+				continue
 			trigger = rule.trigger_item_code
 			if not trigger:
 				continue
@@ -145,6 +161,7 @@ def apply_promo_rules(items, company=None):
 		"items": items,
 		"promo_discount": flt(total_discount),
 		"applied_promos": applied,
+		"pending_promos": pending,
 	}
 
 

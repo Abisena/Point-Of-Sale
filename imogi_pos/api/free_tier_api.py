@@ -151,6 +151,34 @@ def _order_history_where(filters, access):
 	return " and ".join(conditions), values
 
 
+def _attach_payment_methods(rows):
+	if not rows:
+		return rows
+	parents = [row.name for row in rows if row.get("name")]
+	if not parents:
+		return rows
+	payments = frappe.get_all(
+		"IMOGI POS Order Payment",
+		filters={"parent": ["in", parents]},
+		fields=["parent", "mode_of_payment"],
+		order_by="parent asc, idx asc",
+	)
+	by_parent = {}
+	for pay in payments:
+		mode = (pay.mode_of_payment or "").strip()
+		if not mode:
+			continue
+		bucket = by_parent.setdefault(pay.parent, [])
+		if mode not in bucket:
+			bucket.append(mode)
+	for row in rows:
+		if row.get("payment_method"):
+			continue
+		modes = by_parent.get(row.name) or []
+		row["payment_method"] = ", ".join(modes) if modes else ""
+	return rows
+
+
 def _count_order_history_rows(filters, access):
 	where, values = _order_history_where(filters, access)
 	return frappe.db.sql(
@@ -182,6 +210,7 @@ def _fetch_order_history_rows(filters, access, limit=50, offset=0):
 			ro.kitchen_order,
 			ro.delivery_task,
 			ro.pos_profile,
+			ro.payment_method,
 			COALESCE(NULLIF(ro.cashier, ''), ro.owner) as cashier,
 			COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) as cashier_name
 		from `tabRiwayat Order` ro
@@ -234,6 +263,7 @@ def list_order_history(
 	total = _count_order_history_rows(filters, access)
 	offset = (page - 1) * page_size
 	rows = _fetch_order_history_rows(filters, access, limit=page_size, offset=offset)
+	rows = _attach_payment_methods(rows)
 	total_pages = max(1, (total + page_size - 1) // page_size)
 
 	return {
@@ -279,6 +309,10 @@ def get_order_history_detail(order_name, branch=None, pos_profile=None):
 			"loyalty_points_redeemed": flt(order.loyalty_points_redeemed),
 			"loyalty_discount_amount": flt(order.loyalty_discount_amount),
 			"loyalty_points_earned": flt(order.loyalty_points_earned),
+			"promo_discount_amount": flt(order.promo_discount_amount),
+			"taxable_amount": flt(order.taxable_amount),
+			"tax_amount": flt(order.tax_amount),
+			"payment_method": order.payment_method,
 			"kitchen_order": order.kitchen_order,
 			"delivery_task": order.delivery_task,
 		}
@@ -295,6 +329,30 @@ def get_order_history_detail(order_name, branch=None, pos_profile=None):
 		for row in order.items
 	]
 	return detail
+
+
+@frappe.whitelist()
+def get_order_receipt_url(order_name, branch=None, pos_profile=None):
+	"""Receipt print URL for order history reprint."""
+	_require_login()
+	require_feature_doctype_access("order_history")
+
+	if not order_name:
+		frappe.throw(_("order_name is required"))
+
+	access = _order_history_access(branch, pos_profile)
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("read")
+	_assert_order_history_access(order, access)
+
+	from imogi_pos.imogi_pos.utils.flow import get_settings
+
+	settings = get_settings()
+	print_format = settings.receipt_print_format or "IMOGI POS Receipt"
+	return {
+		"url": f"/printview?doctype=Riwayat Order&name={order_name}&format={print_format}&trigger_print=1",
+		"print_format": print_format,
+	}
 
 
 @frappe.whitelist()

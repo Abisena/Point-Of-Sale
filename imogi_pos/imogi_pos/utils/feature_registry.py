@@ -1192,6 +1192,10 @@ def is_feature_operational(
 	feature_id: str, settings=None, tier: str | None = None, user: str | None = None
 ) -> bool:
 	"""Tier + role + settings allow feature AND status is not planned."""
+	from imogi_pos.imogi_pos.utils.business_profile import is_feature_suppressed_for_business
+
+	if is_feature_suppressed_for_business(feature_id, settings):
+		return False
 	feature = get_feature(feature_id)
 	if not feature:
 		return False

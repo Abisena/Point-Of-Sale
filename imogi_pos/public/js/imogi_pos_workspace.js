@@ -224,10 +224,20 @@ function imogi_pos_redirect_dedicated_cashier_from_workspace() {
 	if (!frappe.boot?.imogi_pos_dedicated_cashier) {
 		return false;
 	}
-	if (!imogi_pos_on_imogi_workspace()) {
+	const path = imogi_pos_current_path();
+	if (
+		!imogi_pos_on_imogi_workspace() &&
+		path !== "/app/imogi-pos-settings" &&
+		!path.startsWith("/app/imogi-pos-settings/")
+	) {
 		return false;
 	}
-	window.location.replace("/app/imogi-pos-cashier");
+	const landing = typeof imogi_pos_get_landing_target === "function" ? imogi_pos_get_landing_target() : "cashier";
+	if (landing === "opening-entry" && typeof imogi_pos_go_to_opening_entry === "function") {
+		imogi_pos_go_to_opening_entry();
+	} else {
+		window.location.replace("/app/imogi-pos-cashier");
+	}
 	return true;
 }
 

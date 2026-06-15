@@ -401,19 +401,53 @@ def list_combo_packages(company=None) -> list[dict]:
 	return combos
 
 
-def expand_combo_items(combo_name) -> list[dict]:
+def expand_combo_for_cart(combo_name, company=None) -> dict:
+	"""Expand combo into cart lines priced to match package selling_price."""
 	doc = frappe.get_doc("IMOGI POS Combo Package", combo_name)
 	if not doc.is_active:
 		frappe.throw(_("Combo tidak aktif"))
-	return [
-		{
-			"item_code": row.item_code,
-			"item_name": row.item_name,
-			"qty": flt(row.qty),
-			"rate": flt(row.rate) if flt(row.rate) else flt(doc.selling_price) / max(len(doc.items), 1),
-		}
-		for row in doc.items
-	]
+
+	package_price = flt(doc.selling_price)
+	lines = []
+	for row in doc.items:
+		base_rate = flt(row.rate)
+		if not base_rate:
+			base_rate = flt(frappe.db.get_value("Item", row.item_code, "standard_rate"))
+		qty = flt(row.qty) or 1
+		lines.append(
+			{
+				"item_code": row.item_code,
+				"item_name": row.item_name or frappe.db.get_value("Item", row.item_code, "item_name"),
+				"qty": qty,
+				"base_rate": base_rate,
+				"uom": frappe.db.get_value("Item", row.item_code, "stock_uom") or "Nos",
+			}
+		)
+
+	if not lines:
+		frappe.throw(_("Combo tidak memiliki item"))
+
+	line_total = sum(flt(line["base_rate"]) * flt(line["qty"]) for line in lines)
+	for line in lines:
+		if line_total > 0 and package_price > 0:
+			share = (flt(line["base_rate"]) * flt(line["qty"])) / line_total
+			line["rate"] = flt(package_price * share / flt(line["qty"]), 2)
+		elif package_price > 0:
+			line["rate"] = flt(package_price / len(lines) / flt(line["qty"]), 2)
+		else:
+			line["rate"] = flt(line["base_rate"])
+		line.pop("base_rate", None)
+
+	return {
+		"combo_name": doc.name,
+		"combo_label": doc.combo_name or doc.name,
+		"package_price": package_price,
+		"items": lines,
+	}
+
+
+def expand_combo_items(combo_name) -> list[dict]:
+	return expand_combo_for_cart(combo_name)["items"]
 
 
 def get_bom_substitutes(bom_name=None, item_code=None) -> dict:

@@ -21,23 +21,21 @@ function inject_open_shift_css() {
 	frappe.dom.set_style(`
 		.imogi-open-shift-page .layout-main-section-wrapper,
 		.imogi-open-shift-page .layout-main-section,
-		.imogi-open-shift-page .page-body { box-sizing: border-box; max-width: 100% !important; overflow-x: hidden !important; width: 100% !important; }
-		.imogi-open-shift-page .page-body { background: transparent; padding: 0 !important; }
+		.imogi-open-shift-page .page-body,
+		.imogi-open-shift-page.page-container,
+		.imogi-open-shift-page { box-sizing: border-box; max-width: 100% !important; overflow-x: hidden !important; width: 100% !important; }
+		.imogi-open-shift-page .layout-main-section-wrapper,
+		.imogi-open-shift-page .layout-main-section,
+		.imogi-open-shift-page .page-body { background: #fff !important; min-height: 100dvh; }
+		.imogi-open-shift-page .page-body { padding: 0 !important; }
 		.imogi-open-shift-page .layout-main-section { margin: 0 !important; }
-		.imogi-shift-shell { box-sizing: border-box; margin: 0 auto; max-width: 1080px; padding: 20px 24px 32px; width: 100%; }
-		.imogi-shift-header { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin-bottom: 20px; padding: 18px 22px; }
-		.imogi-shift-header-left { align-items: center; display: flex; gap: 14px; min-width: 0; }
-		.imogi-shift-store-icon { align-items: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; color: #fff; display: flex; flex-shrink: 0; font-size: 20px; height: 48px; justify-content: center; width: 48px; }
-		.imogi-shift-header-title { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 2px; }
-		.imogi-shift-header-sub { color: rgba(255,255,255,0.72); font-size: 13px; margin: 0; }
-		.imogi-shift-header-right { align-items: center; color: rgba(255,255,255,0.88); display: flex; flex-wrap: wrap; font-size: 13px; font-weight: 600; gap: 16px; }
-		.imogi-shift-header-right span { align-items: center; display: inline-flex; gap: 6px; }
-		.imogi-shift-btn-logout { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 10px !important; color: #fff !important; font-size: 13px !important; font-weight: 700 !important; padding: 8px 14px !important; }
-		.imogi-shift-btn-logout:hover { background: rgba(255,255,255,0.2) !important; color: #fff !important; }
-		.imogi-shift-layout { align-items: start; display: grid; gap: 20px; grid-template-columns: minmax(0,1fr) 300px; }
-		@media (max-width: 900px) { .imogi-shift-layout { grid-template-columns: 1fr; } }
-		.imogi-shift-main { display: grid; gap: 16px; }
+		.imogi-shift-shell { box-sizing: border-box; margin: 0 auto; max-width: 1080px; min-height: 100dvh; padding: 20px 24px 32px; width: 100%; }
+		.imogi-shift-layout { align-items: stretch; display: grid; gap: 20px; grid-template-columns: minmax(0,1fr) 300px; min-height: calc(100dvh - 200px); }
+		@media (max-width: 900px) { .imogi-shift-layout { grid-template-columns: 1fr; min-height: 0; } }
+		.imogi-shift-main { display: flex; flex-direction: column; gap: 16px; min-height: 100%; }
 		.imogi-shift-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; padding: 18px 20px 20px; }
+		.imogi-shift-cash-card-quick { display: flex; flex: 1; flex-direction: column; min-height: 280px; }
+		.imogi-shift-cash-card-quick .imogi-cash-quick-grid { flex: 1; }
 		.imogi-shift-card-title { align-items: center; color: #0f1f35; display: flex; font-size: 15px; font-weight: 800; gap: 8px; margin-bottom: 16px; }
 		.imogi-shift-card-title .fa { color: #71717a; font-size: 14px; }
 		.imogi-shift-field label { color: #52525b; display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
@@ -53,27 +51,19 @@ function inject_open_shift_css() {
 		.imogi-shift-summary-row span { color: #71717a; }
 		.imogi-shift-summary-row strong { color: #0f1f35; font-variant-numeric: tabular-nums; font-weight: 800; }
 		.imogi-shift-balance-block { border-top: 1px solid #f4f4f5; margin-top: 8px; padding-top: 16px; }
+		.imogi-shift-balance-block-only { border-top: none; margin-top: 0; padding-top: 0; }
 		.imogi-shift-balance-label { color: #71717a; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
 		.imogi-shift-balance-value { color: #0f1f35; font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
 		.imogi-shift-actions { display: grid; gap: 10px; margin-top: 18px; }
 		.imogi-shift-btn-primary { align-items: center; background: #0f1f35 !important; border: none !important; border-radius: 12px !important; color: #fff !important; display: inline-flex !important; font-size: 14px !important; font-weight: 800 !important; gap: 8px; justify-content: center; padding: 14px 16px !important; width: 100%; }
 		.imogi-shift-btn-primary:disabled { opacity: .4; }
 		.imogi-shift-btn-secondary { background: #fff !important; border: 1px solid #d4d4d8 !important; border-radius: 12px !important; color: #0f1f35 !important; font-size: 14px !important; font-weight: 700 !important; padding: 12px 16px !important; width: 100%; }
-		.imogi-shift-btn-link { background: none; border: none; color: #71717a; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 8px; padding: 0; text-decoration: underline; width: 100%; }
 		.imogi-shift-loading { align-items: center; color: #a1a1aa; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: 320px; }
 		@media (max-width: 640px) {
 			.imogi-open-shift-page .page-container,
 			.imogi-open-shift-page .container.page-body,
 			.imogi-open-shift-page .main-section { padding-left: 0 !important; padding-right: 0 !important; }
 			.imogi-shift-shell { box-sizing: border-box; max-width: 100%; padding: 6px 8px 20px; width: 100%; }
-			.imogi-shift-header { align-items: stretch; border-radius: 14px; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 14px; }
-			.imogi-shift-header-left { gap: 10px; width: 100%; }
-			.imogi-shift-store-icon { height: 42px; width: 42px; }
-			.imogi-shift-header-title { font-size: 18px; }
-			.imogi-shift-header-sub { font-size: 12px; word-break: break-word; }
-			.imogi-shift-header-right { align-items: flex-start; flex-direction: column; gap: 8px; width: 100%; }
-			.imogi-shift-header-right span { font-size: 12px; }
-			.imogi-shift-btn-logout { width: 100%; }
 			.imogi-shift-layout { gap: 14px; }
 			.imogi-shift-card { border-radius: 14px; padding: 14px; }
 			.imogi-shift-card-title { font-size: 14px; margin-bottom: 12px; }
@@ -81,7 +71,7 @@ function inject_open_shift_css() {
 			.imogi-shift-summary-card { padding: 16px; }
 			.imogi-shift-balance-value { font-size: 24px; }
 		}
-	`, "imogi-open-shift-inline-css-v11");
+	`, "imogi-open-shift-inline-css-v13");
 }
 
 function imogi_open_shift_show_fatal_error(message) {
@@ -154,10 +144,10 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 		this.context = null;
 		this.amounts = {};
 		imogi_pos.ensure_shift_helpers?.();
-		this.denominations = imogi_pos.init_denominations_map();
+		this.cash_detail_mode = false;
+		this.denominations = imogi_pos.init_denominations_map(this.cash_detail_mode);
 		this.remarks = "";
 		this.submitting = false;
-		this.saving_draft = false;
 		this._clock_timer = null;
 		this.render_shell();
 		this.enable_lock();
@@ -320,8 +310,9 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 			// ignore
 		}
 		this._opening_retry = 0;
-		this.reset_form_state();
 		this.context = r.message;
+		this.cash_detail_mode = cint(r.message.enable_shift_cash_detail);
+		this.reset_form_state();
 		this.cash_mode = r.message.cash_mode;
 		this.remarks = r.message.remarks || "";
 		(r.message.payments || []).forEach((row) => {
@@ -353,10 +344,17 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 
 	reset_form_state() {
 		this.submitting = false;
-		this.saving_draft = false;
 		this.amounts = {};
 		this.remarks = "";
-		this.denominations = imogi_pos.init_denominations_map();
+		this.denominations = imogi_pos.init_denominations_map(this.cash_detail_mode);
+	}
+
+	is_cash_detail_mode() {
+		return cint(this.cash_detail_mode || this.context?.enable_shift_cash_detail);
+	}
+
+	get_denom_list() {
+		return imogi_pos.get_shift_denom_list(this.is_cash_detail_mode());
 	}
 
 	get_cash_mode() {
@@ -364,11 +362,11 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	}
 
 	get_total_sheets() {
-		return imogi_pos.IDR_DENOMINATIONS.reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
+		return this.get_denom_list().reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
 	}
 
 	get_denomination_total() {
-		return imogi_pos.IDR_DENOMINATIONS.reduce(
+		return this.get_denom_list().reduce(
 			(sum, d) => sum + flt(this.denominations[d.value]) * d.value,
 			0
 		);
@@ -415,19 +413,45 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	}
 
 	render_denom_grid() {
-		return imogi_pos.render_cash_denom_grid(this.denominations, imogi_open_shift_format_rp);
+		if (this.is_cash_detail_mode()) {
+			return imogi_pos.render_cash_denom_detail_grid(this.denominations, imogi_open_shift_format_rp);
+		}
+		return imogi_pos.render_cash_denom_grid(
+			this.denominations,
+			imogi_open_shift_format_rp,
+			this.cash_detail_mode
+		);
+	}
+
+	render_cash_section() {
+		if (this.is_cash_detail_mode()) {
+			return `
+				<p class="imogi-cash-denom-hint">${__("Isi jumlah lembar per nominal uang tunai.")}</p>
+				<div class="imogi-cash-denom-detail-grid">${this.render_denom_grid()}</div>
+			`;
+		}
+		return `
+			<p class="imogi-cash-denom-hint">${__(
+				"Ketuk nominal untuk tambah 1 kali. Tombol − untuk kurangi."
+			)}</p>
+			<div class="imogi-cash-denom-grid imogi-cash-quick-grid">${this.render_denom_grid()}</div>
+		`;
 	}
 
 	render_summary_html() {
 		const cash_total = this.get_denomination_total();
 		const total_sheets = this.get_total_sheets();
-
-		return `
+		const sheets_row = this.is_cash_detail_mode()
+			? `
 			<div class="imogi-shift-summary-row">
 				<span>${__("Total Lembar")}</span>
 				<strong class="imogi-shift-total-sheets">${total_sheets} ${__("lembar")}</strong>
-			</div>
-			<div class="imogi-shift-balance-block">
+			</div>`
+			: "";
+
+		return `
+			${sheets_row}
+			<div class="imogi-shift-balance-block${this.is_cash_detail_mode() ? "" : " imogi-shift-balance-block-only"}">
 				<div class="imogi-shift-balance-label">${__("Saldo Awal (Cash)")}</div>
 				<div class="imogi-shift-balance-value imogi-shift-balance-display">${imogi_open_shift_format_rp(
 					cash_total
@@ -445,26 +469,14 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 
 		this.$wrapper.html(`
 			<div class="imogi-shift-shell">
-				<div class="imogi-shift-header">
-					<div class="imogi-shift-header-left">
-						<div class="imogi-shift-store-icon"><i class="fa fa-shopping-bag"></i></div>
-						<div>
-							<h1 class="imogi-shift-header-title">${__("Opening Shift Kasir")}</h1>
-							<p class="imogi-shift-header-sub">${frappe.utils.escape_html(this.get_store_label())}</p>
-						</div>
-					</div>
-					<div class="imogi-shift-header-right">
-						<span><i class="fa fa-calendar-o"></i> <span class="imogi-shift-date">${frappe.utils.escape_html(date_long)}</span></span>
-						<span><i class="fa fa-clock-o"></i> <span class="imogi-shift-clock">${time_str}</span></span>
-						${
-							show_logout
-								? `<button type="button" class="btn imogi-shift-btn-logout imogi-shift-logout-btn"><i class="fa fa-sign-out"></i> ${__(
-										"Logout"
-								  )}</button>`
-								: ""
-						}
-					</div>
-				</div>
+				${imogi_pos.render_shift_workflow_header({
+					title: __("Opening Shift Kasir"),
+					subtitle: this.get_store_label(),
+					icon: "fa-sign-in",
+					dateLong: date_long,
+					timeStr: time_str,
+					showLogout: show_logout,
+				})}
 
 				<div class="imogi-shift-layout">
 					<div class="imogi-shift-main">
@@ -479,14 +491,13 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 							</div>
 						</div>
 
-						<div class="imogi-shift-card">
+						<div class="imogi-shift-card${
+							this.is_cash_detail_mode() ? "" : " imogi-shift-cash-card-quick"
+						}">
 							<div class="imogi-shift-card-title"><i class="fa fa-money"></i> ${__(
 								"Hitung Uang Tunai"
 							)}</div>
-							<p class="imogi-cash-denom-hint">${__(
-								"Ketuk nominal untuk tambah lembar. Tombol − untuk kurangi."
-							)}</p>
-							<div class="imogi-cash-denom-grid">${this.render_denom_grid()}</div>
+							${this.render_cash_section()}
 						</div>
 
 						<div class="imogi-shift-card">
@@ -509,9 +520,6 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 								</button>
 								<button type="button" class="btn imogi-shift-btn-secondary imogi-shift-reset">${__(
 									"Reset"
-								)}</button>
-								<button type="button" class="imogi-shift-btn-link imogi-shift-draft">${__(
-									"Simpan draft"
 								)}</button>
 							</div>
 						</div>
@@ -546,7 +554,8 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 			denom,
 			this.denominations,
 			imogi_open_shift_format_rp,
-			() => this.update_summary()
+			() => this.update_summary(),
+			this.is_cash_detail_mode()
 		);
 	}
 
@@ -563,39 +572,23 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 	bind_events() {
 		const $shell = this.$wrapper;
 
-		imogi_pos.bind_cash_denom_buttons($shell, this, imogi_open_shift_format_rp, () =>
-			this.update_summary()
-		);
+		if (this.is_cash_detail_mode()) {
+			imogi_pos.bind_cash_denom_detail_inputs($shell, this, imogi_open_shift_format_rp, () =>
+				this.update_summary()
+			);
+		} else {
+			imogi_pos.bind_cash_denom_buttons($shell, this, imogi_open_shift_format_rp, () =>
+				this.update_summary()
+			);
+		}
 
 		$shell.find(".imogi-shift-remarks").on("input", (e) => {
 			this.remarks = e.target.value;
 		});
 
 		$shell.find(".imogi-shift-reset").on("click", () => this.reset_form());
-		$shell.find(".imogi-shift-draft").on("click", () => this.save_draft());
 		$shell.find(".imogi-shift-submit").on("click", () => this.submit());
 		$shell.find(".imogi-shift-logout-btn").on("click", () => imogi_pos.logout_cashier?.());
-	}
-
-	save_draft() {
-		if (this.saving_draft || this.submitting) return;
-
-		this.saving_draft = true;
-		frappe.call({
-			method: "imogi_pos.api.cashier.save_shift_opening_draft",
-			args: {
-				...this.shift_api_args(),
-				payments: this.build_payments(),
-				draft_name: this.context?.draft_name || null,
-				remarks: this.remarks,
-			},
-			callback: (r) => {
-				this.saving_draft = false;
-				if (r.exc) return;
-				this.context.draft_name = r.message.name;
-				frappe.show_alert({ message: __("Draft tersimpan"), indicator: "green" }, 3);
-			},
-		});
 	}
 
 	submit() {
@@ -610,7 +603,6 @@ imogi_pos.OpenShiftPage = class OpenShiftPage {
 			args: {
 				...this.shift_api_args(),
 				payments: this.build_payments(),
-				draft_name: this.context?.draft_name || null,
 				remarks: this.remarks,
 			},
 			callback: (r) => {

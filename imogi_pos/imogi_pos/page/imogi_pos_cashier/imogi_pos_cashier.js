@@ -72,6 +72,63 @@ function imogi_apply_shift_bar_theme($bar) {
 		return;
 	}
 
+	const mobile = window.matchMedia("(max-width: 992px)").matches;
+	if (mobile) {
+		$bar.css({
+			alignItems: "center",
+			background: "transparent",
+			border: "none",
+			borderRadius: "0",
+			display: "flex",
+			flexWrap: "nowrap",
+			gap: "8px",
+			justifyContent: "space-between",
+			marginBottom: "0",
+			padding: "10px 12px",
+		});
+
+		$bar.find(".imogi-cashier-shift-text").css({
+			color: "#3f3f46",
+			fontSize: "12px",
+			fontWeight: "700",
+		});
+
+		$bar.find(".imogi-cashier-shift-text .fa").css({
+			color: "#16a34a",
+		});
+
+		$bar.find(".imogi-cashier-shift-text a").css({
+			color: "#0f1f35",
+			fontWeight: "700",
+			textDecoration: "none",
+		});
+
+		$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn, .imogi-cashier-history-btn").css({
+			background: "#f4f4f5",
+			border: "1px solid #d4d4d8",
+			borderRadius: "8px",
+			color: "#0f1f35",
+			fontWeight: "700",
+		});
+
+		$bar.find(".imogi-cashier-open-shift-btn, .imogi-cashier-btn-primary").css({
+			background: "#0f1f35",
+			border: "1px solid #0f1f35",
+			borderRadius: "8px",
+			color: "#fff",
+			fontWeight: "700",
+		});
+
+		$bar.find(".imogi-cashier-shift-actions").css({
+			alignItems: "center",
+			display: "flex",
+			flexShrink: "0",
+			flexWrap: "nowrap",
+			gap: "6px",
+		});
+		return;
+	}
+
 	$bar.css({
 		alignItems: "center",
 		background: "linear-gradient(145deg, #0f1f35 0%, #1a3352 100%)",
@@ -101,7 +158,7 @@ function imogi_apply_shift_bar_theme($bar) {
 		textDecoration: "underline",
 	});
 
-	$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn").css({
+	$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn, .imogi-cashier-history-btn").css({
 		background: "rgba(255, 255, 255, 0.12)",
 		border: "1px solid rgba(255, 255, 255, 0.24)",
 		borderRadius: "8px",
@@ -141,6 +198,24 @@ function inject_cashier_css() {
 	document.getElementById("imogi-cashier-inline-css-v22")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v26")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v27")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v28")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v29")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v30")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v31")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v32")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v33")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v34")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v35")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v36")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v37")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v38")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v39")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v40")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v41")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v42")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v43")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v44")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v46")?.remove();
 	frappe.dom.set_style(`
 		.imogi-cashier-page .layout-main-section-wrapper,
 		.imogi-cashier-page .layout-main-section,
@@ -152,13 +227,15 @@ function inject_cashier_css() {
 		.imogi-cashier-top { display: flex; flex-direction: column; flex-shrink: 0; gap: 6px; margin-bottom: 8px; }
 		.imogi-cashier-shift-bar { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 10px; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 0 !important; padding: 8px 12px; }
 		.imogi-cashier-shift-bar.is-closed { background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important; border-color: rgba(255,255,255,0.12) !important; }
-		.imogi-cashier-shift-text { color: rgba(255,255,255,0.92) !important; font-size: 13px; font-weight: 700; }
-		.imogi-cashier-shift-text .fa { color: rgba(255,255,255,0.72) !important; }
-		.imogi-cashier-shift-text a { color: #fff !important; font-weight: 800; text-decoration: underline; }
+		.imogi-cashier-shift-bar .imogi-cashier-shift-text { color: rgba(255,255,255,0.92) !important; font-size: 13px; font-weight: 700; }
+		.imogi-cashier-shift-bar .imogi-cashier-shift-text .fa { color: rgba(255,255,255,0.72) !important; }
+		.imogi-cashier-shift-bar .imogi-cashier-shift-text a { color: #fff !important; font-weight: 800; text-decoration: underline; }
 		.imogi-cashier-shift-actions { align-items: center; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
 		.imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
-		.imogi-cashier-shift-bar .imogi-cashier-logout-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
-		.imogi-cashier-shift-bar .imogi-cashier-logout-btn .fa { margin-right: 4px; opacity: .85; }
+		.imogi-cashier-shift-bar .imogi-cashier-logout-btn,
+		.imogi-cashier-shift-bar .imogi-cashier-history-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
+		.imogi-cashier-shift-bar .imogi-cashier-logout-btn .fa,
+		.imogi-cashier-shift-bar .imogi-cashier-history-btn .fa { margin-right: 4px; opacity: .85; }
 		.imogi-cashier-status-strip { align-items: center; display: none; flex-wrap: wrap; gap: 6px; }
 		.imogi-cashier-status-strip.is-visible { display: flex; }
 		.imogi-status-chip { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 999px; color: #334155; cursor: pointer; display: none; font-size: 11px; font-weight: 700; gap: 5px; line-height: 1; padding: 5px 10px; }
@@ -170,10 +247,32 @@ function inject_cashier_css() {
 		.imogi-chip-offline.has-pending { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
 		.imogi-cashier-shell { display: grid; flex: 1; gap: 12px; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; overflow: hidden; }
 		.imogi-cashier-mobile-backdrop, .imogi-cashier-mobile-dock { display: none; }
+		.imogi-cashier-mobile-checkout { display: none; }
+		.imogi-cashier-cart-scroll { display: contents; }
 		.imogi-cashier-cart-mobile-head, .imogi-cashier-cart-close { display: none; }
 		@media (max-width: 992px) {
 			.imogi-cashier-page.layout-main-section,
-			.imogi-cashier-page { padding: 8px 8px 0 !important; }
+			.imogi-cashier-page { padding: 6px 6px 0 !important; }
+			.imogi-cashier-top { gap: 4px; margin-bottom: 6px; }
+			.imogi-cashier-shift-bar { border-radius: 10px; padding: 7px 10px; }
+			.imogi-cashier-shift-text { font-size: 11px !important; line-height: 1.35; }
+			.imogi-cashier-shift-bar .btn { font-size: 10px !important; padding: 4px 8px !important; }
+			.imogi-cashier-status-strip.is-visible { gap: 4px; }
+			.imogi-status-chip { font-size: 10px; padding: 4px 8px; }
+			.imogi-cashier-panel.imogi-cashier-products .imogi-cashier-panel-head { padding: 10px 12px; }
+			.imogi-cashier-panel.imogi-cashier-products .imogi-cashier-panel-head h5 { font-size: 14px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel.imogi-cashier-products .imogi-cashier-meta { display: none; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-branch-row {
+				background: transparent;
+				border: none;
+				display: flex !important;
+				gap: 6px;
+				margin: 0 0 6px;
+				padding: 0 2px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-branch-row .fa { color: #71717a; font-size: 11px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-branch-label { color: #52525b; font-size: 11px; font-weight: 600; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-branch-select { font-size: 11px !important; font-weight: 600; min-width: 0; }
 			.imogi-cashier-shell {
 				display: flex;
 				flex: 1;
@@ -182,29 +281,34 @@ function inject_cashier_css() {
 				grid-template-columns: 1fr;
 				min-height: 0;
 				overflow: hidden;
-				padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+				padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 			}
-			.imogi-cashier-panel.imogi-cashier-products { border-radius: 16px; flex: 1; min-height: 0; }
+			.imogi-cashier-panel.imogi-cashier-products { border-radius: 14px; flex: 1; min-height: 0; }
 			.imogi-cashier-panel.imogi-cashier-cart {
 				border-left: none;
 				border-radius: 16px 16px 0 0;
 				border-right: none;
-				bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+				bottom: 0;
 				box-shadow: 0 -12px 40px rgba(24,24,27,.16);
 				display: flex;
 				flex-direction: column;
-				height: auto;
+				height: calc(100dvh - env(safe-area-inset-top, 0px));
 				left: 0;
-				max-height: none;
+				max-height: calc(100dvh - env(safe-area-inset-top, 0px));
 				overflow: hidden;
 				position: fixed;
 				right: 0;
-				top: calc(48px + env(safe-area-inset-top, 0px));
-				transform: translateY(calc(100% + 76px + env(safe-area-inset-bottom, 0px)));
+				top: env(safe-area-inset-top, 0px);
+				transform: translateY(100%);
 				transition: transform .25s ease;
-				z-index: 1040;
+				z-index: 1060;
 			}
 			.imogi-cashier-page.is-mobile-cart-open .imogi-cashier-panel.imogi-cashier-cart { transform: translateY(0); }
+			.imogi-cashier-page.is-mobile-cart-open .imogi-cashier-mobile-dock { display: none !important; }
+			.imogi-cashier-page.is-mobile-cart-open .imogi-cashier-mobile-backdrop { z-index: 1055; }
+			body.imogi-cashier-mobile-cart-open { overflow: hidden; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cart-row { padding: 12px 14px; }
+			.imogi-cashier-mobile-checkout { display: block; }
 			.imogi-cashier-cart-mobile-head {
 				align-items: center;
 				background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%);
@@ -229,26 +333,92 @@ function inject_cashier_css() {
 				padding: 10px 14px 12px;
 			}
 			.imogi-cashier-panel.imogi-cashier-cart .imogi-cashier-panel-head h5 { font-size: 15px; }
-			.imogi-cashier-cart-items {
+			.imogi-cashier-cart-scroll {
+				display: flex;
 				flex: 1 1 auto;
-				max-height: none;
+				flex-direction: column;
 				min-height: 0;
 				overflow-x: hidden;
 				overflow-y: auto;
 				overscroll-behavior: contain;
+				-webkit-overflow-scrolling: touch;
+			}
+			.imogi-cashier-cart-items {
+				flex: 0 0 auto;
+				max-height: none;
+				min-height: 0;
+				overflow: visible;
 				padding: 0;
 				text-align: left;
-				-webkit-overflow-scrolling: touch;
 			}
 			.imogi-cashier-cart-foot {
+				background: #fafafa;
+				border-top: 1px solid #e4e4e7;
+				box-shadow: none;
 				flex-shrink: 0;
-				max-height: min(46vh, 360px);
-				overflow-x: hidden;
-				overflow-y: auto;
-				overscroll-behavior: contain;
-				-webkit-overflow-scrolling: touch;
+				max-height: none;
+				overflow: visible;
+				padding: 12px 14px 14px;
 			}
-			.imogi-cashier-cart-foot .imogi-cashier-pay { display: none; }
+			.imogi-cashier-panel.imogi-cashier-cart .imogi-cashier-order-type-row { display: none; }
+			.imogi-cashier-cart-foot > .imogi-cashier-total-row,
+			.imogi-cashier-cart-foot > .imogi-cashier-pay { display: none !important; }
+			.imogi-cashier-mobile-checkout {
+				background: #fff;
+				border-top: 1px solid #e4e4e7;
+				box-shadow: 0 -8px 28px rgba(15,31,53,.08);
+				flex-shrink: 0;
+				padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-total-row {
+				align-items: center;
+				display: flex;
+				justify-content: space-between;
+				margin: 0 0 12px;
+				padding: 0;
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-total-row span {
+				color: #71717a;
+				font-size: 14px;
+				font-weight: 700;
+			}
+			.imogi-cashier-mobile-checkout .imogi-cart-total {
+				color: #0f1f35 !important;
+				font-size: 24px !important;
+				font-weight: 800 !important;
+				line-height: 1.1;
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-pay {
+				align-items: center;
+				background: linear-gradient(135deg, #0f1f35 0%, #1a3352 100%) !important;
+				border: none !important;
+				border-radius: 14px !important;
+				box-shadow: 0 8px 20px rgba(15,31,53,.22) !important;
+				color: #fff !important;
+				display: flex !important;
+				font-size: 16px !important;
+				font-weight: 800 !important;
+				gap: 10px;
+				height: 56px !important;
+				justify-content: center;
+				letter-spacing: .01em;
+				margin: 0;
+				padding: 0 20px !important;
+				width: 100%;
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-pay .fa {
+				font-size: 18px;
+				opacity: .92;
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-pay:active:not(:disabled) {
+				box-shadow: 0 4px 12px rgba(15,31,53,.18) !important;
+				transform: translateY(1px);
+			}
+			.imogi-cashier-mobile-checkout .imogi-cashier-pay:disabled {
+				background: #d4d4d8 !important;
+				box-shadow: none !important;
+				opacity: 1 !important;
+			}
 			.imogi-cashier-cart-close {
 				align-items: center;
 				background: rgba(255,255,255,0.14);
@@ -269,7 +439,6 @@ function inject_cashier_css() {
 				transform: translateY(-50%);
 				width: 36px;
 			}
-			.imogi-cashier-cart-close:hover { background: rgba(255,255,255,0.22); color: #fff; }
 			.imogi-cashier-mobile-backdrop {
 				background: rgba(24,24,27,.45);
 				display: block;
@@ -290,7 +459,7 @@ function inject_cashier_css() {
 				display: flex;
 				gap: 10px;
 				left: 0;
-				padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+				padding: 10px 14px calc(18px + env(safe-area-inset-bottom, 0px));
 				position: fixed;
 				right: 0;
 				z-index: 1050;
@@ -353,7 +522,7 @@ function inject_cashier_css() {
 		.imogi-cashier-hold-bar-text .fa { color: #71717a; font-size: 14px; }
 		.imogi-cashier-hold-count { align-items: center; background: #0f1f35; border-radius: 999px; color: #fff; display: inline-flex; font-size: 11px; font-weight: 800; height: 20px; justify-content: center; min-width: 20px; padding: 0 6px; }
 		.imogi-cashier-btn-primary { background: #0f1f35 !important; border: none !important; border-radius: 10px !important; color: #fff !important; font-weight: 700 !important; }
-		.imogi-cashier-btn-primary:hover, .imogi-cashier-btn-primary:focus { background: #1a3352 !important; color: #fff !important; }
+		.imogi-cashier-btn-primary:focus { background: #1a3352 !important; color: #fff !important; }
 		.imogi-cashier-btn-primary:disabled { opacity: .4; }
 		.imogi-cashier-hold-list-btn { font-size: 11px !important; font-weight: 700; }
 		.imogi-cashier-toolbar { background: #fafafa; border-bottom: 1px solid #e4e4e7; flex-shrink: 0; padding: 14px 16px; }
@@ -444,7 +613,6 @@ function inject_cashier_css() {
 			text-align: left;
 			width: 100%;
 		}
-		.imogi-cashier-group-picker-option:hover { background: #f8fafc; }
 		.imogi-cashier-group-picker-option.is-active { background: #0f1f35; color: #fff; }
 		.imogi-cashier-group-picker-option-icon {
 			align-items: center;
@@ -465,7 +633,6 @@ function inject_cashier_css() {
 		.imogi-cashier-cart-items { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0; text-align: left; -webkit-overflow-scrolling: touch; }
 		.imogi-cashier-page .items-container .item-wrapper { background: #fff; border: 1px solid #e8ecf1; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,31,53,.06), 0 4px 12px rgba(15,31,53,.04); cursor: pointer; display: flex; flex-direction: column; height: auto; overflow: hidden; position: relative; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; user-select: none; }
 		.imogi-cashier-page .items-container .item-wrapper.is-out { opacity: .55; pointer-events: none; }
-		.imogi-cashier-page .items-container .item-wrapper:hover:not(.is-out) { border-color: #c7d2e0; box-shadow: 0 6px 20px rgba(15,31,53,.12); transform: translateY(-2px); }
 		.imogi-cashier-page .items-container .item-wrapper:active:not(.is-out) { transform: translateY(0); }
 		.imogi-cashier-page .items-container .item-qty-pill { display: flex; justify-content: flex-end; margin: 8px; position: absolute; right: 0; top: 0; z-index: 2; }
 		.imogi-cashier-page .items-container .item-display, .imogi-cashier-page .items-container .item-media { align-items: center; aspect-ratio: 1; background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%); display: flex; flex-shrink: 0; height: auto; justify-content: center; margin: 0; min-height: 0; overflow: hidden; width: 100%; }
@@ -496,17 +663,15 @@ function inject_cashier_css() {
 		}
 		.imogi-cashier-loading, .imogi-cashier-empty { align-items: center; color: #94a3b8; display: flex; flex-direction: column; gap: 10px; grid-column: 1/-1; justify-content: center; min-height: 220px; }
 		.imogi-cashier-cart-empty { color: #94a3b8; padding: 40px 16px; text-align: center; }
-		.imogi-cart-row { align-items: stretch; border-bottom: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 14px; width: 100%; }
-		.imogi-cart-row-head { align-items: flex-start; display: flex; flex-direction: column; gap: 4px; min-width: 0; text-align: left; width: 100%; }
-		.imogi-cart-row-name { color: #0f172a; font-size: 14px; font-weight: 700; line-height: 1.35; text-align: left; width: 100%; word-break: break-word; }
-		.imogi-cart-row-meta { color: #94a3b8; font-size: 12px; line-height: 1.2; text-align: left; width: 100%; }
-		.imogi-cart-row-foot { align-items: center; display: flex; justify-content: flex-end; min-height: 40px; width: 100%; }
-		.imogi-cart-row-controls { align-items: center; display: inline-flex; flex-shrink: 0; gap: 10px; max-width: 100%; }
-		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; display: inline-flex; flex-shrink: 0; gap: 0; padding: 2px; }
+		.imogi-cart-row { border-bottom: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 14px; width: 100%; }
+		.imogi-cart-row-line { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; min-width: 0; width: 100%; }
+		.imogi-cart-row-name { color: #0f172a; flex: 1; font-size: 14px; font-weight: 700; line-height: 1.35; min-width: 0; text-align: left; word-break: break-word; }
+		.imogi-cart-row-amount { color: #0f1f35; flex-shrink: 0; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.35; text-align: right; white-space: nowrap; }
+		.imogi-cart-row-actions { align-items: center; display: flex; gap: 10px; justify-content: space-between; min-width: 0; width: 100%; }
+		.imogi-cart-row-meta { color: #94a3b8; flex: 1; font-size: 12px; line-height: 1.2; min-width: 0; text-align: right; }
+		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; box-sizing: border-box; display: inline-flex; flex-shrink: 0; gap: 0; justify-content: space-between; padding: 2px; width: 112px; }
 		.imogi-qty-btn { align-items: center; background: transparent; border: none; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; flex-shrink: 0; font-size: 18px; font-weight: 700; height: 36px; justify-content: center; line-height: 1; padding: 0; width: 36px; }
-		.imogi-qty-btn:hover { background: #fff; color: #0f1f35; }
-		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 36px; text-align: center; }
-		.imogi-cart-row-amount { align-items: center; color: #0f1f35; display: inline-flex; flex-shrink: 0; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: flex-end; line-height: 1; min-width: 96px; text-align: right; white-space: nowrap; }
+		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; flex: 1; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 0; text-align: center; }
 		.imogi-cashier-cart-foot { background: #fafafa; border-top: 1px solid #e4e4e7; flex-shrink: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
 		.imogi-cashier-order-type-row { margin-bottom: 8px; }
 		.imogi-cashier-order-type-label { color: #52525b; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
@@ -522,59 +687,404 @@ function inject_cashier_css() {
 		.imogi-cashier-total-row span { color: #71717a; font-size: 13px; font-weight: 600; }
 		.imogi-cart-total { color: #0f1f35 !important; font-size: 22px !important; font-weight: 800 !important; }
 		.imogi-cashier-pay { background: #0f1f35 !important; border: none !important; border-radius: 10px !important; box-shadow: none !important; color: #fff !important; font-size: 15px !important; font-weight: 800 !important; padding: 12px !important; width: 100%; }
-		.imogi-cashier-pay:hover, .imogi-cashier-pay:focus { background: #1a3352 !important; color: #fff !important; }
+		.imogi-cashier-pay:focus { background: #1a3352 !important; color: #fff !important; }
 		.imogi-cashier-pay:disabled { box-shadow: none !important; opacity: .4; }
-		.imogi-pay-change-box { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 10px; color: #0f1f35; font-size: 22px; font-weight: 800; margin-top: 10px; padding: 12px; text-align: center; }
-		.imogi-pay-change-box.is-short { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
-		.imogi-pay-quick-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-		.imogi-pay-quick-btn { background: #fff; border: 1px solid #d4d4d8; border-radius: 8px; color: #0f1f35; cursor: pointer; flex: 1; font-size: 12px; font-weight: 700; min-width: 70px; padding: 8px 6px; }
-		.imogi-pay-quick-btn:hover { background: #fafafa; border-color: #0f1f35; color: #0f1f35; }
-		.imogi-pay-discount-wrap { margin-bottom: 12px; }
-		.imogi-pay-discount-toggle { align-items: center; background: #fafafa; border: 1px dashed #d4d4d8; border-radius: 10px; color: #0f1f35; cursor: pointer; display: flex; font-size: 13px; font-weight: 700; gap: 8px; padding: 10px 12px; width: 100%; }
-		.imogi-pay-discount-toggle:hover { background: #fff; border-color: #0f1f35; }
-		.imogi-pay-discount-toggle.is-open { background: #f8fafc; border-color: #0f1f35; border-style: solid; }
-		.imogi-pay-discount-panel { display: none; margin-top: 10px; }
-		.imogi-pay-discount-panel.is-open { display: block; }
-		.imogi-pay-discount-row { align-items: center; display: flex; gap: 8px; margin-bottom: 10px; }
-		.imogi-pay-discount-row select, .imogi-pay-discount-row input { flex: 1; font-size: 13px !important; min-width: 0; }
-		.imogi-pay-promo-wrap { margin-bottom: 12px; }
-		.imogi-pay-promo-toggle { align-items: center; background: #fff7ed; border: 1px dashed #fdba74; border-radius: 10px; color: #9a3412; cursor: pointer; display: flex; font-size: 13px; font-weight: 700; gap: 8px; padding: 10px 12px; width: 100%; }
-		.imogi-pay-promo-toggle.is-open, .imogi-pay-promo-toggle:hover { background: #ffedd5; border-color: #ea580c; border-style: solid; }
-		.imogi-pay-promo-panel { display: none; margin-top: 10px; }
-		.imogi-pay-promo-panel.is-open { display: block; }
+		.imogi-pay-change-box { align-items: center; background: var(--imogi-pay-surface-2, #f4f4f5); border: 2px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); display: flex; font-size: 26px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; min-height: 72px; padding: 12px; text-align: center; transition: background .15s, border-color .15s, color .15s; }
+		.imogi-pay-change-box.is-ok { background: #f0fdf4; border-color: #86efac; color: #166534; }
+		.imogi-pay-change-box.is-short { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+		.imogi-pay-cash-quick { margin-top: 12px; }
+		.imogi-pay-dialog:not(.imogi-pay-cash-mode) .imogi-pay-cash-quick { display: none !important; }
+		.imogi-pay-dialog.imogi-pay-cash-mode .imogi-pay-cash-quick { display: block !important; }
+		.imogi-pay-quick-row { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 8px; }
+		.imogi-pay-quick-btn { background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 10px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; font-size: 13px; font-weight: 700; min-height: 48px; padding: 10px 8px; touch-action: manipulation; transition: background .12s, border-color .12s, color .12s; }
+		.imogi-pay-quick-btn.is-exact { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); color: #fff; }
+		.imogi-pay-quick-btn.is-disabled, .imogi-pay-quick-btn:disabled { cursor: not-allowed; opacity: 0.42; }
+		.imogi-pay-quick-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-top: 14px; text-transform: uppercase; }
+		.imogi-pay-discount-wrap, .imogi-pay-promo-wrap { margin-bottom: 0; }
+		.imogi-pay-discount-toggle, .imogi-pay-promo-toggle { align-items: center; background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; display: flex; font-size: 13px; font-weight: 700; gap: 10px; margin-bottom: 8px; min-height: 52px; overflow: hidden; padding: 12px 14px; text-align: left; touch-action: manipulation; width: 100%; }
+		.imogi-pay-discount-toggle.is-open, .imogi-pay-promo-toggle.is-open { background: #f8fafc; border-color: var(--imogi-navy-800, #0f1f35); }
+		.imogi-pay-promo-toggle { background: #fff; }
+		.imogi-pay-section-icon { align-items: center; background: #f4f4f5; border-radius: 10px; color: #52525b; display: inline-flex; flex-shrink: 0; font-size: 14px; height: 36px; justify-content: center; width: 36px; }
+		.imogi-pay-section-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+		.imogi-pay-section-text strong { font-size: 14px; font-weight: 700; line-height: 1.2; }
+		.imogi-pay-section-text small { color: #71717a; font-size: 11px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.imogi-pay-section-chevron { color: #a1a1aa; flex-shrink: 0; font-size: 12px; margin-left: auto; transition: transform .15s; }
+		.imogi-pay-discount-toggle.is-open .imogi-pay-section-chevron, .imogi-pay-promo-toggle.is-open .imogi-pay-section-chevron { transform: rotate(180deg); }
+		.imogi-pay-discount-panel, .imogi-pay-promo-panel { display: none; margin-bottom: 8px; }
+		.imogi-pay-discount-panel.is-open, .imogi-pay-promo-panel.is-open { display: block; }
+		.imogi-pay-discount-panel { background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; padding: 12px; }
+		.imogi-pay-discount-row { align-items: center; display: flex; gap: 8px; }
+		.imogi-pay-discount-row select, .imogi-pay-discount-row input { flex: 1; font-size: 14px !important; min-height: 44px !important; min-width: 0; }
 		.imogi-pay-voucher-row, .imogi-pay-loyalty-input-row { align-items: center; display: flex; gap: 8px; margin-bottom: 8px; }
 		.imogi-pay-voucher-row input, .imogi-pay-loyalty-input-row input { flex: 1; min-width: 0; }
 		.imogi-pay-loyalty-row { margin-top: 8px; }
 		.imogi-pos-offline-bar { background: #7f1d1d; color: #fff; display: none; font-size: 12px; font-weight: 700; left: 0; padding: 8px 12px; position: fixed; right: 0; text-align: center; top: 0; z-index: 99999; }
 		.imogi-pos-offline-bar.is-visible { display: block; }
 		.imogi-cashier-promo-hint { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #047857; font-size: 11px; font-weight: 700; margin-bottom: 8px; padding: 8px 10px; }
+		.imogi-cashier-promo-hint--pending { background: #fffbeb; border-color: #fde68a; color: #b45309; }
 		@media (pointer: coarse) {
 			.imogi-cashier-group-btn, .imogi-pay-quick-btn, .imogi-cashier-order-type-btn { min-height: 44px; }
-			.imogi-cart-qty-group { min-height: 44px; padding: 3px; }
+			.imogi-cart-qty-group { min-height: 44px; padding: 3px; width: 120px; }
 			.imogi-qty-btn { height: 38px; width: 38px; }
 		}
-		.imogi-pay-breakdown-row { align-items: baseline; color: #64748b; display: flex; font-size: 12px; justify-content: space-between; margin-bottom: 4px; }
-		.imogi-pay-breakdown-row strong { color: #0f1f35; font-variant-numeric: tabular-nums; }
+		.imogi-pay-dialog {
+			--imogi-pay-border: #e4e4e7;
+			--imogi-pay-surface: #fff;
+			--imogi-pay-surface-2: #f8fafc;
+		}
+		.imogi-pay-dialog .frappe-control[data-fieldname="mode_of_payment"] { display: none !important; }
+		.imogi-pay-dialog .modal-dialog { margin-left: auto !important; margin-right: auto !important; max-width: min(1140px, 96vw) !important; width: min(1140px, 96vw) !important; }
+		.imogi-pay-dialog.imogi-pay-mobile .modal-dialog { max-width: 100% !important; width: 100% !important; }
+		.imogi-pay-dialog .frappe-control[class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; width: 100% !important; }
+		.imogi-pay-dialog .modal-content {
+			border: none; border-radius: 16px; box-shadow: 0 24px 64px rgba(7,17,31,.18);
+			display: flex; flex-direction: column; max-height: min(92vh, 880px); overflow: hidden;
+		}
+		.imogi-pay-dialog .modal-header { background: var(--imogi-pay-surface); border-bottom: 1px solid var(--imogi-pay-border); flex-shrink: 0; padding: 16px 20px 14px; }
+		.imogi-pay-dialog .modal-title { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+		.imogi-pay-title-main { color: var(--imogi-navy-800, #0f1f35); font-size: 18px; font-weight: 800; }
+		.imogi-pay-title-sub { color: #71717a; font-size: 12px; font-weight: 500; }
+		.imogi-pay-dialog .modal-body { background: var(--imogi-pay-surface-2); flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0; -webkit-overflow-scrolling: touch; }
+		.imogi-pay-dialog .modal-body > .form-layout,
+		.imogi-pay-dialog .modal-body > form,
+		.imogi-pay-dialog .modal-body > .form-section,
+		.imogi-pay-dialog .modal-body > .form-page { display: none !important; }
+		.imogi-pay-shell { display: grid; gap: 0; grid-template-columns: 1fr; min-height: 0; width: 100%; }
+		.imogi-pay-col { box-sizing: border-box; min-width: 0; padding: 16px 20px 20px; width: 100%; }
+		.imogi-pay-col--summary { background: var(--imogi-pay-surface); border-bottom: 1px solid var(--imogi-pay-border); }
+		.imogi-pay-col--checkout { background: var(--imogi-pay-surface-2); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+		.imogi-pay-checkout-stack { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; width: 100%; }
+		.imogi-pay-checkout-stack > .frappe-control,
+		.imogi-pay-extras > .frappe-control { margin: 0 !important; max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+		.imogi-pay-checkout-stack .form-group,
+		.imogi-pay-extras .form-group { margin-bottom: 0 !important; width: 100%; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="pay_summary_html"],
+		.imogi-pay-dialog .frappe-control[data-fieldname="payment_modes_html"],
+		.imogi-pay-dialog .frappe-control[data-fieldname="change_html"],
+		.imogi-pay-dialog .frappe-control[data-fieldname="discount_html"],
+		.imogi-pay-dialog .frappe-control[data-fieldname="promo_html"] { width: 100% !important; }
+		.imogi-pay-dialog .modal-footer { background: var(--imogi-pay-surface); border-top: 1px solid var(--imogi-pay-border); box-shadow: 0 -8px 32px rgba(7,17,31,.06); display: flex; flex-direction: column; flex-shrink: 0; gap: 10px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
+		.imogi-pay-dialog .modal-footer .btn-modal-secondary, .imogi-pay-dialog .modal-footer .btn-secondary { display: none !important; }
+		.imogi-pay-dialog .modal-footer .standard-actions, .imogi-pay-dialog .modal-footer .custom-actions { margin: 0 !important; width: 100%; }
+		.imogi-pay-dialog .modal-footer .btn-primary {
+			background: var(--imogi-navy-800, #0f1f35) !important; border: none !important; border-radius: 12px !important;
+			box-shadow: 0 4px 16px rgba(15,31,53,.24) !important; font-size: 16px !important; font-weight: 800 !important;
+			height: 52px !important; letter-spacing: .01em; width: 100%;
+		}
+		.imogi-pay-dialog .modal-footer .btn-primary:hover { background: var(--imogi-navy-700, #1a3352) !important; }
+		.imogi-pay-dialog .modal-footer .btn-primary:disabled { background: #d4d4d8 !important; box-shadow: none !important; }
+		.imogi-pay-footer-strip { align-items: center; display: flex; justify-content: space-between; width: 100%; }
+		.imogi-pay-footer-label { color: #71717a; font-size: 12px; font-weight: 600; }
+		.imogi-pay-footer-amount { color: var(--imogi-navy-800, #0f1f35); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 800; }
+		.imogi-pay-top { display: flex; flex-direction: column; gap: 12px; }
+		.imogi-pay-total-strip { background: linear-gradient(135deg, var(--imogi-navy-800, #0f1f35) 0%, var(--imogi-navy-700, #1a3352) 100%); border-radius: 14px; color: #fff; padding: 16px 18px; }
+		.imogi-pay-total-strip-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+		.imogi-pay-item-badge, .imogi-pay-order-badge { align-items: center; background: rgba(255,255,255,.12); border-radius: 999px; color: rgba(255,255,255,.9); display: inline-flex; font-size: 11px; font-weight: 600; gap: 5px; padding: 4px 10px; }
+		.imogi-pay-total-strip-label { color: rgba(255,255,255,.7); display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; margin-bottom: 4px; text-transform: uppercase; }
+		.imogi-pay-hero-amount { color: #fff !important; font-size: 32px !important; font-variant-numeric: tabular-nums; font-weight: 800 !important; line-height: 1.05; }
+		.imogi-pay-hero-amount .imogi-pay-currency { color: rgba(255,255,255,.88) !important; font-size: 20px; }
+		.imogi-pay-receipt { background: var(--imogi-pay-surface-2); border: 1px solid var(--imogi-pay-border); border-radius: 12px; padding: 12px 14px; }
+		.imogi-pay-receipt-title { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-bottom: 8px; text-transform: uppercase; }
+		.imogi-pay-breakdown-row { align-items: baseline; color: #64748b; display: flex; font-size: 13px; justify-content: space-between; margin-bottom: 6px; }
+		.imogi-pay-breakdown-row strong { color: var(--imogi-navy-800, #0f1f35); font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 700; }
 		.imogi-pay-breakdown-row.is-discount strong { color: #be123c; }
-		.imogi-pay-numpad-wrap { display: none; margin-top: 10px; }
+		.imogi-pay-breakdown-row.is-tax strong { color: #047857; }
+		.imogi-pay-breakdown-divider { border-top: 1px dashed var(--imogi-pay-border); margin: 8px 0; }
+		.imogi-pay-checkout-block { background: var(--imogi-pay-surface); border: 1px solid var(--imogi-pay-border); border-radius: 14px; margin-bottom: 12px; padding: 14px 16px; }
+		.imogi-pay-block-title { color: var(--imogi-navy-800, #0f1f35); font-size: 13px; font-weight: 800; letter-spacing: .02em; margin-bottom: 12px; }
+		.imogi-pay-block-title .reqd { color: #e11d48; margin-left: 2px; }
+		.imogi-pay-block-title .fa { color: #71717a; margin-right: 6px; }
+		.imogi-pay-modes { background: transparent; border: none; margin: 0; padding: 0; }
+		.imogi-pay-modes-label { display: none; }
+		.imogi-pay-modes-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); width: 100%; }
+		.imogi-pay-mode-card {
+			align-items: center; background: #fff; border: 1.5px solid var(--imogi-pay-border); border-radius: 12px;
+			color: var(--imogi-navy-800, #0f1f35); cursor: pointer; display: flex; flex-direction: column;
+			gap: 8px; justify-content: center; min-height: 88px; min-width: 0; padding: 12px 10px;
+			touch-action: manipulation; transition: border-color .12s, background .12s, box-shadow .12s; width: 100%;
+		}
+		.imogi-pay-mode-card.is-active { background: #f8fafc; border-color: var(--imogi-navy-800, #0f1f35); box-shadow: 0 0 0 1px var(--imogi-navy-800, #0f1f35); }
+		.imogi-pay-mode-icon { align-items: center; background: #f4f4f5; border-radius: 999px; color: #52525b; display: inline-flex; flex-shrink: 0; font-size: 18px; height: 40px; justify-content: center; width: 40px; }
+		.imogi-pay-mode-card.is-active .imogi-pay-mode-icon { background: var(--imogi-navy-800, #0f1f35); color: #fff; }
+		.imogi-pay-mode-card.is-qris.is-active { border-color: #0f766e; box-shadow: 0 0 0 1px #0f766e; }
+		.imogi-pay-mode-card.is-qris.is-active .imogi-pay-mode-icon { background: #0f766e; color: #fff; }
+		.imogi-pay-mode-name { font-size: 12px; font-weight: 700; line-height: 1.3; max-width: 100%; overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+		.imogi-pay-cash-section { background: transparent; border: none; margin: 0; padding: 0; }
+		.imogi-pay-section-head { align-items: center; color: var(--imogi-navy-800, #0f1f35); display: flex; font-size: 13px; font-weight: 800; gap: 8px; margin-bottom: 12px; }
+		.imogi-pay-section-head .fa { color: #71717a; }
+		.imogi-pay-cash-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+		.imogi-pay-cash-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-bottom: 6px; text-transform: uppercase; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] { margin: 0 !important; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] .control-label { display: none; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] input {
+			background: #fff !important; border: 2px solid var(--imogi-pay-border) !important; border-radius: 12px !important;
+			box-shadow: none !important; color: var(--imogi-navy-800, #0f1f35) !important; font-size: 24px !important;
+			font-weight: 800 !important; height: 72px !important; padding: 8px 12px !important; text-align: center;
+		}
+		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"].is-focused input { border-color: var(--imogi-navy-800, #0f1f35) !important; }
+		.imogi-pay-qris-hint, .imogi-pay-noncash-hint { align-items: flex-start; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; color: #1e40af; display: flex; font-size: 13px; font-weight: 500; gap: 10px; line-height: 1.45; margin: 0 0 12px; padding: 12px 14px; }
+		.imogi-pay-noncash-hint { background: #f8fafc; border-color: var(--imogi-pay-border); color: #52525b; }
+		.imogi-pay-qris-hint .fa, .imogi-pay-noncash-hint .fa { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+		.imogi-pay-extras { display: flex; flex-direction: column; flex-shrink: 0; gap: 0; margin-top: auto; width: 100%; }
+		.imogi-pay-numpad-wrap { display: none; margin-top: 12px; }
 		.imogi-pay-numpad-wrap.is-visible { display: block; }
 		.imogi-pay-numpad { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-		.imogi-pay-numpad-key { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 10px; color: #0f1f35; cursor: pointer; font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 800; height: 48px; padding: 0; touch-action: manipulation; }
-		.imogi-pay-numpad-key:active { background: #0f1f35; border-color: #0f1f35; color: #fff; }
+		.imogi-pay-numpad-key { background: #fff; border: 1px solid var(--imogi-pay-border); border-radius: 10px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 800; height: 52px; padding: 0; touch-action: manipulation; }
+		.imogi-pay-numpad-key:active { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); color: #fff; }
+		.imogi-pay-summary { background: linear-gradient(135deg, var(--imogi-navy-800, #0f1f35) 0%, var(--imogi-navy-700, #1a3352) 100%); border-radius: 14px; color: #fff; margin-bottom: 14px; overflow: hidden; padding: 16px 18px 14px; }
+		.imogi-pay-summary .imogi-pay-breakdown-row { color: rgba(255,255,255,.78); font-size: 12px; margin-bottom: 5px; }
+		.imogi-pay-summary .imogi-pay-breakdown-row strong { color: #fff; font-size: 15px; }
+		.imogi-pay-summary .imogi-pay-breakdown-row.is-discount strong { color: #fecdd3; }
+		.imogi-pay-summary .imogi-pay-breakdown-row.is-tax strong { color: #bbf7d0; }
+		.imogi-pay-total-footer { align-items: flex-end; border-top: 1px solid rgba(255,255,255,.14); display: flex; justify-content: space-between; padding-top: 12px; }
+		.imogi-pay-summary .imogi-pay-total-label { color: rgba(255,255,255,.72); font-size: 11px; font-weight: 700; letter-spacing: .04em; margin: 0; text-transform: uppercase; }
+		.imogi-pay-summary .imogi-pay-total-value { color: #fff !important; font-size: 28px !important; font-weight: 800 !important; line-height: 1.1; text-align: right; }
+		.imogi-pay-shell--split { grid-template-columns: minmax(260px, 34%) minmax(0, 1fr); min-height: 0; }
+		.imogi-pay-shell--split .imogi-pay-col--summary { border-bottom: none; border-right: 1px solid var(--imogi-pay-border); }
+		.imogi-pay-shell--split .imogi-pay-modes-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+		@media (min-width: 993px) {
+			.imogi-pay-dialog .modal-content { max-height: min(90vh, 920px); }
+		}
+		@media (max-width: 992px) and (orientation: landscape) {
+			.modal.imogi-pay-dialog.imogi-pay-landscape .modal-dialog {
+				margin: 0 auto !important;
+				max-width: min(1120px, 96vw) !important;
+				width: min(1120px, 96vw) !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-landscape .modal-content {
+				border-radius: 16px !important;
+				max-height: min(94vh, 720px) !important;
+			}
+		}
+		@media (max-width: 992px) and (orientation: portrait) {
+			.imogi-pay-modes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		}
+		@media (max-width: 992px) and (orientation: landscape) {
+			.modal.imogi-pay-dialog.imogi-pay-landscape {
+				align-items: center !important;
+				justify-content: center !important;
+				padding: 10px 16px !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-landscape .modal-content {
+				display: flex !important;
+				flex-direction: column !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-landscape .modal-body {
+				flex: 1 1 auto !important;
+				min-height: 0 !important;
+				overflow-y: auto !important;
+			}
+			.imogi-pay-dialog.imogi-pay-landscape .imogi-pay-col--summary,
+			.imogi-pay-dialog.imogi-pay-landscape .imogi-pay-col--checkout { padding: 12px 14px 14px !important; }
+			.imogi-pay-dialog.imogi-pay-landscape .imogi-pay-mode-card { min-height: 76px; padding: 10px 8px; }
+			.imogi-pay-dialog.imogi-pay-landscape .imogi-pay-hero-amount { font-size: 26px !important; }
+			.imogi-pay-dialog.imogi-pay-landscape .imogi-pay-numpad-key { height: 44px; }
+		}
 		.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-numpad-wrap.is-visible { display: block; }
-		.imogi-pay-dialog.imogi-pay-mobile .frappe-control[data-fieldname="paid_amount"] input { caret-color: transparent; cursor: pointer; }
+		.imogi-pay-dialog.imogi-pay-mobile .frappe-control[data-fieldname="paid_amount"] input {
+			caret-color: transparent;
+			cursor: default;
+			pointer-events: none;
+			user-select: none;
+			-webkit-user-select: none;
+		}
+		.imogi-pay-dialog.imogi-pay-mobile .frappe-control[data-fieldname="paid_amount"] {
+			margin-bottom: 8px;
+		}
+		.imogi-pay-dialog.imogi-pay-mobile .frappe-control[data-fieldname="paid_amount"] .control-label {
+			color: #71717a;
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: .04em;
+			margin-bottom: 8px;
+			text-align: center;
+			text-transform: uppercase;
+			width: 100%;
+		}
+		.imogi-pay-dialog.imogi-pay-mobile .frappe-control[data-fieldname="paid_amount"] input {
+			background: #f8fafc !important;
+			border: 2px solid #e4e4e7 !important;
+			border-radius: 14px !important;
+			box-shadow: none !important;
+			color: #0f1f35 !important;
+			font-size: 32px !important;
+			font-weight: 800 !important;
+			height: 64px !important;
+			padding: 8px 12px !important;
+			text-align: center;
+		}
+		@media (max-width: 992px) {
+			.modal.imogi-pay-dialog.imogi-pay-mobile {
+				align-items: flex-end !important;
+				justify-content: flex-end !important;
+				padding: 0 !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-dialog {
+				align-items: stretch;
+				display: flex !important;
+				margin: 0 !important;
+				max-height: min(94dvh, 720px);
+				max-width: 100% !important;
+				min-height: 0 !important;
+				width: 100% !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-content {
+				border: none;
+				border-radius: 20px 20px 0 0;
+				display: flex;
+				flex-direction: column;
+				max-height: min(94dvh, 720px);
+				overflow: hidden;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-header {
+				flex-shrink: 0;
+				padding: 14px 16px 12px;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-title { font-size: 16px; }
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-body {
+				flex: 1 1 auto;
+				min-height: 0;
+				overflow-x: hidden;
+				overflow-y: auto;
+				overscroll-behavior: contain;
+				padding: 12px 16px 8px;
+				-webkit-overflow-scrolling: touch;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer {
+				background: #fff;
+				border-top: 1px solid #e4e4e7;
+				box-shadow: 0 -8px 24px rgba(15,31,53,.08);
+				flex-shrink: 0;
+				padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+				position: relative;
+				z-index: 3;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-primary {
+				border-radius: 14px !important;
+				font-size: 16px !important;
+				font-weight: 800 !important;
+				height: 54px !important;
+				width: 100%;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-col { padding: 14px 16px 16px; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-col--summary { padding-bottom: 12px; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-hero-amount { font-size: 28px !important; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-modes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-cash-section { margin-top: 0; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-quick-row {
+				display: grid;
+				gap: 6px;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				margin-top: 10px;
+				overflow: visible;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-quick-btn {
+				flex: 0 0 auto;
+				min-width: 72px;
+				padding: 10px 12px;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-numpad-wrap.is-visible {
+				display: block;
+				margin-top: 8px;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-numpad-wrap:not(.is-visible) {
+				display: none;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-numpad { gap: 6px; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-numpad-key {
+				border-radius: 12px;
+				font-size: 22px;
+				height: 50px;
+			}
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-hero { border-radius: 16px; padding: 16px; }
+			.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-hero-amount { font-size: 30px !important; }
+			.imogi-pay-dialog.imogi-pay-mobile:not(.imogi-pay-cash-mode) .imogi-pay-cash-section,
+			.imogi-pay-dialog.imogi-pay-mobile:not(.imogi-pay-cash-mode) .frappe-control[data-fieldname="paid_amount"],
+			.imogi-pay-dialog.imogi-pay-mobile:not(.imogi-pay-cash-mode) .imogi-pay-numpad-wrap {
+				display: none !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer {
+				display: flex !important;
+				flex-direction: column !important;
+				gap: 0 !important;
+				padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .standard-actions,
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .custom-actions {
+				display: flex !important;
+				float: none !important;
+				margin: 0 !important;
+				width: 100% !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn {
+				border-radius: 14px !important;
+				float: none !important;
+				font-size: 16px !important;
+				font-weight: 800 !important;
+				height: 54px !important;
+				margin: 0 !important;
+				width: 100% !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-modal-secondary,
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-secondary {
+				display: none !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-header {
+				border-bottom: 1px solid #f1f5f9;
+				padding: 12px 16px 10px;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-header .modal-title {
+				font-size: 17px;
+				font-weight: 800;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-body {
+				background: #f8fafc;
+				padding: 14px 16px 10px;
+			}
+		}
 		.imogi-cashier-customer-label { line-height: 1.25; margin-bottom: 6px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 		.imogi-cashier-meta { color: rgba(255,255,255,0.65); font-size: 12px; }
 		.imogi-cashier-branch-row { align-items: center; display: none; gap: 8px; margin-bottom: 10px; }
 		.imogi-cashier-branch-row.is-visible { display: flex; }
+		.imogi-cashier-page:not(.is-mobile-layout) .imogi-cashier-top .imogi-cashier-branch-row {
+			display: none !important;
+		}
+		.imogi-cashier-top .imogi-cashier-branch-row.is-visible {
+			margin-bottom: 0;
+			padding: 0 14px 10px;
+		}
+		.imogi-cashier-top .imogi-cashier-branch-row .fa,
+		.imogi-cashier-top .imogi-cashier-branch-row .imogi-cashier-branch-label {
+			color: #52525b;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.imogi-cashier-top .imogi-cashier-branch-row .imogi-cashier-branch-select {
+			background: #fff;
+			border-color: #e4e4e7;
+			color: #0f1f35;
+			font-size: 12px !important;
+		}
 		.imogi-cashier-branch-row .fa { color: #0f1f35; flex-shrink: 0; font-size: 14px; }
+		.imogi-cashier-branch-label { color: #0f1f35; flex: 1; font-size: 13px; font-weight: 700; min-width: 0; }
 		.imogi-cashier-branch-select { flex: 1; font-size: 13px !important; font-weight: 700; min-width: 0; }
+		.imogi-pay-success-dialog .modal-dialog { max-width: 440px; }
+		.imogi-pay-success-body { padding: 8px 4px 0 !important; text-align: center; }
+		.imogi-pay-success-icon { color: #10b981; font-size: 44px; line-height: 1; margin-bottom: 6px; }
+		.imogi-pay-success-order { color: #0f1f35; font-size: 17px; font-weight: 800; margin-bottom: 12px; }
+		.imogi-pay-summary--success { margin-bottom: 10px; text-align: left; }
+		.imogi-pay-success-payment-meta,
+		.imogi-pay-success-cash-meta { border-top: 1px solid rgba(255,255,255,.12); margin-top: 10px; padding-top: 10px; }
+		.imogi-pay-success-payment-meta { align-items: center; color: rgba(255,255,255,.78); display: flex; font-size: 12px; justify-content: space-between; }
+		.imogi-pay-success-payment-meta strong { color: #fff; font-size: 12px; }
+		.imogi-pay-success-cash-row { align-items: baseline; color: rgba(255,255,255,.78); display: flex; font-size: 12px; justify-content: space-between; margin-bottom: 4px; }
+		.imogi-pay-success-cash-row strong { color: #fff; font-variant-numeric: tabular-nums; }
+		.imogi-pay-success-cash-row.is-change strong { color: #bbf7d0; }
+		.imogi-pay-success-status { color: #71717a; font-size: 12px; margin-top: 10px; }
 		.imogi-pay-success-dialog .modal-footer { display: none !important; }
 		.imogi-success-actions { border-top: 1px solid #f1f5f9; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; padding-top: 16px; text-align: left; }
 		.imogi-success-action-btn { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; color: #0f1f35; cursor: pointer; display: flex; flex-direction: column; gap: 6px; justify-content: center; min-height: 78px; padding: 12px 10px; transition: border-color .15s, background .15s, transform .1s; }
-		.imogi-success-action-btn:hover { background: #fafafa; border-color: #0f1f35; transform: translateY(-1px); }
 		.imogi-success-action-btn.is-primary { background: #0f1f35; border-color: #0f1f35; color: #fff; flex-direction: row; gap: 10px; grid-column: 1 / -1; min-height: 48px; }
-		.imogi-success-action-btn.is-primary:hover { background: #1a3352; color: #fff; }
 		.imogi-success-action-icon { align-items: center; background: #f8fafc; border-radius: 10px; color: #0f1f35; display: flex; font-size: 18px; height: 36px; justify-content: center; width: 36px; }
 		.imogi-success-action-btn.is-primary .imogi-success-action-icon { background: rgba(255,255,255,.12); color: #fff; font-size: 16px; height: auto; width: auto; }
 		.imogi-success-action-label { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; }
@@ -606,13 +1116,23 @@ function inject_cashier_css() {
 		.imogi-cashier-mobile-filters { display: none; }
 		.imogi-cashier-mobile-filter-block + .imogi-cashier-mobile-filter-block { margin-top: 8px; }
 		.imogi-cashier-mobile-filter-label { color: #71717a; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 5px; text-transform: uppercase; }
+		.imogi-cashier-mobile-order-scroll {
+			display: none;
+			margin-top: 6px;
+			overflow: hidden;
+			width: 100%;
+		}
+		.imogi-cashier-page:not(.is-mobile-layout) .imogi-cashier-mobile-order-scroll,
+		.imogi-cashier-page:not(.is-mobile-layout) .imogi-cashier-mobile-filters {
+			display: none !important;
+		}
 		.imogi-cashier-mobile-order-types {
 			display: flex;
 			flex-wrap: nowrap;
 			gap: 6px;
 			overflow-x: auto;
 			-webkit-overflow-scrolling: touch;
-			padding-bottom: 2px;
+			padding: 2px 2px 4px;
 			scrollbar-width: none;
 		}
 		.imogi-cashier-mobile-order-types::-webkit-scrollbar { display: none; }
@@ -624,39 +1144,330 @@ function inject_cashier_css() {
 			padding: 6px 12px;
 			white-space: nowrap;
 		}
+		.imogi-cashier-mobile-chip-scroll {
+			display: none;
+			flex-wrap: nowrap;
+			gap: 6px;
+			margin-top: 6px;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding: 2px 2px 4px;
+			scrollbar-width: none;
+		}
+		.imogi-cashier-mobile-chip-scroll::-webkit-scrollbar { display: none; }
 		@media (max-width: 992px) {
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-groups { display: none !important; }
-			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-filters { display: block; margin-top: 8px; }
-			.imogi-cashier-page.is-mobile-layout .imogi-cashier-group-picker { display: block !important; }
-			.imogi-cashier-page.is-mobile-layout .imogi-cashier-toolbar { padding: 10px 12px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-chip-scroll { display: none !important; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-filters {
+				display: block !important;
+				margin-top: 8px;
+				width: 100%;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-filter-block {
+				margin: 0;
+				width: 100%;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-filter-label {
+				color: #71717a;
+				display: block;
+				font-size: 10px;
+				font-weight: 800;
+				letter-spacing: .04em;
+				margin-bottom: 5px;
+				text-transform: uppercase;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-group-picker {
+				display: block !important;
+				width: 100%;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-group-picker-trigger {
+				background: #fff;
+				border: 1px solid #e4e4e7;
+				border-radius: 12px;
+				min-height: 42px;
+				padding: 0 12px;
+				width: 100%;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-order-scroll { display: block; margin-top: 8px; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-order-scroll > .imogi-cashier-mobile-filter-label {
+				color: #71717a;
+				display: block;
+				font-size: 10px;
+				font-weight: 800;
+				letter-spacing: .04em;
+				margin-bottom: 5px;
+				text-transform: uppercase;
+			}
+			.imogi-cashier-page.is-mobile-layout {
+				background: #f4f4f5 !important;
+				padding: 0 !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top {
+				background: #fff;
+				border: 1px solid #e4e4e7;
+				border-radius: 14px;
+				box-shadow: 0 1px 2px rgba(15,31,53,.04);
+				gap: 0;
+				margin: 8px 10px 8px;
+				overflow: hidden;
+				padding: 0;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-status-strip {
+				border-top: 1px solid #f1f5f9;
+				display: none;
+				flex-wrap: nowrap;
+				gap: 6px;
+				overflow-x: auto;
+				padding: 8px 12px 10px;
+				scrollbar-width: none;
+				-webkit-overflow-scrolling: touch;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-status-strip.is-visible {
+				display: flex !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-status-strip::-webkit-scrollbar {
+				display: none;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-status-strip .imogi-status-chip {
+				flex: 0 0 auto;
+				font-size: 11px;
+				padding: 6px 10px;
+				white-space: nowrap;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-branch-row {
+				align-items: center;
+				background: transparent;
+				border: none;
+				border-top: 1px solid #f1f5f9;
+				display: flex !important;
+				gap: 6px;
+				margin: 0;
+				padding: 8px 12px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-branch-row .fa {
+				color: #71717a !important;
+				font-size: 11px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-branch-row .imogi-cashier-branch-label,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-branch-row .imogi-cashier-branch-select {
+				color: #52525b !important;
+				font-size: 11px !important;
+				font-weight: 600;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-text,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-text a {
+				color: #3f3f46 !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-text .fa {
+				color: #16a34a !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-toolbar .imogi-cashier-branch-row {
+				display: none !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-bar {
+				background: transparent !important;
+				border: none !important;
+				border-radius: 0;
+				box-shadow: none;
+				margin: 0;
+				padding: 10px 12px !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-text {
+				color: #3f3f46 !important;
+				flex: 1;
+				font-size: 12px !important;
+				font-weight: 700;
+				min-width: 0;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-text .fa {
+				color: #16a34a !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-text a {
+				color: #0f1f35 !important;
+				font-weight: 700;
+				text-decoration: none;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-actions {
+				flex-shrink: 0;
+				gap: 4px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-bar .btn {
+				border-radius: 8px !important;
+				font-size: 11px !important;
+				padding: 6px 10px !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-logout-btn,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-history-btn,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn {
+				background: #f4f4f5 !important;
+				border: 1px solid #d4d4d8 !important;
+				color: #0f1f35 !important;
+				font-weight: 700 !important;
+				min-height: 34px;
+				white-space: nowrap;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-logout-btn .fa,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-history-btn .fa,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn .fa {
+				color: #0f1f35 !important;
+				margin-right: 4px;
+				opacity: 1;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-chip-target {
+				max-width: min(100%, calc(100vw - 130px));
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile {
+				align-items: flex-end !important;
+				justify-content: flex-end !important;
+				padding: 0 !important;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile .modal-dialog {
+				align-items: stretch;
+				display: flex !important;
+				margin: 0 !important;
+				max-height: min(78dvh, 520px);
+				max-width: 100% !important;
+				width: 100% !important;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile .modal-content {
+				border: none;
+				border-radius: 20px 20px 0 0;
+				max-height: min(78dvh, 520px);
+				overflow: hidden;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile .modal-header {
+				border-bottom: 1px solid #f1f5f9;
+				padding: 12px 16px 10px;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile .modal-title {
+				font-size: 16px;
+				font-weight: 800;
+			}
+			.modal.imogi-pay-success-dialog.imogi-pay-success-mobile .modal-body {
+				overflow-x: hidden;
+				overflow-y: auto;
+				padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-success-body {
+				padding: 12px 0 4px !important;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-success-icon {
+				font-size: 36px;
+				margin-bottom: 2px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-success-order {
+				font-size: 15px;
+				margin-bottom: 8px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-summary--success {
+				margin: 0 0 8px;
+				padding: 14px 16px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-summary--success .imogi-pay-total-value {
+				font-size: 24px !important;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-pay-success-status {
+				font-size: 11px;
+				margin-top: 6px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-actions {
+				gap: 8px;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				margin-top: 12px;
+				padding-top: 12px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-btn {
+				min-height: 52px;
+				padding: 8px 6px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-btn.is-primary {
+				flex-direction: row;
+				gap: 8px;
+				grid-column: 1 / -1;
+				justify-content: center;
+				min-height: 48px;
+				padding: 0 14px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-icon {
+				font-size: 15px;
+				height: 28px;
+				width: 28px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-label {
+				font-size: 10px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-btn.is-primary .imogi-success-action-label {
+				font-size: 14px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel.imogi-cashier-products {
+				background: transparent;
+				border: none;
+				border-radius: 0;
+				box-shadow: none;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel.imogi-cashier-products > .imogi-cashier-panel-head {
+				display: none;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-toolbar {
+				background: transparent;
+				border-bottom: none;
+				padding: 0 10px 8px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-search {
+				background: #fff !important;
+				border: 1px solid #e4e4e7 !important;
+				border-radius: 12px !important;
+				box-shadow: 0 1px 2px rgba(15,31,53,.04);
+				font-size: 14px !important;
+				margin-bottom: 0;
+				padding: 11px 12px !important;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-order-types .imogi-cashier-order-type-btn {
+				background: #fff;
+				border: 1px solid #e4e4e7;
+				border-radius: 999px;
+				font-size: 11px;
+				min-height: 36px;
+				padding: 0 12px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-order-types .imogi-cashier-order-type-btn.is-active {
+				background: #0f1f35;
+				border-color: #0f1f35;
+				color: #fff;
+			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-grid.items-container {
 				display: flex !important;
 				flex-direction: column;
-				gap: 8px;
+				gap: 6px;
 				grid-template-columns: unset !important;
-				padding: 8px 10px 12px;
+				padding: 2px 10px calc(96px + env(safe-area-inset-bottom, 0px));
 			}
 			.imogi-cashier-page.is-mobile-layout .items-container .item-wrapper {
 				align-items: center !important;
+				background: #fff;
+				border: 1px solid #ececef;
+				border-radius: 12px;
+				box-shadow: 0 1px 2px rgba(15,31,53,.04);
 				flex-direction: row !important;
-				min-height: 84px;
+				min-height: 72px;
 			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-wrapper:hover:not(.is-out) { transform: none !important; }
 			.imogi-cashier-page.is-mobile-layout .items-container .item-display,
 			.imogi-cashier-page.is-mobile-layout .items-container .item-media {
 				aspect-ratio: 1 !important;
-				flex-shrink: 0;
-				height: 72px !important;
-				margin: 8px 0 8px 8px !important;
-				min-height: 0;
-				width: 72px !important;
-			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-media,
-			.imogi-cashier-page.is-mobile-layout .items-container .item-display {
 				border-radius: 10px;
-				overflow: hidden;
+				flex-shrink: 0;
+				height: 60px !important;
+				margin: 6px 0 6px 6px !important;
+				min-height: 0;
+				width: 60px !important;
 			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-display { font-size: 1.05rem !important; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-display { font-size: .95rem !important; }
 			.imogi-cashier-page.is-mobile-layout .items-container .item-img { border-radius: 10px; object-fit: cover; }
 			.imogi-cashier-page.is-mobile-layout .items-container .item-detail {
 				border-top: none !important;
@@ -664,16 +1475,91 @@ function inject_cashier_css() {
 				gap: 2px;
 				justify-content: center;
 				min-height: 0 !important;
-				padding: 8px 8px 8px 10px !important;
+				padding: 6px 8px 6px 6px !important;
 			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-name { font-size: 13px; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-name { font-size: 13px; line-height: 1.25; }
 			.imogi-cashier-page.is-mobile-layout .items-container .item-rate { font-size: 13px; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-stock { font-size: 10px; margin-top: 2px; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-quick-add { display: inline-flex !important; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-stock { font-size: 10px; margin-top: 0; }
+			.imogi-cashier-page.is-mobile-layout .items-container .item-quick-add {
+				display: inline-flex !important;
+				height: 32px;
+				margin: 0 8px 0 2px;
+				width: 32px;
+			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-loading,
-			.imogi-cashier-page.is-mobile-layout .imogi-cashier-empty { min-height: 120px; width: 100%; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-empty { min-height: 100px; width: 100%; }
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shell {
+				padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-dock {
+				background: rgba(255,255,255,.98);
+				backdrop-filter: blur(10px);
+				border-top: 1px solid #e4e4e7;
+				border-radius: 16px 16px 0 0;
+				box-shadow: 0 -6px 28px rgba(15,31,53,.08);
+				gap: 8px;
+				padding: 12px 14px calc(20px + env(safe-area-inset-bottom, 0px));
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-dock-cart {
+				border-radius: 12px;
+				font-size: 17px;
+				height: 48px;
+				width: 48px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-dock-total {
+				font-size: 17px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-dock-label {
+				font-size: 10px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-dock-pay {
+				border-radius: 12px !important;
+				font-size: 14px !important;
+				height: 48px !important;
+				min-width: 100px;
+				padding: 0 14px !important;
+			}
 		}
-	`, "imogi-cashier-inline-css-v27");
+		/* POS touch-first: no hover highlights */
+		.imogi-cashier-page :is(button, .btn, .imogi-status-chip, .imogi-cashier-group-btn, .imogi-cashier-order-type-btn, .imogi-cashier-group-picker-trigger, .imogi-cashier-group-picker-option, .item-wrapper, .imogi-qty-btn, .imogi-cashier-pay, .imogi-cashier-dock-cart, .imogi-cashier-dock-pay, .imogi-pay-quick-btn, .imogi-pay-discount-toggle, .imogi-pay-promo-toggle, .imogi-success-action-btn, .imogi-pay-numpad-key):hover {
+			box-shadow: none !important;
+			transform: none !important;
+		}
+		.imogi-pay-dialog :is(button, .btn, .imogi-pay-quick-btn, .imogi-success-action-btn):hover,
+		.modal.imogi-pay-success-dialog :is(button, .btn, .imogi-success-action-btn):hover {
+			box-shadow: none !important;
+			transform: none !important;
+		}
+		.imogi-cashier-page .imogi-cashier-search:hover:not(:focus),
+		.imogi-cashier-page .imogi-cashier-customer-row input:hover:not(:focus),
+		.imogi-cashier-page .imogi-cashier-discount-row input:hover:not(:focus),
+		.imogi-pay-dialog .form-control:hover:not(:focus) {
+			background: inherit !important;
+			border-color: inherit !important;
+			box-shadow: none !important;
+		}
+		.imogi-cashier-page .btn-default:hover,
+		.imogi-cashier-page .btn-primary:hover,
+		.imogi-cashier-page .imogi-cashier-btn-primary:hover,
+		.imogi-cashier-page .imogi-cashier-pay:hover,
+		.imogi-pay-dialog .btn-primary:hover {
+			filter: none !important;
+			opacity: 1 !important;
+		}
+		.imogi-cashier-page .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-logout-btn:hover,
+		.imogi-cashier-page .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-history-btn:hover,
+		.imogi-cashier-page .imogi-cashier-top .imogi-cashier-shift-bar .imogi-cashier-close-shift-btn:hover {
+			background: #f4f4f5 !important;
+			border-color: #d4d4d8 !important;
+			color: #0f1f35 !important;
+		}
+		.imogi-cashier-page .imogi-cashier-group-btn.is-active:hover,
+		.imogi-cashier-page .imogi-cashier-order-type-btn.is-active:hover {
+			background: #0f1f35 !important;
+			border-color: #0f1f35 !important;
+			color: #fff !important;
+		}
+	`, "imogi-cashier-inline-css-v47");
 }
 
 function format_stock_pill(qty) {
@@ -732,6 +1618,47 @@ function round_up_cash(amount, step) {
 	return Math.ceil(flt(amount) / step) * step;
 }
 
+function imogi_dismiss_cashier_toast() {
+	const $el = imogi_dismiss_cashier_toast._$el;
+	if ($el && $el.length) {
+		$el.remove();
+	}
+	imogi_dismiss_cashier_toast._$el = null;
+}
+
+function imogi_show_cashier_toast(message, indicator = "green", seconds = 2) {
+	imogi_dismiss_cashier_toast();
+	imogi_dismiss_cashier_toast._$el = frappe.show_alert(
+		typeof message === "string" ? { message, indicator } : message,
+		seconds
+	);
+}
+
+function imogi_compute_local_tax(net, sales_tax = {}) {
+	const rate = flt(sales_tax.rate) || 11;
+	const enabled = sales_tax.enabled !== 0 && sales_tax.enabled !== false;
+	const net_amount = Math.max(0, flt(net));
+	if (!enabled || net_amount <= 0) {
+		return { taxable_amount: net_amount, tax_amount: 0, grand_total: net_amount, tax_rate: rate };
+	}
+	if (sales_tax.prices_include_tax) {
+		const tax_amount = net_amount * rate / (100 + rate);
+		return {
+			taxable_amount: net_amount - tax_amount,
+			tax_amount,
+			grand_total: net_amount,
+			tax_rate: rate,
+		};
+	}
+	const tax_amount = net_amount * rate / 100;
+	return {
+		taxable_amount: net_amount,
+		tax_amount,
+		grand_total: net_amount + tax_amount,
+		tax_rate: rate,
+	};
+}
+
 imogi_pos.CashierPage = class CashierPage {
 	constructor(page) {
 		this.page = page;
@@ -752,11 +1679,14 @@ imogi_pos.CashierPage = class CashierPage {
 		this.discount_value = 0;
 		this.order_type = "Takeaway";
 		this.held_orders = [];
+		this.promo_discount = 0;
+		this.applied_promos = [];
 		this.pos_opening = null;
 		this.enable_pos_shift = false;
 		this.requires_shift_workflow = false;
 		this.mobile_cart_open = false;
 		this._catalog_mem = {};
+		this._cart_add_toast = null;
 		this.variant_picker = new imogi_pos.VariantPicker(this);
 		this.make();
 		this.enable_mobile_layout_watch();
@@ -787,16 +1717,17 @@ imogi_pos.CashierPage = class CashierPage {
 						"Buka Shift"
 					)}</button>
 				</div>
+				<div class="imogi-cashier-branch-row">
+					<i class="fa fa-map-marker" aria-hidden="true"></i>
+					<span class="imogi-cashier-branch-label"></span>
+					<select class="form-control input-sm imogi-cashier-branch-select" aria-label="${__(
+						"Cabang"
+					)}"></select>
+				</div>
 				<div class="imogi-cashier-status-strip">
 					<button type="button" class="imogi-status-chip imogi-chip-target" title="${__(
 						"Target omzet"
 					)}"></button>
-					<button type="button" class="imogi-status-chip imogi-chip-history is-visible" title="${__(
-						"Riwayat order"
-					)}">
-						<i class="fa fa-history"></i>
-						<span>${__("Riwayat")}</span>
-					</button>
 					<button type="button" class="imogi-status-chip imogi-chip-marketplace" title="${__(
 						"Order marketplace"
 					)}"></button>
@@ -816,12 +1747,6 @@ imogi_pos.CashierPage = class CashierPage {
 						<span class="imogi-cashier-meta imogi-cashier-context-label"></span>
 					</div>
 					<div class="imogi-cashier-toolbar">
-						<div class="imogi-cashier-branch-row">
-							<i class="fa fa-map-marker" aria-hidden="true"></i>
-							<select class="form-control input-sm imogi-cashier-branch-select" aria-label="${__(
-								"Cabang"
-							)}"></select>
-						</div>
 						<input type="search" class="form-control imogi-cashier-search" placeholder="${__(
 							"Cari produk atau scan barcode..."
 						)}" autocomplete="off" />
@@ -837,12 +1762,12 @@ imogi_pos.CashierPage = class CashierPage {
 									<div class="imogi-cashier-group-picker-menu" role="listbox"></div>
 								</div>
 							</div>
-							<div class="imogi-cashier-mobile-filter-block imogi-cashier-mobile-order-row">
-								<div class="imogi-cashier-mobile-filter-label">${__("Jenis Makan")}</div>
-								<div class="imogi-cashier-mobile-order-types">${imogi_render_order_type_buttons(
-									this.order_type
-								)}</div>
-							</div>
+						</div>
+						<div class="imogi-cashier-mobile-order-scroll">
+							<div class="imogi-cashier-mobile-filter-label">${__("Tipe Order")}</div>
+							<div class="imogi-cashier-mobile-order-types">${imogi_render_order_type_buttons(
+								this.order_type
+							)}</div>
 						</div>
 						<div class="imogi-cashier-groups"></div>
 					</div>
@@ -877,18 +1802,29 @@ imogi_pos.CashierPage = class CashierPage {
 							"Lihat"
 						)}</button>
 					</div>
-					<div class="imogi-cashier-cart-items"></div>
-					<div class="imogi-cashier-cart-foot">
-						<div class="imogi-cashier-order-type-row">
-							<div class="imogi-cashier-order-type-label">${__("Tipe Order")}</div>
-							<div class="imogi-cashier-order-types">${imogi_render_order_type_buttons(this.order_type)}</div>
+					<div class="imogi-cashier-cart-scroll">
+						<div class="imogi-cashier-cart-items"></div>
+						<div class="imogi-cashier-cart-foot">
+							<div class="imogi-cashier-order-type-row">
+								<div class="imogi-cashier-order-type-label">${__("Tipe Order")}</div>
+								<div class="imogi-cashier-order-types">${imogi_render_order_type_buttons(this.order_type)}</div>
+							</div>
+							<div class="imogi-cashier-customer-row">
+								<input type="search" class="form-control input-sm imogi-cashier-customer-search" placeholder="${__(
+									"Cari atau ketik nama customer..."
+								)}" autocomplete="off" />
+							</div>
+							<div class="imogi-cashier-customer-label text-muted small mb-2"></div>
+							<div class="imogi-cashier-total-row">
+								<span>${__("Total")}</span>
+								<strong class="imogi-cart-total">${format_currency(0)}</strong>
+							</div>
+							<button type="button" class="btn imogi-cashier-pay" disabled>
+								<i class="fa fa-money"></i> ${__("Bayar Sekarang")}
+							</button>
 						</div>
-						<div class="imogi-cashier-customer-row">
-							<input type="search" class="form-control input-sm imogi-cashier-customer-search" placeholder="${__(
-								"Cari atau ketik nama customer..."
-							)}" autocomplete="off" />
-						</div>
-						<div class="imogi-cashier-customer-label text-muted small mb-2"></div>
+					</div>
+					<div class="imogi-cashier-mobile-checkout">
 						<div class="imogi-cashier-total-row">
 							<span>${__("Total")}</span>
 							<strong class="imogi-cart-total">${format_currency(0)}</strong>
@@ -930,6 +1866,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$group_picker.on("click", (e) => e.stopPropagation());
 		this.wrapper.on("click.imogi-group-picker", () => this.close_group_picker());
 		this.$branch_row = this.wrapper.find(".imogi-cashier-branch-row");
+		this.$branch_label = this.wrapper.find(".imogi-cashier-branch-label");
 		this.$branch_select = this.wrapper.find(".imogi-cashier-branch-select");
 		this.$cart_items = this.wrapper.find(".imogi-cashier-cart-items");
 		this.$total = this.wrapper.find(".imogi-cart-total");
@@ -943,12 +1880,11 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$shift_bar = this.wrapper.find(".imogi-cashier-shift-bar");
 		this.$status_strip = this.wrapper.find(".imogi-cashier-status-strip");
 		this.$target_chip = this.wrapper.find(".imogi-chip-target");
-		this.$history_chip = this.wrapper.find(".imogi-chip-history");
 		this.$marketplace_chip = this.wrapper.find(".imogi-chip-marketplace");
 		this.$offline_chip = this.wrapper.find(".imogi-chip-offline");
 		this.$offline_badge = this.wrapper.find(".imogi-cashier-offline-badge");
 		this.$target_chip.on("click", () => this.open_target_detail());
-		this.$history_chip.on("click", () => {
+		this.wrapper.on("click", ".imogi-cashier-history-btn", () => {
 			if (!this.require_feature("order_history")) return;
 			frappe.set_route("imogi-pos-order-history");
 		});
@@ -1084,50 +2020,96 @@ imogi_pos.CashierPage = class CashierPage {
 		return args;
 	}
 
+	format_branch_label(branch = {}) {
+		if (!branch.branch_code && !branch.branch_name) return "";
+		if (branch.city) {
+			return `${branch.branch_name || branch.branch_code} (${branch.city})`;
+		}
+		return branch.branch_name || branch.branch_code || "";
+	}
+
+	get_display_brand_name(branch = {}) {
+		const store = (this.context?.receipt_store_name || "").trim();
+		if (store) return store;
+		const name = (branch.branch_name || "").replace(/\s*\([^)]*\)\s*$/g, "").trim();
+		const trailing = name.match(/\s[-–]\s*([^\s-]+)\s*$/i);
+		if (trailing && /^imogi$/i.test(trailing[1])) {
+			return "IMOGI";
+		}
+		return (this.context?.company || "IMOGI").trim();
+	}
+
+	format_branch_short_label(branch = {}) {
+		if (!branch.branch_code && !branch.branch_name) return "";
+		const brand = this.get_display_brand_name(branch);
+		let name = (branch.branch_name || branch.branch_code || "").trim();
+		name = name.replace(/\s*\([^)]*\)\s*$/g, "").trim();
+		if (branch.city) {
+			const city_suffix = new RegExp(
+				`\\s*\\(\\s*${String(branch.city).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\)\\s*$`,
+				"i"
+			);
+			name = name.replace(city_suffix, "").trim();
+		}
+		const parts = name.match(/^(.+?)\s*[-–]\s*(.+)$/i);
+		if (parts) {
+			const left = parts[1].trim();
+			const right = parts[2].trim();
+			if (/^imogi$/i.test(right) || right.toLowerCase() === brand.toLowerCase()) {
+				return `${brand} - ${left}`;
+			}
+			if (/^imogi$/i.test(left) || left.toLowerCase() === brand.toLowerCase()) {
+				return `${brand} - ${right}`;
+			}
+		}
+		if (branch.city) {
+			return `${brand} - Cabang ${branch.city}`;
+		}
+		return name;
+	}
+
+	render_context_label() {
+		const active_branch = this.context?.active_branch || {};
+		this.$context_label.text(this.format_branch_short_label(active_branch));
+	}
+
 	render_branch_picker() {
 		if (!this.$branch_row?.length) return;
 		const branches = this.context?.branches || [];
-		const show = cint(this.context?.multi_branch_enabled) && branches.length > 1;
-		if (!show) {
+		const active_branch = this.context?.active_branch || {};
+		const branch_label = this.format_branch_short_label(active_branch);
+		const can_switch = cint(this.context?.multi_branch_enabled) && branches.length > 1;
+
+		if (!branch_label) {
 			this.$branch_row.removeClass("is-visible");
+			this.render_context_label();
 			return;
 		}
 
+		this.$branch_row.addClass("is-visible");
 		const locked = cint(this.context?.branch_locked_by_shift);
-		this.$branch_select.prop("disabled", locked);
 		this.$branch_row.toggleClass("is-locked", locked);
 
-		const active = this.get_active_branch_code();
-		this.$branch_select.html(
-			branches
-				.map((row) => {
-					const label = row.city
-						? `${row.branch_name} (${row.city})`
-						: row.branch_name || row.branch_code;
-					return `<option value="${frappe.utils.escape_html(row.branch_code)}"${
-						row.branch_code === active ? " selected" : ""
-					}>${frappe.utils.escape_html(label)}</option>`;
-				})
-				.join("")
-		);
-		this.$branch_row.addClass("is-visible");
-		const active_branch = this.context?.active_branch || {};
-		const menu = this.context?.menu_summary || {};
-		const menu_label =
-			menu.menu_mode === "custom"
-				? __("Menu khusus")
-				: menu.menu_mode === "restricted"
-					? __("Menu terbatas")
-					: null;
-		this.$context_label.text(
-			[
-				active_branch.branch_name || active_branch.branch_code,
-				this.context.selling_price_list || active_branch.selling_price_list,
-				menu_label,
-			]
-				.filter(Boolean)
-				.join(" · ")
-		);
+		if (can_switch) {
+			this.$branch_label.hide();
+			this.$branch_select.show().prop("disabled", locked);
+			const active = this.get_active_branch_code();
+			this.$branch_select.html(
+				branches
+					.map((row) => {
+						const label = this.format_branch_short_label(row);
+						return `<option value="${frappe.utils.escape_html(row.branch_code)}"${
+							row.branch_code === active ? " selected" : ""
+						}>${frappe.utils.escape_html(label)}</option>`;
+					})
+					.join("")
+			);
+		} else {
+			this.$branch_select.hide().prop("disabled", true);
+			this.$branch_label.text(branch_label).show();
+		}
+
+		this.render_context_label();
 	}
 
 	switch_branch(branch_code) {
@@ -1178,11 +2160,6 @@ imogi_pos.CashierPage = class CashierPage {
 			this.set_stored_branch_code("");
 		}
 		this.render_branch_picker();
-		if (!this.$branch_row.hasClass("is-visible")) {
-			this.$context_label.text(
-				[this.context.pos_profile, this.context.company].filter(Boolean).join(" · ")
-			);
-		}
 		if (this.enable_pos_shift && (this.requires_shift_workflow || this.pos_opening)) {
 			this.$shift_bar.show();
 			this.render_shift_bar();
@@ -1215,6 +2192,10 @@ imogi_pos.CashierPage = class CashierPage {
 
 	require_feature(feature_key, options = {}) {
 		if (this.feature_allowed(feature_key)) return true;
+		const blocked_reason = this.feature_meta(feature_key).blocked_reason;
+		if (blocked_reason === "business" || blocked_reason === "planned") {
+			return false;
+		}
 		if (imogi_pos.feature_upgrade) {
 			imogi_pos.feature_upgrade.prompt(this, feature_key, options);
 		} else {
@@ -1235,26 +2216,25 @@ imogi_pos.CashierPage = class CashierPage {
 			this.feature_allowed(typeFeatures[row.value])
 		);
 		const $orderTypeRow = this.wrapper.find(".imogi-cashier-order-type-row");
-		const $mobileOrderRow = this.wrapper.find(".imogi-cashier-mobile-order-row");
-		if (!availableTypes.length) {
-			// Free tier: basic pos_order checkout without order-type tier features.
+		const $mobileOrderRow = this.wrapper.find(".imogi-cashier-mobile-order-scroll");
+		if (availableTypes.length <= 1) {
+			// Free tier: hide picker when only default checkout is available.
 			$orderTypeRow.hide();
 			$mobileOrderRow.hide();
+			if (availableTypes.length === 1) {
+				this.set_order_type(availableTypes[0].value, true);
+			}
 		} else {
-			$orderTypeRow.show();
-			$mobileOrderRow.show();
 			this.wrapper.find(".imogi-cashier-order-type-btn").each((_, el) => {
 				const $btn = $(el);
 				const type = $btn.data("type");
 				const allowed = this.feature_allowed(typeFeatures[type]);
-				$btn
-					.toggleClass("is-tier-locked", !allowed)
-					.prop("disabled", false)
-					.attr("aria-disabled", allowed ? "false" : "true");
+				$btn.toggle(allowed).removeClass("is-tier-locked").attr("aria-disabled", "false");
 			});
 			if (!this.feature_allowed(typeFeatures[this.order_type])) {
 				this.set_order_type(availableTypes[0].value, true);
 			}
+			this.sync_order_type_placement();
 		}
 
 		const customerOn = this.feature_allowed("customer");
@@ -1285,8 +2265,7 @@ imogi_pos.CashierPage = class CashierPage {
 			this.$marketplace_chip?.removeClass("is-tier-locked");
 		}
 
-		this.$history_chip?.toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
-		this.$history_chip?.addClass("is-visible");
+		this.wrapper.find(".imogi-cashier-history-btn").toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
 		this.sync_status_strip();
 	}
 
@@ -1360,6 +2339,20 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$status_strip.toggleClass("is-visible", has_chip);
 	}
 
+	history_action_html() {
+		return `<button type="button" class="btn btn-xs btn-default imogi-cashier-history-btn" title="${__(
+			"Riwayat order"
+		)}"><i class="fa fa-history"></i> ${__("Riwayat")}</button>`;
+	}
+
+	mount_history_fallback() {
+		this.wrapper.find(".imogi-cashier-history-btn").remove();
+		this.$status_strip.prepend(this.history_action_html());
+		this.wrapper
+			.find(".imogi-cashier-history-btn")
+			.toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
+	}
+
 	refresh_sales_target() {
 		frappe.call({
 			method: "imogi_pos.imogi_pos.utils.sales_target.get_sales_target_progress_api",
@@ -1374,27 +2367,38 @@ imogi_pos.CashierPage = class CashierPage {
 	render_shift_bar() {
 		if (!this.enable_pos_shift || (!this.requires_shift_workflow && !this.pos_opening)) {
 			this.$shift_bar.hide();
+			this.mount_history_fallback();
+			this.sync_status_strip();
 			return;
 		}
+		this.$status_strip.find(".imogi-cashier-history-btn").remove();
 		this.$shift_bar.show();
+		const mobile = this.is_mobile_layout();
 		if (this.pos_opening && this.pos_opening.name) {
 			this.$shift_bar.removeClass("is-closed");
 			const since = frappe.datetime.str_to_user(this.pos_opening.period_start_date);
+			const shift_short = (this.pos_opening.name || "").replace(/^POS-OPE-\d+-/, "POS-");
 			this.$shift_bar.html(`
 				<div class="imogi-cashier-shift-text">
-					<i class="fa fa-unlock"></i>
-					${__("Shift")} <a href="/app/pos-opening-entry/${encodeURIComponent(
-						this.pos_opening.name
-					)}">${frappe.utils.escape_html(this.pos_opening.name)}</a>
-					· ${__("sejak")} ${frappe.utils.escape_html(since)}
+					<i class="fa fa-circle" style="font-size:8px;color:#16a34a"></i>
+					${
+						mobile
+							? `${__("Shift")} ${frappe.utils.escape_html(shift_short)}`
+							: `${__("Shift")} <a href="/app/pos-opening-entry/${encodeURIComponent(
+									this.pos_opening.name
+							  )}">${frappe.utils.escape_html(this.pos_opening.name)}</a> · ${__(
+									"sejak"
+							  )} ${frappe.utils.escape_html(since)}`
+					}
 				</div>
 				<div class="imogi-cashier-shift-actions">
 					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
 						"Logout sementara — shift tetap terbuka"
 					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
-					<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn">${__(
+					${this.history_action_html()}
+					<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn" title="${__(
 						"Tutup Shift"
-					)}</button>
+					)}">${mobile ? `<i class="fa fa-stop"></i> ${__("Tutup")}` : __("Tutup Shift")}</button>
 				</div>
 			`);
 			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
@@ -1409,6 +2413,7 @@ imogi_pos.CashierPage = class CashierPage {
 					<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
 						"Buka Shift"
 					)}</button>
+					${this.history_action_html()}
 					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
 						"Logout dan ganti user kasir"
 					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
@@ -1418,6 +2423,9 @@ imogi_pos.CashierPage = class CashierPage {
 			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
 		}
 		imogi_apply_shift_bar_theme(this.$shift_bar);
+		this.wrapper
+			.find(".imogi-cashier-history-btn")
+			.toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
 	}
 
 	prompt_open_shift() {
@@ -1502,21 +2510,21 @@ imogi_pos.CashierPage = class CashierPage {
 			: this.context.item_groups || [];
 		this.use_pos_category = !!(this.context.pos_categories && this.context.pos_categories.length);
 
-		this.$groups.html(
-			groups
-				.map((g, i) => {
-					const icon = imogi_resolve_group_icon(g.label || g.name);
-					return `<button type="button" class="imogi-cashier-group-btn ${
-						i === 0 ? "is-active" : ""
-					}" data-group="${frappe.utils.escape_html(g.name || "")}" data-label="${frappe.utils.escape_html(
-						g.label || ""
-					)}">
-						<i class="fa ${icon}" aria-hidden="true"></i>
-						<span>${frappe.utils.escape_html(g.label)}</span>
-					</button>`;
-				})
-				.join("")
-		);
+		const group_buttons_html = groups
+			.map((g, i) => {
+				const icon = imogi_resolve_group_icon(g.label || g.name);
+				return `<button type="button" class="imogi-cashier-group-btn ${
+					i === 0 ? "is-active" : ""
+				}" data-group="${frappe.utils.escape_html(g.name || "")}" data-label="${frappe.utils.escape_html(
+					g.label || ""
+				)}">
+					<i class="fa ${icon}" aria-hidden="true"></i>
+					<span>${frappe.utils.escape_html(g.label)}</span>
+				</button>`;
+			})
+			.join("");
+
+		this.$groups.html(group_buttons_html);
 
 		this.$group_picker_menu.html(
 			groups
@@ -1535,10 +2543,11 @@ imogi_pos.CashierPage = class CashierPage {
 		);
 		this.sync_group_picker_ui(groups[0]?.name || "", groups[0]?.label || __("Semua"));
 
-		this.$groups.find(".imogi-cashier-group-btn").on("click", (e) => {
+		const on_group_click = (e) => {
 			const $btn = $(e.currentTarget);
 			this.apply_group_filter($btn.data("group") || "", $btn.data("label") || "");
-		});
+		};
+		this.$groups.find(".imogi-cashier-group-btn").off("click.imogi").on("click.imogi", on_group_click);
 		this.$group_picker_menu.off("click.imogi").on("click.imogi", ".imogi-cashier-group-picker-option", (e) => {
 			const $opt = $(e.currentTarget);
 			this.apply_group_filter($opt.data("group") || "", $opt.data("label") || "");
@@ -1589,7 +2598,38 @@ imogi_pos.CashierPage = class CashierPage {
 			this.item_group = value;
 			this.pos_category = "";
 		}
-		this.load_items();
+		this.load_items({ force: !!value });
+	}
+
+	_all_catalog_cache_key() {
+		return this._catalog_cache_key({ limit: 48, start: 0, ...this.branch_api_args() });
+	}
+
+	_get_cached_all_catalog_items() {
+		return this._catalog_mem[this._all_catalog_cache_key()]?.items || [];
+	}
+
+	_client_filter_catalog_items(items, { pos_category = "", item_group = "" } = {}) {
+		if (!items?.length) return [];
+		if (pos_category) {
+			const direct = items.filter((row) => (row.imogi_pos_category || "") === pos_category);
+			if (direct.length) return direct;
+			const key = String(pos_category).toLowerCase();
+			const match_row = (row) => {
+				const hay = `${row.imogi_pos_category || ""} ${row.item_group || ""} ${row.item_name || ""}`.toLowerCase();
+				if (key === "food") return /food|makan|snack|rice|nasi|main/.test(hay);
+				if (key === "beverage") return /beverage|minuman|drink|coffee|tea|latte|espresso|juice|soda/.test(hay);
+				if (key === "dessert") return /dessert|kue|sweet|cake|pastry|donut/.test(hay);
+				if (key === "service") return /service|layanan|jasa/.test(hay);
+				if (key === "combo package") return row.is_combo || /combo|paket|package/.test(hay);
+				return hay.includes(key);
+			};
+			return items.filter(match_row);
+		}
+		if (item_group) {
+			return items.filter((row) => (row.item_group || "") === item_group);
+		}
+		return items;
 	}
 
 	_catalog_args() {
@@ -1665,14 +2705,30 @@ imogi_pos.CashierPage = class CashierPage {
 				}
 				const items = (r.message || {}).items || [];
 				const cache_key = this._catalog_cache_key(args);
-				this._catalog_mem[cache_key] = { items, cached_at: Date.now() };
+				let render_items = items;
+				if (!render_items.length && (args.pos_category || args.item_group)) {
+					const fallback = this._client_filter_catalog_items(this._get_cached_all_catalog_items(), {
+						pos_category: args.pos_category,
+						item_group: args.item_group,
+					});
+					if (fallback.length) {
+						render_items = fallback;
+					}
+				}
+				this._catalog_mem[cache_key] = { items: render_items, cached_at: Date.now() };
+				if (!args.search && !args.pos_category && !args.item_group) {
+					this._catalog_mem[this._all_catalog_cache_key()] = {
+						items: render_items,
+						cached_at: Date.now(),
+					};
+				}
 				if (
 					imogi_pos.offline?.is_enabled(this) &&
 					typeof imogi_pos.offline.save_catalog === "function"
 				) {
-					imogi_pos.offline.save_catalog(this, args, items);
+					imogi_pos.offline.save_catalog(this, args, render_items);
 				}
-				this._render_catalog_items(items);
+				this._render_catalog_items(render_items);
 				this._prefetch_category_catalogs(args);
 			},
 		});
@@ -1683,12 +2739,14 @@ imogi_pos.CashierPage = class CashierPage {
 		const categories = this.context?.pos_categories || [];
 		if (!categories.length) return;
 
-		categories.forEach((pos_category) => {
+		categories.forEach((category) => {
+			const category_name = category?.name ?? category;
+			if (!category_name) return;
 			const args = {
 				limit: 48,
 				start: 0,
 				...this.branch_api_args(),
-				pos_category,
+				pos_category: category_name,
 			};
 			delete args.item_group;
 			const cache_key = this._catalog_cache_key(args);
@@ -1919,13 +2977,24 @@ imogi_pos.CashierPage = class CashierPage {
 				uom: $el.data("uom"),
 				has_variants: cint($el.data("has-variants")),
 				auto_variant_item_code: $el.data("auto-variant") || "",
+				is_combo: cint($el.data("is-combo")),
+				combo_name: $el.data("combo-name") || "",
+				has_addons: cint($el.data("has-addons")),
 			};
+			if (item.is_combo) {
+				this.add_combo_to_cart(item.combo_name || String(item.item_code).replace(/^COMBO::/, ""));
+				return;
+			}
 			if (item.auto_variant_item_code) {
 				this.add_resolved_item(item.auto_variant_item_code, item);
 				return;
 			}
 			if (item.has_variants) {
 				this.open_variant_modal(item);
+				return;
+			}
+			if (item.has_addons) {
+				this.open_addon_modal(item);
 				return;
 			}
 			this.add_to_cart(item);
@@ -1951,8 +3020,9 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	get_item_html(item) {
+		const is_combo = cint(item.is_combo);
 		const track_stock =
-			cint(item.show_stock_label) || item.is_stock_item || item.bom_limited;
+			!is_combo && (cint(item.show_stock_label) || item.is_stock_item || item.bom_limited);
 		const out = track_stock && !item.in_stock;
 		const uom = item.uom || item.stock_uom || "Nos";
 		const precision = flt(item.rate, 2) % 1 !== 0 ? 2 : 0;
@@ -1960,7 +3030,11 @@ imogi_pos.CashierPage = class CashierPage {
 		const indicator = qty > 10 ? "green" : qty <= 0 ? "red" : "orange";
 		let stock_line = "";
 
-		if (track_stock) {
+		if (is_combo) {
+			stock_line = `<div class="item-stock item-stock--combo"><span class="indicator-pill blue">${__(
+				"Paket"
+			)}</span></div>`;
+		} else if (track_stock) {
 			if (qty <= 0) {
 				stock_line = `<div class="item-stock item-stock--out"><span class="indicator-pill red">${__(
 					"Habis"
@@ -1984,13 +3058,16 @@ imogi_pos.CashierPage = class CashierPage {
 			media = `<div class="item-display abbr">${abbr}</div>`;
 		}
 
-		return `<div class="item-wrapper${out ? " is-out" : ""}${item.has_variants ? " has-variants" : ""}" role="button" tabindex="0"
+		return `<div class="item-wrapper${out ? " is-out" : ""}${item.has_variants ? " has-variants" : ""}${is_combo ? " is-combo" : ""}" role="button" tabindex="0"
 			data-code="${frappe.utils.escape_html(item.item_code)}"
 			data-name="${frappe.utils.escape_html(item.item_name || item.item_code)}"
 			data-rate="${item.rate || 0}"
 			data-uom="${frappe.utils.escape_html(uom)}"
 			data-has-variants="${item.has_variants ? 1 : 0}"
-			data-auto-variant="${frappe.utils.escape_html(item.auto_variant_item_code || "")}">
+			data-auto-variant="${frappe.utils.escape_html(item.auto_variant_item_code || "")}"
+			data-is-combo="${is_combo ? 1 : 0}"
+			data-combo-name="${frappe.utils.escape_html(item.combo_name || "")}"
+			data-has-addons="${item.has_addons ? 1 : 0}">
 			${media}
 			<div class="item-detail">
 				<div class="item-name">${frappe.utils.escape_html(item.item_name || item.item_code)}</div>
@@ -2001,12 +3078,48 @@ imogi_pos.CashierPage = class CashierPage {
 		</div>`;
 	}
 
-	add_to_cart(item) {
-		const existing = this.cart.find((row) => row.item_code === item.item_code);
-		if (existing) existing.qty += 1;
-		else this.cart.push({ ...item, qty: 1 });
+	add_to_cart(item, options = {}) {
+		const qty = Math.max(flt(options.qty || item.qty || 1), 1);
+		const line_key = item.combo_name ? `${item.item_code}::${item.combo_name}` : item.item_code;
+		const existing = this.cart.find((row) => {
+			const key = row.combo_name ? `${row.item_code}::${row.combo_name}` : row.item_code;
+			return key === line_key;
+		});
+		if (existing) existing.qty += qty;
+		else this.cart.push({ ...item, qty });
 		this.render_cart();
-		frappe.show_alert({ message: item.item_name, indicator: "green" });
+		if (!options.silent) {
+			this.queue_cart_add_toast(item);
+		}
+	}
+
+	queue_cart_add_toast(item) {
+		if (!item) return;
+		if (!this._cart_add_toast) {
+			this._cart_add_toast = { code: null, name: "", timer: null };
+		}
+		const state = this._cart_add_toast;
+		const code = item.item_code;
+		if (state.code && state.code !== code) {
+			this.flush_cart_add_toast();
+		}
+		state.code = code;
+		state.name = item.item_name || item.item_code || "";
+		clearTimeout(state.timer);
+		state.timer = setTimeout(() => this.flush_cart_add_toast(), 350);
+	}
+
+	flush_cart_add_toast() {
+		const state = this._cart_add_toast;
+		if (!state || !state.code) return;
+		clearTimeout(state.timer);
+		state.timer = null;
+		const row = this.cart.find((r) => r.item_code === state.code);
+		const qty = row ? flt(row.qty) : 0;
+		const message = qty > 1 ? `${state.name} × ${qty}` : state.name;
+		imogi_show_cashier_toast(message, "green", 1.6);
+		state.code = null;
+		state.name = "";
 	}
 
 	add_resolved_item(item_code, template_item) {
@@ -2017,7 +3130,7 @@ imogi_pos.CashierPage = class CashierPage {
 				if (r.exc) return;
 				const resolved = r.message || {};
 				if (resolved.is_stock_item && !resolved.in_stock) {
-					frappe.show_alert({ message: __("Stok habis"), indicator: "red" });
+					imogi_show_cashier_toast(__("Stok habis"), "red", 2);
 					return;
 				}
 				this.add_to_cart({
@@ -2034,7 +3147,7 @@ imogi_pos.CashierPage = class CashierPage {
 	open_variant_modal(template_item) {
 		this.variant_picker.open(template_item, (resolved) => {
 			if (resolved.is_stock_item && !resolved.in_stock) {
-				frappe.show_alert({ message: __("Stok habis"), indicator: "red" });
+				imogi_show_cashier_toast(__("Stok habis"), "red", 2);
 				return;
 			}
 			this.add_to_cart({
@@ -2047,8 +3160,67 @@ imogi_pos.CashierPage = class CashierPage {
 			});
 			(resolved.add_ons || []).forEach((addon) => {
 				if (addon.is_stock_item && !addon.in_stock) return;
-				this.add_to_cart(addon);
+				this.add_to_cart(addon, { silent: true });
 			});
+		});
+	}
+
+	open_addon_modal(template_item) {
+		this.variant_picker.open(
+			template_item,
+			(resolved) => {
+				if (resolved.is_stock_item && !resolved.in_stock) {
+					imogi_show_cashier_toast(__("Stok habis"), "red", 2);
+					return;
+				}
+				this.add_to_cart({
+					item_code: resolved.item_code,
+					item_name: resolved.item_name,
+					rate: flt(resolved.rate),
+					uom: resolved.uom || "Nos",
+					template_item_code: resolved.template_item_code,
+				});
+				(resolved.add_ons || []).forEach((addon) => {
+					if (addon.is_stock_item && !addon.in_stock) return;
+					this.add_to_cart(addon, { silent: true });
+				});
+			},
+			{ addon_only: true }
+		);
+	}
+
+	add_combo_to_cart(combo_name) {
+		if (!combo_name) return;
+		frappe.call({
+			method: "imogi_pos.api.planned_features_api.get_combo_items",
+			args: { combo_name },
+			callback: (r) => {
+				if (r.exc) return;
+				const payload = r.message || {};
+				const rows = payload.items || [];
+				if (!rows.length) {
+					imogi_show_cashier_toast(__("Combo kosong"), "red", 2);
+					return;
+				}
+				rows.forEach((row) => {
+					this.add_to_cart(
+						{
+							item_code: row.item_code,
+							item_name: row.item_name,
+							rate: flt(row.rate),
+							uom: row.uom || "Nos",
+							combo_name: payload.combo_name,
+							combo_label: payload.combo_label,
+						},
+						{ silent: true, qty: flt(row.qty) || 1 }
+					);
+				});
+				imogi_show_cashier_toast(
+					__("{0} ditambahkan ke keranjang", [payload.combo_label || combo_name]),
+					"green",
+					2
+				);
+			},
 		});
 	}
 
@@ -2091,7 +3263,7 @@ imogi_pos.CashierPage = class CashierPage {
 					return;
 				}
 				if (item.is_stock_item && !item.in_stock) {
-					frappe.show_alert({ message: __("Stok habis"), indicator: "red" });
+					imogi_show_cashier_toast(__("Stok habis"), "red", 2);
 					return;
 				}
 				this.add_to_cart({
@@ -2219,11 +3391,11 @@ imogi_pos.CashierPage = class CashierPage {
 				],
 			});
 			d.$wrapper.on("click", ".imogi-take-hold", (e) => {
-				const hold_id = $(e.currentTarget).closest("tr").data("id");
+				const hold_id = $(e.currentTarget).closest("tr").attr("data-id");
 				this.take_hold(hold_id, () => d.hide());
 			});
 			d.$wrapper.on("click", ".imogi-drop-hold", (e) => {
-				const hold_id = $(e.currentTarget).closest("tr").data("id");
+				const hold_id = $(e.currentTarget).closest("tr").attr("data-id");
 				frappe.call({
 					method: "imogi_pos.api.hold.delete_hold",
 					args: this.branch_api_args({ hold_id }),
@@ -2247,6 +3419,8 @@ imogi_pos.CashierPage = class CashierPage {
 				args: this.branch_api_args({ hold_id }),
 				callback: (r) => {
 					if (r.exc) return;
+					this.held_orders = (this.held_orders || []).filter((h) => h.id !== hold_id);
+					this.update_hold_ui();
 					this._apply_hold(r.message || {});
 					this.load_holds();
 					done && done();
@@ -2280,6 +3454,107 @@ imogi_pos.CashierPage = class CashierPage {
 		return (row && row.type === "Cash") || /^cash$/i.test(mode_of_payment || "");
 	}
 
+	get_payment_mode_icon(mode_of_payment) {
+		if (this.is_cash_mode(mode_of_payment)) return "fa-money";
+		if (this.context?.payment_gateway_enabled && imogi_pos.qris?.is_qris_mode(this, mode_of_payment)) {
+			return "fa-qrcode";
+		}
+		if (/qris/i.test(mode_of_payment || "")) return "fa-qrcode";
+		if (/transfer|bank|va\b/i.test(mode_of_payment || "")) return "fa-university";
+		if (/card|kartu|debit|credit/i.test(mode_of_payment || "")) return "fa-credit-card";
+		return "fa-wallet";
+	}
+
+	build_payment_modes_html(default_mode) {
+		const rows = this.context.payment_modes || [];
+		if (!rows.length) {
+			return `<div class="imogi-pay-modes"><div class="text-muted small">${__(
+				"Tidak ada metode pembayaran"
+			)}</div></div>`;
+		}
+		const cards = rows
+			.map((row) => {
+				const mode = row.mode_of_payment;
+				const active = mode === default_mode ? " is-active" : "";
+				const is_qris =
+					this.context.payment_gateway_enabled && imogi_pos.qris?.is_qris_mode(this, mode);
+				const icon = this.get_payment_mode_icon(mode);
+				return `<button type="button" class="imogi-pay-mode-card${active}${is_qris ? " is-qris" : ""}"
+					data-mode="${frappe.utils.escape_html(mode)}">
+					<span class="imogi-pay-mode-icon"><i class="fa ${icon}"></i></span>
+					<span class="imogi-pay-mode-name">${frappe.utils.escape_html(mode)}</span>
+				</button>`;
+			})
+			.join("");
+		return `<div class="imogi-pay-checkout-block imogi-pay-modes-wrap">
+			<div class="imogi-pay-block-title"><i class="fa fa-credit-card"></i> ${__("Metode Pembayaran")}<span class="reqd">*</span></div>
+			<div class="imogi-pay-modes">
+				<div class="imogi-pay-modes-grid">${cards}</div>
+			</div>
+			<div class="imogi-pay-cash-quick">
+				<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
+				<div class="imogi-pay-quick-row"></div>
+			</div>
+		</div>`;
+	}
+
+	render_cash_quick_buttons(dialog, total) {
+		this.ensure_cash_quick_ui(dialog);
+		const amounts = [
+			{ amount: flt(total), label: __("Uang Pas"), exact: true },
+			{ amount: 50000, label: "50K" },
+			{ amount: 100000, label: "100K" },
+		];
+		dialog.$wrapper.find(".imogi-pay-quick-row").html(
+			amounts
+				.map(({ amount, label, exact }) => {
+					const disabled = !exact && amount < flt(total);
+					const exact_cls = exact ? " is-exact" : "";
+					const disabled_cls = disabled ? " is-disabled" : "";
+					return `<button type="button" class="imogi-pay-quick-btn${exact_cls}${disabled_cls}" data-amount="${amount}"${
+						disabled ? " disabled" : ""
+					}>${label}</button>`;
+				})
+				.join("")
+		);
+	}
+
+	ensure_cash_quick_ui(dialog) {
+		const $wrap = dialog.$wrapper;
+		let $quick = $wrap.find(".imogi-pay-cash-quick");
+		if ($quick.length) return $quick;
+		const $modes_field = $wrap.find('.frappe-control[data-fieldname="payment_modes_html"]');
+		$quick = $(`<div class="imogi-pay-cash-quick">
+			<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
+			<div class="imogi-pay-quick-row"></div>
+		</div>`);
+		if ($modes_field.length) {
+			$modes_field.after($quick);
+		} else {
+			$wrap.find(".imogi-pay-checkout-stack").prepend($quick);
+		}
+		return $quick;
+	}
+
+	setup_payment_mode_cards(dialog, subtotal) {
+		const me = this;
+		const $wrap = dialog.$wrapper;
+		$wrap.off("click.imogiPayMode", ".imogi-pay-mode-card");
+		$wrap.on("click.imogiPayMode", ".imogi-pay-mode-card", function () {
+			const mode = $(this).data("mode");
+			if (!mode) return;
+			$wrap.find(".imogi-pay-mode-card").removeClass("is-active");
+			$(this).addClass("is-active");
+			dialog.set_value("mode_of_payment", mode);
+			me.toggle_cash_fields(dialog, subtotal);
+		});
+	}
+
+	is_sales_tax_enabled() {
+		const cfg = this.context?.sales_tax || {};
+		return cfg.enabled !== 0 && cfg.enabled !== false;
+	}
+
 	is_mobile_layout() {
 		return window.matchMedia("(max-width: 992px)").matches;
 	}
@@ -2299,12 +3574,35 @@ imogi_pos.CashierPage = class CashierPage {
 		this.wrapper.toggleClass("is-mobile-layout", mobile);
 		this.page?.main?.toggleClass("is-mobile-layout", mobile);
 		if (!mobile) this.close_mobile_cart();
+		if (this.enable_pos_shift && this.$shift_bar?.is(":visible")) {
+			this.render_shift_bar();
+		}
+		this.sync_order_type_placement();
+	}
+
+	sync_order_type_placement() {
+		const typeFeatures = IMOGI_ORDER_TYPE_FEATURES;
+		const availableTypes = IMOGI_ORDER_TYPES.filter((row) =>
+			this.feature_allowed(typeFeatures[row.value])
+		);
+		const $orderTypeRow = this.wrapper.find(".imogi-cashier-order-type-row");
+		const $mobileOrderRow = this.wrapper.find(".imogi-cashier-mobile-order-scroll");
+		if (availableTypes.length <= 1) {
+			$orderTypeRow.hide();
+			$mobileOrderRow.hide();
+			return;
+		}
+		const mobile = this.is_mobile_layout();
+		$orderTypeRow.toggle(!mobile);
+		$mobileOrderRow.toggle(mobile);
 	}
 
 	toggle_mobile_cart(open) {
 		if (!this.is_mobile_layout()) return;
 		this.mobile_cart_open = open === undefined ? !this.mobile_cart_open : !!open;
 		this.wrapper.toggleClass("is-mobile-cart-open", this.mobile_cart_open);
+		this.page?.main?.toggleClass("is-mobile-cart-open", this.mobile_cart_open);
+		document.body.classList.toggle("imogi-cashier-mobile-cart-open", this.mobile_cart_open);
 	}
 
 	close_mobile_cart() {
@@ -2430,7 +3728,22 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	refresh_payment_preview(dialog, subtotal) {
-		imogi_pos.loyalty.refresh_preview(this, dialog, subtotal);
+		if (imogi_pos.loyalty?.refresh_preview) {
+			imogi_pos.loyalty.refresh_preview(this, dialog, subtotal);
+			return;
+		}
+		this.payment_preview = null;
+		this.refresh_payment_dialog(dialog, subtotal);
+	}
+
+	needs_checkout_preview() {
+		if (this.is_sales_tax_enabled()) return true;
+		if (this.context?.enable_promo_rules) return true;
+		return !!(
+			this.context?.loyalty_enabled &&
+			imogi_pos.loyalty &&
+			(this.feature_allowed("point_reward") || this.feature_allowed("voucher"))
+		);
 	}
 
 	prompt_create_customer(prefill_name = "") {
@@ -2513,7 +3826,12 @@ imogi_pos.CashierPage = class CashierPage {
 
 	refresh_cart_promos(subtotal) {
 		this.$cart_items.siblings(".imogi-cashier-promo-hint").remove();
-		if (!this.context?.enable_promo_rules || !this.cart.length) return;
+		if (!this.context?.enable_promo_rules || !this.cart.length) {
+			this.promo_discount = 0;
+			this.applied_promos = [];
+			this.update_cart_total_display();
+			return;
+		}
 		clearTimeout(this._promo_preview_timer);
 		this._promo_preview_timer = setTimeout(() => {
 			frappe.call({
@@ -2531,13 +3849,26 @@ imogi_pos.CashierPage = class CashierPage {
 				callback: (r) => {
 					const msg = r.message || {};
 					this.applied_promos = msg.applied_promos || [];
-					if (!this.applied_promos.length) return;
-					const labels = this.applied_promos.map((row) => row.label).join(" · ");
-					this.$cart_items.before(
-						`<div class="imogi-cashier-promo-hint"><i class="fa fa-gift"></i> ${frappe.utils.escape_html(
-							labels
-						)}</div>`
-					);
+					this.promo_discount = flt(msg.promo_discount);
+					const pending = msg.pending_promos || [];
+					const hints = [
+						...this.applied_promos.map((row) => row.label),
+						...pending.map((row) => row.label),
+					];
+					if (hints.length) {
+						const savings =
+							this.promo_discount > 0
+								? ` · ${__("hemat")} ${format_currency(this.promo_discount)}`
+								: "";
+						this.$cart_items.before(
+							`<div class="imogi-cashier-promo-hint imogi-cashier-promo-hint--${
+								this.promo_discount > 0 ? "active" : "pending"
+							}"><i class="fa fa-gift"></i> ${frappe.utils.escape_html(
+								hints.join(" · ")
+							)}${savings}</div>`
+						);
+					}
+					this.update_cart_total_display();
 				},
 			});
 		}, 250);
@@ -2554,7 +3885,233 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	get_cart_total() {
-		return this.get_cart_subtotal();
+		const subtotal = this.get_cart_subtotal();
+		const manual = this.get_discount_amount(subtotal);
+		const net = Math.max(0, subtotal - manual - flt(this.promo_discount));
+		return imogi_compute_local_tax(net, this.context?.sales_tax || {}).grand_total;
+	}
+
+	get_pay_item_count() {
+		return this.cart.reduce((sum, row) => sum + flt(row.qty), 0);
+	}
+
+	get_order_type_label() {
+		const row = IMOGI_ORDER_TYPES.find((item) => item.value === this.order_type);
+		return row?.label || this.order_type || "";
+	}
+
+	build_pay_summary_html(subtotal) {
+		const tax_cfg = this.context?.sales_tax || {};
+		const tax_rate = flt(tax_cfg.rate) || 11;
+		const tax_enabled = this.is_sales_tax_enabled();
+		const manual = this.get_discount_amount(subtotal);
+		const net = Math.max(0, subtotal - manual - flt(this.promo_discount));
+		const tax = imogi_compute_local_tax(net, tax_cfg);
+		const tax_style = tax_enabled ? "" : ' style="display:none;"';
+		const item_count = this.get_pay_item_count();
+		const order_label = this.get_order_type_label();
+		const order_badge = order_label
+			? `<span class="imogi-pay-order-badge">${frappe.utils.escape_html(order_label)}</span>`
+			: "";
+		return `<div class="imogi-pay-top">
+			<div class="imogi-pay-total-strip">
+				<div class="imogi-pay-total-strip-meta">
+					<span class="imogi-pay-item-badge"><i class="fa fa-shopping-basket"></i> ${item_count} ${__(
+						"barang"
+					)}</span>
+					${order_badge}
+				</div>
+				<span class="imogi-pay-total-strip-label">${__("Total Bayar")}</span>
+				<div class="imogi-pay-hero-amount imogi-pay-total-value">${imogi_format_pay_total(tax.grand_total)}</div>
+			</div>
+			<div class="imogi-pay-receipt">
+				<div class="imogi-pay-receipt-title">${__("Rincian Tagihan")}</div>
+				<div class="imogi-pay-breakdown imogi-pay-breakdown--summary">
+					<div class="imogi-pay-breakdown-row">
+						<span>${__("Subtotal")}</span>
+						<strong class="imogi-pay-subtotal-value">${format_currency(subtotal)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-row is-discount imogi-pay-promo-breakdown-row" style="display:none;">
+						<span>${__("Promo otomatis")}</span>
+						<strong class="imogi-pay-promo-discount-display">-${format_currency(0)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-row is-discount imogi-pay-discount-breakdown-row" style="display:none;">
+						<span>${__("Diskon")}</span>
+						<strong class="imogi-pay-discount-value-display">-${format_currency(0)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-row is-discount imogi-pay-voucher-breakdown-row" style="display:none;">
+						<span>${__("Voucher")}</span>
+						<strong class="imogi-pay-voucher-discount-display">-${format_currency(0)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-row is-discount imogi-pay-loyalty-breakdown-row" style="display:none;">
+						<span>${__("Poin")}</span>
+						<strong class="imogi-pay-loyalty-discount-display">-${format_currency(0)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-divider imogi-pay-tax-divider"${tax_style}></div>
+					<div class="imogi-pay-breakdown-row is-tax imogi-pay-taxable-breakdown-row"${tax_style}>
+						<span>${__("DPP")}</span>
+						<strong class="imogi-pay-taxable-value">${format_currency(tax.taxable_amount)}</strong>
+					</div>
+					<div class="imogi-pay-breakdown-row is-tax imogi-pay-tax-breakdown-row"${tax_style}>
+						<span class="imogi-pay-tax-label">${__("PPN")} ${tax_rate}%</span>
+						<strong class="imogi-pay-tax-value">${format_currency(tax.tax_amount)}</strong>
+					</div>
+				</div>
+			</div>
+		</div>`;
+	}
+
+	get_checkout_breakdown(dialog, subtotal) {
+		const preview = this.payment_preview || {};
+		const { type, value } = this.get_payment_discount_state(dialog);
+		const promo_discount = flt(preview.promo_discount ?? this.promo_discount);
+		const manual_discount = this.get_discount_amount(subtotal, type, value);
+		const voucher_discount = flt(preview.voucher_discount);
+		const loyalty_discount = flt(preview.loyalty_discount);
+		const net_before_tax =
+			preview.net_before_tax != null
+				? flt(preview.net_before_tax)
+				: Math.max(0, subtotal - promo_discount - manual_discount - voucher_discount - loyalty_discount);
+		const tax = preview.tax_amount != null
+			? {
+					taxable_amount: flt(preview.taxable_amount),
+					tax_amount: flt(preview.tax_amount),
+					grand_total: flt(preview.grand_total),
+					tax_rate: flt(preview.tax_rate) || flt(this.context?.sales_tax?.rate) || 11,
+			  }
+			: imogi_compute_local_tax(net_before_tax, this.context?.sales_tax || {});
+		return {
+			subtotal,
+			promo_discount,
+			manual_discount,
+			voucher_discount,
+			loyalty_discount,
+			net_before_tax,
+			...tax,
+		};
+	}
+
+	build_order_breakdown(order) {
+		const subtotal = flt(order.subtotal);
+		const promo_discount = flt(order.promo_discount_amount);
+		const voucher_discount = flt(order.voucher_discount_amount);
+		const loyalty_discount = flt(order.loyalty_discount_amount);
+		const total_discount = flt(order.discount_amount);
+		const manual_discount = Math.max(
+			0,
+			total_discount - promo_discount - voucher_discount - loyalty_discount
+		);
+		let taxable_amount = flt(order.taxable_amount);
+		let tax_amount = flt(order.tax_amount);
+		const grand_total = flt(order.grand_total);
+		const tax_rate = flt(this.context?.sales_tax?.rate) || 11;
+		if (!taxable_amount && !tax_amount && grand_total) {
+			const net = Math.max(0, subtotal - total_discount);
+			const tax = imogi_compute_local_tax(net, this.context?.sales_tax || {});
+			taxable_amount = flt(tax.taxable_amount);
+			tax_amount = flt(tax.tax_amount);
+		}
+		return {
+			subtotal,
+			promo_discount,
+			manual_discount,
+			voucher_discount,
+			loyalty_discount,
+			taxable_amount,
+			tax_amount,
+			grand_total,
+			tax_rate,
+		};
+	}
+
+	build_success_summary_html(breakdown, payment_info = {}) {
+		const tax_enabled = this.is_sales_tax_enabled();
+		const tax_rate = flt(breakdown.tax_rate) || flt(this.context?.sales_tax?.rate) || 11;
+		const row = (label, value, cls, show) =>
+			show
+				? `<div class="imogi-pay-breakdown-row ${cls || ""}"><span>${label}</span><strong>${value}</strong></div>`
+				: "";
+		const payment_mode = payment_info.mode_of_payment
+			? `<div class="imogi-pay-success-payment-meta">
+				<span>${__("Metode")}</span>
+				<strong>${frappe.utils.escape_html(payment_info.mode_of_payment)}</strong>
+			</div>`
+			: "";
+		const paid = flt(payment_info.paid_amount);
+		const change = flt(payment_info.change);
+		const is_cash =
+			payment_info.mode_of_payment && this.is_cash_mode(payment_info.mode_of_payment);
+		const cash_meta =
+			is_cash && paid > 0
+				? `<div class="imogi-pay-success-cash-meta">
+					<div class="imogi-pay-success-cash-row">
+						<span>${__("Diterima")}</span>
+						<strong>${format_currency(paid)}</strong>
+					</div>
+					${
+						change > 0
+							? `<div class="imogi-pay-success-cash-row is-change">
+								<span>${__("Kembalian")}</span>
+								<strong>${format_currency(change)}</strong>
+							</div>`
+							: ""
+					}
+				</div>`
+				: "";
+
+		return `<div class="imogi-pay-summary imogi-pay-summary--success">
+			<div class="imogi-pay-breakdown imogi-pay-breakdown--summary">
+				${row(__("Subtotal"), format_currency(breakdown.subtotal), "", breakdown.subtotal > 0)}
+				${row(
+					__("Promo otomatis"),
+					`-${format_currency(breakdown.promo_discount)}`,
+					"is-discount",
+					breakdown.promo_discount > 0
+				)}
+				${row(
+					__("Diskon"),
+					`-${format_currency(breakdown.manual_discount)}`,
+					"is-discount",
+					breakdown.manual_discount > 0
+				)}
+				${row(
+					__("Voucher"),
+					`-${format_currency(breakdown.voucher_discount)}`,
+					"is-discount",
+					breakdown.voucher_discount > 0
+				)}
+				${row(
+					__("Poin"),
+					`-${format_currency(breakdown.loyalty_discount)}`,
+					"is-discount",
+					breakdown.loyalty_discount > 0
+				)}
+				${row(
+					__("DPP"),
+					format_currency(breakdown.taxable_amount),
+					"is-tax",
+					tax_enabled
+				)}
+				${row(
+					`${__("PPN")} ${tax_rate}%`,
+					format_currency(breakdown.tax_amount),
+					"is-tax",
+					tax_enabled
+				)}
+			</div>
+			<div class="imogi-pay-total-footer">
+				<div class="imogi-pay-total-label">${__("Total Bayar")}</div>
+				<div class="imogi-pay-total-value">${imogi_format_pay_total(breakdown.grand_total)}</div>
+			</div>
+			${payment_mode}
+			${cash_meta}
+		</div>`;
+	}
+
+	update_cart_total_display() {
+		if (!this.$total) return;
+		this.$total.text(format_currency(this.get_cart_total()));
+		this.update_mobile_dock();
 	}
 
 	render_cart() {
@@ -2582,19 +4139,17 @@ imogi_pos.CashierPage = class CashierPage {
 					const unit_label = row.uom ? ` / ${frappe.utils.escape_html(row.uom)}` : "";
 					return `
 						<div class="imogi-cart-row" data-code="${frappe.utils.escape_html(row.item_code)}">
-							<div class="imogi-cart-row-head">
+							<div class="imogi-cart-row-line">
 								<div class="imogi-cart-row-name">${frappe.utils.escape_html(row.item_name)}</div>
-								<div class="imogi-cart-row-meta">${format_currency(row.rate)}${unit_label}</div>
+								<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
 							</div>
-							<div class="imogi-cart-row-foot">
-								<div class="imogi-cart-row-controls">
-									<div class="imogi-cart-qty-group">
-										<button type="button" class="imogi-qty-btn" data-delta="-1" aria-label="${__("Kurangi")}">−</button>
-										<span class="imogi-cart-qty">${row.qty}</span>
-										<button type="button" class="imogi-qty-btn" data-delta="1" aria-label="${__("Tambah")}">+</button>
-									</div>
-									<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
+							<div class="imogi-cart-row-actions">
+								<div class="imogi-cart-qty-group">
+									<button type="button" class="imogi-qty-btn" data-delta="-1" aria-label="${__("Kurangi")}">−</button>
+									<span class="imogi-cart-qty">${row.qty}</span>
+									<button type="button" class="imogi-qty-btn" data-delta="1" aria-label="${__("Tambah")}">+</button>
 								</div>
+								<div class="imogi-cart-row-meta">${format_currency(row.rate)}${unit_label}</div>
 							</div>
 						</div>`;
 				})
@@ -2606,7 +4161,7 @@ imogi_pos.CashierPage = class CashierPage {
 			this.update_qty($row.data("code"), cint($(e.currentTarget).data("delta")));
 		});
 
-		this.$total.text(format_currency(subtotal));
+		this.$total.text(format_currency(this.get_cart_total()));
 		this.refresh_cart_promos(subtotal);
 		this.$pay.prop("disabled", false);
 		this.$hold_btn.prop("disabled", !this.feature_allowed("hold_order"));
@@ -2625,8 +4180,7 @@ imogi_pos.CashierPage = class CashierPage {
 		if (this.payment_preview && flt(this.payment_preview.grand_total) >= 0) {
 			return flt(this.payment_preview.grand_total);
 		}
-		const { type, value } = this.get_payment_discount_state(dialog);
-		return subtotal - this.get_discount_amount(subtotal, type, value);
+		return this.get_checkout_breakdown(dialog, subtotal).grand_total;
 	}
 
 	build_pay_numpad_html() {
@@ -2654,7 +4208,7 @@ imogi_pos.CashierPage = class CashierPage {
 		$toggle.toggleClass("is-open", has_discount);
 
 		const sync = () => {
-			if (me.context?.loyalty_enabled) {
+			if (me.needs_checkout_preview()) {
 				me.refresh_payment_preview(dialog, subtotal);
 			} else {
 				me.refresh_payment_dialog(dialog, subtotal);
@@ -2685,18 +4239,25 @@ imogi_pos.CashierPage = class CashierPage {
 
 		let $numpad_wrap = $wrap.find(".imogi-pay-numpad-wrap");
 		if (!$numpad_wrap.length) {
-			$field.after(`<div class="imogi-pay-numpad-wrap">${this.build_pay_numpad_html()}</div>`);
+			$wrap.find(".imogi-pay-cash-section").append(`<div class="imogi-pay-numpad-wrap">${this.build_pay_numpad_html()}</div>`);
 			$numpad_wrap = $wrap.find(".imogi-pay-numpad-wrap");
 		}
 
 		const $input = dialog.fields_dict.paid_amount.$input;
 		if (!is_mobile) {
-			$input.removeAttr("readonly inputmode");
+			$input.removeAttr("readonly inputmode tabindex");
+			$input.prop("readonly", false);
 			$numpad_wrap.removeClass("is-visible");
 			return;
 		}
 
-		$input.attr({ readonly: true, inputmode: "none" });
+		const input_el = $input.get(0);
+		if (input_el) {
+			input_el.readOnly = true;
+			input_el.inputMode = "none";
+		}
+		$input.attr({ readonly: true, inputmode: "none", autocomplete: "off", tabindex: "-1" });
+
 		let buffer = "";
 
 		const sync_buffer = (next_buffer) => {
@@ -2711,12 +4272,24 @@ imogi_pos.CashierPage = class CashierPage {
 			$numpad_wrap.addClass("is-visible");
 			buffer = String(Math.round(flt(dialog.get_value("paid_amount")) || 0));
 			if (buffer === "0") buffer = "";
+			if (input_el) {
+				input_el.readOnly = true;
+				input_el.blur();
+			}
 		};
 
-		$input.off("focus.imogiNumpad click.imogiNumpad").on("focus.imogiNumpad click.imogiNumpad", (e) => {
+		const block_focus = (e) => {
 			e.preventDefault();
+			e.stopPropagation();
+			if (input_el) input_el.blur();
 			show_numpad();
-		});
+			return false;
+		};
+
+		$input
+			.off("focus.imogiNumpad touchstart.imogiNumpad mousedown.imogiNumpad click.imogiNumpad keydown.imogiNumpad")
+			.on("focus.imogiNumpad touchstart.imogiNumpad mousedown.imogiNumpad click.imogiNumpad", block_focus)
+			.on("keydown.imogiNumpad", (e) => e.preventDefault());
 
 		$numpad_wrap.off("click.imogiNumpad").on("click.imogiNumpad", ".imogi-pay-numpad-key", function () {
 			const key = $(this).data("key");
@@ -2740,44 +4313,233 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 	}
 
+	finalize_mobile_pay_dialog(dialog) {
+		if (!this.is_mobile_layout()) return;
+		const blur_focused = () => {
+			dialog.$wrapper.find("input:focus, textarea:focus, select:focus").each(function () {
+				this.blur();
+			});
+			document.activeElement?.blur?.();
+		};
+		blur_focused();
+		setTimeout(blur_focused, 0);
+		setTimeout(blur_focused, 120);
+
+		const $paid = dialog.fields_dict.paid_amount?.$input;
+		if ($paid?.length) {
+			const el = $paid.get(0);
+			if (el) {
+				el.readOnly = true;
+				el.inputMode = "none";
+			}
+			$paid.attr({ readonly: true, inputmode: "none", autocomplete: "off", tabindex: "-1" });
+		}
+
+		const $wrap = dialog.$wrapper;
+		const has_discount = !!(this.discount_type && flt(this.discount_value));
+		if (!has_discount) {
+			$wrap.find(".imogi-pay-discount-panel, .imogi-pay-discount-toggle").removeClass("is-open");
+		}
+		$wrap.find(".imogi-pay-promo-panel, .imogi-pay-promo-toggle").removeClass("is-open");
+
+		if (!$wrap.find(".imogi-pay-qris-hint").length) {
+			$wrap.find(".imogi-pay-checkout-stack").append(
+				`<div class="imogi-pay-qris-hint" style="display:none">
+					<i class="fa fa-qrcode"></i>
+					<span>${__("QRIS akan ditampilkan setelah konfirmasi. Pastikan nominal sudah sesuai.")}</span>
+				</div>`
+			);
+			$wrap.find(".imogi-pay-checkout-stack").append(
+				`<div class="imogi-pay-noncash-hint" style="display:none">
+					<i class="fa fa-info-circle"></i>
+					<span>${__("Konfirmasi metode pembayaran, lalu tekan tombol bayar.")}</span>
+				</div>`
+			);
+		}
+	}
+
 	refresh_payment_dialog(dialog, subtotal) {
-		const total = this.get_payment_total(dialog, subtotal);
-		const { type, value } = this.get_payment_discount_state(dialog);
-		const discount_amount = this.get_discount_amount(subtotal, type, value);
-		const preview = this.payment_preview || {};
-		const voucher_discount = flt(preview.voucher_discount);
-		const loyalty_discount = flt(preview.loyalty_discount);
+		const breakdown = this.get_checkout_breakdown(dialog, subtotal);
+		const total = breakdown.grand_total;
+		const tax_enabled = this.is_sales_tax_enabled();
 		const $wrap = dialog.$wrapper;
 
-		$wrap.find(".imogi-pay-total-value").html(imogi_format_pay_total(total));
-		$wrap.find(".imogi-pay-subtotal-value").text(format_currency(subtotal));
-		$wrap.find(".imogi-pay-discount-value-display").text(`-${format_currency(discount_amount)}`);
-		$wrap.find(".imogi-pay-discount-breakdown-row").toggle(discount_amount > 0);
-		$wrap.find(".imogi-pay-voucher-discount-display").text(`-${format_currency(voucher_discount)}`);
-		$wrap.find(".imogi-pay-voucher-breakdown-row").toggle(voucher_discount > 0);
-		$wrap.find(".imogi-pay-loyalty-discount-display").text(`-${format_currency(loyalty_discount)}`);
-		$wrap.find(".imogi-pay-loyalty-breakdown-row").toggle(loyalty_discount > 0);
-
-		const quick_amounts = [
-			total,
-			round_up_cash(total, 1000),
-			round_up_cash(total, 5000),
-			round_up_cash(total, 10000),
-			round_up_cash(total, 50000),
-			round_up_cash(total, 100000),
-		];
-		$wrap.find(".imogi-pay-quick-row").html(
-			quick_amounts
-				.map((amount, idx) => {
-					const label = idx === 0 ? __("Pas") : format_currency(amount);
-					return `<button type="button" class="imogi-pay-quick-btn" data-amount="${amount}">${label}</button>`;
-				})
-				.join("")
+		$wrap.find(".imogi-pay-hero-amount, .imogi-pay-total-value").html(imogi_format_pay_total(total));
+		$wrap.find(".imogi-pay-footer-amount").text(format_currency(total));
+		$wrap.find(".imogi-pay-item-badge").html(
+			`<i class="fa fa-shopping-basket"></i> ${this.get_pay_item_count()} ${__("barang")}`
 		);
+		$wrap.find(".imogi-pay-subtotal-value").text(format_currency(breakdown.subtotal));
+		$wrap.find(".imogi-pay-promo-discount-display").text(`-${format_currency(breakdown.promo_discount)}`);
+		$wrap.find(".imogi-pay-promo-breakdown-row").toggle(breakdown.promo_discount > 0);
+		$wrap.find(".imogi-pay-discount-value-display").text(`-${format_currency(breakdown.manual_discount)}`);
+		$wrap.find(".imogi-pay-discount-breakdown-row").toggle(breakdown.manual_discount > 0);
+		$wrap.find(".imogi-pay-voucher-discount-display").text(`-${format_currency(breakdown.voucher_discount)}`);
+		$wrap.find(".imogi-pay-voucher-breakdown-row").toggle(breakdown.voucher_discount > 0);
+		$wrap.find(".imogi-pay-loyalty-discount-display").text(`-${format_currency(breakdown.loyalty_discount)}`);
+		$wrap.find(".imogi-pay-loyalty-breakdown-row").toggle(breakdown.loyalty_discount > 0);
+		$wrap.find(".imogi-pay-tax-label").text(`${__("PPN")} ${breakdown.tax_rate}%`);
+		$wrap.find(".imogi-pay-taxable-value").text(format_currency(breakdown.taxable_amount));
+		$wrap.find(".imogi-pay-tax-value").text(format_currency(breakdown.tax_amount));
+		$wrap
+			.find(".imogi-pay-taxable-breakdown-row, .imogi-pay-tax-breakdown-row, .imogi-pay-tax-divider")
+			.toggle(tax_enabled);
+
+		this.render_cash_quick_buttons(dialog, total);
+
+		this.update_payment_primary_action(dialog, subtotal);
 
 		if (this.is_cash_mode(dialog.get_value("mode_of_payment"))) {
+			const prevTotal = flt(dialog._imogi_last_checkout_total);
+			const paid = flt(dialog.get_value("paid_amount"));
+			if (!paid || prevTotal !== total) {
+				if (typeof dialog._imogi_set_paid_amount === "function") {
+					dialog._imogi_set_paid_amount(total);
+				} else {
+					dialog.set_value("paid_amount", total);
+				}
+			}
+			dialog._imogi_last_checkout_total = total;
 			this.update_change_display(dialog, total);
 		}
+	}
+
+	update_payment_primary_action(dialog, subtotal) {
+		const total = this.get_payment_total(dialog, subtotal);
+		dialog.set_primary_action_label(`${__("Selesaikan Pembayaran")} · ${format_currency(total)}`);
+	}
+
+	setup_payment_shell(dialog) {
+		const $wrap = dialog.$wrapper;
+		const $body = $wrap.find(".modal-body");
+		if ($body.find(".imogi-pay-shell").length) return;
+
+		const $shell = $(`<div class="imogi-pay-shell">
+			<div class="imogi-pay-col imogi-pay-col--summary"></div>
+			<div class="imogi-pay-col imogi-pay-col--checkout">
+				<div class="imogi-pay-checkout-stack"></div>
+				<div class="imogi-pay-extras"></div>
+			</div>
+		</div>`);
+
+		const $summary = dialog.fields_dict.pay_summary_html?.$wrapper;
+		const $stack = $shell.find(".imogi-pay-checkout-stack");
+		const $extras = $shell.find(".imogi-pay-extras");
+		const checkout_fields = ["payment_modes_html", "change_html"];
+		const extra_fields = ["promo_html", "discount_html"];
+
+		$body.prepend($shell);
+		if ($summary?.length) {
+			$shell.find(".imogi-pay-col--summary").append($summary);
+		}
+		checkout_fields.forEach((name) => {
+			const $field = dialog.fields_dict[name]?.$wrapper;
+			if ($field?.length) $stack.append($field);
+		});
+		extra_fields.forEach((name) => {
+			const $field = dialog.fields_dict[name]?.$wrapper;
+			if ($field?.length) $extras.append($field);
+		});
+
+		const $paid = dialog.fields_dict.paid_amount?.$wrapper;
+		if ($paid?.length) {
+			$stack.append($paid);
+		}
+
+		const $mode = dialog.fields_dict.mode_of_payment?.$wrapper;
+		if ($mode?.length) {
+			$shell.find(".imogi-pay-col--checkout").append($mode.hide());
+		}
+
+		$body.children().not(".imogi-pay-shell").hide();
+
+		$shell.find(".frappe-control").each(function () {
+			const $field = $(this);
+			$field.removeClass(function (i, className) {
+				return (className.match(/(^|\s)col-\S+/g) || []).join(" ");
+			});
+			$field.css({ width: "100%", maxWidth: "100%" });
+		});
+	}
+
+	apply_payment_modal_dimensions(dialog) {
+		if (!dialog?.$wrapper) return;
+		const $dlg = dialog.$wrapper.find(".modal-dialog");
+		if (!$dlg.length) return;
+		$dlg.addClass("modal-xl");
+		const mobile = this.is_mobile_layout();
+		const landscape = this.is_landscape_layout();
+		const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+		if (mobile && !landscape) {
+			$dlg.css({ maxWidth: "", width: "" });
+			return;
+		}
+		const maxW = Math.min(landscape ? 1120 : 1140, Math.round(vw * 0.96));
+		$dlg.css({ maxWidth: `${maxW}px`, width: `${maxW}px` });
+	}
+
+	update_payment_shell_layout(dialog) {
+		const $shell = dialog?.$wrapper?.find(".imogi-pay-shell");
+		if (!$shell?.length) return;
+		const dialogW =
+			dialog.$wrapper.find(".modal-dialog").outerWidth() ||
+			window.innerWidth ||
+			0;
+		const landscape = this.is_landscape_layout();
+		const useSplit =
+			(landscape && dialogW >= 720) || (!landscape && dialogW >= 1120);
+		$shell.toggleClass("imogi-pay-shell--split", useSplit);
+	}
+
+	finalize_payment_dialog_layout(dialog) {
+		this.apply_payment_modal_dimensions(dialog);
+		this.update_payment_shell_layout(dialog);
+		requestAnimationFrame(() => {
+			this.apply_payment_modal_dimensions(dialog);
+			this.update_payment_shell_layout(dialog);
+		});
+	}
+
+	setup_payment_footer(dialog, subtotal) {
+		const $footer = dialog.$wrapper.find(".modal-footer");
+		if ($footer.find(".imogi-pay-footer-strip").length) return;
+		const total = this.get_payment_total(dialog, subtotal);
+		$footer.prepend(`<div class="imogi-pay-footer-strip">
+			<span class="imogi-pay-footer-label">${__("Total transaksi")}</span>
+			<span class="imogi-pay-footer-amount">${format_currency(total)}</span>
+		</div>`);
+	}
+
+	setup_payment_header(dialog) {
+		dialog.$wrapper.find(".modal-title").html(
+			`<span class="imogi-pay-title-main">${__("Pembayaran")}</span>
+			<span class="imogi-pay-title-sub">${__("Pilih metode pembayaran dan selesaikan transaksi")}</span>`
+		);
+	}
+
+	setup_payment_layout(dialog) {
+		const $wrap = dialog.$wrapper;
+		const $paid = dialog.fields_dict.paid_amount?.$wrapper;
+		const $slot = $wrap.find(".imogi-pay-cash-received-slot");
+		if ($paid?.length && $slot.length && !$slot.find("[data-fieldname='paid_amount']").length) {
+			$slot.append(
+				`<div class="imogi-pay-cash-label">${__("Uang Diterima")}</div>`
+			);
+			$slot.append($paid);
+		}
+	}
+
+	is_landscape_layout() {
+		return window.matchMedia("(orientation: landscape)").matches;
+	}
+
+	sync_payment_dialog_layout(dialog) {
+		if (!dialog?.$wrapper) return;
+		const mobile = this.is_mobile_layout();
+		const landscape = this.is_landscape_layout();
+		dialog.$wrapper.toggleClass("imogi-pay-mobile", mobile && !landscape);
+		dialog.$wrapper.toggleClass("imogi-pay-landscape", landscape);
+		this.finalize_payment_dialog_layout(dialog);
 	}
 
 	open_payment_dialog() {
@@ -2788,6 +4550,7 @@ imogi_pos.CashierPage = class CashierPage {
 			this.prompt_open_shift();
 			return;
 		}
+		this.payment_preview = null;
 		const subtotal = this.get_cart_subtotal();
 		const modes = (this.context.payment_modes || []).map((m) => m.mode_of_payment);
 		const default_mode = this.context.default_payment_mode || modes[0];
@@ -2795,32 +4558,35 @@ imogi_pos.CashierPage = class CashierPage {
 
 		const dialog = new frappe.ui.Dialog({
 			title: __("Pembayaran"),
+			size: "extra-large",
 			fields: [
 				{
 					fieldtype: "HTML",
 					fieldname: "pay_summary_html",
-					options: `<div class="imogi-pay-summary">
-						<div class="imogi-pay-total-label">${__("Total Bayar")}</div>
-						<div class="imogi-pay-total-value">${imogi_format_pay_total(subtotal)}</div>
-					</div>`,
+					options: me.build_pay_summary_html(subtotal),
+				},
+				{
+					fieldtype: "HTML",
+					fieldname: "payment_modes_html",
+					options: me.build_payment_modes_html(default_mode),
 				},
 				{
 					fieldname: "mode_of_payment",
-					fieldtype: "Select",
-					label: __("Metode Pembayaran"),
-					options: modes.join("\n"),
+					fieldtype: "Data",
+					hidden: 1,
 					default: default_mode,
-					reqd: 1,
-					change() {
-						me.toggle_cash_fields(dialog, subtotal);
-					},
 				},
 				{
 					fieldtype: "HTML",
 					fieldname: "discount_html",
 					options: `<div class="imogi-pay-discount-wrap">
 						<button type="button" class="imogi-pay-discount-toggle">
-							<i class="fa fa-tag"></i> ${__("Tambah diskon")}
+							<span class="imogi-pay-section-icon"><i class="fa fa-tag"></i></span>
+							<span class="imogi-pay-section-text">
+								<strong>${__("Diskon Manual")}</strong>
+								<small>${__("Opsional — untuk kasir")}</small>
+							</span>
+							<i class="fa fa-chevron-down imogi-pay-section-chevron"></i>
 						</button>
 						<div class="imogi-pay-discount-panel">
 							<div class="imogi-pay-discount-row">
@@ -2830,16 +4596,6 @@ imogi_pos.CashierPage = class CashierPage {
 									<option value="Amount">${__("Diskon Rp")}</option>
 								</select>
 								<input type="number" min="0" step="any" inputmode="decimal" class="form-control input-sm imogi-pay-discount-value" placeholder="0" />
-							</div>
-							<div class="imogi-pay-discount-breakdown">
-								<div class="imogi-pay-breakdown-row">
-									<span>${__("Subtotal")}</span>
-									<strong class="imogi-pay-subtotal-value">${format_currency(subtotal)}</strong>
-								</div>
-								<div class="imogi-pay-breakdown-row is-discount imogi-pay-discount-breakdown-row" style="display:none;">
-									<span>${__("Diskon")}</span>
-									<strong class="imogi-pay-discount-value-display">-${format_currency(0)}</strong>
-								</div>
 							</div>
 						</div>
 					</div>`,
@@ -2865,14 +4621,23 @@ imogi_pos.CashierPage = class CashierPage {
 				{
 					fieldtype: "HTML",
 					fieldname: "change_html",
-					options: `<div class="imogi-pay-change-wrap" style="display:none;">
-						<div class="text-muted small">${__("Kembalian")}</div>
-						<div class="imogi-pay-change-box">${format_currency(0)}</div>
-						<div class="imogi-pay-quick-row"></div>
+					options: `<div class="imogi-pay-checkout-block imogi-pay-cash-section" style="display:none;">
+						<div class="imogi-pay-section-head"><i class="fa fa-money"></i> ${__("Uang Tunai")}</div>
+						<div class="imogi-pay-cash-grid">
+							<div class="imogi-pay-cash-col imogi-pay-cash-received-slot"></div>
+							<div class="imogi-pay-cash-col">
+								<div class="imogi-pay-cash-label">${__("Kembalian")}</div>
+								<div class="imogi-pay-change-box is-neutral"><span class="imogi-pay-change-value">${format_currency(0)}</span></div>
+							</div>
+						</div>
+					</div>
+					<div class="imogi-pay-noncash-hint" style="display:none;">
+						<i class="fa fa-check-circle"></i>
+						<span>${__("Konfirmasi metode pembayaran lalu tekan tombol bayar di bawah.")}</span>
 					</div>`,
 				},
 			],
-			primary_action_label: __("Selesaikan Pembayaran"),
+			primary_action_label: __("Bayar Sekarang"),
 			primary_action: (values) => {
 				if (me.busy) return;
 				const total = me.get_payment_total(dialog, subtotal);
@@ -2908,7 +4673,12 @@ imogi_pos.CashierPage = class CashierPage {
 						voucher_code: me.voucher_code,
 						loyalty_points_redeem: me.loyalty_points_redeem,
 						on_success: (order) => {
-							me.show_success(order || {}, { change: 0, paid_amount: total });
+							me.show_success(order || {}, {
+								change: 0,
+								paid_amount: total,
+								mode_of_payment: values.mode_of_payment,
+								breakdown: me.get_checkout_breakdown(dialog, subtotal),
+							});
 							me.refresh_sales_target();
 						},
 					});
@@ -2926,8 +4696,22 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		dialog.$wrapper.addClass("imogi-pay-dialog");
+		this.sync_payment_dialog_layout(dialog);
+		if (!dialog._imogi_pay_layout_bound) {
+			dialog._imogi_pay_layout_bound = true;
+			const on_layout = () => this.sync_payment_dialog_layout(dialog);
+			dialog._imogi_pay_layout_on_resize = on_layout;
+			window.addEventListener("resize", on_layout);
+			window.addEventListener("orientationchange", on_layout);
+			dialog.$wrapper.on("hide.bs.modal", () => {
+				window.removeEventListener("resize", on_layout);
+				window.removeEventListener("orientationchange", on_layout);
+				dialog._imogi_pay_layout_bound = false;
+			});
+		}
 
 		dialog.$wrapper.on("click", ".imogi-pay-quick-btn", function () {
+			if ($(this).prop("disabled") || $(this).hasClass("is-disabled")) return;
 			const amount = flt($(this).data("amount"));
 			if (typeof dialog._imogi_set_paid_amount === "function") {
 				dialog._imogi_set_paid_amount(amount);
@@ -2942,6 +4726,11 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		dialog.show();
+		this.setup_payment_shell(dialog);
+		this.setup_payment_header(dialog);
+		this.setup_payment_layout(dialog);
+		this.setup_payment_footer(dialog, subtotal);
+		this.setup_payment_mode_cards(dialog, subtotal);
 		this.setup_payment_discount_ui(dialog, subtotal);
 		if (
 			this.context.loyalty_enabled &&
@@ -2952,20 +4741,36 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		this.setup_mobile_pay_numpad(dialog, subtotal);
 		this.toggle_cash_fields(dialog, subtotal);
-		if (this.context.loyalty_enabled && imogi_pos.loyalty) {
+		if (this.needs_checkout_preview()) {
 			this.refresh_payment_preview(dialog, subtotal);
 		} else {
 			this.refresh_payment_dialog(dialog, subtotal);
 		}
+		this.finalize_mobile_pay_dialog(dialog);
+		this.finalize_payment_dialog_layout(dialog);
+		this.toggle_cash_fields(dialog, subtotal);
 	}
 
 	toggle_cash_fields(dialog, subtotal) {
 		const mode = dialog.get_value("mode_of_payment");
 		const is_cash = this.is_cash_mode(mode);
+		const is_qris =
+			this.context.payment_gateway_enabled &&
+			imogi_pos.qris &&
+			imogi_pos.qris.is_qris_mode(this, mode);
 		const total = this.get_payment_total(dialog, subtotal);
 		dialog.toggle_field("paid_amount", is_cash);
-		dialog.$wrapper.find(".imogi-pay-change-wrap").toggle(is_cash);
-		dialog.$wrapper.find(".imogi-pay-numpad-wrap").toggleClass("is-visible", is_cash && this.is_mobile_layout());
+		const $wrap = dialog.$wrapper;
+		$wrap.toggleClass("imogi-pay-cash-mode", is_cash);
+		$wrap.toggleClass("imogi-pay-qris-mode", !!is_qris);
+		$wrap.find(".imogi-pay-cash-section").toggle(is_cash);
+		$wrap.find(".imogi-pay-numpad-wrap").toggleClass("is-visible", is_cash && this.is_mobile_layout());
+		if (is_cash) {
+			this.ensure_cash_quick_ui(dialog);
+			this.render_cash_quick_buttons(dialog, total);
+		}
+		$wrap.find(".imogi-pay-qris-hint").toggle(!!is_qris);
+		$wrap.find(".imogi-pay-noncash-hint").toggle(!is_cash && !is_qris);
 		if (is_cash) {
 			if (!flt(dialog.get_value("paid_amount"))) {
 				if (typeof dialog._imogi_set_paid_amount === "function") {
@@ -2982,8 +4787,16 @@ imogi_pos.CashierPage = class CashierPage {
 		const paid = flt(dialog.get_value("paid_amount"));
 		const change = paid - total;
 		const $box = dialog.$wrapper.find(".imogi-pay-change-box");
-		$box.text(format_currency(Math.max(change, 0)));
-		$box.toggleClass("is-short", paid < total);
+		const display_change = Math.max(change, 0);
+		$box.html(`<span class="imogi-pay-change-value">${format_currency(display_change)}</span>`);
+		$box.removeClass("is-short is-ok is-neutral");
+		if (paid < total) {
+			$box.addClass("is-short");
+		} else if (change > 0) {
+			$box.addClass("is-ok");
+		} else {
+			$box.addClass("is-neutral");
+		}
 	}
 
 	checkout(dialog, mode_of_payment, total, paid_amount) {
@@ -3018,11 +4831,17 @@ imogi_pos.CashierPage = class CashierPage {
 		if (this.selected_table) args.restaurant_table = this.selected_table;
 		if (this._pending_approval_code) args.approval_code = this._pending_approval_code;
 
+		const checkout_breakdown = this.get_checkout_breakdown(dialog, this.get_cart_subtotal());
 		const finish = (order, change) => {
 			this.busy = false;
 			this.update_mobile_dock();
 			dialog.hide();
-			this.show_success(order || {}, { change, paid_amount: flt(paid_amount) });
+			this.show_success(order || {}, {
+				change,
+				paid_amount: flt(paid_amount),
+				mode_of_payment,
+				breakdown: checkout_breakdown,
+			});
 			this.refresh_sales_target();
 			this.clear_cart_after_checkout();
 			this.refresh_marketplace_badge();
@@ -3085,11 +4904,14 @@ imogi_pos.CashierPage = class CashierPage {
 		this.voucher_code = "";
 		this.loyalty_points_redeem = 0;
 		this.payment_preview = null;
+		this.promo_discount = 0;
+		this.applied_promos = [];
 		this.discount_type = "";
 		this.discount_value = 0;
 		this.render_cart();
 		this._invalidate_catalog_cache();
 		this.load_items({ force: true });
+		this.load_holds();
 	}
 
 	print_receipt(order, payment_info = {}) {
@@ -3107,6 +4929,7 @@ imogi_pos.CashierPage = class CashierPage {
 						header: this.context?.receipt_header || "",
 						footer: this.context?.receipt_footer || __("Terima kasih"),
 						change: flt(payment_info.change),
+						tax_rate: flt(this.context?.sales_tax?.rate) || 11,
 				  };
 		return imogi_pos.thermal.print_order(order, options);
 	}
@@ -3167,12 +4990,8 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	show_success(order, payment_info = {}) {
-		const change_html =
-			payment_info.change > 0
-				? `<div class="imogi-pay-change-highlight">
-					${__("Kembalian")}: ${format_currency(payment_info.change)}
-				</div>`
-				: "";
+		const breakdown = payment_info.breakdown || this.build_order_breakdown(order);
+		const summary_html = this.build_success_summary_html(breakdown, payment_info);
 		const stamp_html = order.stamp_reward
 			? `<div class="imogi-pay-stamp-reward text-success mt-2">
 					<i class="fa fa-gift"></i>
@@ -3211,14 +5030,10 @@ imogi_pos.CashierPage = class CashierPage {
 			fields: [
 				{
 					fieldtype: "HTML",
-					options: `<div class="imogi-pay-success-body text-center py-3">
+					options: `<div class="imogi-pay-success-body">
 						<div class="imogi-pay-success-icon"><i class="fa fa-check-circle"></i></div>
 						<div class="imogi-pay-success-order">${frappe.utils.escape_html(order.name || "")}</div>
-						<div class="imogi-pay-summary imogi-pay-summary--compact">
-							<div class="imogi-pay-total-label">${__("Total")}</div>
-							<div class="imogi-pay-total-value">${imogi_format_pay_total(order.grand_total || 0)}</div>
-						</div>
-						${change_html}
+						${summary_html}
 						${stamp_html}
 						<div class="imogi-pay-success-status">${__("Status")}: ${frappe.utils.escape_html(order.status || "")}</div>
 						<div class="imogi-success-actions">${actions_html}</div>
@@ -3238,6 +5053,9 @@ imogi_pos.CashierPage = class CashierPage {
 		};
 
 		dialog.$wrapper.addClass("imogi-pay-dialog imogi-pay-success-dialog");
+		if (this.is_mobile_layout()) {
+			dialog.$wrapper.addClass("imogi-pay-success-mobile");
+		}
 		dialog.show();
 		dialog.$wrapper.find(".modal-footer").hide();
 		me.bind_success_dialog_actions(dialog, order, payment_info);

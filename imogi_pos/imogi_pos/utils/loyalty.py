@@ -222,8 +222,12 @@ def compute_checkout_totals(
 			frappe.throw(_("Poin yang ditukar melebihi saldo atau nilai belanja"))
 		loyalty_discount = compute_redeem_discount(loyalty_points_redeem, config)
 
-	grand_total = max(0, after_voucher - loyalty_discount)
-	total_discount = subtotal - grand_total
+	net_before_tax = max(0, after_voucher - loyalty_discount)
+	from imogi_pos.imogi_pos.utils.sales_tax import compute_sales_tax
+
+	tax_result = compute_sales_tax(net_before_tax, settings=settings)
+	grand_total = flt(tax_result["grand_total"])
+	total_discount = subtotal - net_before_tax
 
 	return {
 		"items": items,
@@ -235,7 +239,12 @@ def compute_checkout_totals(
 		"voucher_discount": flt(voucher_discount),
 		"loyalty_discount": flt(loyalty_discount),
 		"discount_amount": flt(total_discount),
-		"grand_total": flt(grand_total),
+		"net_before_tax": flt(net_before_tax),
+		"taxable_amount": flt(tax_result["taxable_amount"]),
+		"tax_amount": flt(tax_result["tax_amount"]),
+		"tax_rate": flt(tax_result["tax_rate"]),
+		"prices_include_tax": cint(tax_result["prices_include_tax"]),
+		"grand_total": grand_total,
 		"voucher_code": voucher_meta["voucher_code"] if voucher_meta else "",
 		"loyalty_points_redeemed": loyalty_points_redeem if loyalty_discount else 0,
 		"loyalty_points_earned": compute_earn_points(grand_total, config, customer=customer, company=company)
@@ -261,6 +270,8 @@ def apply_promotions_to_order(order, totals):
 	order.discount_type = order.discount_type or ""
 	order.discount_value = flt(order.discount_value)
 	order.promo_discount_amount = flt(totals.get("promo_discount"))
+	order.taxable_amount = flt(totals.get("taxable_amount"))
+	order.tax_amount = flt(totals.get("tax_amount"))
 	order.applied_promo = totals.get("applied_promo_json") or ""
 	order.voucher_code = totals.get("voucher_code") or ""
 	order.voucher_discount_amount = flt(totals.get("voucher_discount"))
@@ -314,7 +325,11 @@ def apply_loyalty_after_payment(order):
 	if stamp_reward:
 		frappe.flags.imogi_stamp_reward = stamp_reward
 
-	member.save(ignore_permissions=True)
+	try:
+		member.save(ignore_permissions=True)
+	except frappe.TimestampMismatchError:
+		member.reload()
+		member.save(ignore_permissions=True)
 
 	if order.voucher_code:
 		voucher_name = frappe.db.get_value(

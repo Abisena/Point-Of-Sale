@@ -98,6 +98,15 @@ imogi_pos.feature_upgrade.build_message = function (meta, page, feature_key) {
 		};
 	}
 
+	if (reason === "business") {
+		return {
+			title: __("Fitur Tidak Tersedia"),
+			body: __("Fitur <b>{0}</b> tidak tersedia untuk konfigurasi saat ini.", [label]),
+			hint: __("Periksa paket langganan dan toggle di IMOGI POS Settings."),
+			show_matrix: false,
+		};
+	}
+
 	if (reason === "role") {
 		const required = meta.required_role || __("Staff");
 		const mine = (page?.context?.role_context?.matrix_roles || frappe.boot?.imogi_pos_role_context?.matrix_roles || []).join(

@@ -12,19 +12,12 @@ from imogi_pos.imogi_pos.utils.branch_provisioning import (
 	get_provisioning_context,
 	provision_branch_for_existing_company,
 	provision_branch_stack,
+	require_branch_provision_access,
 )
 
 
 def _require_provision_access():
-	frappe.only_for(
-		(
-			"System Manager",
-			"Sales Manager",
-			"Administrator",
-			"IMOGI Owner",
-			"IMOGI Area Manager",
-		)
-	)
+	require_branch_provision_access()
 
 
 @frappe.whitelist()

@@ -270,6 +270,10 @@ def is_workspace_item_allowed_for_user(
 	feature_id: str | None = None,
 ) -> bool:
 	"""Tier + role filter for IMOGI POS workspace links."""
+	from imogi_pos.imogi_pos.utils.business_profile import (
+		is_feature_suppressed_for_business,
+		is_workspace_hidden_for_umkm,
+	)
 	from imogi_pos.imogi_pos.utils.role_gating import (
 		is_workspace_role_allowed_for_feature,
 		user_bypasses_role_gating,
@@ -277,6 +281,8 @@ def is_workspace_item_allowed_for_user(
 
 	tier = tier or get_subscription_tier()
 	user = user or getattr(frappe.session, "user", None)
+	if is_workspace_hidden_for_umkm(link_type, link_to, settings):
+		return False
 	if _user_is_dedicated_cashier(user):
 		return False
 	if not is_workspace_item_in_plan(
@@ -302,6 +308,8 @@ def is_workspace_item_allowed_for_user(
 	resolved = get_workspace_link_feature_id(
 		link_type, link_to, label=label, feature_id=feature_id
 	)
+	if resolved and is_feature_suppressed_for_business(resolved, settings):
+		return False
 	if resolved:
 		from imogi_pos.imogi_pos.utils.feature_registry import is_feature_ui_visible
 

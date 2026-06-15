@@ -2,7 +2,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt, get_datetime, now_datetime
+from frappe.utils import cint, flt, get_datetime, now_datetime
 
 from imogi_pos.imogi_pos.utils.shift_opening import get_cash_payment_mode
 
@@ -102,6 +102,9 @@ def get_shift_closing_page_context(user=None, pos_opening_entry=None):
 	summary = build_closing_summary(opening)
 	pending = get_pending_shift_closing(user, opening.name)
 
+	from imogi_pos.imogi_pos.utils.flow import get_settings
+
+	settings = get_settings()
 	context = {
 		**summary,
 		"user": user,
@@ -110,6 +113,7 @@ def get_shift_closing_page_context(user=None, pos_opening_entry=None):
 		"expenses": 0,
 		"actual_cash": 0,
 		"remarks": "",
+		"enable_shift_cash_detail": cint(getattr(settings, "enable_shift_cash_detail", 0)),
 	}
 
 	if pending:

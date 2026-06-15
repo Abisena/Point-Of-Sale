@@ -3,7 +3,9 @@
 import frappe
 from frappe.utils import cint, flt
 
-POS_CATEGORIES = ("Food", "Beverage", "Dessert", "Service")
+POS_CATEGORIES = ("Food", "Beverage", "Dessert", "Service", "Combo Package")
+COMBO_PACKAGE_CATEGORY = "Combo Package"
+COMBO_CATALOG_PREFIX = "COMBO::"
 
 
 def get_default_bom(item_code):

@@ -15,6 +15,32 @@ from imogi_pos.imogi_pos.utils.stock_import_helpers import (
 	run_stock_import,
 )
 
+_BRANCH_STOCK_TRANSFER_ROLES = frozenset(
+	{
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Area Manager",
+		"IMOGI Inventory",
+		"IMOGI Manager",
+	}
+)
+
+
+def require_branch_stock_transfer_access():
+	"""Transfer antar cabang — butuh Stock Entry, bukan import produk baru."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Login required"), frappe.AuthenticationError)
+
+	roles = set(frappe.get_roles())
+	if roles & _BRANCH_STOCK_TRANSFER_ROLES:
+		return
+	if frappe.has_permission("Stock Entry", "create"):
+		return
+
+	frappe.throw(_("Not permitted to transfer stock"), frappe.PermissionError)
+
 
 def build_stock_import_template():
 	branches = get_accessible_branches()
@@ -63,7 +89,7 @@ def run_import_stock_from_file(file_url, update_rate=1, warehouse=None, branch_c
 
 
 def build_branch_transfer_context(from_branch_code=None, to_branch_code=None):
-	require_import_access()
+	require_branch_stock_transfer_access()
 	return {
 		"branches": get_accessible_branches(),
 		"from_branch": from_branch_code,
@@ -72,7 +98,7 @@ def build_branch_transfer_context(from_branch_code=None, to_branch_code=None):
 
 
 def run_branch_stock_transfer(from_branch_code, to_branch_code, items):
-	require_import_access()
+	require_branch_stock_transfer_access()
 	if not from_branch_code or not to_branch_code:
 		frappe.throw(_("Pilih cabang asal dan tujuan"))
 	if from_branch_code == to_branch_code:
@@ -86,6 +112,12 @@ def run_branch_stock_transfer(from_branch_code, to_branch_code, items):
 
 	if not from_wh or not to_wh:
 		frappe.throw(_("Warehouse cabang belum di-set"))
+	if from_wh == to_wh:
+		frappe.throw(
+			_("Gudang cabang asal dan tujuan sama ({0}). Set warehouse berbeda per cabang, atau pilih cabang lain.").format(
+				from_wh
+			)
+		)
 	if frappe.db.get_value("Warehouse", from_wh, "company") != frappe.db.get_value("Warehouse", to_wh, "company"):
 		frappe.throw(_("Transfer antar cabang harus dalam Company yang sama"))
 

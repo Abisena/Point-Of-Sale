@@ -9,7 +9,12 @@ imogi_pos.loyalty.is_enabled = function (page) {
 imogi_pos.loyalty.build_promo_html = function () {
 	return `<div class="imogi-pay-promo-wrap">
 		<button type="button" class="imogi-pay-promo-toggle">
-			<i class="fa fa-gift"></i> ${__("Voucher & Poin")}
+			<span class="imogi-pay-section-icon"><i class="fa fa-gift"></i></span>
+			<span class="imogi-pay-section-text">
+				<strong>${__("Voucher & Poin")}</strong>
+				<small>${__("Opsional — pelanggan terdaftar")}</small>
+			</span>
+			<i class="fa fa-chevron-down imogi-pay-section-chevron"></i>
 		</button>
 		<div class="imogi-pay-promo-panel">
 			<div class="imogi-pay-voucher-row">
@@ -24,16 +29,6 @@ imogi_pos.loyalty.build_promo_html = function () {
 				<div class="imogi-pay-loyalty-input-row">
 					<input type="number" min="0" step="1" inputmode="numeric" class="form-control input-sm imogi-pay-loyalty-points" placeholder="0" />
 					<span class="imogi-pay-loyalty-balance small text-muted"></span>
-				</div>
-			</div>
-			<div class="imogi-pay-promo-breakdown">
-				<div class="imogi-pay-breakdown-row imogi-pay-voucher-breakdown-row" style="display:none;">
-					<span>${__("Voucher")}</span>
-					<strong class="imogi-pay-voucher-discount-display">-${format_currency(0)}</strong>
-				</div>
-				<div class="imogi-pay-breakdown-row is-discount imogi-pay-loyalty-breakdown-row" style="display:none;">
-					<span>${__("Poin")}</span>
-					<strong class="imogi-pay-loyalty-discount-display">-${format_currency(0)}</strong>
 				</div>
 			</div>
 		</div>
@@ -114,7 +109,9 @@ imogi_pos.loyalty.setup_payment_ui = function (page, dialog, subtotal) {
 };
 
 imogi_pos.loyalty.refresh_preview = function (page, dialog, subtotal) {
-	if (!imogi_pos.loyalty.is_enabled(page)) {
+	const promo_enabled = !!page.context?.enable_promo_rules;
+	const loyalty_enabled = imogi_pos.loyalty.is_enabled(page);
+	if (!promo_enabled && !loyalty_enabled) {
 		page.payment_preview = null;
 		page.refresh_payment_dialog(dialog, subtotal);
 		return;

@@ -32,7 +32,7 @@ imogi_pos.is_erp_enterprise_deployment = function () {
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260614-order-history-cashier-v1";
+	const CACHE_VERSION = "20260615-cash-quick-buttons-v9";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",
@@ -428,13 +428,9 @@ function imogi_pos_fetch_and_redirect() {
 			}
 			frappe.boot.imogi_pos_landing_target = data.landing;
 			frappe.boot.imogi_pos_has_open_shift = data.landing === "cashier";
-			if (data.shift_opening_draft) {
-				frappe.boot.imogi_pos_shift_opening_draft = data.shift_opening_draft;
-			}
 			imogi_pos_apply_landing(data.landing, {
 				company: data.company,
 				pos_profile: data.pos_profile,
-				shift_opening_draft: data.shift_opening_draft,
 			});
 		},
 	});
@@ -479,7 +475,9 @@ function imogi_pos_apply_desk_logo() {
 }
 
 function imogi_pos_sync_cashier_fullscreen() {
-	const active = imogi_pos_requires_shift_workflow() && imogi_pos_on_cashier_flow_page();
+	const active =
+		imogi_pos_requires_shift_workflow() &&
+		(imogi_pos_on_cashier_flow_page() || imogi_pos_on_order_history_page());
 	document.body.classList.toggle("imogi-pos-cashier-fullscreen", active);
 }
 
@@ -511,11 +509,65 @@ function imogi_pos_redirect_to_setup_if_needed() {
 	return true;
 }
 
+const IMOGI_SETTINGS_DOCTYPE = "IMOGI POS Settings";
+const IMOGI_SETTINGS_SLUG = "imogi-pos-settings";
+
+function imogi_pos_has_settings_doctype_route() {
+	return !!(frappe.router?.routes && frappe.router.routes[IMOGI_SETTINGS_SLUG]);
+}
+
+function imogi_pos_patch_settings_slug_route() {
+	if (!frappe.router || frappe.router._imogi_pos_settings_slug_patched) {
+		return;
+	}
+
+	const original = frappe.router.convert_to_standard_route.bind(frappe.router);
+	frappe.router.convert_to_standard_route = async function (route) {
+		const slug = route && route[0];
+		if (slug === IMOGI_SETTINGS_SLUG && !this.routes?.[IMOGI_SETTINGS_SLUG]) {
+			if (imogi_pos_is_cashier_user()) {
+				const landing = imogi_pos_get_landing_target();
+				return [landing === "opening-entry" ? IMOGI_OPEN_SHIFT_PAGE : "imogi-pos-cashier"];
+			}
+			const docname =
+				route.length > 1 && route[1] !== "view"
+					? decodeURIComponent(route[1])
+					: IMOGI_SETTINGS_DOCTYPE;
+			return ["Form", IMOGI_SETTINGS_DOCTYPE, docname];
+		}
+		return original(route);
+	};
+	frappe.router._imogi_pos_settings_slug_patched = true;
+}
+
+function imogi_pos_guard_cashier_settings_slug() {
+	if (imogi_pos_current_path() !== `/app/${IMOGI_SETTINGS_SLUG}`) {
+		return false;
+	}
+	if (!imogi_pos_is_cashier_user() || imogi_pos_has_settings_doctype_route()) {
+		return false;
+	}
+	const landing = imogi_pos_get_landing_target();
+	if (landing === "opening-entry") {
+		imogi_pos_go_to_opening_entry();
+	} else {
+		window.location.replace(IMOGI_CASHIER_PATH);
+	}
+	return true;
+}
+
+imogi_pos.settings_form_route = () => ["Form", IMOGI_SETTINGS_DOCTYPE, IMOGI_SETTINGS_DOCTYPE];
+
 imogi_pos.sync_desk_theme = imogi_pos_sync_desk_theme;
 
 $(document).on("app_ready", () => {
 	imogi_pos_ensure_logout();
+	imogi_pos_patch_settings_slug_route();
 	imogi_pos_sync_desk_theme();
+
+	if (imogi_pos_guard_cashier_settings_slug()) {
+		return;
+	}
 
 	if (imogi_pos_redirect_to_setup_if_needed()) {
 		return;
@@ -528,6 +580,9 @@ $(document).on("app_ready", () => {
 			imogi_pos_sync_desk_theme();
 			setTimeout(() => {
 				imogi_pos_sync_desk_theme();
+				if (imogi_pos_guard_cashier_settings_slug()) {
+					return;
+				}
 				if (imogi_pos_redirect_to_setup_if_needed()) {
 					return;
 				}
@@ -560,6 +615,9 @@ $(document).on("app_ready", () => {
 		imogi_pos_sync_desk_theme();
 		setTimeout(imogi_pos_sync_desk_theme, 50);
 		setTimeout(() => {
+			if (imogi_pos_guard_cashier_settings_slug()) {
+				return;
+			}
 			if (imogi_pos_guard_opening_entry_lock()) {
 				return;
 			}

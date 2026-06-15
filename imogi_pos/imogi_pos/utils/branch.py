@@ -133,9 +133,12 @@ def grant_branch_access(user, branch_code=None, branch=None, pos_profile=None, c
 		"pos_profile": ensure_user_permission(user, "POS Profile", pos_profile),
 	}
 	if "IMOGI Cashier" not in frappe.get_roles(user):
-		frappe.get_doc("User", user).add_roles("IMOGI Cashier")
+		user_doc = frappe.get_doc("User", user)
+		user_doc.flags.ignore_permissions = True
+		user_doc.add_roles("IMOGI Cashier")
 
 	frappe.cache.hdel("bootinfo", user)
+	set_user_default_branch_code(branch["branch_code"], user)
 	return {
 		"user": user,
 		"branch_code": branch["branch_code"],
@@ -212,6 +215,30 @@ def get_accessible_branches(user=None, company=None, include_inactive=0, all_com
 def get_user_default_branch_code(user=None):
 	user = user or frappe.session.user
 	return frappe.defaults.get_user_default(BRANCH_USER_DEFAULT_KEY, user=user)
+
+
+def pick_branch_for_pos_profile(accessible, pos_profile, user=None):
+	"""Pick one branch when several share the same POS Profile (shift lock / profile match)."""
+	if not pos_profile or not accessible:
+		return None
+	matches = [row for row in accessible if row.get("pos_profile") == pos_profile]
+	if not matches:
+		return None
+	if len(matches) == 1:
+		return matches[0]
+
+	user = user or frappe.session.user
+	default_code = get_user_default_branch_code(user)
+	if default_code:
+		for row in matches:
+			if row.get("branch_code") == default_code:
+				return row
+
+	defaults = [row for row in matches if cint(row.get("is_default"))]
+	if defaults:
+		return defaults[0]
+
+	return matches[0]
 
 
 def set_user_default_branch_code(branch_code, user=None):
@@ -295,16 +322,17 @@ def resolve_active_branch(branch_code=None, pos_profile=None, user=None, strict=
 	settings = get_settings()
 	ensure_default_branch(settings)
 
-	branch = None
-	if branch_code:
-		branch = get_branch(branch_code=branch_code)
-	if not branch:
-		default_code = get_user_default_branch_code(user)
-		if default_code:
-			branch = get_branch(branch_code=default_code)
-
 	accessible = get_accessible_branches(user=user)
 	accessible_map = {row["branch_code"]: row for row in accessible}
+
+	# Kasir dengan satu cabang assign selalu pakai cabang itu (abaikan default stale).
+	if len(accessible) == 1 and not strict:
+		branch = accessible[0]
+	elif branch_code:
+		branch = get_branch(branch_code=branch_code)
+	else:
+		branch = None
+
 	stale_branch_code = None
 	if branch and branch["branch_code"] not in accessible_map:
 		if strict:
@@ -314,6 +342,13 @@ def resolve_active_branch(branch_code=None, pos_profile=None, user=None, strict=
 			)
 		stale_branch_code = branch["branch_code"]
 		branch = None
+
+	if not branch and not (len(accessible) == 1 and not strict):
+		default_code = get_user_default_branch_code(user)
+		if default_code:
+			candidate = get_branch(branch_code=default_code)
+			if candidate and candidate["branch_code"] in accessible_map:
+				branch = candidate
 
 	if not branch and accessible:
 		defaults = [row for row in accessible if cint(row.get("is_default"))]
@@ -344,7 +379,7 @@ def resolve_active_branch(branch_code=None, pos_profile=None, user=None, strict=
 	if pos_profile and pos_profile != branch["pos_profile"]:
 		allowed = {row["pos_profile"] for row in accessible}
 		if pos_profile in allowed:
-			match = next((row for row in accessible if row["pos_profile"] == pos_profile), None)
+			match = pick_branch_for_pos_profile(accessible, pos_profile, user=user)
 			if match:
 				branch = match
 

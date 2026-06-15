@@ -8,6 +8,8 @@ from frappe.utils import cint, flt
 
 from imogi_pos.api.auth import ensure_setup_ready, validate_order_api_access
 from imogi_pos.imogi_pos.utils.bom_stock import (
+	COMBO_CATALOG_PREFIX,
+	COMBO_PACKAGE_CATEGORY,
 	POS_CATEGORIES,
 	apply_bom_stock_limits,
 	get_auto_variant_code,
@@ -166,6 +168,77 @@ def _filter_items_by_pos_category(items, pos_category):
 	if not pos_category:
 		return items
 	return [row for row in items if (row.get("imogi_pos_category") or "") == pos_category]
+
+
+def _item_has_pos_add_ons(item_code):
+	text = frappe.get_cached_value("Item", item_code, "imogi_pos_add_ons")
+	return bool((text or "").strip())
+
+
+def _list_combo_catalog_items(ctx, search=None):
+	from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
+	from imogi_pos.imogi_pos.utils.planned_features import list_combo_packages
+
+	if not is_feature_operational("combo_package"):
+		return []
+
+	search_l = (search or "").strip().lower()
+	combos = list_combo_packages(ctx.get("company"))
+	result = []
+	for combo in combos:
+		label = combo.get("combo_name") or combo["name"]
+		if search_l and search_l not in label.lower() and search_l not in combo["name"].lower():
+			continue
+		result.append(
+			{
+				"item_code": f"{COMBO_CATALOG_PREFIX}{combo['name']}",
+				"item_name": label,
+				"rate": flt(combo.get("selling_price")),
+				"currency": ctx.get("currency"),
+				"imogi_pos_category": COMBO_PACKAGE_CATEGORY,
+				"description": combo.get("description") or "",
+				"image": None,
+				"is_combo": 1,
+				"combo_name": combo["name"],
+				"in_stock": True,
+				"is_stock_item": 0,
+				"show_stock_label": 0,
+				"has_variants": 0,
+				"has_addons": 0,
+				"uom": _("Paket"),
+			}
+		)
+	return result
+
+
+def _merge_combo_into_catalog(items, ctx, pos_category=None, search=None):
+	if pos_category and pos_category != COMBO_PACKAGE_CATEGORY:
+		return items
+
+	combos = _list_combo_catalog_items(ctx, search=search)
+	if pos_category == COMBO_PACKAGE_CATEGORY:
+		return combos
+	if not combos:
+		return items
+
+	existing_codes = {row.get("item_code") for row in items}
+	for combo in combos:
+		if combo["item_code"] not in existing_codes:
+			items.append(combo)
+	return items
+
+
+def _enrich_catalog_items(items):
+	for row in items:
+		if row.get("is_combo"):
+			row.setdefault("has_addons", 0)
+			continue
+		code = row.get("item_code")
+		if code and not row.get("has_variants"):
+			row["has_addons"] = int(_item_has_pos_add_ons(code))
+		else:
+			row["has_addons"] = 0
+	return items
 
 
 def _get_item_meta_map(item_codes):
@@ -400,6 +473,7 @@ def _get_template_variants_meta(template_item_code):
 
 def _get_pos_add_ons(template_item, ctx):
 	from erpnext.accounts.doctype.pos_invoice.pos_invoice import get_stock_availability
+	from imogi_pos.imogi_pos.utils.import_helpers import ensure_pos_addon_item, resolve_item_code
 
 	template_code = template_item.name if hasattr(template_item, "name") else template_item
 	add_on_text = frappe.db.get_value("Item", template_code, "imogi_pos_add_ons")
@@ -408,9 +482,7 @@ def _get_pos_add_ons(template_item, ctx):
 	if names:
 		rows = []
 		for name in names:
-			item_code = frappe.db.get_value("Item", {"item_name": name}, "name") or (
-				name if frappe.db.exists("Item", name) else None
-			)
+			item_code = resolve_item_code(name) or ensure_pos_addon_item(name, exclude_item_code=template_code)
 			if not item_code or item_code == template_code:
 				continue
 			row = frappe.db.get_value(
@@ -505,6 +577,19 @@ def get_items(
 	if not item_group:
 		item_group = get_parent_item_group()
 
+	if pos_category == COMBO_PACKAGE_CATEGORY:
+		combos = _list_combo_catalog_items(ctx, search=search)
+		return {
+			"items": combos[start : start + limit],
+			"total": len(combos),
+			"start": start,
+			"limit": limit,
+			"pos_profile": ctx["pos_profile"],
+			"warehouse": ctx["warehouse"],
+			"price_list": price_list,
+			"pos_category": pos_category,
+		}
+
 	cache_key = None
 	if not search:
 		cache_key = _catalog_list_cache_key(ctx, branch, item_group, pos_category, start, limit)
@@ -521,6 +606,8 @@ def get_items(
 			items = _build_catalog_items(ctx, result, template_rows)
 			items = _filter_items_by_groups(items, ctx)
 			items = _filter_items_by_pos_category(items, pos_category)
+			items = _merge_combo_into_catalog(items, ctx, pos_category=pos_category, search=search)
+			items = _enrich_catalog_items(items)
 			return {
 				"items": items[start : start + limit],
 				"total": len(items),
@@ -537,8 +624,11 @@ def get_items(
 		items = _build_catalog_items(ctx, raw, template_rows)
 		items = _filter_items_by_groups(items, ctx)
 		items = _filter_items_by_pos_category(items, pos_category)
+		items = _merge_combo_into_catalog(items, ctx, pos_category=pos_category, search=search)
+		items = _enrich_catalog_items(items)
 		return {
 			"items": items,
+			"total": len(items),
 			"total": len(items),
 			"start": start,
 			"limit": limit,
@@ -552,6 +642,8 @@ def get_items(
 	items = _build_catalog_items(ctx, raw, template_rows)
 	items = _filter_items_by_groups(items, ctx)
 	items = _filter_items_by_pos_category(items, pos_category)
+	items = _merge_combo_into_catalog(items, ctx, pos_category=pos_category)
+	items = _enrich_catalog_items(items)
 
 	response = {
 		"items": items,
@@ -652,6 +744,56 @@ def get_item(item_code, pos_profile=None, branch=None):
 		},
 		warehouse=ctx["warehouse"],
 	)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_item_addon_config(item_code, pos_profile=None, branch=None):
+	"""Return add-on picker config for items without variant selection."""
+	from erpnext.accounts.doctype.pos_invoice.pos_invoice import get_stock_availability
+
+	validate_order_api_access()
+	ensure_setup_ready()
+
+	if not item_code:
+		frappe.throw(_("item_code is required"))
+
+	ctx = _get_pos_context(pos_profile, branch=branch)
+	template = frappe.get_doc("Item", item_code)
+	if template.disabled or not template.is_sales_item:
+		frappe.throw(_("Item {0} is not available for sale").format(item_code))
+	if needs_variant_picker(item_code):
+		frappe.throw(_("Gunakan pilihan varian untuk item ini"))
+	if not _item_has_pos_add_ons(item_code):
+		frappe.throw(_("Tidak ada add-on untuk item ini"))
+
+	allowed_groups = _allowed_item_groups(ctx)
+	if allowed_groups and template.item_group not in allowed_groups:
+		frappe.throw(_("Item {0} is not allowed for this branch").format(item_code))
+
+	base_rate = _get_item_price_rate(template.name, ctx)
+	add_ons = _get_pos_add_ons(template, ctx)
+	add_on_text = frappe.db.get_value("Item", template.name, "imogi_pos_add_ons") or ""
+	configured_add_ons = [part.strip() for part in add_on_text.split(",") if part.strip()]
+	actual_qty, _, _ = get_stock_availability(template.name, ctx["warehouse"])
+	actual_qty, in_stock, _ = resolve_catalog_stock(
+		template.name, ctx["warehouse"], actual_qty, cint(template.is_stock_item)
+	)
+
+	return {
+		"template_item_code": template.name,
+		"item_name": template.item_name,
+		"description": (template.description or "").strip(),
+		"image": template.image,
+		"base_rate": base_rate,
+		"currency": ctx["currency"],
+		"attributes": [],
+		"variants": [],
+		"add_ons": add_ons,
+		"configured_add_ons": configured_add_ons,
+		"addon_only": 1,
+		"is_stock_item": cint(template.is_stock_item),
+		"in_stock": in_stock,
+	}
 
 
 @frappe.whitelist(allow_guest=True)

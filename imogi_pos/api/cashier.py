@@ -8,12 +8,13 @@ from frappe.utils import cint, flt
 
 from imogi_pos.api.auth import ensure_setup_ready
 from imogi_pos.api.order import _parse_json, _serialize_order
-from imogi_pos.imogi_pos.utils.bom_stock import POS_CATEGORIES
+from imogi_pos.imogi_pos.utils.bom_stock import COMBO_PACKAGE_CATEGORY, POS_CATEGORIES
 from imogi_pos.imogi_pos.utils.branch import (
 	get_accessible_branches,
 	resolve_active_branch,
 	set_user_default_branch_code,
 )
+from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
 from imogi_pos.imogi_pos.utils.pos_profile import validate_pos_profile
 from imogi_pos.imogi_pos.utils.webhook import emit_order_webhook
@@ -76,22 +77,32 @@ def _opening_pos_profile(opening):
 
 
 def _resolve_cashier_branch(branch=None, pos_profile=None, strict=False):
-	"""Resolve cabang kasir. Shift terbuka selalu menang (abaikan cache browser)."""
+	"""Resolve cabang kasir. Shift terbuka mengunci cabang ke POS Profile shift."""
+	from imogi_pos.imogi_pos.utils.branch import get_accessible_branches, pick_branch_for_pos_profile
+
+	user = frappe.session.user
 	opening = _get_pos_opening() if _is_pos_shift_enabled() and not strict else None
 	shift_profile = _opening_pos_profile(opening)
 
 	if shift_profile and not strict:
-		pos_profile = shift_profile
-		branch = None
+		accessible = get_accessible_branches(user=user)
+		shift_branch = pick_branch_for_pos_profile(accessible, shift_profile, user=user)
+		if shift_branch:
+			branch = shift_branch["branch_code"]
+			pos_profile = shift_profile
+		else:
+			pos_profile = shift_profile
+			branch = None
 
 	ctx = resolve_active_branch(
 		branch_code=branch,
 		pos_profile=pos_profile,
 		strict=strict,
+		user=user,
 	)
 
-	if ctx.get("branch_code"):
-		set_user_default_branch_code(ctx["branch_code"])
+	if strict and ctx.get("branch_code"):
+		set_user_default_branch_code(ctx["branch_code"], user=user)
 
 	return ctx
 
@@ -277,6 +288,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 	from imogi_pos.imogi_pos.utils.loyalty import get_loyalty_config, is_loyalty_enabled
 	from imogi_pos.imogi_pos.utils.offline_checkout import is_offline_cashier_enabled
 	from imogi_pos.imogi_pos.utils.promo_rules import is_promo_enabled
+	from imogi_pos.imogi_pos.utils.sales_tax import get_sales_tax_config
 	from imogi_pos.imogi_pos.utils.franchise import get_branch_franchise_meta
 	from imogi_pos.imogi_pos.utils.stamp_card import get_stamp_config, is_stamp_enabled
 	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
@@ -303,6 +315,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 		"loyalty_enabled": is_loyalty_enabled(settings),
 		"loyalty": get_loyalty_config(settings),
 		"enable_promo_rules": is_promo_enabled(settings),
+		"sales_tax": get_sales_tax_config(settings),
 		"enable_offline_cashier": is_offline_cashier_enabled(settings),
 		"enable_stamp_card": is_stamp_enabled(settings),
 		"stamp": get_stamp_config(settings),
@@ -323,7 +336,10 @@ def get_cashier_context(branch=None, pos_profile=None):
 			{"name": g.name, "label": g.item_group_name or g.name} for g in groups
 		],
 		"pos_categories": [{"name": "", "label": _("Semua")}] + [
-			{"name": category, "label": category} for category in POS_CATEGORIES
+			{"name": category, "label": category}
+			for category in POS_CATEGORIES
+			if category != COMBO_PACKAGE_CATEGORY
+			or is_feature_operational("combo_package", settings, user=frappe.session.user)
 		],
 		"pos_opening": opening,
 		"held_orders": held,
@@ -362,7 +378,7 @@ def set_active_branch(branch_code):
 			title=_("Cabang Terkunci"),
 		)
 
-	_resolve_cashier_branch(branch_code=branch_code, strict=True)
+	_resolve_cashier_branch(branch=branch_code, strict=True)
 	return get_cashier_context()
 
 
@@ -535,7 +551,6 @@ def get_pos_opening_status():
 def get_cashier_landing_status():
 	"""Fresh landing target for IMOGI Cashier (used after login redirect)."""
 	from imogi_pos.boot import get_cashier_landing, should_use_cashier_home
-	from imogi_pos.imogi_pos.utils.shift_opening import get_pending_shift_opening
 
 	if not should_use_cashier_home():
 		return {"active": False}
@@ -551,7 +566,6 @@ def get_cashier_landing_status():
 		"requires_shift_workflow": True,
 		"company": company,
 		"pos_profile": settings.default_pos_profile,
-		"shift_opening_draft": get_pending_shift_opening(),
 	}
 
 
@@ -627,7 +641,7 @@ def get_shift_opening_page_context(pos_profile=None, branch=None):
 
 
 @frappe.whitelist()
-def submit_shift_opening(payments, draft_name=None, remarks=None, pos_profile=None, branch=None):
+def submit_shift_opening(payments, remarks=None, pos_profile=None, branch=None):
 	"""Create/submit IMOGI POS Shift Opening from custom page."""
 	_require_cashier_access()
 	ensure_setup_ready()
@@ -643,7 +657,6 @@ def submit_shift_opening(payments, draft_name=None, remarks=None, pos_profile=No
 	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
 	result = create_and_submit_shift_opening(
 		payments,
-		draft_name=draft_name,
 		remarks=remarks,
 		pos_profile=branch_ctx["pos_profile"],
 		company=branch_ctx["company"],
@@ -656,30 +669,6 @@ def submit_shift_opening(payments, draft_name=None, remarks=None, pos_profile=No
 		}
 	)
 	return result
-
-
-@frappe.whitelist()
-def save_shift_opening_draft(payments, draft_name=None, remarks=None, pos_profile=None, branch=None):
-	"""Save draft IMOGI POS Shift Opening without submitting."""
-	_require_cashier_access()
-	ensure_setup_ready()
-
-	if not _is_pos_shift_enabled():
-		frappe.throw(_("Shift kasir dinonaktifkan di IMOGI POS Settings"))
-
-	if _get_pos_opening():
-		frappe.throw(_("Shift kasir sudah dibuka"))
-
-	from imogi_pos.imogi_pos.utils.shift_opening import save_shift_opening_draft as _save
-
-	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
-	return _save(
-		payments,
-		draft_name=draft_name,
-		remarks=remarks,
-		pos_profile=branch_ctx["pos_profile"],
-		company=branch_ctx["company"],
-	)
 
 
 @frappe.whitelist()

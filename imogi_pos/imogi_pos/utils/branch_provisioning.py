@@ -26,6 +26,18 @@ PROVISION_CHECKLIST = [
 	_("Berikan User Permission Company + POS Profile ke kasir"),
 ]
 
+PROVISION_ALLOWED_ROLES = (
+	"System Manager",
+	"Sales Manager",
+	"Administrator",
+	"IMOGI Owner",
+	"IMOGI Area Manager",
+)
+
+
+def require_branch_provision_access():
+	frappe.only_for(PROVISION_ALLOWED_ROLES)
+
 
 def get_provisioning_context():
 	"""Context for the add-company/branch helper page."""
@@ -212,7 +224,7 @@ def provision_branch_stack(
 
 	Returns a summary dict with created/linked records.
 	"""
-	frappe.only_for(("System Manager", "Sales Manager", "Administrator"))
+	require_branch_provision_access()
 
 	branch_name = (branch_name or "").strip()
 	if not branch_name:
@@ -300,7 +312,7 @@ def provision_branch_for_existing_company(
 	assign_users=None,
 ):
 	"""Register IMOGI Branch when Company + POS Profile already exist."""
-	frappe.only_for(("System Manager", "Sales Manager", "Administrator"))
+	require_branch_provision_access()
 
 	branch_name = (branch_name or "").strip()
 	if not branch_name:

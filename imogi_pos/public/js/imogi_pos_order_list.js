@@ -4,6 +4,7 @@ frappe.listview_settings["Riwayat Order"] = {
 		"status",
 		"grand_total",
 		"customer_name",
+		"payment_method",
 		"pos_invoice",
 		"order_channel",
 		"order_type",
@@ -42,6 +43,9 @@ frappe.listview_settings["Riwayat Order"] = {
 		},
 		grand_total(value) {
 			return value ? format_currency(value) : "";
+		},
+		payment_method(value) {
+			return value || __("—");
 		},
 		creation(value) {
 			return value ? frappe.datetime.str_to_user(value) : "";

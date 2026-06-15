@@ -21,6 +21,11 @@ frappe.ui.form.on("Riwayat Order", {
 			frm.page.clear_inner_toolbar();
 			if (frm.doc.docstatus === 1) {
 				frm.add_custom_button(__("Print"), () => frm.print()).addClass("btn-default");
+				if (frm.doc.status === "Completed" || frm.doc.pos_invoice) {
+					frm.add_custom_button(__("Cetak Ulang Struk"), () => {
+						imogi_pos_reprint_order_receipt(frm.doc.name);
+					}).addClass("btn-default");
+				}
 			}
 			return;
 		}
@@ -122,6 +127,11 @@ frappe.ui.form.on("Riwayat Order", {
 		}
 
 		add_void_refund_buttons(frm, status, is_umkm);
+		if (frm.doc.docstatus === 1 && (status === "Completed" || frm.doc.pos_invoice)) {
+			frm.add_custom_button(__("Cetak Ulang Struk"), () => {
+				imogi_pos_reprint_order_receipt(frm.doc.name);
+			}).addClass("btn-default");
+		}
 		if (!is_umkm) {
 			add_move_table_button(frm, status);
 			add_merge_table_button(frm, status);
@@ -180,7 +190,11 @@ frappe.ui.form.on("IMOGI POS Order Item", {
 });
 
 function is_umkm_mode() {
-	return frappe.boot.imogi_pos_business_type === "UMKM";
+	return !uses_post_payment_flow();
+}
+
+function uses_post_payment_flow() {
+	return !!(cint(frappe.boot.imogi_pos_enable_kds) || cint(frappe.boot.imogi_pos_enable_fulfillment));
 }
 
 function apply_umkm_defaults(frm) {
@@ -508,4 +522,27 @@ function add_move_table_button(frm, status) {
 
 function imogi_pos_is_riwayat_order_admin() {
 	return frappe.user.has_role("System Manager") || frappe.user.has_role("Administrator");
+}
+
+function imogi_pos_reprint_order_receipt(order_name) {
+	if (!order_name) return;
+	frappe.call({
+		method: "imogi_pos.api.free_tier_api.get_order_receipt_url",
+		args: { order_name },
+		callback(r) {
+			const url = r.message && r.message.url;
+			if (!url) {
+				frappe.msgprint(__("URL struk tidak tersedia."));
+				return;
+			}
+			const win = window.open(url, "_blank");
+			if (!win) {
+				frappe.msgprint({
+					title: __("Pop-up diblokir"),
+					indicator: "orange",
+					message: __("Izinkan pop-up untuk situs ini, lalu coba cetak ulang."),
+				});
+			}
+		},
+	});
 }

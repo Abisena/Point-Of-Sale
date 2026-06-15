@@ -10,14 +10,19 @@ imogi_pos.VariantPicker = class VariantPicker {
 		this.on_add = null;
 	}
 
-	open(template_item, on_add) {
+	open(template_item, on_add, options = {}) {
 		this.on_add = on_add;
-		const args = { template_item_code: template_item.item_code };
-		if (this.page?.branch_api_args) {
-			Object.assign(args, this.page.branch_api_args());
+		this.addon_only = !!(options.addon_only || template_item.addon_only);
+		const args = { ...this.page?.branch_api_args?.() };
+		if (this.addon_only) {
+			args.item_code = template_item.item_code;
+		} else {
+			args.template_item_code = template_item.item_code;
 		}
 		frappe.call({
-			method: "imogi_pos.api.catalog.get_item_variant_config",
+			method: this.addon_only
+				? "imogi_pos.api.catalog.get_item_addon_config"
+				: "imogi_pos.api.catalog.get_item_variant_config",
 			args,
 			callback: (r) => {
 				if (r.exc || !r.message) return;
@@ -138,7 +143,9 @@ imogi_pos.VariantPicker = class VariantPicker {
 
 	render_add_ons() {
 		const rows = this.config.add_ons || [];
-		if (!rows.length) return "";
+		if (!rows.length) {
+			return this.render_addon_empty_state();
+		}
 
 		const options = rows
 			.map((row) => {
@@ -162,6 +169,27 @@ imogi_pos.VariantPicker = class VariantPicker {
 				)}</span>
 			</div>
 			<div class="imogi-variant-options">${options}</div>
+		</section>`;
+	}
+
+	render_addon_empty_state() {
+		if (!this.addon_only) return "";
+		const labels = this.config.configured_add_ons || [];
+		if (!labels.length) return "";
+
+		const items = labels
+			.map((label) => `<li>${frappe.utils.escape_html(label)}</li>`)
+			.join("");
+
+		return `<section class="imogi-variant-section imogi-variant-section--addons imogi-variant-section--empty">
+			<div class="imogi-variant-section-head">
+				<h3 class="imogi-variant-section-title">${__("ADD-ONS")}</h3>
+			</div>
+			<p class="imogi-variant-addon-empty-title">${__("Add-on belum tersedia di sistem")}</p>
+			<p class="imogi-variant-addon-empty-hint">${__(
+				"Buat Item berikut (grup Add-ons) lalu refresh kasir:"
+			)}</p>
+			<ul class="imogi-variant-addon-empty-list">${items}</ul>
 		</section>`;
 	}
 
@@ -252,6 +280,34 @@ imogi_pos.VariantPicker = class VariantPicker {
 		const $btn = this.$modal.find(".imogi-variant-add-cart");
 		$btn.prop("disabled", true).text(`${__("Menambahkan...")}`);
 
+		if (this.config.addon_only) {
+			const add_on_items = (this.config.add_ons || [])
+				.filter((row) => this.add_ons[row.item_code])
+				.map((row) => ({
+					item_code: row.item_code,
+					item_name: row.item_name,
+					rate: flt(row.rate),
+					uom: row.uom || row.stock_uom,
+					is_stock_item: row.is_stock_item,
+					in_stock: row.in_stock,
+				}));
+
+			this.close();
+			this.on_add &&
+				this.on_add({
+					item_code: this.config.template_item_code,
+					item_name: this.config.item_name,
+					rate: flt(this.config.base_rate),
+					uom: this.config.uom || "Nos",
+					template_item_code: this.config.template_item_code,
+					is_stock_item: this.config.is_stock_item,
+					in_stock: this.config.in_stock,
+					addon_only: true,
+					add_ons: add_on_items,
+				});
+			return;
+		}
+
 		const args = {
 			template_item_code: this.config.template_item_code,
 			attributes: this.selections,
@@ -301,6 +357,7 @@ function inject_variant_modal_css() {
 		"imogi-variant-modal-css-v5",
 		"imogi-variant-modal-css-v6",
 		"imogi-variant-modal-css-v7",
+		"imogi-variant-modal-css-v8",
 	].forEach((id) => document.getElementById(id)?.remove());
 
 	frappe.dom.set_style(
@@ -458,6 +515,26 @@ function inject_variant_modal_css() {
 			background: #f4f4f5;
 			color: #52525b;
 		}
+		.imogi-variant-section--empty { padding-bottom: 18px; }
+		.imogi-variant-addon-empty-title {
+			color: #b45309;
+			font-size: 13px;
+			font-weight: 700;
+			margin: 8px 0 6px;
+		}
+		.imogi-variant-addon-empty-hint {
+			color: #71717a;
+			font-size: 12px;
+			line-height: 1.45;
+			margin: 0 0 8px;
+		}
+		.imogi-variant-addon-empty-list {
+			color: #18181b;
+			font-size: 13px;
+			font-weight: 600;
+			margin: 0;
+			padding-left: 18px;
+		}
 		.imogi-variant-options { display: flex; flex-direction: column; }
 		.imogi-variant-option {
 			align-items: center;
@@ -565,7 +642,7 @@ function inject_variant_modal_css() {
 			.imogi-variant-hero-media { border-radius: 16px 16px 0 0; }
 		}
 		`,
-		"imogi-variant-modal-css-v8"
+		"imogi-variant-modal-css-v9"
 	);
 }
 

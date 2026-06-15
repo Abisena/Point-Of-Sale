@@ -31,7 +31,6 @@ SETTINGS_FEATURE_MAP = {
 	"enable_birthday_promo": "birthday_promo",
 	"enable_pos_shift": "open_shift",
 	"enable_kitchen_display": "kitchen_display",
-	"enable_fulfillment": "delivery_order",
 	"enable_order_api": "api_access",
 	"multi_branch": "multi_outlet",
 	"enable_central_kitchen": "central_kitchen",
@@ -136,15 +135,19 @@ def _settings_enabled_for_feature(settings, feature_id: str) -> bool:
 def get_feature_block_reason(
 	feature_id: str, settings=None, tier: str | None = None, user: str | None = None
 ) -> str | None:
-	"""Return None when feature is usable; else ``tier``, ``role``, ``settings``, or ``planned``."""
+	"""Return None when feature is usable; else ``business``, ``tier``, ``role``, ``settings``, or ``planned``."""
+	from imogi_pos.imogi_pos.utils.business_profile import is_feature_suppressed_for_business
 	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	settings = settings or get_settings()
+	if is_feature_suppressed_for_business(feature_id, settings):
+		return "business"
 
 	feature = get_feature(feature_id)
 	if not feature:
 		return "tier"
 	if feature["status"] == FEATURE_STATUS_PLANNED:
 		return "planned"
-	settings = settings or get_settings()
 	if not is_subscription_tier_disabled():
 		tier = tier or get_subscription_tier(settings)
 		if not is_tier_at_least(tier, feature["min_tier"]):

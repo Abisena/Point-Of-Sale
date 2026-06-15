@@ -92,10 +92,31 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 
 .imogi-cashier-page .layout-main-section-wrapper,
 .imogi-cashier-page .layout-main-section,
-.imogi-cashier-page .page-body,
-.imogi-open-shift-page .page-body,
-.imogi-close-shift-page .page-body {
+.imogi-cashier-page .page-body {
 	background: transparent !important;
+}
+
+.imogi-open-shift-page.layout-main-section,
+.imogi-close-shift-page.layout-main-section,
+.imogi-open-shift-page .layout-main-section-wrapper,
+.imogi-open-shift-page .layout-main-section,
+.imogi-open-shift-page .page-body,
+.imogi-open-shift-page .page-container,
+.imogi-open-shift-page .main-section,
+.imogi-close-shift-page .layout-main-section-wrapper,
+.imogi-close-shift-page .layout-main-section,
+.imogi-close-shift-page .page-body,
+.imogi-close-shift-page .page-container,
+.imogi-close-shift-page .main-section {
+	background: #fff !important;
+	min-height: 100dvh;
+}
+
+body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history),
+.imogi-pos-order-history.layout-main-section,
+.imogi-pos-order-history .page-body {
+	background: #fff !important;
+	min-height: calc(100dvh - 60px);
 }
 
 /* Primary buttons */
@@ -113,13 +134,10 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	color: #fff !important;
 }
 
-.imogi-cashier-page .imogi-cashier-btn-primary:hover,
 .imogi-cashier-page .imogi-cashier-btn-primary:focus,
-.imogi-cashier-page .imogi-cashier-pay:hover,
 .imogi-cashier-page .imogi-cashier-pay:focus,
-.imogi-open-shift-page .imogi-shift-btn-primary:hover,
 .imogi-open-shift-page .imogi-shift-btn-primary:focus,
-.imogi-close-shift-page .imogi-close-btn-primary.is-balanced:hover {
+.imogi-close-shift-page .imogi-close-btn-primary.is-balanced:focus {
 	background: var(--imogi-primary-hover) !important;
 	color: #fff !important;
 }
@@ -134,18 +152,6 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 .imogi-close-shift-page .imogi-close-input,
 .imogi-close-shift-page .imogi-close-denom-qty {
 	transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-.imogi-cashier-page .imogi-cashier-search:hover:not(:focus),
-.imogi-cashier-page .imogi-cashier-customer-row input:hover:not(:focus),
-.imogi-cashier-page .imogi-cashier-discount-row input:hover:not(:focus),
-.imogi-open-shift-page .imogi-shift-input:hover:not(:focus),
-.imogi-open-shift-page .imogi-shift-denom-qty:hover:not(:focus),
-.imogi-close-shift-page .imogi-close-input:hover:not(:focus),
-.imogi-close-shift-page .imogi-close-denom-qty:hover:not(:focus) {
-	background: #fff !important;
-	border-color: var(--imogi-input-hover) !important;
-	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
 }
 
 .imogi-cashier-page .imogi-cashier-search:focus,
@@ -182,18 +188,18 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 
 .imogi-cashier-page .imogi-cashier-panel-head,
 .imogi-open-shift-page .imogi-shift-header,
-.imogi-close-shift-page .imogi-close-header {
+.imogi-close-shift-page .imogi-shift-header {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
 	border-color: rgba(255, 255, 255, 0.12) !important;
 	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
 }
 
-.imogi-cashier-shift-text,
-.imogi-cashier-shift-text a {
+.imogi-cashier-shift-bar .imogi-cashier-shift-text,
+.imogi-cashier-shift-bar .imogi-cashier-shift-text a {
 	color: #fff !important;
 }
 
-.imogi-cashier-shift-text .fa {
+.imogi-cashier-shift-bar .imogi-cashier-shift-text .fa {
 	color: rgba(255, 255, 255, 0.72) !important;
 }
 
@@ -207,14 +213,14 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 
 .imogi-cashier-page .imogi-cashier-panel-head h5,
 .imogi-open-shift-page .imogi-shift-header-title,
-.imogi-close-shift-page .imogi-close-header-title {
+.imogi-close-shift-page .imogi-shift-header-title {
 	color: #fff !important;
 }
 
 .imogi-cashier-page .imogi-cashier-head-icon,
 .imogi-cashier-page .imogi-cashier-meta,
 .imogi-open-shift-page .imogi-shift-header-sub,
-.imogi-close-shift-page .imogi-close-header-sub {
+.imogi-close-shift-page .imogi-shift-header-sub {
 	color: rgba(255, 255, 255, 0.72) !important;
 }
 
@@ -283,7 +289,6 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	font-weight: 700 !important;
 }
 
-.imogi-pay-dialog .btn-primary:hover,
 .imogi-pay-dialog .btn-primary:focus {
 	background: var(--imogi-primary-hover) !important;
 	border-color: var(--imogi-primary-hover) !important;
@@ -301,12 +306,6 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	border: 1px solid #d4d4d8 !important;
 	border-radius: 10px !important;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.imogi-pay-dialog .form-control:hover:not(:focus) {
-	background: #fff !important;
-	border-color: var(--imogi-input-hover) !important;
-	box-shadow: 0 0 0 3px rgba(42, 79, 115, 0.14) !important;
 }
 
 .imogi-pay-dialog .form-control:focus {
@@ -426,12 +425,6 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 
-.imogi-success-action-btn:hover {
-	background: #fafafa;
-	border-color: #0f1f35;
-	transform: translateY(-1px);
-}
-
 .imogi-success-action-btn.is-primary {
 	background: #0f1f35;
 	border-color: #0f1f35;
@@ -440,11 +433,6 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	gap: 10px;
 	grid-column: 1 / -1;
 	min-height: 48px;
-}
-
-.imogi-success-action-btn.is-primary:hover {
-	background: #1a3352;
-	color: #fff;
 }
 
 .imogi-success-action-icon {
@@ -504,13 +492,12 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 	transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.imogi-pay-dialog .imogi-pay-quick-btn:hover {
-	background: #fafafa;
-	border-color: var(--imogi-input-hover);
-	color: #0f1f35;
+/* IMOGI Cashier fullscreen kiosk mode — hide desk chrome on shift workflow pages */
+body.imogi-pos-themed.imogi-pos-cashier-fullscreen {
+	background: #fff !important;
+	background-image: none !important;
 }
 
-/* IMOGI Cashier fullscreen kiosk mode — hide desk chrome on shift workflow pages */
 body.imogi-pos-cashier-fullscreen .navbar,
 body.imogi-pos-cashier-fullscreen header.navbar,
 body.imogi-pos-cashier-fullscreen .sticky-top,
@@ -544,15 +531,49 @@ body.imogi-pos-cashier-fullscreen .imogi-cashier-page {
 	max-height: 100dvh !important;
 }
 
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .layout-main-section-wrapper,
 body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .layout-main-section,
-body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .layout-main-section {
-	min-height: 100vh !important;
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .page-body,
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .page-container,
+body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .main-section,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .layout-main-section-wrapper,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-body,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-container,
+body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .main-section {
+	background: #fff !important;
 	min-height: 100dvh !important;
 }
 
 body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .page-body,
 body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-body {
 	padding-top: 16px !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history,
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body,
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .imogi-web-shell,
+body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper:has(.imogi-pos-order-history) {
+	background: #fff !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	height: 100dvh !important;
+	max-height: 100dvh !important;
+	min-height: 100dvh !important;
+	overflow: hidden;
+	padding: 8px 12px 10px !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body {
+	padding: 0 !important;
 }
 
 .imogi-open-shift-page .imogi-cash-denom-add,
@@ -567,13 +588,20 @@ body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-body {
 	color: #fff !important;
 }
 
-@media (max-width: 640px) {
+	@media (max-width: 640px) {
 	body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper,
 	body.imogi-pos-cashier-fullscreen .layout-main-section,
 	body.imogi-pos-cashier-fullscreen .page-container,
 	body.imogi-pos-cashier-fullscreen .main-section {
 		padding-left: 0 !important;
 		padding-right: 0 !important;
+	}
+
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history.layout-main-section,
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history {
+		padding-left: 6px !important;
+		padding-right: 6px !important;
+		padding-top: 6px !important;
 	}
 
 	body.imogi-pos-cashier-fullscreen .imogi-open-shift-page .page-body,
@@ -605,5 +633,73 @@ body.imogi-pos-cashier-fullscreen .imogi-close-shift-page .page-body {
 	.imogi-close-shift-page .imogi-close-verify-card {
 		border-radius: 12px;
 		box-shadow: 0 8px 20px rgba(7, 17, 31, 0.08);
+	}
+}
+
+@media (max-width: 992px) {
+	.modal.imogi-pay-dialog.imogi-pay-mobile {
+		align-items: flex-end !important;
+		justify-content: flex-end !important;
+		padding: 0 !important;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-dialog {
+		align-items: stretch;
+		display: flex !important;
+		margin: 0 !important;
+		max-height: min(94dvh, 720px);
+		max-width: 100% !important;
+		min-height: 0 !important;
+		width: 100% !important;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-content {
+		border: none;
+		border-radius: 20px 20px 0 0;
+		display: flex;
+		flex-direction: column;
+		max-height: min(94dvh, 720px);
+		overflow: hidden;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-body {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-x: hidden;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer {
+		background: #fff;
+		border-top: 1px solid #e4e4e7;
+		box-shadow: 0 -8px 24px rgba(15, 31, 53, 0.08);
+		display: flex !important;
+		flex-direction: column !important;
+		flex-shrink: 0;
+		padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .standard-actions,
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .custom-actions {
+		display: flex !important;
+		float: none !important;
+		margin: 0 !important;
+		width: 100% !important;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn {
+		border-radius: 14px !important;
+		float: none !important;
+		font-size: 16px !important;
+		font-weight: 800 !important;
+		height: 54px !important;
+		margin: 0 !important;
+		width: 100% !important;
+	}
+
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-modal-secondary,
+	.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-secondary {
+		display: none !important;
 	}
 }

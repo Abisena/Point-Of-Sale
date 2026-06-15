@@ -11,6 +11,34 @@ imogi_pos.qris.is_qris_mode = function (page, mode_of_payment) {
 imogi_pos.qris.open_dialog = function (page, opts) {
 	const { items, total, mode_of_payment, discount_type, discount_value, voucher_code, loyalty_points_redeem, on_success } = opts;
 	let poll_timer = null;
+	let payment_done = false;
+
+	const stop_poll = () => {
+		if (poll_timer) {
+			clearInterval(poll_timer);
+			poll_timer = null;
+		}
+	};
+
+	const finish_paid = (row) => {
+		if (payment_done) return;
+		payment_done = true;
+		stop_poll();
+		$wrap.find(".imogi-qris-status").text(__("Pembayaran berhasil"));
+		dialog.hide();
+		const order_name = row.order;
+		if (order_name) {
+			frappe.call({
+				method: "imogi_pos.api.payment_gateway_api.get_gateway_order",
+				args: { order_name },
+				callback(or) {
+					on_success && on_success(or.message || { name: order_name, status: "Completed" });
+				},
+			});
+		} else {
+			on_success && on_success({ name: order_name, status: "Completed" });
+		}
+	};
 
 	const dialog = new frappe.ui.Dialog({
 		title: __("Bayar QRIS"),
@@ -29,14 +57,14 @@ imogi_pos.qris.open_dialog = function (page, opts) {
 		],
 		primary_action_label: __("Tutup"),
 		primary_action() {
-			if (poll_timer) clearInterval(poll_timer);
+			stop_poll();
 			dialog.hide();
 		},
 	});
 
 	dialog.show();
 	const $wrap = dialog.$wrapper;
-	const 	args = {
+	const args = {
 		items: JSON.stringify(items),
 		mode_of_payment,
 		discount_type: discount_type || undefined,
@@ -58,28 +86,18 @@ imogi_pos.qris.open_dialog = function (page, opts) {
 			imogi_pos.qris._render_qr($wrap.find(".imogi-qris-image"), msg);
 
 			poll_timer = setInterval(() => {
+				if (payment_done) return;
 				frappe.call({
 					method: "imogi_pos.api.payment_gateway_api.poll_gateway_payment",
 					args: { payment_name: msg.name },
 					callback(res) {
+						if (payment_done) return;
+						if (res.exc) return;
 						const row = res.message || {};
 						if (row.status === "Paid") {
-							clearInterval(poll_timer);
-							$wrap.find(".imogi-qris-status").text(__("Pembayaran berhasil"));
-							dialog.hide();
-							if (row.order) {
-								frappe.call({
-									method: "imogi_pos.api.payment_gateway_api.get_gateway_order",
-									args: { order_name: row.order },
-									callback(or) {
-										on_success && on_success(or.message || { name: row.order, status: "Completed" });
-									},
-								});
-							} else {
-								on_success && on_success({ name: row.order, status: "Completed" });
-							}
+							finish_paid(row);
 						} else if (row.status === "Failed") {
-							clearInterval(poll_timer);
+							stop_poll();
 							$wrap.find(".imogi-qris-status").text(__("Pembayaran gagal / kedaluwarsa"));
 						}
 					},

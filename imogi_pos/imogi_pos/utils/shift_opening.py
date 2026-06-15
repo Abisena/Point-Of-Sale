@@ -4,7 +4,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 from imogi_pos.imogi_pos.utils.flow import get_settings
 
@@ -59,33 +59,17 @@ def get_pending_shift_opening(user=None):
 def get_shift_opening_page_context(user=None, pos_profile=None):
 	user = user or frappe.session.user
 	defaults = get_shift_opening_defaults(pos_profile=pos_profile)
-	pending = get_pending_shift_opening(user)
-
-	context = {
+	settings = get_settings()
+	return {
 		"company": defaults["company"],
 		"pos_profile": defaults["pos_profile"],
 		"cash_mode": defaults["cash_mode"],
 		"user": user,
 		"user_fullname": frappe.db.get_value("User", user, "full_name") or user,
-		"draft_name": pending,
 		"remarks": "",
 		"payments": defaults["payments"],
+		"enable_shift_cash_detail": cint(getattr(settings, "enable_shift_cash_detail", 0)),
 	}
-
-	if not pending:
-		return context
-
-	doc = frappe.get_doc("IMOGI POS Shift Opening", pending)
-	cash_mode = defaults["cash_mode"]
-	cash_amount = 0
-	for row in doc.payments:
-		if row.mode_of_payment == cash_mode:
-			cash_amount = flt(row.opening_amount)
-			break
-	context["payments"] = [{"mode_of_payment": cash_mode, "opening_amount": cash_amount}]
-	context["remarks"] = getattr(doc, "remarks", None) or ""
-
-	return context
 
 
 def _build_shift_opening_doc(payments, draft_name=None, remarks=None, user=None, pos_profile=None, company=None):
@@ -132,24 +116,11 @@ def _build_shift_opening_doc(payments, draft_name=None, remarks=None, user=None,
 	return doc
 
 
-def save_shift_opening_draft(payments, draft_name=None, remarks=None, user=None, pos_profile=None, company=None):
+def create_and_submit_shift_opening(payments, remarks=None, user=None, pos_profile=None, company=None):
+	user = user or frappe.session.user
 	doc = _build_shift_opening_doc(
 		payments,
-		draft_name=draft_name,
-		remarks=remarks,
-		user=user,
-		pos_profile=pos_profile,
-		company=company,
-	)
-	doc.save()
-	frappe.db.commit()
-	return {"name": doc.name}
-
-
-def create_and_submit_shift_opening(payments, draft_name=None, remarks=None, user=None, pos_profile=None, company=None):
-	doc = _build_shift_opening_doc(
-		payments,
-		draft_name=draft_name,
+		draft_name=get_pending_shift_opening(user),
 		remarks=remarks,
 		user=user,
 		pos_profile=pos_profile,

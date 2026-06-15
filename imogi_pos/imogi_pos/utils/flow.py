@@ -56,11 +56,6 @@ def set_order_flags(order):
 	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 
 	settings = get_settings()
-	if settings.business_type == "UMKM":
-		order.requires_kitchen = 0
-		order.requires_fulfillment = 0
-		return
-
 	kitchen_types = [t.strip() for t in (settings.fulfillment_for_order_types or "").split("\n") if t.strip()]
 
 	order.requires_kitchen = 0
@@ -127,24 +122,24 @@ def create_pos_invoice_from_order(order):
 
 	if flt(order.discount_amount):
 		invoice.apply_discount_on = "Grand Total"
-		if order.discount_type == "Percent" and flt(order.discount_value):
-			invoice.additional_discount_percentage = flt(order.discount_value)
-		else:
-			invoice.discount_amount = flt(order.discount_amount)
+		# IMOGI stacks manual + promo + voucher discounts into discount_amount.
+		invoice.discount_amount = flt(order.discount_amount)
 
 	invoice.set_missing_values()
+	invoice.calculate_taxes_and_totals()
 
+	invoice_total = flt(invoice.rounded_total) or flt(invoice.grand_total)
 	for pay in order.payments:
 		invoice.append(
 			"payments",
 			{
 				"mode_of_payment": pay.mode_of_payment,
-				"amount": pay.amount,
+				"amount": invoice_total,
 			},
 		)
 
-	invoice.paid_amount = flt(order.paid_amount)
-	invoice.base_paid_amount = flt(order.paid_amount)
+	invoice.paid_amount = invoice_total
+	invoice.base_paid_amount = invoice_total
 	invoice.insert(ignore_permissions=True)
 	invoice.submit()
 

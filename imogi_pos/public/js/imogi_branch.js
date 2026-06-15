@@ -1,15 +1,15 @@
 frappe.ui.form.on("IMOGI Branch", {
 	refresh(frm) {
 		if (frm.is_new()) {
-			if (frappe.user.has_role("System Manager") || frappe.user.has_role("Sales Manager")) {
+			if (imogi_branch_can_manage_provisioning()) {
 				frm.add_custom_button(__("Wizard Company & Cabang"), () => {
 					frappe.set_route("imogi-pos-add-branch");
 				});
 			}
 			return;
 		}
-		frm.add_custom_button(__("Transfer Stok"), () => open_branch_transfer_dialog(frm), __("Aksi"));
-		if (frappe.user.has_role("System Manager") || frappe.user.has_role("Sales Manager")) {
+		if (imogi_branch_can_manage_provisioning()) {
+			frm.add_custom_button(__("Transfer Stok"), () => open_branch_transfer_dialog(frm), __("Aksi"));
 			frm.add_custom_button(__("Assign Kasir"), () => open_assign_cashiers_dialog(frm), __("Aksi"));
 		}
 		if (!frm.doc.selling_price_list) {
@@ -29,6 +29,16 @@ frappe.ui.form.on("IMOGI Branch", {
 		frm.toggle_display("item_groups", cint(frm.doc.use_custom_menu));
 	},
 });
+
+function imogi_branch_can_manage_provisioning() {
+	return (
+		frappe.user.has_role("Administrator") ||
+		frappe.user.has_role("System Manager") ||
+		frappe.user.has_role("Sales Manager") ||
+		frappe.user.has_role("IMOGI Owner") ||
+		frappe.user.has_role("IMOGI Area Manager")
+	);
+}
 
 function open_assign_cashiers_dialog(frm) {
 	frappe.call({

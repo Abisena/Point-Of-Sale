@@ -77,6 +77,40 @@ def resolve_item_code(name_or_code):
 	return found[0][0] if found else None
 
 
+def ensure_pos_addon_item(name, exclude_item_code=None):
+	"""Resolve or create a sellable add-on Item from imogi_pos_add_ons text."""
+	label = (name or "").strip()
+	if not label:
+		return None
+
+	code = resolve_item_code(label)
+	if code and code != exclude_item_code:
+		return code
+
+	ensure_item_group("Add-ons")
+	base_code = slug_item_code(label)
+	item_code = base_code
+	suffix = 1
+	while frappe.db.exists("Item", item_code):
+		existing_name = (frappe.db.get_value("Item", item_code, "item_name") or "").strip()
+		if existing_name.lower() == label.lower() and item_code != exclude_item_code:
+			return item_code
+		item_code = f"{base_code}-{suffix}"
+		suffix += 1
+		if suffix > 99:
+			return None
+
+	item = frappe.new_doc("Item")
+	item.item_code = item_code
+	item.item_name = label
+	item.item_group = "Add-ons"
+	item.is_sales_item = 1
+	item.is_stock_item = 0
+	item.stock_uom = "Nos"
+	item.insert(ignore_permissions=True)
+	return item.name
+
+
 def upsert_item_from_import(row, settings, update_existing=0):
 	item_code = row.get("item_code") or row.get("code")
 	item_name = row.get("item_name") or row.get("name") or row.get("produk") or row.get("product")

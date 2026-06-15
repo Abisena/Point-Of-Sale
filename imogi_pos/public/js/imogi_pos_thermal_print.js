@@ -24,6 +24,65 @@ function _center(text, width) {
 	return " ".repeat(Math.floor(pad / 2)) + t;
 }
 
+function _receipt_discount_lines(order, currency) {
+	const subtotal = flt(order.subtotal);
+	const promo = flt(order.promo_discount_amount);
+	const voucher = flt(order.voucher_discount_amount);
+	const loyalty = flt(order.loyalty_discount_amount);
+	const total_disc = flt(order.discount_amount);
+	const has_split = promo > 0 || voucher > 0 || loyalty > 0;
+	const manual = has_split ? Math.max(0, total_disc - promo - voucher - loyalty) : total_disc;
+	const lines = [];
+
+	if (subtotal > 0) {
+		lines.push({ label: __("Subtotal"), value: _money(subtotal, currency) });
+	}
+	if (has_split) {
+		if (promo > 0) {
+			lines.push({ label: __("Promo"), value: `-${_money(promo, currency)}`, discount: true });
+		}
+		if (manual > 0) {
+			lines.push({ label: __("Diskon"), value: `-${_money(manual, currency)}`, discount: true });
+		}
+		if (voucher > 0) {
+			lines.push({ label: __("Voucher"), value: `-${_money(voucher, currency)}`, discount: true });
+		}
+		if (loyalty > 0) {
+			lines.push({ label: __("Poin"), value: `-${_money(loyalty, currency)}`, discount: true });
+		}
+	} else if (total_disc > 0) {
+		lines.push({ label: __("Diskon"), value: `-${_money(total_disc, currency)}`, discount: true });
+	}
+	return lines;
+}
+
+function _receipt_tax_lines(order, currency, tax_rate) {
+	const tax_amount = flt(order.tax_amount);
+	if (tax_amount <= 0) return [];
+	const rate = flt(tax_rate) || 11;
+	return [
+		{ label: __("DPP"), value: _money(order.taxable_amount, currency) },
+		{ label: `${__("PPN")} ${rate}%`, value: _money(tax_amount, currency) },
+	];
+}
+
+function _receipt_totals_html(order, options = {}) {
+	const currency = order.currency;
+	const discount_rows = _receipt_discount_lines(order, currency)
+		.map(
+			(row) =>
+				`<div class="row${row.discount ? " is-discount" : ""}"><span>${row.label}</span><strong>${row.value}</strong></div>`
+		)
+		.join("");
+	const tax_rows = _receipt_tax_lines(order, currency, options.tax_rate)
+		.map((row) => `<div class="row is-tax"><span>${row.label}</span><strong>${row.value}</strong></div>`)
+		.join("");
+	return `${discount_rows}${tax_rows}<div class="row grand"><span>${__("Total Bayar")}</span><strong>${_money(
+		order.grand_total,
+		currency
+	)}</strong></div>`;
+}
+
 imogi_pos.thermal.build_receipt = function (order, options = {}) {
 	const width = cint(options.width) || 32;
 	const store = (options.store_name || __("Toko")).toUpperCase();
@@ -55,11 +114,13 @@ imogi_pos.thermal.build_receipt = function (order, options = {}) {
 	});
 
 	push("-".repeat(width), "center");
-	if (flt(order.discount_amount) > 0) {
-		push(_pad_line(__("Subtotal"), _money(order.subtotal, order.currency)), "right");
-		push(_pad_line(__("Diskon"), `-${_money(order.discount_amount, order.currency)}`), "right");
-	}
-	push(_pad_line(__("TOTAL"), _money(flt(order.grand_total), order.currency)), "right", "bold");
+	_receipt_discount_lines(order, order.currency).forEach((row) => {
+		push(_pad_line(row.label, row.value), "right");
+	});
+	_receipt_tax_lines(order, order.currency, options.tax_rate).forEach((row) => {
+		push(_pad_line(row.label, row.value), "right");
+	});
+	push(_pad_line(__("Total Bayar"), _money(flt(order.grand_total), order.currency)), "right", "bold");
 
 	const payments = order.payments || [];
 	if (payments.length) {
@@ -102,12 +163,12 @@ imogi_pos.thermal.build_receipt_html = function (order, options = {}) {
 		.join("");
 
 	const discount =
-		flt(order.discount_amount) > 0
-			? `<div class="row"><span>${__("Diskon")}</span><strong>-${_money(
-					order.discount_amount,
+		flt(order.discount_amount) > 0 || flt(order.subtotal) > 0
+			? _receipt_totals_html(order, options)
+			: `<div class="row grand"><span>${__("Total Bayar")}</span><strong>${_money(
+					order.grand_total,
 					order.currency
-			  )}</strong></div>`
-			: "";
+			  )}</strong></div>`;
 
 	const payments = (order.payments || [])
 		.map(
@@ -152,6 +213,8 @@ tbody td { border-bottom: 1px dotted #eee; padding: 6px 0; vertical-align: top; 
 .amt { font-size: 11px; font-weight: 700; text-align: right; white-space: nowrap; }
 .totals { border-top: 1px solid #111; padding-top: 8px; }
 .row { display: flex; font-size: 11px; justify-content: space-between; margin-bottom: 4px; }
+.row.is-discount strong { color: #b91c1c; }
+.row.is-tax strong { color: #047857; }
 .row.grand { font-size: 14px; font-weight: 800; margin-top: 4px; }
 .pay { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 8px; padding: 8px; }
 .change { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; color: #047857; font-size: 12px; font-weight: 800; margin-top: 8px; padding: 8px; text-align: center; }
@@ -178,10 +241,6 @@ tbody td { border-bottom: 1px dotted #eee; padding: 6px 0; vertical-align: top; 
   <table><thead><tr><th>${__("Item")}</th><th>${__("Subtotal")}</th></tr></thead><tbody>${items}</tbody></table>
   <div class="totals">
     ${discount}
-    <div class="row grand"><span>${__("TOTAL")}</span><strong>${_money(
-		order.grand_total,
-		order.currency
-	)}</strong></div>
   </div>
   ${payments ? `<div class="pay">${payments}${change}</div>` : change}
   ${footer}
@@ -344,5 +403,6 @@ imogi_pos.thermal.get_print_options = function (context, payment_info = {}) {
 		header: ctx.receipt_header || frappe.boot.imogi_pos_receipt_header || "",
 		footer: ctx.receipt_footer || frappe.boot.imogi_pos_receipt_footer || __("Terima kasih"),
 		change: flt(payment_info.change),
+		tax_rate: flt(ctx.sales_tax?.rate) || 11,
 	};
 };

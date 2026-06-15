@@ -8,7 +8,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, now_datetime
 
-from imogi_pos.imogi_pos.utils.business_profile import is_umkm
+from imogi_pos.imogi_pos.utils.business_profile import uses_kitchen_or_fulfillment_flow
 from imogi_pos.imogi_pos.utils.flow import (
 	create_delivery_task,
 	create_fulfillment_task,
@@ -31,6 +31,7 @@ class RiwayatOrder(Document):
 		self.set_currency()
 		self.calculate_totals()
 		set_order_flags(self)
+		self.sync_payment_method()
 		self.validate_payments()
 		from imogi_pos.imogi_pos.utils.approval_hooks import complimentary_discount_check
 
@@ -83,7 +84,13 @@ class RiwayatOrder(Document):
 		total_discount = min(subtotal, discount_amount + voucher_discount + loyalty_discount + promo_discount)
 
 		self.discount_amount = total_discount
-		self.grand_total = subtotal - total_discount
+		net_before_tax = max(0, flt(subtotal) - flt(total_discount))
+		from imogi_pos.imogi_pos.utils.sales_tax import compute_sales_tax
+
+		tax_result = compute_sales_tax(net_before_tax)
+		self.taxable_amount = flt(tax_result["taxable_amount"])
+		self.tax_amount = flt(tax_result["tax_amount"])
+		self.grand_total = flt(tax_result["grand_total"])
 		self.paid_amount = sum(flt(p.amount) for p in self.payments)
 
 	def validate_payments(self):
@@ -94,6 +101,14 @@ class RiwayatOrder(Document):
 					indicator="orange",
 					alert=True,
 				)
+
+	def sync_payment_method(self):
+		modes = []
+		for row in self.payments or []:
+			mode = (row.mode_of_payment or "").strip()
+			if mode and mode not in modes:
+				modes.append(mode)
+		self.payment_method = ", ".join(modes)
 
 	@frappe.whitelist()
 	def action_confirm_order(self):
@@ -140,7 +155,7 @@ class RiwayatOrder(Document):
 			frappe.db.commit()
 			self._run_post_payment_steps()
 			if not silent:
-				if is_umkm():
+				if not uses_kitchen_or_fulfillment_flow():
 					frappe.msgprint(
 						_("Payment processed. Order completed. POS Invoice {0}.").format(
 							frappe.bold(pos_invoice.name)
@@ -199,10 +214,6 @@ class RiwayatOrder(Document):
 		notify_order_status(self.name, self.status)
 
 	def _start_conditional_steps(self):
-		if is_umkm():
-			self._complete_umkm_order()
-			return
-
 		from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 
 		settings = get_settings()
@@ -219,12 +230,16 @@ class RiwayatOrder(Document):
 			self._notify_status()
 			return
 
+		if not self.requires_kitchen and not self.requires_fulfillment:
+			self._complete_direct_order()
+			return
+
 		if self.status == "Paid" or not self.delivery_task:
 			self._start_service_phase()
 			self._notify_status()
 
-	def _complete_umkm_order(self):
-		"""UMKM: single operator — payment completes the order."""
+	def _complete_direct_order(self):
+		"""Payment completes the order when no kitchen/fulfillment steps apply."""
 		self.db_set(
 			{
 				"status": "Completed",

@@ -274,9 +274,16 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 
 
 def build_workspace_profile(*, variant: str = "restaurant") -> dict:
+	shortcuts = WORKSPACE_SHORTCUTS
+	if variant == "umkm":
+		shortcuts = [
+			row
+			for row in WORKSPACE_SHORTCUTS
+			if row.get("feature_id") not in {"kitchen_display"}
+		]
 	return {
 		"icon": "retail",
 		"content": build_workspace_content(variant=variant),
 		"links": build_workspace_links(),
-		"shortcuts": WORKSPACE_SHORTCUTS,
+		"shortcuts": shortcuts,
 	}

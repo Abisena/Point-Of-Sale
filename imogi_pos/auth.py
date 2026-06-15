@@ -24,6 +24,7 @@ def patch_login_home_page():
 
 		frappe.local.response["home_page"] = route
 		frappe.local.response.pop("redirect_to", None)
+		frappe.cache.hdel("redirect_after_login", self.user)
 
 	LoginManager.set_user_info = set_user_info
 	LoginManager._imogi_pos_login_patched = True

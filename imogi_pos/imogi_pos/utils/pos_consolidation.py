@@ -68,17 +68,12 @@ def repair_mode_of_payment_accounts(company=None):
 		return []
 
 	fixed = []
-	for mop in E_WALLET_PAYMENT_MODES:
-		if not frappe.db.exists("Mode of Payment", mop):
-			continue
-
-		row = frappe.db.get_value(
-			"Mode of Payment Account",
-			{"parent": mop, "company": company},
-			["name", "default_account"],
-			as_dict=True,
-		)
-		if not row or not row.default_account:
+	for row in frappe.get_all(
+		"Mode of Payment Account",
+		filters={"company": company},
+		fields=["name", "parent", "default_account"],
+	):
+		if not row.default_account:
 			continue
 
 		account_type = frappe.get_cached_value("Account", row.default_account, "account_type")
@@ -92,7 +87,8 @@ def repair_mode_of_payment_accounts(company=None):
 			settlement_account,
 			update_modified=False,
 		)
-		fixed.append(mop)
+		if row.parent not in fixed:
+			fixed.append(row.parent)
 
 	return fixed
 

@@ -9,8 +9,16 @@ from imogi_pos.imogi_pos.utils.flow import get_settings
 BUSINESS_RESTAURANT = "Restaurant / Cafe"
 BUSINESS_UMKM = "UMKM"
 
+# Legacy workspace keys — kept for backward compatibility only.
+UMKM_HIDDEN_WORKSPACE_KEYS = frozenset(
+	{
+		("Report", "IMOGI POS Order Summary"),
+	}
+)
+
 
 def is_umkm():
+	"""Deprecated — use uses_kitchen_or_fulfillment_flow() for post-payment flow."""
 	return get_settings().business_type == BUSINESS_UMKM
 
 
@@ -18,50 +26,68 @@ def is_restaurant():
 	return get_settings().business_type == BUSINESS_RESTAURANT
 
 
+def uses_kitchen_or_fulfillment_flow(settings=None) -> bool:
+	"""Kitchen / packing steps follow IMOGI POS Settings toggles, not business mode."""
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
+	settings = settings or get_settings()
+	return is_setting_enabled("enable_kitchen_display", settings) or is_setting_enabled(
+		"enable_fulfillment", settings
+	)
+
+
+def is_feature_suppressed_for_business(feature_id: str | None, settings=None) -> bool:
+	"""Business mode no longer hides cashier features — tier + settings toggles apply."""
+	return False
+
+
+def is_workspace_hidden_for_umkm(
+	link_type: str | None, link_to: str | None, settings=None
+) -> bool:
+	settings = settings or get_settings()
+	if settings.business_type != BUSINESS_UMKM:
+		return False
+	key = ((link_type or "").strip(), (link_to or "").strip())
+	return key in UMKM_HIDDEN_WORKSPACE_KEYS
+
+
 def apply_business_profile(business_type):
+	"""Legacy hook from setup wizard — no longer forces KDS/fulfillment on or off."""
 	settings = frappe.get_single("IMOGI POS Settings")
 	settings.business_type = business_type
-
-	if business_type == BUSINESS_UMKM:
-		# Keep existing kitchen/fulfillment toggles — UMKM F&B may still use KDS.
-		pass
-	elif business_type == BUSINESS_RESTAURANT:
-		settings.enable_kitchen_display = 1
-		settings.enable_fulfillment = 1
-		settings.kitchen_item_groups = settings.kitchen_item_groups or "Consumable"
-		settings.fulfillment_for_order_types = settings.fulfillment_for_order_types or "Takeaway\nDelivery"
-
 	settings.save(ignore_permissions=True)
 
 	from imogi_pos.imogi_pos.utils.workspace import sync_workspaces
 
-	sync_workspaces(business_type)
+	sync_workspaces()
 	return settings
 
 
 def get_flow_summary(business_type=None):
-	business_type = business_type or get_settings().business_type
-	if business_type == BUSINESS_UMKM:
+	settings = get_settings()
+	kds_on = bool(settings.enable_kitchen_display)
+	fulfillment_on = bool(settings.enable_fulfillment)
+	if not kds_on and not fulfillment_on:
 		return {
-			"label": BUSINESS_UMKM,
+			"label": _("Alur Langsung"),
 			"steps": [
 				_("Order & Payment"),
-				_("Completed (1 operator)"),
+				_("Completed"),
 			],
 			"description": _(
-				"Simplified flow for small business — payment completes the order directly."
+				"Order selesai saat pembayaran. Aktifkan Kitchen Display atau Fulfillment di Settings jika perlu alur dapur/packing."
 			),
 		}
+	steps = [_("Order & Payment")]
+	if kds_on:
+		steps.append(_("Kitchen Display"))
+	if fulfillment_on:
+		steps.append(_("Fulfillment"))
+	steps.append(_("Completed"))
 	return {
-		"label": BUSINESS_RESTAURANT,
-		"steps": [
-			_("Order & Payment"),
-			_("Kitchen Display (conditional)"),
-			_("Fulfillment (conditional)"),
-			_("Delivery & Service"),
-			_("Completed"),
-		],
+		"label": _("Alur Dapur & Packing"),
+		"steps": steps,
 		"description": _(
-			"Full F&B flow for restaurant and cafe with kitchen, packing, and service steps."
+			"Alur mengikuti toggle Kitchen Display dan Fulfillment di IMOGI POS Settings."
 		),
 	}

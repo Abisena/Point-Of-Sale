@@ -51,7 +51,6 @@ def apply_stamp_after_payment(order, member):
 		stamps = 0
 
 	member.stamp_count = stamps
-	member.save(ignore_permissions=True)
 	return reward
 
 

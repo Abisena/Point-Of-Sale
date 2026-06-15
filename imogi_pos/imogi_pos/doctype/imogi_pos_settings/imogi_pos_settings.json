@@ -29,6 +29,7 @@
   "default_pos_profile",
   "default_warehouse",
   "enable_pos_shift",
+  "enable_shift_cash_detail",
   "billing_section",
   "enable_saas_billing_sync",
   "billing_provider",
@@ -51,6 +52,9 @@
   "reorder_level_field",
   "enable_auto_purchase_request",
   "receipt_section",
+  "enable_sales_tax",
+  "sales_tax_rate",
+  "prices_include_tax",
   "enable_receipt_print",
   "thermal_print_mode",
   "thermal_printer_width",
@@ -280,6 +284,14 @@
    "label": "Wajib Shift Kasir (Buka/Tutup)"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.enable_pos_shift",
+   "description": "Jika aktif, hitung uang per lembar (Rp 100 … Rp 100.000) dengan input detail. Jika nonaktif, mode cepat dengan tombol 10rb, 50rb, 100rb, 500rb, dan 1 juta.",
+   "fieldname": "enable_shift_cash_detail",
+   "fieldtype": "Check",
+   "label": "Detail Denominasi Uang Tunai"
+  },
+  {
    "fieldname": "billing_section",
    "fieldtype": "Section Break",
    "label": "SaaS Billing Sync"
@@ -427,6 +439,27 @@
    "fieldname": "receipt_section",
    "fieldtype": "Section Break",
    "label": "Struk / Receipt"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_sales_tax",
+   "fieldtype": "Check",
+   "label": "Tampilkan PPN di Kasir"
+  },
+  {
+   "default": "11",
+   "depends_on": "eval:doc.enable_sales_tax",
+   "fieldname": "sales_tax_rate",
+   "fieldtype": "Float",
+   "label": "Tarif PPN (%)"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_sales_tax",
+   "description": "Harga menu sudah termasuk PPN — breakdown DPP + PPN ditampilkan tanpa menambah total.",
+   "fieldname": "prices_include_tax",
+   "fieldtype": "Check",
+   "label": "Harga Sudah Termasuk PPN"
   },
   {
    "default": "1",

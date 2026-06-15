@@ -328,7 +328,11 @@ imogi_pos.cashier_extras.run_checkout_call = function (page, dialog, args, mode_
 			dialog.hide();
 			const change =
 				page.is_cash_mode(mode_of_payment) && flt(paid_amount) > total ? flt(paid_amount) - total : 0;
-			page.show_success(r.message || {}, { change, paid_amount: flt(paid_amount) });
+			page.show_success(r.message || {}, {
+				change,
+				paid_amount: flt(paid_amount),
+				mode_of_payment,
+			});
 			page.refresh_sales_target();
 			page.clear_cart_after_checkout();
 			page.refresh_marketplace_badge();

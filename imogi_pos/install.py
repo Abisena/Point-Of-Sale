@@ -73,11 +73,34 @@ def _receipt_print_html(header, footer):
     </tbody>
   </table>
   <div class="imogi-receipt-totals">
-    {% if doc.discount_amount %}
+    {% if doc.subtotal %}
     <div class="imogi-receipt-total-row"><span>Subtotal</span><strong>{{ frappe.utils.fmt_money(doc.subtotal, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    {% set promo = doc.promo_discount_amount or 0 %}
+    {% set voucher = doc.voucher_discount_amount or 0 %}
+    {% set loyalty = doc.loyalty_discount_amount or 0 %}
+    {% set manual = (doc.discount_amount or 0) - promo - voucher - loyalty %}
+    {% if promo %}
+    <div class="imogi-receipt-total-row is-discount"><span>Promo</span><strong>-{{ frappe.utils.fmt_money(promo, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    {% if manual > 0 %}
+    <div class="imogi-receipt-total-row is-discount"><span>Diskon</span><strong>-{{ frappe.utils.fmt_money(manual, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    {% if voucher %}
+    <div class="imogi-receipt-total-row is-discount"><span>Voucher</span><strong>-{{ frappe.utils.fmt_money(voucher, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    {% if loyalty %}
+    <div class="imogi-receipt-total-row is-discount"><span>Poin</span><strong>-{{ frappe.utils.fmt_money(loyalty, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    {% if not (promo or voucher or loyalty) and doc.discount_amount %}
     <div class="imogi-receipt-total-row is-discount"><span>Diskon</span><strong>-{{ frappe.utils.fmt_money(doc.discount_amount, currency=doc.currency) }}</strong></div>
     {% endif %}
-    <div class="imogi-receipt-total-row is-grand"><span>TOTAL</span><strong>{{ frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) }}</strong></div>
+    {% if doc.tax_amount %}
+    {% set tax_rate = frappe.db.get_single_value("IMOGI POS Settings", "sales_tax_rate") or 11 %}
+    <div class="imogi-receipt-total-row"><span>DPP</span><strong>{{ frappe.utils.fmt_money(doc.taxable_amount, currency=doc.currency) }}</strong></div>
+    <div class="imogi-receipt-total-row"><span>PPN {{ tax_rate }}%</span><strong>{{ frappe.utils.fmt_money(doc.tax_amount, currency=doc.currency) }}</strong></div>
+    {% endif %}
+    <div class="imogi-receipt-total-row is-grand"><span>Total Bayar</span><strong>{{ frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) }}</strong></div>
   </div>
   {% if doc.payments %}
   <div class="imogi-receipt-pay">

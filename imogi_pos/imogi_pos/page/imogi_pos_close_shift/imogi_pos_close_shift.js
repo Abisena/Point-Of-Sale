@@ -60,34 +60,19 @@ function inject_close_shift_css() {
 			overflow-x: hidden !important;
 			width: 100% !important;
 		}
-		.imogi-close-shift-page .page-body { background: transparent; padding: 0 !important; }
+		.imogi-close-shift-page .page-body { background: #fff !important; min-height: 100dvh; padding: 0 !important; }
+		.imogi-close-shift-page .layout-main-section-wrapper,
+		.imogi-close-shift-page .layout-main-section { background: #fff !important; min-height: 100dvh; }
 		.imogi-close-shift-page .layout-main-section { margin: 0 auto !important; max-width: 1120px; width: 100%; }
 		.imogi-close-shell {
 			box-sizing: border-box;
 			margin: 0 auto;
 			max-width: 1120px;
+			min-height: 100dvh;
 			overflow-x: hidden;
 			padding: 20px 24px 32px;
 			width: 100%;
 		}
-		.imogi-close-header {
-			align-items: flex-start;
-			background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%);
-			border: 1px solid rgba(255,255,255,0.12);
-			border-radius: 16px;
-			display: flex;
-			flex-wrap: wrap;
-			gap: 16px;
-			justify-content: space-between;
-			margin-bottom: 20px;
-			padding: 18px 22px;
-		}
-		.imogi-close-header-left { flex: 1 1 220px; min-width: 0; }
-		.imogi-close-header-title { color: #fff; font-size: 22px; font-weight: 800; line-height: 1.2; margin: 0 0 4px; word-break: break-word; }
-		.imogi-close-header-sub { color: rgba(255,255,255,0.72); font-size: 13px; line-height: 1.35; margin: 0; word-break: break-word; }
-		.imogi-close-header-right { align-items: center; color: rgba(255,255,255,0.88); display: flex; flex: 1 1 180px; flex-wrap: wrap; font-size: 13px; font-weight: 600; gap: 10px 16px; justify-content: flex-end; min-width: 0; }
-		.imogi-close-logout-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
-		.imogi-close-logout-btn .fa { margin-right: 4px; opacity: .85; }
 		.imogi-close-layout { align-items: start; box-sizing: border-box; display: grid; gap: 20px; grid-template-columns: minmax(0,1fr) 320px; max-width: 100%; width: 100%; }
 		.imogi-close-main { box-sizing: border-box; display: grid; gap: 16px; max-width: 100%; min-width: 0; width: 100%; }
 		.imogi-close-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; box-sizing: border-box; max-width: 100%; overflow: hidden; padding: 18px 20px 20px; width: 100%; }
@@ -137,12 +122,6 @@ function inject_close_shift_css() {
 			.imogi-close-shift-page .container.page-body,
 			.imogi-close-shift-page .main-section { padding-left: 0 !important; padding-right: 0 !important; }
 			.imogi-close-shell { box-sizing: border-box; max-width: 100%; padding: 6px 8px 20px; width: 100%; }
-			.imogi-close-header { border-radius: 14px; gap: 10px; margin-bottom: 14px; padding: 14px 16px; }
-			.imogi-close-header-left,
-			.imogi-close-header-right { flex: 1 1 100%; justify-content: flex-start; width: 100%; }
-			.imogi-close-header-title { font-size: 18px; }
-			.imogi-close-header-sub { font-size: 12px; }
-			.imogi-close-header-right { font-size: 11px; gap: 8px 12px; }
 			.imogi-close-card { border-radius: 14px; padding: 14px 14px 16px; }
 			.imogi-close-card-title { font-size: 14px; margin-bottom: 12px; }
 			.imogi-close-stat-grid { grid-template-columns: minmax(0, 1fr); }
@@ -167,7 +146,8 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 		this.page = page;
 		this.$wrapper = page.main;
 		this.context = null;
-		this.denominations = imogi_pos.init_denominations_map();
+		this.cash_detail_mode = false;
+		this.denominations = imogi_pos.init_denominations_map(this.cash_detail_mode);
 		this.expenses = 0;
 		this.remarks = "";
 		this.submitting = false;
@@ -206,10 +186,11 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 					return;
 				}
 				this.context = r.message;
+				this.cash_detail_mode = cint(r.message.enable_shift_cash_detail);
 				this.expenses = flt(r.message.expenses);
 				this.remarks = r.message.remarks || "";
 				if (flt(r.message.actual_cash) > 0) {
-					this.denominations = imogi_pos.init_denominations_map();
+					this.denominations = imogi_pos.init_denominations_map(this.cash_detail_mode);
 				}
 				this.render();
 			},
@@ -234,12 +215,20 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 		return ctx.company && ctx.pos_profile ? `${ctx.company} — ${ctx.pos_profile}` : ctx.company || "-";
 	}
 
+	is_cash_detail_mode() {
+		return cint(this.cash_detail_mode || this.context?.enable_shift_cash_detail);
+	}
+
+	get_denom_list() {
+		return imogi_pos.get_shift_denom_list(this.is_cash_detail_mode());
+	}
+
 	get_total_sheets() {
-		return imogi_pos.IDR_DENOMINATIONS.reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
+		return this.get_denom_list().reduce((sum, d) => sum + flt(this.denominations[d.value]), 0);
 	}
 
 	get_actual_cash() {
-		return imogi_pos.IDR_DENOMINATIONS.reduce(
+		return this.get_denom_list().reduce(
 			(sum, d) => sum + flt(this.denominations[d.value]) * d.value,
 			0
 		);
@@ -277,19 +266,45 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 	}
 
 	render_denom_grid() {
-		return imogi_pos.render_cash_denom_grid(this.denominations, imogi_close_format_rp);
+		if (this.is_cash_detail_mode()) {
+			return imogi_pos.render_cash_denom_detail_grid(this.denominations, imogi_close_format_rp);
+		}
+		return imogi_pos.render_cash_denom_grid(
+			this.denominations,
+			imogi_close_format_rp,
+			this.cash_detail_mode
+		);
+	}
+
+	render_cash_section() {
+		if (this.is_cash_detail_mode()) {
+			return `
+				<p class="imogi-cash-denom-hint">${__("Isi jumlah lembar per nominal uang tunai.")}</p>
+				<div class="imogi-cash-denom-detail-grid">${this.render_denom_grid()}</div>
+			`;
+		}
+		return `
+			<p class="imogi-cash-denom-hint">${__(
+				"Ketuk nominal untuk tambah 1 kali. Tombol − untuk kurangi."
+			)}</p>
+			<div class="imogi-cash-denom-grid imogi-cash-quick-grid">${this.render_denom_grid()}</div>
+		`;
 	}
 
 	render_verify_sidebar() {
 		const diff = this.get_diff_meta();
 		const balanced = diff.className === "is-ok";
 		const submit_label = balanced ? __("Tutup Shift") : __("Tutup dengan Selisih");
-
-		return `
+		const sheets_row = this.is_cash_detail_mode()
+			? `
 			<div class="imogi-close-verify-row">
 				<span>${__("Total Lembar")}</span>
 				<strong class="imogi-close-total-sheets">${this.get_total_sheets()} ${__("lembar")}</strong>
-			</div>
+			</div>`
+			: "";
+
+		return `
+			${sheets_row}
 			<div class="imogi-close-verify-row">
 				<span>${__("Kas Diharapkan")}</span>
 				<strong class="imogi-close-expected">${imogi_close_format_rp(this.get_expected_cash())}</strong>
@@ -318,21 +333,15 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 
 		this.$wrapper.html(`
 			<div class="imogi-close-shell">
-				<div class="imogi-close-header">
-					<div class="imogi-close-header-left">
-						<h1 class="imogi-close-header-title">${__("Closing Shift Kasir")}</h1>
-						<p class="imogi-close-header-sub">${frappe.utils.escape_html(this.get_store_label())} · ${__(
-							"Kasir"
-						)}: ${frappe.utils.escape_html(ctx.user_fullname || ctx.user || "")}</p>
-					</div>
-					<div class="imogi-close-header-right">
-						<button type="button" class="btn btn-xs btn-default imogi-close-logout-btn" title="${__(
-							"Logout sementara — shift tetap terbuka"
-						)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
-						<span><i class="fa fa-calendar-o"></i> <span class="imogi-close-date">${frappe.utils.escape_html(date_long)}</span></span>
-						<span><i class="fa fa-clock-o"></i> <span class="imogi-close-clock">${time_str}</span></span>
-					</div>
-				</div>
+				${imogi_pos.render_shift_workflow_header({
+					title: __("Closing Shift Kasir"),
+					subtitle: this.get_store_label(),
+					icon: "fa-sign-out",
+					dateLong: date_long,
+					timeStr: time_str,
+					showLogout: true,
+					logoutTitle: __("Logout sementara — shift tetap terbuka"),
+				})}
 
 				<div class="imogi-close-layout">
 					<div class="imogi-close-main">
@@ -376,10 +385,7 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 
 						<div class="imogi-close-card">
 							<div class="imogi-close-card-title">${__("Hitung Uang Tunai Aktual")}</div>
-							<p class="imogi-cash-denom-hint">${__(
-								"Ketuk nominal untuk tambah lembar. Tombol − untuk kurangi."
-							)}</p>
-							<div class="imogi-cash-denom-grid">${this.render_denom_grid()}</div>
+							${this.render_cash_section()}
 						</div>
 
 						<div class="imogi-close-card">
@@ -407,8 +413,8 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 	start_clock() {
 		if (this._clock_timer) clearInterval(this._clock_timer);
 		const tick = () => {
-			this.$wrapper.find(".imogi-close-clock").text(this.get_time_string());
-			this.$wrapper.find(".imogi-close-date").text(imogi_pos.format_local_date_long());
+			this.$wrapper.find(".imogi-shift-clock").text(this.get_time_string());
+			this.$wrapper.find(".imogi-shift-date").text(imogi_pos.format_local_date_long());
 		};
 		tick();
 		this._clock_timer = setInterval(tick, 1000);
@@ -426,12 +432,13 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 			denom,
 			this.denominations,
 			imogi_close_format_rp,
-			() => this.update_verify_ui()
+			() => this.update_verify_ui(),
+			this.is_cash_detail_mode()
 		);
 	}
 
 	reset_count() {
-		this.denominations = imogi_pos.init_denominations_map();
+		this.denominations = imogi_pos.init_denominations_map(this.cash_detail_mode);
 		this.render();
 		frappe.show_alert({ message: __("Hitungan direset"), indicator: "blue" }, 2);
 	}
@@ -439,15 +446,21 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 	bind_verify_events() {
 		this.$wrapper.find(".imogi-close-submit").on("click", () => this.submit());
 		this.$wrapper.find(".imogi-close-reset").on("click", () => this.reset_count());
-		this.$wrapper.find(".imogi-close-logout-btn").on("click", () => imogi_pos.logout_cashier?.({ shift_active: true }));
+		this.$wrapper.find(".imogi-shift-logout-btn").on("click", () => imogi_pos.logout_cashier?.({ shift_active: true }));
 	}
 
 	bind_events() {
 		const $shell = this.$wrapper;
 
-		imogi_pos.bind_cash_denom_buttons($shell, this, imogi_close_format_rp, () =>
-			this.update_verify_ui()
-		);
+		if (this.is_cash_detail_mode()) {
+			imogi_pos.bind_cash_denom_detail_inputs($shell, this, imogi_close_format_rp, () =>
+				this.update_verify_ui()
+			);
+		} else {
+			imogi_pos.bind_cash_denom_buttons($shell, this, imogi_close_format_rp, () =>
+				this.update_verify_ui()
+			);
+		}
 
 		$shell.find(".imogi-close-expenses").on("input", (e) => {
 			this.expenses = Math.max(0, flt(e.target.value));

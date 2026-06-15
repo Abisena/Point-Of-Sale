@@ -2,10 +2,9 @@
 
 import frappe
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
-from imogi_pos.imogi_pos.utils.shift_opening import get_pending_shift_opening
 from imogi_pos.imogi_pos.utils.workspace import get_workspace_route
 from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO
 
@@ -148,6 +147,8 @@ def boot_session(bootinfo):
 
 	bootinfo.imogi_pos_dashboard_focus_by_label = get_dashboard_focus_by_label()
 	bootinfo.imogi_pos_business_type = settings.business_type or ""
+	bootinfo.imogi_pos_enable_kds = bool(settings.enable_kitchen_display)
+	bootinfo.imogi_pos_enable_fulfillment = bool(settings.enable_fulfillment)
 	bootinfo.imogi_pos_workspace_route = get_workspace_route(settings.business_type)
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
 	bootinfo.imogi_pos_dedicated_cashier = should_use_cashier_home()
@@ -175,6 +176,7 @@ def boot_session(bootinfo):
 	if not should_use_cashier_home():
 		return
 
+	# Dedicated cashier must always land on Kasir/Buka Shift — never workspace or settings slug.
 	bootinfo.imogi_pos_cashier_home = True
 	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 
@@ -183,6 +185,10 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_thermal_mode = settings.thermal_print_mode or "Browser"
 	bootinfo.imogi_pos_receipt_header = settings.receipt_header or ""
 	bootinfo.imogi_pos_receipt_footer = settings.receipt_footer or __("Terima kasih")
+	from imogi_pos.imogi_pos.utils.sales_tax import get_sales_tax_config
+
+	tax_cfg = get_sales_tax_config(settings)
+	bootinfo.imogi_pos_sales_tax_rate = flt(tax_cfg.get("rate")) or 11
 	bootinfo.imogi_pos_payment_gateway_enabled = is_setting_enabled("enable_payment_gateway", settings)
 	from imogi_pos.imogi_pos.utils.feature_registry import HIDDEN_UI_FEATURE_IDS
 
@@ -191,9 +197,6 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_default_pos_profile = settings.default_pos_profile or ""
 	bootinfo.imogi_pos_has_open_shift = bool(_get_pos_opening()) if bootinfo.imogi_pos_enable_shift else False
 	bootinfo.imogi_pos_landing_target = get_cashier_landing()
-	bootinfo.imogi_pos_shift_opening_draft = (
-		get_pending_shift_opening() if bootinfo.imogi_pos_landing_target == "opening-entry" else None
-	)
 
 	if bootinfo.imogi_pos_landing_target == "cashier":
 		bootinfo.home_page = CASHIER_HOME_PAGE

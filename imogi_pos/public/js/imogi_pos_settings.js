@@ -186,11 +186,13 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_kitchen_display(frm) {
 		toggle_settings_by_business_type(frm);
+		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
 	},
 
 	enable_fulfillment(frm) {
 		toggle_settings_by_business_type(frm);
+		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
 	},
 
@@ -1948,18 +1950,27 @@ function copy_to_clipboard(text, success_message) {
 }
 
 function render_mode_summary(frm) {
-	const is_umkm = frm.doc.business_type === "UMKM";
-	const summary = is_umkm
-		? {
-				title: __("Mode UMKM"),
-				text: __(
-					"Satu operator menangani order dan pembayaran. Cocok untuk toko kecil, warung, dan UMKM tanpa alur dapur."
-				),
-		  }
-		: {
-				title: __("Mode Restoran / Cafe"),
-				text: __("Alur F&B lengkap dengan kitchen display, fulfillment, dan meja."),
-		  };
+	const kds_on = cint(frm.doc.enable_kitchen_display);
+	const fulfillment_on = cint(frm.doc.enable_fulfillment);
+	const summary =
+		!kds_on && !fulfillment_on
+			? {
+					title: __("Alur Langsung"),
+					text: __(
+						"Order selesai saat pembayaran. Aktifkan Kitchen Display atau Fulfillment di bawah jika perlu alur dapur/packing."
+					),
+			  }
+			: {
+					title: __("Alur Dapur & Packing"),
+					text: [
+						kds_on ? __("Kitchen Display aktif — item dapur masuk antrian masak.") : null,
+						fulfillment_on
+							? __("Fulfillment aktif — packing takeaway/delivery setelah siap.")
+							: null,
+					]
+						.filter(Boolean)
+						.join(" "),
+			  };
 
 	const field = frm.get_field("mode_summary");
 	if (!field || !field.$wrapper) return;
@@ -1969,13 +1980,9 @@ function render_mode_summary(frm) {
 
 	field.$wrapper.html(`
 		<div class="imogi-hero-grid imogi-hero-grid--mode-only">
-			<div class="imogi-mode-panel ${is_umkm ? "is-umkm" : "is-restaurant"}">
+			<div class="imogi-mode-panel ${kds_on || fulfillment_on ? "is-restaurant" : "is-umkm"}">
 				<div class="imogi-panel-head">
-					<div class="imogi-panel-title">${__("Mode Operasional")}</div>
-					<div class="imogi-mode-tabs" role="tablist">
-						<button type="button" class="imogi-mode-tab ${is_umkm ? "is-active" : ""}" data-mode="UMKM">${__("UMKM")}</button>
-						<button type="button" class="imogi-mode-tab ${!is_umkm ? "is-active" : ""}" data-mode="Restaurant / Cafe">${__("Restoran / Cafe")}</button>
-					</div>
+					<div class="imogi-panel-title">${__("Alur Operasional")}</div>
 				</div>
 				<div class="imogi-mode-card">
 					<div class="imogi-mode-card-top">
@@ -2015,41 +2022,6 @@ function bind_mode_summary_handlers(frm, $host) {
 			frappe.set_route($(e.currentTarget).data("route") || "imogi-pos-feature-matrix");
 		});
 	}
-	$host.on("click.imogi-hero", ".imogi-mode-tab:not(.is-active)", function (e) {
-		e.preventDefault();
-		const mode = $(this).data("mode");
-		if (mode === frm.doc.business_type) return;
-		const mode_label = mode === "UMKM" ? __("UMKM") : __("Restoran / Cafe");
-		frappe.confirm(
-			__(
-				"Ganti mode operasional ke <b>{0}</b>? Workspace, alur order (KDS/fulfillment), dan pengaturan terkait akan disesuaikan.",
-				[mode_label]
-			),
-			() => {
-				frappe.call({
-					method: "imogi_pos.api.setup.change_operational_mode",
-					args: { business_type: mode },
-					freeze: true,
-					freeze_message: __("Mengganti mode operasional..."),
-					callback(r) {
-						if (r.exc) return;
-						const msg = r.message || {};
-						frappe.show_alert({
-							message: __("Mode operasional: {0}", [msg.business_type || mode]),
-							indicator: "green",
-						});
-						frappe.ui.toolbar.clear_cache().then(() => {
-							if (msg.redirect) {
-								frappe.set_route(msg.redirect.replace(/^\/app\//, ""));
-							} else {
-								frm.reload_doc();
-							}
-						});
-					},
-				});
-			}
-		);
-	});
 }
 
 const STORE_IDENTITY_FIELDS = [
@@ -2062,6 +2034,7 @@ const STORE_IDENTITY_FIELDS = [
 
 const SHIFT_SETTINGS_FIELDS = [
 	"enable_pos_shift",
+	"enable_shift_cash_detail",
 	"default_pos_profile",
 	"default_warehouse",
 	"default_opening_time",
@@ -2188,7 +2161,7 @@ function layout_kitchen_settings(frm) {
 					<div>
 						<div class="imogi-settings-card-title">${__("Kitchen & Fulfillment")}</div>
 						<div class="imogi-settings-card-sub">${__(
-							"Kitchen Display (KDS), packing takeaway/delivery, dan item group dapur. Opsional untuk UMKM."
+							"Aktifkan Kitchen Display untuk antrian dapur. Aktifkan Fulfillment untuk packing takeaway/delivery."
 						)}</div>
 					</div>
 				</div>

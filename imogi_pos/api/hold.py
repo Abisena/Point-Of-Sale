@@ -125,5 +125,5 @@ def take_hold(hold_id, pos_profile=None):
 	hold = next((h for h in holds if h.get("id") == hold_id), None)
 	if not hold:
 		frappe.throw(_("Order ditahan tidak ditemukan"))
-	_set_holds([h for h in holds if h.get("id") != hold_id])
+	_set_holds([h for h in holds if h.get("id") != hold_id], pos_profile)
 	return hold

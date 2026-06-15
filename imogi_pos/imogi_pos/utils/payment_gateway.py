@@ -387,7 +387,10 @@ def _normalize_status(raw_status):
 def refresh_gateway_payment(name):
 	doc = frappe.get_doc("IMOGI POS Gateway Payment", name)
 	if doc.status in ("Paid", "Cancelled"):
-		return serialize_gateway_payment(doc)
+		result = serialize_gateway_payment(doc)
+		if doc.order:
+			result["order"] = doc.order
+		return result
 
 	cfg = get_gateway_settings()
 	raw_status = ""
@@ -398,63 +401,126 @@ def refresh_gateway_payment(name):
 		raw_status = _xendit_qr_status(doc.external_id)
 
 	new_status = _normalize_status(raw_status)
-	if new_status == "Paid" and doc.status != "Paid":
-		doc.status = "Paid"
-		doc.paid_at = now_datetime()
-		doc.save(ignore_permissions=True)
-		_complete_gateway_payment(doc)
-	elif new_status == "Failed" and doc.status == "Pending":
-		doc.status = "Failed"
-		doc.save(ignore_permissions=True)
+	if new_status == "Paid":
+		try:
+			return mark_gateway_paid(doc)
+		except frappe.TimestampMismatchError:
+			doc.reload()
+			if doc.status == "Paid":
+				result = serialize_gateway_payment(doc)
+				result["order"] = doc.order or frappe.db.get_value(
+					"IMOGI POS Gateway Payment", doc.name, "order"
+				)
+				return result
+			raise
+	if new_status == "Failed" and doc.status == "Pending":
+		frappe.db.set_value(
+			"IMOGI POS Gateway Payment",
+			doc.name,
+			{"status": "Failed"},
+			update_modified=True,
+		)
+		frappe.db.commit()
+		doc.reload()
 
-	frappe.db.commit()
-	doc.reload()
 	return serialize_gateway_payment(doc)
 
 
 def mark_gateway_paid(doc, remarks=None):
+	"""Mark gateway payment paid and ensure exactly one Riwayat Order exists."""
+	doc.reload()
 	if doc.status == "Paid":
-		return serialize_gateway_payment(doc)
-	doc.status = "Paid"
-	doc.paid_at = now_datetime()
+		result = serialize_gateway_payment(doc)
+		order_name = doc.order or _ensure_gateway_order(doc)
+		result["order"] = order_name
+		return result
+
+	updates = {"status": "Paid", "paid_at": now_datetime()}
 	if remarks:
-		doc.remarks = remarks
-	doc.save(ignore_permissions=True)
-	order = _complete_gateway_payment(doc)
+		updates["remarks"] = remarks
+	frappe.db.set_value("IMOGI POS Gateway Payment", doc.name, updates, update_modified=True)
 	frappe.db.commit()
+
+	order_name = _ensure_gateway_order(doc)
 	doc.reload()
 	result = serialize_gateway_payment(doc)
-	result["order"] = order
+	result["order"] = order_name
 	return result
 
 
+def _acquire_redis_lock(cache, lock_key, expires_in_sec=120):
+	"""SET NX lock — frappe.cache() has no .add(); use native Redis SET NX."""
+	key = cache.make_key(lock_key)
+	try:
+		return bool(cache.set(name=key, value=b"1", nx=True, ex=expires_in_sec))
+	except Exception:
+		return True
+
+
+def _release_redis_lock(cache, lock_key):
+	cache.delete_value(lock_key)
+
+
+def _ensure_gateway_order(doc):
+	"""Create and pay order once per gateway payment (safe under concurrent poll/webhook)."""
+	order_name = frappe.db.get_value("IMOGI POS Gateway Payment", doc.name, "order")
+	if order_name:
+		return order_name
+
+	lock_key = f"imogi_gw_order:{doc.name}"
+	cache = frappe.cache()
+	acquired = _acquire_redis_lock(cache, lock_key, expires_in_sec=120)
+	if not acquired:
+		for _ in range(50):
+			order_name = frappe.db.get_value("IMOGI POS Gateway Payment", doc.name, "order")
+			if order_name:
+				return order_name
+			frappe.db.commit()
+			frappe.sleep(0.1)
+		frappe.throw(_("Pembayaran sedang diproses. Silakan refresh halaman."))
+
+	try:
+		order_name = frappe.db.get_value("IMOGI POS Gateway Payment", doc.name, "order")
+		if order_name:
+			return order_name
+
+		snapshot = json.loads(doc.cart_snapshot or "{}")
+		items = snapshot.get("items") or []
+		mode = snapshot.get("mode_of_payment") or "QRIS"
+
+		from imogi_pos.api.cashier import _create_cashier_order
+
+		order = _create_cashier_order(
+			items,
+			doc.customer,
+			snapshot.get("order_channel") or "Walk-in",
+			snapshot.get("order_type") or "Takeaway",
+			[{"mode_of_payment": mode, "amount": flt(doc.amount)}],
+			doc.discount_type,
+			doc.discount_value,
+			pos_profile=doc.pos_profile,
+			company=doc.company,
+			voucher_code=snapshot.get("voucher_code"),
+			loyalty_points_redeem=snapshot.get("loyalty_points_redeem") or 0,
+		)
+		order.action_process_payment(silent=True)
+		order.reload()
+		frappe.db.set_value(
+			"IMOGI POS Gateway Payment",
+			doc.name,
+			"order",
+			order.name,
+			update_modified=False,
+		)
+		frappe.db.commit()
+		return order.name
+	finally:
+		if acquired:
+			_release_redis_lock(cache, lock_key)
+
+
 def _complete_gateway_payment(doc):
-	if doc.order:
-		return frappe.get_doc("Riwayat Order", doc.order)
-
-	snapshot = json.loads(doc.cart_snapshot or "{}")
-	items = snapshot.get("items") or []
-	mode = snapshot.get("mode_of_payment") or "QRIS"
-
-	from imogi_pos.api.cashier import _create_cashier_order
-
-	order = _create_cashier_order(
-		items,
-		doc.customer,
-		snapshot.get("order_channel") or "Walk-in",
-		snapshot.get("order_type") or "Takeaway",
-		[{"mode_of_payment": mode, "amount": flt(doc.amount)}],
-		doc.discount_type,
-		doc.discount_value,
-		pos_profile=doc.pos_profile,
-		company=doc.company,
-		voucher_code=snapshot.get("voucher_code"),
-		loyalty_points_redeem=snapshot.get("loyalty_points_redeem") or 0,
-	)
-	order.action_process_payment(silent=True)
-	order.reload()
-	doc.db_set("order", order.name, update_modified=False)
-	return order.name
+	return _ensure_gateway_order(doc)
 
 
 def serialize_gateway_payment(doc):
@@ -510,8 +576,8 @@ def handle_gateway_webhook(provider, payload):
 		or ""
 	)
 	if _normalize_status(status_raw) == "Paid":
-		mark_gateway_paid(doc, remarks=f"webhook:{provider}")
-		return {"ok": True, "order": doc.order}
+		result = mark_gateway_paid(doc, remarks=f"webhook:{provider}")
+		return {"ok": True, "order": result.get("order") or doc.order}
 	if _normalize_status(status_raw) == "Failed":
 		doc.status = "Failed"
 		doc.save(ignore_permissions=True)
