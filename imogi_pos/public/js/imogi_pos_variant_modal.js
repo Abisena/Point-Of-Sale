@@ -1,5 +1,8 @@
 frappe.provide("imogi_pos");
 
+const IMOGI_VARIANT_CART_ICON = `<svg class="imogi-variant-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
+const IMOGI_VARIANT_CLOSE_ICON = `<svg class="imogi-variant-btn-icon imogi-variant-btn-icon--close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+
 imogi_pos.VariantPicker = class VariantPicker {
 	constructor(page) {
 		this.page = page;
@@ -102,12 +105,21 @@ imogi_pos.VariantPicker = class VariantPicker {
 		this.$modal.find(".imogi-variant-hero-media").html(this.render_hero_html());
 	}
 
-	update_footer_price() {
+	update_prices() {
 		if (!this.$modal) return;
 		const total = this.format_price(this.get_selected_rate());
-		this.$modal
-			.find(".imogi-variant-add-cart")
-			.text(`${__("Tambah ke Keranjang")} — ${total}`);
+		const has_delta = flt(this.get_selected_rate()) !== flt(this.config.base_rate);
+		this.$modal.find(".imogi-variant-price").text(total);
+		this.$modal.find(".imogi-variant-price-hint").text(has_delta ? __("Total") : __("Harga dasar"));
+		this.$modal.find(".imogi-variant-add-cart").html(
+			`${IMOGI_VARIANT_CART_ICON}<span>${__(
+				"Tambah ke Keranjang"
+			)} — ${total}</span>`
+		);
+	}
+
+	render_cart_button_html(total) {
+		return `${IMOGI_VARIANT_CART_ICON}<span>${__("Tambah ke Keranjang")} — ${total}</span>`;
 	}
 
 	render_attribute_section(attr) {
@@ -173,7 +185,6 @@ imogi_pos.VariantPicker = class VariantPicker {
 	}
 
 	render_addon_empty_state() {
-		if (!this.addon_only) return "";
 		const labels = this.config.configured_add_ons || [];
 		if (!labels.length) return "";
 
@@ -206,13 +217,13 @@ imogi_pos.VariantPicker = class VariantPicker {
 
 		this.$modal = $(`
 			<div class="imogi-variant-overlay">
-				<div class="imogi-variant-sheet" role="dialog" aria-modal="true" aria-label="${frappe.utils.escape_html(
+				<div class="imogi-variant-sheet imogi-variant-sheet--v12" role="dialog" aria-modal="true" aria-label="${frappe.utils.escape_html(
 					cfg.item_name
 				)}">
 					<div class="imogi-variant-hero">
 						<div class="imogi-variant-hero-media">${this.render_hero_html()}</div>
 						<button type="button" class="imogi-variant-close-fab" aria-label="${__("Tutup")}">
-							<i class="fa fa-times"></i>
+							${IMOGI_VARIANT_CLOSE_ICON}
 						</button>
 					</div>
 					<div class="imogi-variant-scroll">
@@ -233,7 +244,7 @@ imogi_pos.VariantPicker = class VariantPicker {
 					</div>
 					<div class="imogi-variant-sticky-footer">
 						<button type="button" class="imogi-variant-add-cart">
-							${__("Tambah ke Keranjang")} — ${this.format_price(this.get_selected_rate())}
+							${this.render_cart_button_html(this.format_price(this.get_selected_rate()))}
 						</button>
 					</div>
 				</div>
@@ -261,7 +272,7 @@ imogi_pos.VariantPicker = class VariantPicker {
 			this.selections[attribute] = value;
 			$m.find(`.imogi-variant-option[data-attribute="${attribute}"]`).removeClass("is-active");
 			$btn.addClass("is-active");
-			this.update_footer_price();
+			this.update_prices();
 			this.update_hero_image();
 		});
 
@@ -270,7 +281,7 @@ imogi_pos.VariantPicker = class VariantPicker {
 			const code = $btn.data("addon");
 			this.add_ons[code] = !this.add_ons[code];
 			$btn.toggleClass("is-active", !!this.add_ons[code]);
-			this.update_footer_price();
+			this.update_prices();
 		});
 
 		$m.find(".imogi-variant-add-cart").on("click", () => this.submit());
@@ -278,7 +289,9 @@ imogi_pos.VariantPicker = class VariantPicker {
 
 	submit() {
 		const $btn = this.$modal.find(".imogi-variant-add-cart");
-		$btn.prop("disabled", true).text(`${__("Menambahkan...")}`);
+		$btn.prop("disabled", true).html(
+			`<span class="imogi-variant-btn-spinner" aria-hidden="true"></span><span>${__("Menambahkan...")}</span>`
+		);
 
 		if (this.config.addon_only) {
 			const add_on_items = (this.config.add_ons || [])
@@ -321,7 +334,7 @@ imogi_pos.VariantPicker = class VariantPicker {
 			callback: (r) => {
 				if (r.exc) {
 					$btn.prop("disabled", false);
-					this.update_footer_price();
+					this.update_prices();
 					return;
 				}
 
@@ -358,292 +371,129 @@ function inject_variant_modal_css() {
 		"imogi-variant-modal-css-v6",
 		"imogi-variant-modal-css-v7",
 		"imogi-variant-modal-css-v8",
+		"imogi-variant-modal-css-v9",
+		"imogi-variant-modal-css-v10",
+		"imogi-variant-modal-css-v11",
 	].forEach((id) => document.getElementById(id)?.remove());
+
+	const style_id = "imogi-variant-modal-css-v12";
+	if (document.getElementById(style_id)) return;
 
 	frappe.dom.set_style(
 		`
 		body.imogi-variant-open { overflow: hidden; }
 		.imogi-variant-overlay {
 			align-items: flex-end;
-			background: rgba(15, 23, 42, 0.45);
+			background: rgba(15, 23, 42, 0.55);
+			backdrop-filter: blur(3px);
 			display: flex;
 			inset: 0;
 			justify-content: center;
 			padding: 0;
 			position: fixed;
-			z-index: 1050;
+			z-index: 1065;
 		}
 		.imogi-variant-sheet {
 			background: #fff;
-			border-radius: 16px 16px 0 0;
-			box-shadow: 0 -8px 40px rgba(15, 23, 42, 0.18);
+			border: 1px solid #e2e8f0;
+			border-radius: 20px 20px 0 0;
+			box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.22);
 			display: flex;
 			flex-direction: column;
-			max-height: 92vh;
 			max-height: 92dvh;
-			max-width: 480px;
+			max-width: 440px;
 			overflow: hidden;
 			width: 100%;
 		}
-		.imogi-variant-hero {
-			flex-shrink: 0;
-			position: relative;
-			width: 100%;
-		}
+		.imogi-variant-hero { flex-shrink: 0; position: relative; width: 100%; }
 		.imogi-variant-hero-media {
-			aspect-ratio: 16 / 10;
-			background: #f4f4f5;
-			max-height: 220px;
+			aspect-ratio: 4 / 3;
+			background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
+			max-height: 240px;
 			overflow: hidden;
 			width: 100%;
 		}
-		.imogi-variant-hero-img {
-			display: block;
-			height: 100%;
-			object-fit: cover;
-			width: 100%;
-		}
+		.imogi-variant-hero-img { display: block; height: 100%; object-fit: cover; object-position: center; width: 100%; }
 		.imogi-variant-hero-placeholder {
-			align-items: center;
-			color: #71717a;
-			display: flex;
-			font-size: 28px;
-			font-weight: 800;
-			height: 100%;
-			justify-content: center;
-			min-height: 160px;
-			width: 100%;
+			align-items: center; color: #94a3b8; display: flex; font-size: 28px; font-weight: 800;
+			height: 100%; justify-content: center; min-height: 180px; width: 100%;
 		}
 		.imogi-variant-close-fab {
-			align-items: center;
-			background: #fff;
-			border: none;
-			border-radius: 50%;
-			box-shadow: 0 2px 12px rgba(15, 23, 42, 0.16);
-			color: #18181b;
-			cursor: pointer;
-			display: inline-flex;
-			font-size: 16px;
-			height: 36px;
-			justify-content: center;
-			left: 14px;
-			position: absolute;
-			top: 14px;
-			width: 36px;
+			align-items: center; background: #fff; border: none; border-radius: 50%;
+			box-shadow: 0 2px 12px rgba(15, 23, 42, 0.18); color: #18181b; cursor: pointer;
+			display: inline-flex; height: 38px; justify-content: center; left: 14px;
+			position: absolute; top: 14px; width: 38px; z-index: 2;
 		}
 		.imogi-variant-close-fab:hover { background: #fafafa; }
-		.imogi-variant-scroll {
-			flex: 1;
-			min-height: 0;
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-		.imogi-variant-info {
-			border-bottom: 8px solid #f4f4f5;
-			padding: 16px 16px 14px;
-		}
-		.imogi-variant-info-row {
-			align-items: flex-start;
-			display: flex;
-			gap: 12px;
-			justify-content: space-between;
-		}
+		.imogi-variant-btn-icon { display: block; flex-shrink: 0; height: 20px; width: 20px; }
+		.imogi-variant-btn-icon--close { height: 16px; width: 16px; }
+		.imogi-variant-scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+		.imogi-variant-info { border-bottom: 1px solid #f1f5f9; padding: 18px 18px 16px; }
+		.imogi-variant-info-row { align-items: flex-start; display: flex; gap: 14px; justify-content: space-between; }
 		.imogi-variant-title {
-			color: #18181b;
-			flex: 1;
-			font-size: 18px;
-			font-weight: 800;
-			line-height: 1.25;
-			margin: 0;
-			min-width: 0;
+			color: #0f172a; flex: 1; font-size: 17px; font-weight: 800; letter-spacing: 0.01em;
+			line-height: 1.3; margin: 0; min-width: 0; text-transform: uppercase;
 		}
-		.imogi-variant-price-block {
-			flex-shrink: 0;
-			text-align: right;
-		}
-		.imogi-variant-price {
-			color: #18181b;
-			font-size: 16px;
-			font-variant-numeric: tabular-nums;
-			font-weight: 800;
-			line-height: 1.2;
-		}
-		.imogi-variant-price-hint {
-			color: #71717a;
-			font-size: 11px;
-			font-weight: 600;
-			margin-top: 2px;
-		}
+		.imogi-variant-price-block { flex-shrink: 0; text-align: right; }
+		.imogi-variant-price { color: #0f172a; font-size: 17px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.2; }
+		.imogi-variant-price-hint { color: #94a3b8; font-size: 11px; font-weight: 600; margin-top: 3px; }
 		.imogi-variant-desc {
-			color: #71717a;
-			font-size: 13px;
-			line-height: 1.45;
-			margin: 10px 0 0;
+			-webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #64748b; display: -webkit-box;
+			font-size: 13px; line-height: 1.45; margin: 10px 0 0; overflow: hidden;
 		}
-		.imogi-variant-sections { padding-bottom: 8px; }
-		.imogi-variant-section {
-			border-bottom: 1px solid #f4f4f5;
-			padding: 14px 16px;
-		}
+		.imogi-variant-sections { padding-bottom: 4px; }
+		.imogi-variant-section { border-bottom: 1px solid #f1f5f9; padding: 16px 18px; }
 		.imogi-variant-section:last-child { border-bottom: none; }
-		.imogi-variant-section-head {
-			align-items: center;
-			display: flex;
-			gap: 10px;
-			justify-content: space-between;
-			margin-bottom: 4px;
-		}
-		.imogi-variant-section-title {
-			color: #18181b;
-			font-size: 13px;
-			font-weight: 800;
-			letter-spacing: 0.02em;
-			margin: 0;
-			text-transform: uppercase;
-		}
-		.imogi-variant-section-badge {
-			background: #dcfce7;
-			border-radius: 999px;
-			color: #166534;
-			flex-shrink: 0;
-			font-size: 11px;
-			font-weight: 700;
-			padding: 4px 10px;
-			white-space: nowrap;
-		}
-		.imogi-variant-section-badge--optional {
-			background: #f4f4f5;
-			color: #52525b;
-		}
-		.imogi-variant-section--empty { padding-bottom: 18px; }
-		.imogi-variant-addon-empty-title {
-			color: #b45309;
-			font-size: 13px;
-			font-weight: 700;
-			margin: 8px 0 6px;
-		}
-		.imogi-variant-addon-empty-hint {
-			color: #71717a;
-			font-size: 12px;
-			line-height: 1.45;
-			margin: 0 0 8px;
-		}
-		.imogi-variant-addon-empty-list {
-			color: #18181b;
-			font-size: 13px;
-			font-weight: 600;
-			margin: 0;
-			padding-left: 18px;
-		}
-		.imogi-variant-options { display: flex; flex-direction: column; }
+		.imogi-variant-section-head { align-items: center; display: flex; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
+		.imogi-variant-section-title { color: #64748b; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; margin: 0; text-transform: uppercase; }
+		.imogi-variant-section-badge { background: #dcfce7; border-radius: 999px; color: #166534; flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 4px 10px; white-space: nowrap; }
+		.imogi-variant-section-badge--optional { background: #f1f5f9; color: #64748b; }
+		.imogi-variant-options { display: flex; flex-direction: column; gap: 8px; }
 		.imogi-variant-option {
-			align-items: center;
-			background: transparent;
-			border: none;
-			border-bottom: 1px solid #f4f4f5;
-			color: #18181b;
-			cursor: pointer;
-			display: flex;
-			gap: 12px;
-			min-height: 52px;
-			padding: 12px 0;
-			text-align: left;
-			width: 100%;
+			align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+			color: #0f172a; cursor: pointer; display: flex; gap: 12px; min-height: 48px;
+			padding: 10px 12px; text-align: left; transition: background 0.12s ease, border-color 0.12s ease; width: 100%;
 		}
-		.imogi-variant-option:last-child { border-bottom: none; }
-		.imogi-variant-option-radio {
-			border: 2px solid #d4d4d8;
-			border-radius: 50%;
-			flex-shrink: 0;
-			height: 20px;
-			position: relative;
-			width: 20px;
-		}
-		.imogi-variant-option.is-active .imogi-variant-option-radio {
-			border-color: #00b14f;
-		}
+		.imogi-variant-option:hover { background: #fafafa; border-color: #cbd5e1; }
+		.imogi-variant-option.is-active { background: #f0fdf4; border-color: #86efac; }
+		.imogi-variant-option-radio { border: 2px solid #cbd5e1; border-radius: 50%; flex-shrink: 0; height: 20px; position: relative; width: 20px; }
+		.imogi-variant-option.is-active .imogi-variant-option-radio { border-color: #00b14f; }
 		.imogi-variant-option.is-active .imogi-variant-option-radio::after {
-			background: #00b14f;
-			border-radius: 50%;
-			content: "";
-			height: 10px;
-			left: 50%;
-			position: absolute;
-			top: 50%;
-			transform: translate(-50%, -50%);
-			width: 10px;
+			background: #00b14f; border-radius: 50%; content: ""; height: 10px; left: 50%;
+			position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px;
 		}
 		.imogi-variant-option-check {
-			align-items: center;
-			border: 2px solid #d4d4d8;
-			border-radius: 6px;
-			color: transparent;
-			display: inline-flex;
-			flex-shrink: 0;
-			font-size: 10px;
-			height: 20px;
-			justify-content: center;
-			width: 20px;
+			align-items: center; border: 2px solid #cbd5e1; border-radius: 6px; color: transparent;
+			display: inline-flex; flex-shrink: 0; font-size: 10px; height: 20px; justify-content: center; width: 20px;
 		}
-		.imogi-variant-option--addon.is-active .imogi-variant-option-check {
-			background: #00b14f;
-			border-color: #00b14f;
-			color: #fff;
-		}
-		.imogi-variant-option-label {
-			flex: 1;
-			font-size: 14px;
-			font-weight: 600;
-			line-height: 1.35;
-			min-width: 0;
-		}
-		.imogi-variant-option-price {
-			color: #18181b;
-			flex-shrink: 0;
-			font-size: 13px;
-			font-variant-numeric: tabular-nums;
-			font-weight: 700;
-			min-width: 56px;
-			text-align: right;
-		}
+		.imogi-variant-option--addon.is-active .imogi-variant-option-check { background: #00b14f; border-color: #00b14f; color: #fff; }
+		.imogi-variant-option-label { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; min-width: 0; }
+		.imogi-variant-option-price { color: #0f172a; flex-shrink: 0; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 64px; text-align: right; }
 		.imogi-variant-sticky-footer {
-			background: #fff;
-			border-top: 1px solid #e4e4e7;
-			box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
-			flex-shrink: 0;
-			padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+			background: #fff; border-top: 1px solid #e2e8f0; box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
+			flex-shrink: 0; padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
 		}
 		.imogi-variant-add-cart {
-			background: #00b14f;
-			border: none;
-			border-radius: 999px;
-			color: #fff;
-			cursor: pointer;
-			font-size: 15px;
-			font-weight: 800;
-			min-height: 48px;
-			padding: 12px 18px;
-			width: 100%;
+			align-items: center; background: #00b14f; border: none; border-radius: 999px; color: #fff;
+			cursor: pointer; display: inline-flex; font-size: 15px; font-weight: 800; gap: 10px;
+			justify-content: center; min-height: 50px; padding: 12px 20px; width: 100%;
 		}
 		.imogi-variant-add-cart:hover { background: #009a45; }
-		.imogi-variant-add-cart:disabled {
-			background: #d4d4d8;
-			cursor: not-allowed;
+		.imogi-variant-add-cart:disabled { background: #cbd5e1; cursor: not-allowed; }
+		.imogi-variant-btn-spinner {
+			animation: imogi-variant-spin 0.8s linear infinite; border: 2px solid rgba(255,255,255,.35);
+			border-radius: 50%; border-top-color: #fff; display: inline-block; flex-shrink: 0; height: 16px; width: 16px;
 		}
+		@keyframes imogi-variant-spin { to { transform: rotate(360deg); } }
 		@media (min-width: 641px) {
-			.imogi-variant-overlay {
-				align-items: center;
-				padding: 24px 16px;
-			}
-			.imogi-variant-sheet {
-				border-radius: 16px;
-				max-height: min(88vh, 640px);
-			}
-			.imogi-variant-hero-media { border-radius: 16px 16px 0 0; }
+			.imogi-variant-overlay { align-items: center; padding: 28px 20px; }
+			.imogi-variant-sheet { border-radius: 20px; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22); max-height: min(90vh, 720px); max-width: 420px; }
+			.imogi-variant-hero-media { border-radius: 20px 20px 0 0; max-height: 280px; }
 		}
 		`,
-		"imogi-variant-modal-css-v9"
+		style_id
 	);
 }
 
+imogi_pos.ensure_variant_modal_css = inject_variant_modal_css;
 inject_variant_modal_css();

@@ -224,6 +224,39 @@ def _fetch_order_history_rows(filters, access, limit=50, offset=0):
 	)
 
 
+def _fetch_order_history_summary(access):
+	where, values = _order_history_where(
+		{
+			"from_date": getdate(today()),
+			"to_date": add_days(getdate(today()), 1),
+		},
+		access,
+	)
+	row = frappe.db.sql(
+		f"""
+		select
+			count(*) as total_count,
+			sum(case when ro.status = 'Completed' then 1 else 0 end) as completed_count,
+			sum(case when ro.status = 'Completed' then ro.grand_total else 0 end) as revenue
+		from `tabRiwayat Order` ro
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+		""",
+		values,
+		as_dict=True,
+	)
+	row = row[0] if row else {}
+	total = int(row.get("total_count") or 0)
+	completed = int(row.get("completed_count") or 0)
+	revenue = flt(row.get("revenue"))
+	return {
+		"total_today": total,
+		"completed_today": completed,
+		"revenue_today": revenue,
+		"average_today": (revenue / completed) if completed else 0,
+	}
+
+
 @frappe.whitelist()
 def list_order_history(
 	branch=None,
@@ -274,6 +307,7 @@ def list_order_history(
 		"total_pages": total_pages,
 		"scope": scope,
 		"view_mode": access["view_mode"],
+		"summary": _fetch_order_history_summary(access),
 	}
 
 

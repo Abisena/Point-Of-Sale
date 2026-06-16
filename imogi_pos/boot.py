@@ -6,7 +6,7 @@ from frappe.utils import cint, flt
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
 from imogi_pos.imogi_pos.utils.workspace import get_workspace_route
-from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO
+from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO, IMOGI_POS_LOGO_WHITE
 
 CASHIER_ROLE = "IMOGI Cashier"
 OWNER_ROLE = "IMOGI Owner"
@@ -116,6 +116,7 @@ def boot_session(bootinfo):
 	bootinfo.app_logo_url = IMOGI_POS_DESK_LOGO
 	bootinfo.imogi_pos_desk_logo_url = IMOGI_POS_DESK_LOGO
 	bootinfo.imogi_pos_logo_url = IMOGI_POS_LOGO
+	bootinfo.imogi_pos_logo_white_url = IMOGI_POS_LOGO_WHITE
 	settings = get_settings()
 	bootinfo.imogi_pos_setup_complete = bool(settings.setup_complete)
 	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier

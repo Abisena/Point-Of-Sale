@@ -113,10 +113,28 @@ body.imogi-pos-themed .layout-main-section-wrapper {
 }
 
 body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history),
+body.imogi-pos-themed .layout-main:has(.imogi-pos-order-history),
+body.imogi-pos-themed .page-container:has(.imogi-pos-order-history),
+body.imogi-pos-themed .main-section:has(.imogi-pos-order-history),
 .imogi-pos-order-history.layout-main-section,
 .imogi-pos-order-history .page-body {
 	background: #fff !important;
 	min-height: calc(100dvh - 60px);
+}
+
+body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history),
+body.imogi-pos-themed .layout-main:has(.imogi-pos-order-history),
+body.imogi-pos-themed .page-container:has(.imogi-pos-order-history),
+body.imogi-pos-themed .main-section:has(.imogi-pos-order-history),
+body.imogi-pos-themed .container:has(.imogi-pos-order-history),
+.imogi-pos-order-history.layout-main-section,
+.imogi-pos-order-history,
+.imogi-pos-order-history .page-body {
+	box-sizing: border-box;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+	max-width: 100% !important;
+	width: 100% !important;
 }
 
 /* Primary buttons */
@@ -174,12 +192,12 @@ body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history)
 .imogi-close-shift-page .imogi-close-card,
 .imogi-close-shift-page .imogi-close-verify-card {
 	background: #fff !important;
-	border-color: #e4e4e7 !important;
-	box-shadow: 0 12px 32px rgba(7, 17, 31, 0.12);
+	border-color: #dde3ea !important;
+	box-shadow: 0 1px 2px rgba(15, 31, 53, 0.04);
 }
 
 .imogi-cashier-page > .imogi-cashier-shift-bar,
-.imogi-cashier-shift-bar {
+.imogi-cashier-shift-bar:not(.imogi-cashier-header .imogi-cashier-shift-bar) {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
 	border: 1px solid rgba(255, 255, 255, 0.12) !important;
 	border-radius: 12px !important;
@@ -187,11 +205,12 @@ body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history)
 }
 
 .imogi-cashier-page .imogi-cashier-panel-head,
+.imogi-cashier-header,
 .imogi-open-shift-page .imogi-shift-header,
 .imogi-close-shift-page .imogi-shift-header {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
 	border-color: rgba(255, 255, 255, 0.12) !important;
-	box-shadow: 0 8px 24px rgba(7, 17, 31, 0.18);
+	box-shadow: none;
 }
 
 .imogi-cashier-shift-bar .imogi-cashier-shift-text,
@@ -368,45 +387,104 @@ body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history)
 	margin-bottom: 4px;
 }
 
+.imogi-pay-success-dialog .modal-dialog {
+	max-width: 460px;
+	width: calc(100% - 24px);
+}
+
+.imogi-pay-success-dialog .modal-content {
+	border: none;
+	border-radius: 18px;
+	box-shadow: 0 24px 48px rgba(15, 31, 53, 0.18);
+	overflow: hidden;
+}
+
+.imogi-pay-success-dialog .modal-header {
+	background: #fff;
+	border-bottom: 1px solid #f1f5f9;
+	padding: 14px 18px 12px;
+}
+
+.imogi-pay-success-dialog .modal-title {
+	color: #0f1f35;
+	font-size: 15px;
+	font-weight: 800;
+}
+
+.imogi-pay-success-dialog .modal-body {
+	background: #f8fafc;
+	padding: 16px 18px 18px;
+}
+
+.imogi-pay-success-hero {
+	margin-bottom: 14px;
+	text-align: center;
+}
+
+.imogi-pay-success-icon-wrap {
+	align-items: center;
+	background: #ecfdf5;
+	border: 2px solid #a7f3d0;
+	border-radius: 999px;
+	color: #059669;
+	display: inline-flex;
+	font-size: 28px;
+	height: 64px;
+	justify-content: center;
+	margin-bottom: 10px;
+	width: 64px;
+}
+
+.imogi-pay-success-subtitle {
+	color: #71717a;
+	font-size: 12px;
+	font-weight: 600;
+}
+
 .imogi-pay-success-order {
 	color: #0f1f35;
 	font-size: 18px;
+	font-variant-numeric: tabular-nums;
 	font-weight: 800;
 	margin-bottom: 4px;
 }
 
-.imogi-pay-success-status {
-	color: #71717a;
+.imogi-pay-success-status-pill {
+	background: #ecfdf5;
+	border: 1px solid #bbf7d0;
+	border-radius: 999px;
+	color: #047857;
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 5px 12px;
+}
+
+.imogi-pay-stamp-reward {
+	background: #fff7ed;
+	border: 1px solid #fed7aa;
+	border-radius: 10px;
+	color: #9a3412;
 	font-size: 12px;
-	margin-top: 12px;
-}
-
-.imogi-pay-success-dialog .modal-footer {
-	display: none !important;
-}
-
-.modal.imogi-pay-success-dialog {
-	z-index: 1065 !important;
-}
-
-.modal.imogi-pay-success-dialog + .modal-backdrop {
-	z-index: 1060 !important;
-}
-
-.imogi-success-action-btn {
-	pointer-events: auto;
-	position: relative;
-	z-index: 2;
+	font-weight: 600;
+	margin-top: 10px;
+	padding: 10px 12px;
+	text-align: left;
 }
 
 .imogi-success-actions {
-	border-top: 1px solid #f1f5f9;
-	display: grid;
+	border-top: 1px solid #e4e4e7;
+	display: flex;
+	flex-direction: column;
 	gap: 10px;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	margin-top: 18px;
-	padding-top: 16px;
-	text-align: left;
+	margin-top: 16px;
+	padding-top: 14px;
+}
+
+.imogi-success-actions-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .imogi-success-action-btn {
@@ -420,19 +498,22 @@ body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history)
 	flex-direction: column;
 	gap: 6px;
 	justify-content: center;
-	min-height: 78px;
-	padding: 12px 10px;
+	min-height: 72px;
+	padding: 10px 8px;
 	transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 
 .imogi-success-action-btn.is-primary {
-	background: #0f1f35;
+	background: linear-gradient(135deg, #0f1f35 0%, #1a3352 100%);
 	border-color: #0f1f35;
 	color: #fff;
 	flex-direction: row;
 	gap: 10px;
-	grid-column: 1 / -1;
-	min-height: 48px;
+	grid-column: auto;
+	justify-content: center;
+	min-height: 50px;
+	padding: 0 16px;
+	width: 100%;
 }
 
 .imogi-success-action-icon {
@@ -481,19 +562,76 @@ body.imogi-pos-themed .layout-main-section-wrapper:has(.imogi-pos-order-history)
 .imogi-pay-dialog .imogi-pay-quick-btn {
 	background: #fff;
 	border: 1px solid #d4d4d8;
-	border-radius: 8px;
+	border-radius: 10px;
 	color: #0f1f35;
 	cursor: pointer;
-	flex: 1;
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 700;
+	min-height: 48px;
 	min-width: 70px;
-	padding: 8px 6px;
+	padding: 10px 8px;
 	transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-/* IMOGI Cashier fullscreen kiosk mode — hide desk chrome on shift workflow pages */
+.imogi-pay-dialog .imogi-pay-quick-btn.is-selected {
+	background: #0f1f35;
+	border-color: #0f1f35;
+	color: #fff;
+}
+
+.imogi-pay-dialog .imogi-pay-quick-btn.is-disabled,
+.imogi-pay-dialog .imogi-pay-quick-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.42;
+	pointer-events: none;
+}
+
+.imogi-pay-cash-quick {
+	display: block;
+	margin-top: 0;
+}
+
+.imogi-pay-dialog .frappe-control[data-fieldname="cash_quick_html"] {
+	margin: 0 0 12px !important;
+	width: 100% !important;
+}
+
+.modal.imogi-pay-success-dialog {
+	z-index: 1065 !important;
+}
+
+.modal.imogi-pay-success-dialog + .modal-backdrop {
+	z-index: 1060 !important;
+}
+
+.imogi-pay-success-dialog .modal-footer {
+	display: none !important;
+}
+
+/* IMOGI Cashier — white canvas (override login navy gradient on body.imogi-pos-themed) */
+html:has(body.imogi-cashier-active),
+body.imogi-cashier-active,
+body.imogi-pos-themed.imogi-cashier-active,
+body.imogi-pos-themed:has(.imogi-cashier-page),
 body.imogi-pos-themed.imogi-pos-cashier-fullscreen {
+	background: #fff !important;
+	background-attachment: scroll !important;
+	background-image: none !important;
+}
+
+body.imogi-cashier-active .imogi-cashier-page,
+body.imogi-cashier-active .imogi-cashier-page .page-body,
+body.imogi-cashier-active .imogi-cashier-root,
+body.imogi-cashier-active .imogi-cashier-shell,
+body.imogi-cashier-active .layout-main-section-wrapper,
+body.imogi-cashier-active .layout-main-section,
+body.imogi-cashier-active .layout-main,
+body.imogi-cashier-active .page-container,
+body.imogi-cashier-active .main-section,
+body.imogi-cashier-active .container,
+body.imogi-pos-cashier-fullscreen .imogi-cashier-page,
+body.imogi-pos-cashier-fullscreen .imogi-cashier-page .page-body,
+body.imogi-pos-cashier-fullscreen .imogi-cashier-root {
 	background: #fff !important;
 	background-image: none !important;
 }
@@ -505,6 +643,17 @@ body.imogi-pos-cashier-fullscreen #navbar-breadcrumbs,
 body.imogi-pos-cashier-fullscreen .layout-side-section,
 body.imogi-pos-cashier-fullscreen .desk-sidebar {
 	display: none !important;
+}
+
+body.imogi-pos-cashier-fullscreen .page-container,
+body.imogi-pos-cashier-fullscreen .main-section,
+body.imogi-pos-cashier-fullscreen .layout-main {
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+	max-width: 100% !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	width: 100% !important;
 }
 
 body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper {
@@ -587,6 +736,27 @@ body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body {
 	border-color: var(--imogi-primary) !important;
 	color: #fff !important;
 }
+
+	@media (max-width: 992px) {
+	body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper:has(.imogi-pos-order-history),
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history.layout-main-section,
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history {
+		height: auto !important;
+		max-height: none !important;
+		min-height: 100dvh !important;
+		overflow-x: hidden !important;
+		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+	}
+
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body,
+	body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .imogi-web-shell {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+	}
 
 	@media (max-width: 640px) {
 	body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper,

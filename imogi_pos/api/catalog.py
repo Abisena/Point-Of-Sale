@@ -479,43 +479,22 @@ def _get_pos_add_ons(template_item, ctx):
 	add_on_text = frappe.db.get_value("Item", template_code, "imogi_pos_add_ons")
 	names = [part.strip() for part in (add_on_text or "").split(",") if part.strip()]
 
-	if names:
-		rows = []
-		for name in names:
-			item_code = resolve_item_code(name) or ensure_pos_addon_item(name, exclude_item_code=template_code)
-			if not item_code or item_code == template_code:
-				continue
-			row = frappe.db.get_value(
-				"Item",
-				item_code,
-				["name", "item_name", "image", "stock_uom", "is_stock_item"],
-				as_dict=True,
-			)
-			if row:
-				rows.append(row)
-	else:
-		from erpnext.accounts.doctype.pos_profile.pos_profile import get_item_groups
+	if not names:
+		return []
 
-		if not frappe.db.exists("Item Group", "Add-ons"):
-			return []
-
-		allowed_groups = set(get_item_groups(ctx["pos_profile"]) or [])
-		if allowed_groups and "Add-ons" not in allowed_groups:
-			return []
-
-		rows = frappe.get_all(
+	rows = []
+	for name in names:
+		item_code = resolve_item_code(name) or ensure_pos_addon_item(name, exclude_item_code=template_code)
+		if not item_code or item_code == template_code:
+			continue
+		row = frappe.db.get_value(
 			"Item",
-			filters={
-				"disabled": 0,
-				"is_sales_item": 1,
-				"has_variants": 0,
-				"variant_of": ["is", "not set"],
-				"item_group": "Add-ons",
-			},
-			fields=["name", "item_name", "image", "stock_uom", "is_stock_item"],
-			order_by="item_name asc",
-			limit=12,
+			item_code,
+			["name", "item_name", "image", "stock_uom", "is_stock_item"],
+			as_dict=True,
 		)
+		if row:
+			rows.append(row)
 
 	add_ons = []
 	for row in rows:
@@ -865,6 +844,9 @@ def get_item_variant_config(template_item_code, pos_profile=None, branch=None):
 			}
 		)
 
+	add_on_text = frappe.db.get_value("Item", template.name, "imogi_pos_add_ons") or ""
+	configured_add_ons = [part.strip() for part in add_on_text.split(",") if part.strip()]
+
 	return {
 		"template_item_code": template.name,
 		"item_name": template.item_name,
@@ -875,6 +857,7 @@ def get_item_variant_config(template_item_code, pos_profile=None, branch=None):
 		"attributes": attributes,
 		"variants": variants_meta,
 		"add_ons": _get_pos_add_ons(template, ctx),
+		"configured_add_ons": configured_add_ons,
 	}
 
 

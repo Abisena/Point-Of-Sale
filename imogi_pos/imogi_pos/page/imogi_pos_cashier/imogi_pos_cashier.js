@@ -1,8 +1,22 @@
 frappe.provide("imogi_pos");
 
+function imogi_pos_clear_cashier_overlays() {
+	try {
+		frappe.dom.unfreeze();
+	} catch (e) {
+		/* ignore */
+	}
+	document.body.classList.remove("imogi-variant-open");
+	document.querySelectorAll(".imogi-variant-overlay").forEach((el) => el.remove());
+}
+
 frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
+	imogi_pos_clear_cashier_overlays();
+	document.body.classList.add("imogi-cashier-active");
 	inject_cashier_css();
+	imogi_pos_paint_cashier_canvas();
 	imogi_pos.sync_desk_theme?.();
+	imogi_pos_paint_cashier_canvas();
 
 	if (
 		imogi_pos_requires_shift_workflow?.() &&
@@ -20,6 +34,7 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 	});
 
 	page.main.addClass("imogi-cashier-page");
+	document.body.classList.add("imogi-cashier-active");
 	$(wrapper).find(".layout-main-section-wrapper").css("max-width", "100%");
 	$(wrapper).find(".page-head").hide();
 	wrapper.cashier_page = new imogi_pos.CashierPage(page);
@@ -36,17 +51,20 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 	}
 	frappe.breadcrumbs.add("Imogi POS");
 
-	// Optional: load full stylesheet in background (do not block UI)
-	if (!window.__imogi_cashier_styles_ready) {
-		frappe.require("/assets/imogi_pos/css/imogi_pos.css", () => {
-			window.__imogi_cashier_styles_ready = true;
-		});
-	}
+	// Jangan pakai query string di path — frappe.assets.extn() akan error dan freeze overlay abu-abu.
+	frappe.require("/assets/imogi_pos/css/imogi_pos_cashier_cards.css", () => {
+		inject_cashier_css();
+		imogi_pos_paint_cashier_canvas?.();
+		imogi_pos.ensure_variant_modal_css?.();
+	});
 };
 
 frappe.pages["imogi-pos-cashier"].on_page_show = function (wrapper) {
+	imogi_pos_clear_cashier_overlays();
 	document.body.classList.add("imogi-cashier-active");
+	imogi_pos_paint_cashier_canvas();
 	imogi_pos.sync_desk_theme?.();
+	imogi_pos_paint_cashier_canvas();
 	if (
 		imogi_pos_requires_shift_workflow?.() &&
 		frappe.boot?.imogi_pos_landing_target === "opening-entry" &&
@@ -67,112 +85,84 @@ function imogi_format_pay_total(total) {
 	return formatted.replace(/Rp\s?/, '<span class="imogi-pay-currency">Rp</span> ');
 }
 
-function imogi_apply_shift_bar_theme($bar) {
-	if (!$bar || !$bar.length) {
+function imogi_apply_shift_bar_theme($header, $actions) {
+	if (!$header || !$header.length) {
 		return;
 	}
 
 	const mobile = window.matchMedia("(max-width: 992px)").matches;
-	if (mobile) {
-		$bar.css({
-			alignItems: "center",
-			background: "transparent",
-			border: "none",
-			borderRadius: "0",
-			display: "flex",
-			flexWrap: "nowrap",
-			gap: "8px",
-			justifyContent: "space-between",
-			marginBottom: "0",
-			padding: "10px 12px",
-		});
+	const $action_bar = $actions?.length ? $actions : $header.find(".imogi-cashier-shift-actions");
 
-		$bar.find(".imogi-cashier-shift-text").css({
-			color: "#3f3f46",
-			fontSize: "12px",
-			fontWeight: "700",
-		});
-
-		$bar.find(".imogi-cashier-shift-text .fa").css({
-			color: "#16a34a",
-		});
-
-		$bar.find(".imogi-cashier-shift-text a").css({
-			color: "#0f1f35",
-			fontWeight: "700",
-			textDecoration: "none",
-		});
-
-		$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn, .imogi-cashier-history-btn").css({
-			background: "#f4f4f5",
-			border: "1px solid #d4d4d8",
-			borderRadius: "8px",
-			color: "#0f1f35",
-			fontWeight: "700",
-		});
-
-		$bar.find(".imogi-cashier-open-shift-btn, .imogi-cashier-btn-primary").css({
-			background: "#0f1f35",
-			border: "1px solid #0f1f35",
+	const style_header_actions = () => {
+		$action_bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn, .imogi-cashier-history-btn").css({
+			background: "rgba(255, 255, 255, 0.08)",
+			border: "1px solid rgba(255, 255, 255, 0.28)",
 			borderRadius: "8px",
 			color: "#fff",
+			fontSize: mobile ? "11px" : "12px",
+			fontWeight: "700",
+			padding: mobile ? "4px 10px" : "5px 12px",
+		});
+
+		$action_bar.find(".imogi-cashier-open-shift-btn, .imogi-cashier-btn-primary").css({
+			background: "#fff",
+			border: "1px solid #fff",
+			borderRadius: "8px",
+			color: "#0f1f35",
 			fontWeight: "700",
 		});
+	};
 
-		$bar.find(".imogi-cashier-shift-actions").css({
-			alignItems: "center",
-			display: "flex",
-			flexShrink: "0",
-			flexWrap: "nowrap",
-			gap: "6px",
-		});
+	$header.find(".imogi-cashier-shift-text").css({
+		color: "rgba(255, 255, 255, 0.92)",
+		fontSize: mobile ? "11px" : "12px",
+		fontWeight: "600",
+	});
+
+	$header.find(".imogi-cashier-shift-text .fa-circle").css({
+		color: "#22c55e",
+	});
+
+	$header.find(".imogi-cashier-shift-text .imogi-cashier-shift-live").css({
+		display: "inline-block",
+	});
+
+	$header.find(".imogi-cashier-shift-text a").css({
+		color: "#fff",
+		fontWeight: "700",
+		textDecoration: "none",
+	});
+
+	style_header_actions();
+}
+
+function imogi_pos_paint_cashier_canvas() {
+	if (!document.body.classList.contains("imogi-cashier-active") && !document.querySelector(".imogi-cashier-page")) {
 		return;
 	}
+	document.body.classList.add("imogi-cashier-active");
+	const paint = (el) => {
+		if (!el) return;
+		el.style.setProperty("background", "#fff", "important");
+		el.style.setProperty("background-color", "#fff", "important");
+		el.style.setProperty("background-image", "none", "important");
+		el.style.setProperty("background-attachment", "scroll", "important");
+	};
+	paint(document.body);
+	paint(document.documentElement);
+	document
+		.querySelectorAll(
+			".layout-main, .layout-main-section-wrapper, .layout-main-section, .page-body, .page-container, .main-section, .container, .content.page-container, .imogi-cashier-page, .imogi-cashier-root, .imogi-cashier-shell"
+		)
+		.forEach(paint);
+}
+imogi_pos.paint_cashier_canvas = imogi_pos_paint_cashier_canvas;
 
-	$bar.css({
-		alignItems: "center",
-		background: "linear-gradient(145deg, #0f1f35 0%, #1a3352 100%)",
-		border: "1px solid rgba(255, 255, 255, 0.12)",
-		borderRadius: "12px",
-		display: "flex",
-		flexWrap: "wrap",
-		gap: "10px",
-		justifyContent: "space-between",
-		marginBottom: "12px",
-		padding: "10px 14px",
-	});
-
-	$bar.find(".imogi-cashier-shift-text").css({
-		color: "rgba(255, 255, 255, 0.92)",
-		fontSize: "13px",
-		fontWeight: "700",
-	});
-
-	$bar.find(".imogi-cashier-shift-text .fa").css({
-		color: "rgba(255, 255, 255, 0.72)",
-	});
-
-	$bar.find(".imogi-cashier-shift-text a").css({
-		color: "#fff",
-		fontWeight: "800",
-		textDecoration: "underline",
-	});
-
-	$bar.find(".imogi-cashier-close-shift-btn, .imogi-cashier-logout-btn, .imogi-cashier-history-btn").css({
-		background: "rgba(255, 255, 255, 0.12)",
-		border: "1px solid rgba(255, 255, 255, 0.24)",
-		borderRadius: "8px",
-		color: "#fff",
-		fontWeight: "700",
-	});
-
-	$bar.find(".imogi-cashier-shift-actions").css({
-		alignItems: "center",
-		display: "flex",
-		flexShrink: "0",
-		flexWrap: "wrap",
-		gap: "8px",
-	});
+function imogi_cashier_logo_url() {
+	return (
+		frappe.boot?.imogi_pos_logo_white_url ||
+		"/assets/imogi_pos/images/imogi-pos-logo-white.png"
+	);
 }
 
 function inject_cashier_css() {
@@ -215,46 +205,249 @@ function inject_cashier_css() {
 	document.getElementById("imogi-cashier-inline-css-v42")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v43")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v44")?.remove();
-	document.getElementById("imogi-cashier-inline-css-v46")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v50")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v51")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v55")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v60")?.remove();
 	frappe.dom.set_style(`
+		body.imogi-cashier-active,
+		body.imogi-pos-themed.imogi-cashier-active,
+		body.imogi-pos-themed:has(.imogi-cashier-page) {
+			background: #fff !important;
+			background-attachment: scroll !important;
+			background-image: none !important;
+		}
+		body.imogi-pos-cashier-fullscreen,
+		body.imogi-pos-themed.imogi-pos-cashier-fullscreen {
+			background: #fff !important;
+			background-image: none !important;
+		}
+		body.imogi-pos-cashier-fullscreen .page-container,
+		body.imogi-pos-cashier-fullscreen .container,
+		body.imogi-pos-cashier-fullscreen .main-section,
+		body.imogi-pos-cashier-fullscreen .layout-main,
+		body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper,
+		body.imogi-pos-cashier-fullscreen .layout-main-section,
+		body.imogi-pos-cashier-fullscreen .page-body,
+		body.imogi-cashier-active .page-container,
+		body.imogi-cashier-active .container,
+		body.imogi-cashier-active .main-section,
+		body.imogi-cashier-active .layout-main {
+			background: #fff !important;
+			background-image: none !important;
+		}
+		body.imogi-pos-cashier-fullscreen .page-container,
+		body.imogi-pos-cashier-fullscreen .container,
+		body.imogi-pos-cashier-fullscreen .main-section,
+		body.imogi-pos-cashier-fullscreen .layout-main,
+		body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper,
+		body.imogi-pos-cashier-fullscreen .layout-main-section,
+		body.imogi-pos-cashier-fullscreen .page-body {
+			margin-left: 0 !important;
+			margin-right: 0 !important;
+			max-width: 100% !important;
+			padding-left: 0 !important;
+			padding-right: 0 !important;
+			width: 100% !important;
+		}
 		.imogi-cashier-page .layout-main-section-wrapper,
 		.imogi-cashier-page .layout-main-section,
-		.imogi-cashier-page .page-body { background: transparent !important; max-width: 100% !important; overflow: hidden !important; }
+		.imogi-cashier-page .page-body { background: #fff !important; max-width: 100% !important; overflow: hidden !important; }
+		body.imogi-pos-cashier-fullscreen .imogi-cashier-page.layout-main-section,
+		body.imogi-pos-cashier-fullscreen .imogi-cashier-page {
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			height: 100dvh !important;
+			max-height: 100dvh !important;
+			min-height: 0;
+			overflow: hidden !important;
+			padding: 0 !important;
+		}
 		.imogi-cashier-page.layout-main-section,
-		.imogi-cashier-page { box-sizing: border-box; display: flex; flex-direction: column; height: calc(100vh - 60px); height: calc(100dvh - 60px); max-height: calc(100vh - 60px); max-height: calc(100dvh - 60px); min-height: 0; overflow: hidden !important; padding: 8px 12px 10px !important; }
+		.imogi-cashier-page {
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			height: calc(100vh - 60px);
+			height: calc(100dvh - 60px);
+			max-height: calc(100vh - 60px);
+			max-height: calc(100dvh - 60px);
+			min-height: 0;
+			overflow: hidden !important;
+			padding: 0 !important;
+		}
 		.imogi-cashier-page .page-body,
-		.imogi-cashier-root { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
-		.imogi-cashier-top { display: flex; flex-direction: column; flex-shrink: 0; gap: 6px; margin-bottom: 8px; }
-		.imogi-cashier-shift-bar { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 10px; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 0 !important; padding: 8px 12px; }
-		.imogi-cashier-shift-bar.is-closed { background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important; border-color: rgba(255,255,255,0.12) !important; }
-		.imogi-cashier-shift-bar .imogi-cashier-shift-text { color: rgba(255,255,255,0.92) !important; font-size: 13px; font-weight: 700; }
-		.imogi-cashier-shift-bar .imogi-cashier-shift-text .fa { color: rgba(255,255,255,0.72) !important; }
-		.imogi-cashier-shift-bar .imogi-cashier-shift-text a { color: #fff !important; font-weight: 800; text-decoration: underline; }
-		.imogi-cashier-shift-actions { align-items: center; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
-		.imogi-cashier-shift-bar .imogi-cashier-close-shift-btn,
-		.imogi-cashier-shift-bar .imogi-cashier-logout-btn,
-		.imogi-cashier-shift-bar .imogi-cashier-history-btn { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.24) !important; border-radius: 8px !important; color: #fff !important; font-weight: 700 !important; }
-		.imogi-cashier-shift-bar .imogi-cashier-logout-btn .fa,
-		.imogi-cashier-shift-bar .imogi-cashier-history-btn .fa { margin-right: 4px; opacity: .85; }
-		.imogi-cashier-status-strip { align-items: center; display: none; flex-wrap: wrap; gap: 6px; }
+		.imogi-cashier-root,
+		body.imogi-pos-cashier-fullscreen .imogi-cashier-page .layout-main-section-wrapper,
+		body.imogi-pos-cashier-fullscreen .imogi-cashier-page .page-body {
+			background: #fff !important;
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden;
+		}
+		.imogi-cashier-header {
+			align-items: center;
+			background: #0b141a;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+			display: grid;
+			flex-shrink: 0;
+			gap: 12px;
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			min-height: 54px;
+			padding: 10px 14px;
+		}
+		.imogi-cashier-brand {
+			align-items: center;
+			display: flex;
+			flex-shrink: 0;
+			gap: 10px;
+			min-width: 0;
+		}
+		.imogi-cashier-brand-logo {
+			filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.18));
+			flex-shrink: 0;
+			height: 30px;
+			object-fit: contain;
+			width: auto;
+		}
+		.imogi-cashier-brand-title {
+			color: #fff;
+			font-size: 17px;
+			font-weight: 800;
+			letter-spacing: 0.01em;
+			line-height: 1;
+			white-space: nowrap;
+		}
+		.imogi-cashier-header-mid {
+			align-items: center;
+			display: flex;
+			justify-content: center;
+			min-width: 0;
+		}
+		.imogi-cashier-shift-pill {
+			align-items: center;
+			background: rgba(255, 255, 255, 0.08);
+			border: 1px solid rgba(255, 255, 255, 0.14);
+			border-radius: 999px;
+			color: rgba(255, 255, 255, 0.92);
+			display: inline-flex;
+			font-size: 12px;
+			font-weight: 600;
+			gap: 8px;
+			line-height: 1.3;
+			max-width: 100%;
+			padding: 7px 14px;
+			white-space: nowrap;
+		}
+		.imogi-cashier-shift-pill.is-closed { opacity: 0.92; }
+		.imogi-cashier-shift-row { display: none; }
+		.imogi-cashier-shift-live {
+			background: #22c55e;
+			border-radius: 50%;
+			box-shadow: 0 0 0 3px rgba(34,197,94,.25);
+			flex-shrink: 0;
+			height: 8px;
+			width: 8px;
+		}
+		.imogi-cashier-shift-text.is-closed .imogi-cashier-shift-live {
+			background: #f59e0b;
+			box-shadow: 0 0 0 3px rgba(245,158,11,.22);
+		}
+		.imogi-cashier-shift-actions {
+			align-items: center;
+			display: flex;
+			flex-shrink: 0;
+			flex-wrap: wrap;
+			gap: 8px;
+			justify-content: flex-end;
+		}
+		.imogi-cashier-top {
+			display: none;
+			flex-direction: column;
+			flex-shrink: 0;
+			gap: 6px;
+			padding: 6px 10px 0;
+		}
+		.imogi-cashier-top .imogi-cashier-branch-row.is-visible { display: flex; }
+		.imogi-cashier-shift-bar { display: none; }
+		.imogi-cashier-shift-text { color: rgba(255,255,255,0.92) !important; font-size: 12px; font-weight: 600; }
+		.imogi-cashier-shift-text .fa { opacity: .9; }
+		.imogi-cashier-shift-text a { color: #fff !important; font-weight: 700; text-decoration: none; }
+		.imogi-cashier-shift-actions .imogi-cashier-close-shift-btn,
+		.imogi-cashier-shift-actions .imogi-cashier-logout-btn,
+		.imogi-cashier-shift-actions .imogi-cashier-history-btn {
+			background: rgba(255,255,255,0.08) !important;
+			border: 1px solid rgba(255,255,255,0.28) !important;
+			border-radius: 8px !important;
+			color: #fff !important;
+			font-weight: 700 !important;
+		}
+		.imogi-cashier-shift-actions .imogi-cashier-logout-btn .fa,
+		.imogi-cashier-shift-actions .imogi-cashier-history-btn .fa { margin-right: 4px; opacity: .85; }
+		.imogi-cashier-shell {
+			background: #fff !important;
+			box-sizing: border-box;
+			display: grid;
+			flex: 1;
+			gap: 8px 10px;
+			grid-template-columns: minmax(0, 1fr) 360px;
+			grid-template-rows: auto minmax(0, 1fr);
+			min-height: 0;
+			overflow: hidden;
+			padding: 10px;
+			width: 100%;
+		}
+		.imogi-cashier-status-strip {
+			align-items: center;
+			align-self: start;
+			display: none;
+			flex-wrap: wrap;
+			gap: 8px;
+			grid-column: 1 / -1;
+			grid-row: 1;
+			min-height: 0;
+		}
 		.imogi-cashier-status-strip.is-visible { display: flex; }
-		.imogi-status-chip { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 999px; color: #334155; cursor: pointer; display: none; font-size: 11px; font-weight: 700; gap: 5px; line-height: 1; padding: 5px 10px; }
+		.imogi-status-chip { align-items: center; background: #fff; border: 1px solid #d1fae5; border-radius: 999px; color: #047857; cursor: pointer; display: none; font-size: 11px; font-weight: 700; gap: 6px; line-height: 1; padding: 6px 12px; }
 		.imogi-status-chip.is-visible { display: inline-flex; }
-		.imogi-status-chip .fa { font-size: 11px; opacity: .85; }
+		.imogi-status-chip .fa { font-size: 11px; opacity: .9; }
 		.imogi-chip-target.is-behind { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
 		.imogi-chip-target.is-achieved { background: #ecfdf5; border-color: #6ee7b7; color: #047857; }
 		.imogi-chip-marketplace.has-orders { background: #ecfdf5; border-color: #6ee7b7; color: #047857; }
 		.imogi-chip-offline.has-pending { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
-		.imogi-cashier-shell { display: grid; flex: 1; gap: 12px; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; overflow: hidden; }
+		.imogi-cashier-panel.imogi-cashier-products {
+			grid-column: 1;
+			grid-row: 2;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden;
+		}
+		.imogi-cashier-panel.imogi-cashier-cart {
+			grid-column: 2;
+			grid-row: 2;
+			min-height: 0;
+		}
+		.imogi-cashier-shell:not(:has(.imogi-cashier-status-strip.is-visible)) .imogi-cashier-panel.imogi-cashier-products,
+		.imogi-cashier-shell:not(:has(.imogi-cashier-status-strip.is-visible)) .imogi-cashier-panel.imogi-cashier-cart {
+			grid-row: 2;
+		}
+		.imogi-cashier-main-col { display: contents; }
 		.imogi-cashier-mobile-backdrop, .imogi-cashier-mobile-dock { display: none; }
 		.imogi-cashier-mobile-checkout { display: none; }
 		.imogi-cashier-cart-scroll { display: contents; }
 		.imogi-cashier-cart-mobile-head, .imogi-cashier-cart-close { display: none; }
 		@media (max-width: 992px) {
 			.imogi-cashier-page.layout-main-section,
-			.imogi-cashier-page { padding: 6px 6px 0 !important; }
-			.imogi-cashier-top { gap: 4px; margin-bottom: 6px; }
-			.imogi-cashier-shift-bar { border-radius: 10px; padding: 7px 10px; }
+			.imogi-cashier-page { padding: 0 !important; }
+			.imogi-cashier-header { gap: 8px; min-height: 48px; padding: 8px 10px; }
+			.imogi-cashier-brand-logo { height: 26px; }
+			.imogi-cashier-brand-title { font-size: 15px; }
+			.imogi-cashier-top { gap: 4px; padding: 4px 6px 0; }
+			.imogi-cashier-shell { padding: 0 6px 6px; }
 			.imogi-cashier-shift-text { font-size: 11px !important; line-height: 1.35; }
 			.imogi-cashier-shift-bar .btn { font-size: 10px !important; padding: 4px 8px !important; }
 			.imogi-cashier-status-strip.is-visible { gap: 4px; }
@@ -439,6 +632,14 @@ function inject_cashier_css() {
 				transform: translateY(-50%);
 				width: 36px;
 			}
+			.imogi-cashier-cart-close:hover,
+			.imogi-cashier-cart-close:active,
+			.imogi-cashier-cart-close:focus {
+				background: rgba(255,255,255,0.22) !important;
+				border-color: rgba(255,255,255,0.34) !important;
+				color: #fff !important;
+				transform: translateY(-50%) !important;
+			}
 			.imogi-cashier-mobile-backdrop {
 				background: rgba(24,24,27,.45);
 				display: block;
@@ -510,11 +711,25 @@ function inject_cashier_css() {
 				white-space: nowrap;
 			}
 		}
-		.imogi-cashier-panel { background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; box-shadow: none; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-		.imogi-cashier-panel-head { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; flex-shrink: 0; gap: 10px; justify-content: space-between; padding: 14px 16px; }
-		.imogi-cashier-panel-head h5 { align-items: center; color: #fff; display: flex; font-size: 16px; font-weight: 800; gap: 8px; margin: 0; white-space: nowrap; }
-		.imogi-cashier-head-icon { color: rgba(255,255,255,0.72); font-size: 15px; }
+		.imogi-cashier-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(15, 31, 53, 0.05); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+		.imogi-cashier-main-col .imogi-cashier-panel.imogi-cashier-products,
+		.imogi-cashier-panel.imogi-cashier-products { flex: 1; }
+		.imogi-cashier-panel-head { align-items: center; background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%); border-bottom: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; display: flex; flex-shrink: 0; gap: 10px; justify-content: space-between; min-height: 46px; padding: 10px 14px; }
+		.imogi-cashier-panel > .imogi-cashier-panel-head { min-height: 46px; }
+		.imogi-cashier-panel-head h5 { align-items: center; color: #fff; display: flex; font-size: 15px; font-weight: 800; gap: 8px; margin: 0; white-space: nowrap; }
+		.imogi-cashier-head-icon { color: rgba(255,255,255,0.72); font-size: 14px; }
 		.imogi-cashier-cart-head-actions { display: flex; flex-shrink: 0; gap: 6px; }
+		.imogi-cashier-panel-head .imogi-cashier-hold-btn,
+		.imogi-cashier-panel-head .imogi-cart-clear {
+			background: rgba(255,255,255,0.1) !important;
+			border: 1px solid rgba(255,255,255,0.28) !important;
+			border-radius: 8px !important;
+			color: #fff !important;
+			font-size: 11px !important;
+			font-weight: 700;
+			padding: 5px 10px !important;
+			white-space: nowrap;
+		}
 		.imogi-cashier-hold-btn, .imogi-cashier-resume-btn, .imogi-cart-clear { font-size: 11px !important; font-weight: 700; padding: 5px 10px !important; white-space: nowrap; }
 		.imogi-cashier-hold-bar { align-items: center; background: #fafafa; border-bottom: 1px solid #e4e4e7; display: none; flex-shrink: 0; gap: 10px; justify-content: space-between; padding: 9px 14px; }
 		.imogi-cashier-hold-bar.is-visible { display: flex; }
@@ -525,9 +740,11 @@ function inject_cashier_css() {
 		.imogi-cashier-btn-primary:focus { background: #1a3352 !important; color: #fff !important; }
 		.imogi-cashier-btn-primary:disabled { opacity: .4; }
 		.imogi-cashier-hold-list-btn { font-size: 11px !important; font-weight: 700; }
-		.imogi-cashier-toolbar { background: #fafafa; border-bottom: 1px solid #e4e4e7; flex-shrink: 0; padding: 14px 16px; }
-		.imogi-cashier-search { background: #fafafa !important; border: 1px solid #e4e4e7 !important; border-radius: 10px !important; font-size: 15px !important; padding: 10px 14px !important; }
-		.imogi-cashier-search:focus { background: #fff !important; border-color: #a1a1aa !important; box-shadow: none !important; }
+		.imogi-cashier-toolbar { background: #fff; border-bottom: 1px solid #e8edf2; flex-shrink: 0; padding: 12px; }
+		.imogi-cashier-search-wrap { position: relative; }
+		.imogi-cashier-search-icon { color: #94a3b8; font-size: 14px; left: 14px; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; }
+		.imogi-cashier-search { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; box-shadow: none !important; font-size: 14px !important; padding: 11px 14px 11px 40px !important; }
+		.imogi-cashier-search:focus { background: #fff !important; border-color: #0f1f35 !important; box-shadow: 0 0 0 3px rgba(15,31,53,.08) !important; }
 		.imogi-cashier-groups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 		.imogi-cashier-group-btn { align-items: center; background: #fff; border: 1px solid #d4d4d8; border-radius: 999px; color: #71717a; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 700; gap: 6px; padding: 7px 14px; }
 		.imogi-cashier-group-btn .fa { font-size: 11px; opacity: .85; }
@@ -626,43 +843,16 @@ function inject_cashier_css() {
 		}
 		.imogi-cashier-group-picker-option.is-active .imogi-cashier-group-picker-option-icon { background: rgba(255,255,255,.14); color: #fff; }
 		.imogi-cashier-group-picker-option:not(.is-active) .imogi-cashier-group-picker-option-icon { background: #f1f5f9; color: #475569; }
-		.imogi-cashier-panel.imogi-cashier-products { flex: 1; min-height: 0; overflow: hidden; }
+		.imogi-cashier-panel.imogi-cashier-products { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+		.imogi-cashier-panel.imogi-cashier-products .imogi-cashier-toolbar { flex-shrink: 0; }
+		.imogi-cashier-panel.imogi-cashier-products .imogi-pos-catalog-scroll { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 		.imogi-cashier-panel.imogi-cashier-cart { display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; overflow: hidden; }
-		.imogi-cashier-grid.items-container { align-content: start; display: grid; flex: 1 1 auto; gap: 12px; grid-auto-rows: max-content; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 14px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
-		.imogi-cashier-grid.items-container::after { content: ""; display: block; height: 1px; }
-		.imogi-cashier-cart-items { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0; text-align: left; -webkit-overflow-scrolling: touch; }
-		.imogi-cashier-page .items-container .item-wrapper { background: #fff; border: 1px solid #e8ecf1; border-radius: 12px; box-shadow: 0 1px 3px rgba(15,31,53,.06), 0 4px 12px rgba(15,31,53,.04); cursor: pointer; display: flex; flex-direction: column; height: auto; overflow: hidden; position: relative; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; user-select: none; }
-		.imogi-cashier-page .items-container .item-wrapper.is-out { opacity: .55; pointer-events: none; }
-		.imogi-cashier-page .items-container .item-wrapper:active:not(.is-out) { transform: translateY(0); }
-		.imogi-cashier-page .items-container .item-qty-pill { display: flex; justify-content: flex-end; margin: 8px; position: absolute; right: 0; top: 0; z-index: 2; }
-		.imogi-cashier-page .items-container .item-display, .imogi-cashier-page .items-container .item-media { align-items: center; aspect-ratio: 1; background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%); display: flex; flex-shrink: 0; height: auto; justify-content: center; margin: 0; min-height: 0; overflow: hidden; width: 100%; }
-		.imogi-cashier-page .items-container .item-display { color: #94a3b8; font-size: 1.75rem; font-weight: 800; letter-spacing: .02em; }
-		.imogi-cashier-page .items-container .item-img { border-radius: 0; display: block; height: 100%; object-fit: contain; object-position: center; width: 100%; }
-		.imogi-cashier-page .items-container .item-detail { border-top: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; flex: 1; gap: 4px; justify-content: flex-start; min-height: 4rem; padding: 10px 12px 12px; }
-		.imogi-cashier-page .items-container .item-name { -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #1e293b; display: -webkit-box; font-size: 13px; font-weight: 600; line-height: 1.35; overflow: hidden; white-space: normal; }
-		.imogi-cashier-page .items-container .item-rate { color: #0f1f35; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.imogi-cashier-page .items-container .item-rate .item-uom { color: #94a3b8; font-size: 11px; font-weight: 600; }
-		.imogi-cashier-page .items-container .item-stock { align-items: center; color: #64748b; display: flex; font-size: 11px; font-weight: 600; gap: 6px; line-height: 1.2; margin-top: 4px; }
-		.imogi-cashier-page .items-container .item-stock--ok { color: #047857; }
-		.imogi-cashier-page .items-container .item-stock--out { color: #b91c1c; }
-		.imogi-cashier-page .items-container .item-stock--variant { color: #64748b; font-style: italic; }
-		.imogi-cashier-page .items-container .item-stock .indicator-pill { font-size: 10px; font-weight: 800; padding: 2px 8px; }
-		.item-quick-add { display: none; }
-		.imogi-cashier-page .items-container .item-quick-add {
-			align-items: center;
-			background: #ecfdf5;
-			border: 1px solid #6ee7b7;
-			border-radius: 999px;
-			color: #047857;
-			flex-shrink: 0;
-			font-size: 14px;
-			height: 34px;
-			justify-content: center;
-			margin: 0 10px 0 4px;
-			width: 34px;
-		}
+		.imogi-cashier-cart-items { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 120px; overflow-x: hidden; overflow-y: auto; padding: 0; text-align: left; -webkit-overflow-scrolling: touch; }
+		.imogi-pos-card-add { display: none; }
 		.imogi-cashier-loading, .imogi-cashier-empty { align-items: center; color: #94a3b8; display: flex; flex-direction: column; gap: 10px; grid-column: 1/-1; justify-content: center; min-height: 220px; }
-		.imogi-cashier-cart-empty { color: #94a3b8; padding: 40px 16px; text-align: center; }
+		.imogi-cashier-cart-empty { align-items: center; color: #94a3b8; display: flex; flex: 1; flex-direction: column; font-size: 13px; justify-content: center; min-height: 220px; padding: 32px 20px; text-align: center; }
+		.imogi-cashier-cart-empty-icon { align-items: center; background: #f1f5f9; border-radius: 999px; color: #cbd5e1; display: inline-flex; font-size: 24px; height: 68px; justify-content: center; margin-bottom: 14px; width: 68px; }
+		.imogi-cashier-cart-empty p { margin: 0; max-width: 220px; }
 		.imogi-cart-row { border-bottom: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 14px; width: 100%; }
 		.imogi-cart-row-line { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; min-width: 0; width: 100%; }
 		.imogi-cart-row-name { color: #0f172a; flex: 1; font-size: 14px; font-weight: 700; line-height: 1.35; min-width: 0; text-align: left; word-break: break-word; }
@@ -672,33 +862,38 @@ function inject_cashier_css() {
 		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; box-sizing: border-box; display: inline-flex; flex-shrink: 0; gap: 0; justify-content: space-between; padding: 2px; width: 112px; }
 		.imogi-qty-btn { align-items: center; background: transparent; border: none; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; flex-shrink: 0; font-size: 18px; font-weight: 700; height: 36px; justify-content: center; line-height: 1; padding: 0; width: 36px; }
 		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; flex: 1; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 0; text-align: center; }
-		.imogi-cashier-cart-foot { background: #fafafa; border-top: 1px solid #e4e4e7; flex-shrink: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
+		.imogi-cashier-cart-foot { background: #fff; border-top: 1px solid #e8edf2; flex-shrink: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
 		.imogi-cashier-order-type-row { margin-bottom: 8px; }
 		.imogi-cashier-order-type-label { color: #52525b; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
 		.imogi-cashier-order-types { display: grid; gap: 5px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 		.imogi-cashier-order-type-btn { align-items: center; background: #fff; border: 1px solid #d4d4d8; border-radius: 8px; color: #71717a; cursor: pointer; display: flex; flex-direction: row; font-size: 10px; font-weight: 700; gap: 4px; justify-content: center; line-height: 1.1; min-height: 34px; padding: 6px 4px; text-align: center; }
 		.imogi-cashier-order-type-btn .fa { font-size: 12px; }
 		.imogi-cashier-order-type-btn.is-active { background: #0f1f35; border-color: #0f1f35; color: #fff; }
-		.imogi-cashier-customer-row, .imogi-cashier-discount-row { align-items: center; display: flex; gap: 8px; margin-bottom: 8px; }
-		.imogi-cashier-customer-row input { flex: 1; min-width: 0; width: 100%; }
+		.imogi-cashier-customer-row { align-items: center; display: flex; gap: 8px; margin-bottom: 8px; position: relative; }
+		.imogi-cashier-customer-icon { color: #94a3b8; flex-shrink: 0; font-size: 14px; left: 12px; position: absolute; z-index: 1; }
+		.imogi-cashier-customer-row input { flex: 1; min-width: 0; padding-left: 34px !important; width: 100%; }
 		.imogi-cashier-customer-row input, .imogi-cashier-discount-row select, .imogi-cashier-discount-row input { font-size: 12px !important; }
 		.imogi-cashier-subtotal-row { align-items: baseline; color: #64748b; display: flex; font-size: 13px; justify-content: space-between; margin-bottom: 6px; }
 		.imogi-cashier-total-row { align-items: baseline; display: flex; justify-content: space-between; margin-bottom: 10px; }
 		.imogi-cashier-total-row span { color: #71717a; font-size: 13px; font-weight: 600; }
 		.imogi-cart-total { color: #0f1f35 !important; font-size: 22px !important; font-weight: 800 !important; }
-		.imogi-cashier-pay { background: #0f1f35 !important; border: none !important; border-radius: 10px !important; box-shadow: none !important; color: #fff !important; font-size: 15px !important; font-weight: 800 !important; padding: 12px !important; width: 100%; }
+		.imogi-cashier-pay { background: #0f1f35 !important; border: none !important; border-radius: 10px !important; box-shadow: none !important; color: #fff !important; font-size: 15px !important; font-weight: 800 !important; padding: 13px !important; width: 100%; }
 		.imogi-cashier-pay:focus { background: #1a3352 !important; color: #fff !important; }
-		.imogi-cashier-pay:disabled { box-shadow: none !important; opacity: .4; }
+		.imogi-cashier-pay:disabled { background: #e5e7eb !important; color: #9ca3af !important; opacity: 1 !important; }
 		.imogi-pay-change-box { align-items: center; background: var(--imogi-pay-surface-2, #f4f4f5); border: 2px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); display: flex; font-size: 26px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; min-height: 72px; padding: 12px; text-align: center; transition: background .15s, border-color .15s, color .15s; }
 		.imogi-pay-change-box.is-ok { background: #f0fdf4; border-color: #86efac; color: #166534; }
 		.imogi-pay-change-box.is-short { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
-		.imogi-pay-cash-quick { margin-top: 12px; }
-		.imogi-pay-dialog:not(.imogi-pay-cash-mode) .imogi-pay-cash-quick { display: none !important; }
-		.imogi-pay-dialog.imogi-pay-cash-mode .imogi-pay-cash-quick { display: block !important; }
+		.imogi-pay-cash-quick { display: block; margin-top: 0; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="cash_quick_html"] { margin: 0 0 12px !important; width: 100% !important; }
 		.imogi-pay-quick-row { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 8px; }
 		.imogi-pay-quick-btn { background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 10px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; font-size: 13px; font-weight: 700; min-height: 48px; padding: 10px 8px; touch-action: manipulation; transition: background .12s, border-color .12s, color .12s; }
-		.imogi-pay-quick-btn.is-exact { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); color: #fff; }
-		.imogi-pay-quick-btn.is-disabled, .imogi-pay-quick-btn:disabled { cursor: not-allowed; opacity: 0.42; }
+		.imogi-pay-quick-btn.is-selected { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); color: #fff; }
+		.imogi-pay-quick-btn.is-disabled, .imogi-pay-quick-btn:disabled { cursor: not-allowed; opacity: 0.42; pointer-events: none; }
+		.imogi-pay-quick-feedback { align-items: center; background: #f8fafc; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; margin-top: 10px; padding: 10px 12px; }
+		.imogi-pay-quick-feedback span { color: #71717a; font-size: 12px; font-weight: 600; }
+		.imogi-pay-quick-feedback strong { color: var(--imogi-navy-800, #0f1f35); font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 800; }
+		.imogi-pay-quick-change-val.is-ok { color: #047857; }
+		.imogi-pay-quick-change-val.is-short { color: #b91c1c; }
 		.imogi-pay-quick-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-top: 14px; text-transform: uppercase; }
 		.imogi-pay-discount-wrap, .imogi-pay-promo-wrap { margin-bottom: 0; }
 		.imogi-pay-discount-toggle, .imogi-pay-promo-toggle { align-items: center; background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; display: flex; font-size: 13px; font-weight: 700; gap: 10px; margin-bottom: 8px; min-height: 52px; overflow: hidden; padding: 12px 14px; text-align: left; touch-action: manipulation; width: 100%; }
@@ -760,6 +955,7 @@ function inject_cashier_css() {
 		.imogi-pay-extras .form-group { margin-bottom: 0 !important; width: 100%; }
 		.imogi-pay-dialog .frappe-control[data-fieldname="pay_summary_html"],
 		.imogi-pay-dialog .frappe-control[data-fieldname="payment_modes_html"],
+		.imogi-pay-dialog .frappe-control[data-fieldname="cash_quick_html"],
 		.imogi-pay-dialog .frappe-control[data-fieldname="change_html"],
 		.imogi-pay-dialog .frappe-control[data-fieldname="discount_html"],
 		.imogi-pay-dialog .frappe-control[data-fieldname="promo_html"] { width: 100% !important; }
@@ -1043,7 +1239,7 @@ function inject_cashier_css() {
 			}
 		}
 		.imogi-cashier-customer-label { line-height: 1.25; margin-bottom: 6px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.imogi-cashier-meta { color: rgba(255,255,255,0.65); font-size: 12px; }
+		.imogi-cashier-meta { color: rgba(255,255,255,0.72); flex-shrink: 1; font-size: 11px; font-weight: 600; letter-spacing: .03em; max-width: 52%; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 		.imogi-cashier-branch-row { align-items: center; display: none; gap: 8px; margin-bottom: 10px; }
 		.imogi-cashier-branch-row.is-visible { display: flex; }
 		.imogi-cashier-page:not(.is-mobile-layout) .imogi-cashier-top .imogi-cashier-branch-row {
@@ -1068,11 +1264,22 @@ function inject_cashier_css() {
 		.imogi-cashier-branch-row .fa { color: #0f1f35; flex-shrink: 0; font-size: 14px; }
 		.imogi-cashier-branch-label { color: #0f1f35; flex: 1; font-size: 13px; font-weight: 700; min-width: 0; }
 		.imogi-cashier-branch-select { flex: 1; font-size: 13px !important; font-weight: 700; min-width: 0; }
-		.imogi-pay-success-dialog .modal-dialog { max-width: 440px; }
-		.imogi-pay-success-body { padding: 8px 4px 0 !important; text-align: center; }
-		.imogi-pay-success-icon { color: #10b981; font-size: 44px; line-height: 1; margin-bottom: 6px; }
-		.imogi-pay-success-order { color: #0f1f35; font-size: 17px; font-weight: 800; margin-bottom: 12px; }
-		.imogi-pay-summary--success { margin-bottom: 10px; text-align: left; }
+		.imogi-pay-success-dialog .modal-dialog { max-width: 460px; width: calc(100% - 24px); }
+		.imogi-pay-success-dialog .modal-content { border: none; border-radius: 18px; box-shadow: 0 24px 48px rgba(15,31,53,.18); overflow: hidden; }
+		.imogi-pay-success-dialog .modal-header { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 14px 18px 12px; }
+		.imogi-pay-success-dialog .modal-title { color: #0f1f35; font-size: 15px; font-weight: 800; }
+		.imogi-pay-success-dialog .modal-body { background: #f8fafc; padding: 16px 18px 18px; }
+		.imogi-pay-success-body { padding: 0 !important; text-align: center; }
+		.imogi-pay-success-hero { margin-bottom: 14px; }
+		.imogi-pay-success-icon-wrap { align-items: center; background: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 999px; color: #059669; display: inline-flex; font-size: 28px; height: 64px; justify-content: center; margin-bottom: 10px; width: 64px; }
+		.imogi-pay-success-order { color: #0f1f35; font-size: 18px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+		.imogi-pay-success-subtitle { color: #71717a; font-size: 12px; font-weight: 600; }
+		.imogi-pay-success-icon { display: none; }
+		.imogi-pay-summary--success { border-radius: 14px; margin-bottom: 12px; overflow: hidden; text-align: left; }
+		.imogi-pay-success-footer-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+		.imogi-pay-success-status-pill { background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 999px; color: #047857; display: inline-flex; font-size: 11px; font-weight: 700; padding: 5px 12px; }
+		.imogi-pay-stamp-reward { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; color: #9a3412; font-size: 12px; font-weight: 600; margin-top: 0 !important; padding: 10px 12px; text-align: left; }
+		.imogi-pay-stamp-reward .fa { color: #ea580c; margin-right: 6px; }
 		.imogi-pay-success-payment-meta,
 		.imogi-pay-success-cash-meta { border-top: 1px solid rgba(255,255,255,.12); margin-top: 10px; padding-top: 10px; }
 		.imogi-pay-success-payment-meta { align-items: center; color: rgba(255,255,255,.78); display: flex; font-size: 12px; justify-content: space-between; }
@@ -1080,11 +1287,11 @@ function inject_cashier_css() {
 		.imogi-pay-success-cash-row { align-items: baseline; color: rgba(255,255,255,.78); display: flex; font-size: 12px; justify-content: space-between; margin-bottom: 4px; }
 		.imogi-pay-success-cash-row strong { color: #fff; font-variant-numeric: tabular-nums; }
 		.imogi-pay-success-cash-row.is-change strong { color: #bbf7d0; }
-		.imogi-pay-success-status { color: #71717a; font-size: 12px; margin-top: 10px; }
 		.imogi-pay-success-dialog .modal-footer { display: none !important; }
-		.imogi-success-actions { border-top: 1px solid #f1f5f9; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; padding-top: 16px; text-align: left; }
-		.imogi-success-action-btn { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; color: #0f1f35; cursor: pointer; display: flex; flex-direction: column; gap: 6px; justify-content: center; min-height: 78px; padding: 12px 10px; transition: border-color .15s, background .15s, transform .1s; }
-		.imogi-success-action-btn.is-primary { background: #0f1f35; border-color: #0f1f35; color: #fff; flex-direction: row; gap: 10px; grid-column: 1 / -1; min-height: 48px; }
+		.imogi-success-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e4e4e7; }
+		.imogi-success-actions-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		.imogi-success-action-btn { align-items: center; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; color: #0f1f35; cursor: pointer; display: flex; flex-direction: column; gap: 6px; justify-content: center; min-height: 72px; padding: 10px 8px; transition: border-color .15s, background .15s, transform .1s; }
+		.imogi-success-action-btn.is-primary { background: linear-gradient(135deg, #0f1f35 0%, #1a3352 100%); border-color: #0f1f35; color: #fff; flex-direction: row; gap: 10px; justify-content: center; min-height: 50px; padding: 0 16px; width: 100%; }
 		.imogi-success-action-icon { align-items: center; background: #f8fafc; border-radius: 10px; color: #0f1f35; display: flex; font-size: 18px; height: 36px; justify-content: center; width: 36px; }
 		.imogi-success-action-btn.is-primary .imogi-success-action-icon { background: rgba(255,255,255,.12); color: #fff; font-size: 16px; height: auto; width: auto; }
 		.imogi-success-action-label { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; }
@@ -1290,9 +1497,113 @@ function inject_cashier_css() {
 				font-weight: 700;
 				text-decoration: none;
 			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header {
+				align-items: center;
+				display: flex;
+				flex-wrap: nowrap;
+				gap: 8px;
+				grid-template-columns: none;
+				min-height: 48px;
+				padding: 8px 10px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-brand {
+				flex: 1 1 auto;
+				min-width: 0;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-brand-title {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header-mid {
+				display: none !important;
+			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-actions {
+				flex: 0 0 auto;
+				flex-wrap: nowrap;
+				gap: 6px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header .imogi-cashier-shift-actions .btn {
+				align-items: center;
+				display: inline-flex;
+				font-size: 0 !important;
+				gap: 0;
+				justify-content: center;
+				min-height: 34px;
+				min-width: 34px;
+				padding: 0 !important;
+				width: 34px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header .imogi-cashier-shift-actions .btn .fa {
+				font-size: 14px !important;
+				margin: 0 !important;
+				opacity: 1;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header .imogi-cashier-shift-actions .imogi-cashier-open-shift-btn,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-header .imogi-cashier-shift-actions .imogi-cashier-btn-primary {
+				font-size: 11px !important;
+				min-width: auto;
+				padding: 0 10px !important;
+				width: auto;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row.is-visible {
+				align-items: center;
+				border-bottom: 1px solid #f1f5f9;
+				display: flex;
+				gap: 8px;
+				justify-content: space-between;
+				padding: 10px 12px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row .imogi-cashier-shift-text,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row .imogi-cashier-shift-pill {
+				align-items: center;
+				background: transparent !important;
+				border: none !important;
+				box-shadow: none !important;
+				color: #3f3f46 !important;
+				display: inline-flex;
+				flex: 1;
+				font-size: 12px !important;
+				font-weight: 700;
+				gap: 8px;
+				margin: 0;
+				min-width: 0;
+				overflow: hidden;
+				padding: 0 !important;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row .imogi-cashier-shift-live {
+				background: #22c55e;
+				border-radius: 50%;
+				box-shadow: 0 0 0 3px rgba(34,197,94,.22);
 				flex-shrink: 0;
-				gap: 4px;
+				height: 8px;
+				width: 8px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row .imogi-cashier-shift-text.is-closed .imogi-cashier-shift-live {
+				background: #f59e0b;
+				box-shadow: 0 0 0 3px rgba(245,158,11,.22);
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-top .imogi-cashier-shift-row .imogi-cashier-shift-text a {
+				color: #0f1f35 !important;
+				font-weight: 700;
+				text-decoration: none;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel.imogi-cashier-cart .imogi-cashier-panel-head {
+				align-items: center;
+				gap: 8px;
+				padding: 10px 12px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-cart-head-actions {
+				flex-wrap: nowrap;
+				gap: 6px;
+			}
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel-head .imogi-cashier-hold-btn,
+			.imogi-cashier-page.is-mobile-layout .imogi-cashier-panel-head .imogi-cart-clear {
+				font-size: 11px !important;
+				min-height: 32px;
+				padding: 0 10px !important;
+				white-space: nowrap;
 			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-shift-bar .btn {
 				border-radius: 8px !important;
@@ -1378,9 +1689,11 @@ function inject_cashier_css() {
 			}
 			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-actions {
 				gap: 8px;
-				grid-template-columns: repeat(3, minmax(0, 1fr));
 				margin-top: 12px;
 				padding-top: 12px;
+			}
+			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-actions-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
 			.imogi-pay-success-dialog.imogi-pay-success-mobile .imogi-success-action-btn {
 				min-height: 52px;
@@ -1426,7 +1739,7 @@ function inject_cashier_css() {
 				box-shadow: 0 1px 2px rgba(15,31,53,.04);
 				font-size: 14px !important;
 				margin-bottom: 0;
-				padding: 11px 12px !important;
+				padding: 11px 12px 11px 40px !important;
 			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-mobile-order-types .imogi-cashier-order-type-btn {
 				background: #fff;
@@ -1440,51 +1753,6 @@ function inject_cashier_css() {
 				background: #0f1f35;
 				border-color: #0f1f35;
 				color: #fff;
-			}
-			.imogi-cashier-page.is-mobile-layout .imogi-cashier-grid.items-container {
-				display: flex !important;
-				flex-direction: column;
-				gap: 6px;
-				grid-template-columns: unset !important;
-				padding: 2px 10px calc(96px + env(safe-area-inset-bottom, 0px));
-			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-wrapper {
-				align-items: center !important;
-				background: #fff;
-				border: 1px solid #ececef;
-				border-radius: 12px;
-				box-shadow: 0 1px 2px rgba(15,31,53,.04);
-				flex-direction: row !important;
-				min-height: 72px;
-			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-display,
-			.imogi-cashier-page.is-mobile-layout .items-container .item-media {
-				aspect-ratio: 1 !important;
-				border-radius: 10px;
-				flex-shrink: 0;
-				height: 60px !important;
-				margin: 6px 0 6px 6px !important;
-				min-height: 0;
-				width: 60px !important;
-			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-display { font-size: .95rem !important; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-img { border-radius: 10px; object-fit: cover; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-detail {
-				border-top: none !important;
-				flex: 1;
-				gap: 2px;
-				justify-content: center;
-				min-height: 0 !important;
-				padding: 6px 8px 6px 6px !important;
-			}
-			.imogi-cashier-page.is-mobile-layout .items-container .item-name { font-size: 13px; line-height: 1.25; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-rate { font-size: 13px; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-stock { font-size: 10px; margin-top: 0; }
-			.imogi-cashier-page.is-mobile-layout .items-container .item-quick-add {
-				display: inline-flex !important;
-				height: 32px;
-				margin: 0 8px 0 2px;
-				width: 32px;
 			}
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-loading,
 			.imogi-cashier-page.is-mobile-layout .imogi-cashier-empty { min-height: 100px; width: 100%; }
@@ -1521,7 +1789,7 @@ function inject_cashier_css() {
 			}
 		}
 		/* POS touch-first: no hover highlights */
-		.imogi-cashier-page :is(button, .btn, .imogi-status-chip, .imogi-cashier-group-btn, .imogi-cashier-order-type-btn, .imogi-cashier-group-picker-trigger, .imogi-cashier-group-picker-option, .item-wrapper, .imogi-qty-btn, .imogi-cashier-pay, .imogi-cashier-dock-cart, .imogi-cashier-dock-pay, .imogi-pay-quick-btn, .imogi-pay-discount-toggle, .imogi-pay-promo-toggle, .imogi-success-action-btn, .imogi-pay-numpad-key):hover {
+		.imogi-cashier-page :is(button, .btn, .imogi-status-chip, .imogi-cashier-group-btn, .imogi-cashier-order-type-btn, .imogi-cashier-group-picker-trigger, .imogi-cashier-group-picker-option, .imogi-pos-card, .imogi-qty-btn, .imogi-cashier-pay, .imogi-cashier-dock-cart, .imogi-cashier-dock-pay, .imogi-pay-quick-btn, .imogi-pay-discount-toggle, .imogi-pay-promo-toggle, .imogi-success-action-btn, .imogi-pay-numpad-key):not(.imogi-cashier-cart-close):hover {
 			box-shadow: none !important;
 			transform: none !important;
 		}
@@ -1559,7 +1827,7 @@ function inject_cashier_css() {
 			border-color: #0f1f35 !important;
 			color: #fff !important;
 		}
-	`, "imogi-cashier-inline-css-v47");
+	`, "imogi-cashier-inline-css-v63");
 }
 
 function format_stock_pill(qty) {
@@ -1710,13 +1978,24 @@ imogi_pos.CashierPage = class CashierPage {
 	make() {
 		this.wrapper.html(`
 			<div class="imogi-cashier-root">
-			<div class="imogi-cashier-top">
-				<div class="imogi-cashier-shift-bar is-closed">
-					<div class="imogi-cashier-shift-text">${__("Shift kasir belum dibuka")}</div>
+			<header class="imogi-cashier-header">
+				<div class="imogi-cashier-brand">
+					<img class="imogi-cashier-brand-logo" src="${frappe.utils.escape_html(
+						imogi_cashier_logo_url()
+					)}" alt="${frappe.utils.escape_html(__("IMOGI Kasir"))}" />
+					<span class="imogi-cashier-brand-title">${__("IMOGI Kasir")}</span>
+				</div>
+				<div class="imogi-cashier-header-mid">
+					<div class="imogi-cashier-shift-text imogi-cashier-shift-pill">${__("Shift kasir belum dibuka")}</div>
+				</div>
+				<div class="imogi-cashier-shift-actions">
 					<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
 						"Buka Shift"
 					)}</button>
 				</div>
+			</header>
+			<div class="imogi-cashier-top">
+				<div class="imogi-cashier-shift-row"></div>
 				<div class="imogi-cashier-branch-row">
 					<i class="fa fa-map-marker" aria-hidden="true"></i>
 					<span class="imogi-cashier-branch-label"></span>
@@ -1724,6 +2003,8 @@ imogi_pos.CashierPage = class CashierPage {
 						"Cabang"
 					)}"></select>
 				</div>
+			</div>
+			<div class="imogi-cashier-shell">
 				<div class="imogi-cashier-status-strip">
 					<button type="button" class="imogi-status-chip imogi-chip-target" title="${__(
 						"Target omzet"
@@ -1739,17 +2020,18 @@ imogi_pos.CashierPage = class CashierPage {
 						<strong class="imogi-cashier-offline-badge">0</strong>
 					</button>
 				</div>
-			</div>
-			<div class="imogi-cashier-shell">
 				<div class="imogi-cashier-panel imogi-cashier-products">
 					<div class="imogi-cashier-panel-head">
 						<h5><i class="fa fa-th-large imogi-cashier-head-icon"></i> ${__("Produk")}</h5>
 						<span class="imogi-cashier-meta imogi-cashier-context-label"></span>
 					</div>
 					<div class="imogi-cashier-toolbar">
-						<input type="search" class="form-control imogi-cashier-search" placeholder="${__(
-							"Cari produk atau scan barcode..."
-						)}" autocomplete="off" />
+						<div class="imogi-cashier-search-wrap">
+							<i class="fa fa-search imogi-cashier-search-icon" aria-hidden="true"></i>
+							<input type="search" class="form-control imogi-cashier-search" placeholder="${__(
+								"Cari produk atau scan barcode..."
+							)}" autocomplete="off" />
+						</div>
 						<div class="imogi-cashier-mobile-filters">
 							<div class="imogi-cashier-mobile-filter-block">
 								<div class="imogi-cashier-mobile-filter-label">${__("Kategori")}</div>
@@ -1771,10 +2053,12 @@ imogi_pos.CashierPage = class CashierPage {
 						</div>
 						<div class="imogi-cashier-groups"></div>
 					</div>
-					<div class="imogi-cashier-grid items-container">
+					<div class="imogi-pos-catalog-scroll">
+					<div class="imogi-cashier-grid imogi-pos-catalog">
 						<div class="imogi-cashier-loading"><i class="fa fa-spinner fa-spin"></i> ${__(
 							"Memuat produk..."
 						)}</div>
+					</div>
 					</div>
 				</div>
 
@@ -1810,6 +2094,7 @@ imogi_pos.CashierPage = class CashierPage {
 								<div class="imogi-cashier-order-types">${imogi_render_order_type_buttons(this.order_type)}</div>
 							</div>
 							<div class="imogi-cashier-customer-row">
+								<i class="fa fa-user imogi-cashier-customer-icon" aria-hidden="true"></i>
 								<input type="search" class="form-control input-sm imogi-cashier-customer-search" placeholder="${__(
 									"Cari atau ketik nama customer..."
 								)}" autocomplete="off" />
@@ -1852,6 +2137,8 @@ imogi_pos.CashierPage = class CashierPage {
 			</div>
 		`);
 
+		imogi_pos_paint_cashier_canvas();
+
 		this.$grid = this.wrapper.find(".imogi-cashier-grid");
 		this.$groups = this.wrapper.find(".imogi-cashier-groups");
 		this.$group_picker = this.wrapper.find(".imogi-cashier-group-picker");
@@ -1877,7 +2164,10 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$hold_list_btn = this.wrapper.find(".imogi-cashier-hold-list-btn");
 		this.$hold_bar = this.wrapper.find(".imogi-cashier-hold-bar");
 		this.$hold_count = this.wrapper.find(".imogi-cashier-hold-count");
-		this.$shift_bar = this.wrapper.find(".imogi-cashier-shift-bar");
+		this.$shift_bar = this.wrapper.find(".imogi-cashier-header");
+		this.$shift_mid = this.wrapper.find(".imogi-cashier-header-mid");
+		this.$shift_actions = this.wrapper.find(".imogi-cashier-shift-actions");
+		this.$shift_mobile_row = this.wrapper.find(".imogi-cashier-shift-row");
 		this.$status_strip = this.wrapper.find(".imogi-cashier-status-strip");
 		this.$target_chip = this.wrapper.find(".imogi-chip-target");
 		this.$marketplace_chip = this.wrapper.find(".imogi-chip-marketplace");
@@ -1895,7 +2185,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$offline_chip.on("click", () => {
 			if (imogi_pos.offline?.sync_queue) imogi_pos.offline.sync_queue(this);
 		});
-		imogi_apply_shift_bar_theme(this.$shift_bar);
+		imogi_apply_shift_bar_theme(this.$shift_bar, this.$shift_actions);
 		this.$search = this.wrapper.find(".imogi-cashier-search");
 		this.$dock_badge = this.wrapper.find(".imogi-cashier-dock-badge");
 		this.$dock_total = this.wrapper.find(".imogi-cashier-dock-total");
@@ -2161,14 +2451,15 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		this.render_branch_picker();
 		if (this.enable_pos_shift && (this.requires_shift_workflow || this.pos_opening)) {
-			this.$shift_bar.show();
 			this.render_shift_bar();
 			if (this.requires_shift_workflow && !this.pos_opening) {
 				this.open_shift();
 				return;
 			}
 		} else {
-			this.$shift_bar.hide();
+			this.$shift_mid.hide();
+			this.$shift_actions.hide();
+			this.mount_history_fallback();
 		}
 		this.apply_feature_gates();
 		this.render_customer_label();
@@ -2339,10 +2630,62 @@ imogi_pos.CashierPage = class CashierPage {
 		this.$status_strip.toggleClass("is-visible", has_chip);
 	}
 
-	history_action_html() {
+	history_action_html(mobile = this.is_mobile_layout()) {
 		return `<button type="button" class="btn btn-xs btn-default imogi-cashier-history-btn" title="${__(
 			"Riwayat order"
-		)}"><i class="fa fa-history"></i> ${__("Riwayat")}</button>`;
+		)}"><i class="fa fa-history"></i>${mobile ? "" : ` ${__("Riwayat")}`}</button>`;
+	}
+
+	shift_status_html({ mobile, is_closed, shift_short, shift_name, since }) {
+		if (is_closed) {
+			return `<div class="imogi-cashier-shift-text imogi-cashier-shift-pill is-closed">
+				<span class="imogi-cashier-shift-live" aria-hidden="true"></span>
+				${__("Shift kasir belum dibuka — checkout dinonaktifkan")}
+			</div>`;
+		}
+		return `<div class="imogi-cashier-shift-text imogi-cashier-shift-pill">
+			<span class="imogi-cashier-shift-live" aria-hidden="true"></span>
+			${
+				mobile
+					? `${__("Shift")} ${frappe.utils.escape_html(shift_short)}`
+					: `${__("Shift")} <a href="/app/pos-opening-entry/${encodeURIComponent(
+							shift_name
+					  )}">${frappe.utils.escape_html(shift_name)}</a> · ${__("sejak")} ${frappe.utils.escape_html(
+							since
+					  )}`
+			}
+		</div>`;
+	}
+
+	sync_mobile_shift_row(html) {
+		if (!this.$shift_mobile_row?.length) return;
+		const mobile = this.is_mobile_layout();
+		if (!mobile || !html) {
+			this.$shift_mobile_row.removeClass("is-visible").empty();
+			return;
+		}
+		this.$shift_mobile_row.html(html).addClass("is-visible");
+	}
+
+	header_actions_html({ mobile, mode }) {
+		if (mode === "open") {
+			return `
+				<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
+					"Logout sementara — shift tetap terbuka"
+				)}"><i class="fa fa-sign-out"></i>${mobile ? "" : ` ${__("Logout")}`}</button>
+				${this.history_action_html(mobile)}
+				<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn" title="${__(
+					"Tutup Shift"
+				)}"><i class="fa fa-stop"></i>${mobile ? "" : ` ${__("Tutup Shift")}`}</button>`;
+		}
+		return `
+			<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
+				"Buka Shift"
+			)}</button>
+			${this.history_action_html(mobile)}
+			<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
+				"Logout dan ganti user kasir"
+			)}"><i class="fa fa-sign-out"></i>${mobile ? "" : ` ${__("Logout")}`}</button>`;
 	}
 
 	mount_history_fallback() {
@@ -2366,63 +2709,43 @@ imogi_pos.CashierPage = class CashierPage {
 
 	render_shift_bar() {
 		if (!this.enable_pos_shift || (!this.requires_shift_workflow && !this.pos_opening)) {
-			this.$shift_bar.hide();
+			this.$shift_mid.hide();
+			this.$shift_actions.hide();
+			this.sync_mobile_shift_row("");
 			this.mount_history_fallback();
 			this.sync_status_strip();
 			return;
 		}
 		this.$status_strip.find(".imogi-cashier-history-btn").remove();
-		this.$shift_bar.show();
+		this.$shift_mid.show();
+		this.$shift_actions.show();
 		const mobile = this.is_mobile_layout();
 		if (this.pos_opening && this.pos_opening.name) {
 			this.$shift_bar.removeClass("is-closed");
 			const since = frappe.datetime.str_to_user(this.pos_opening.period_start_date);
 			const shift_short = (this.pos_opening.name || "").replace(/^POS-OPE-\d+-/, "POS-");
-			this.$shift_bar.html(`
-				<div class="imogi-cashier-shift-text">
-					<i class="fa fa-circle" style="font-size:8px;color:#16a34a"></i>
-					${
-						mobile
-							? `${__("Shift")} ${frappe.utils.escape_html(shift_short)}`
-							: `${__("Shift")} <a href="/app/pos-opening-entry/${encodeURIComponent(
-									this.pos_opening.name
-							  )}">${frappe.utils.escape_html(this.pos_opening.name)}</a> · ${__(
-									"sejak"
-							  )} ${frappe.utils.escape_html(since)}`
-					}
-				</div>
-				<div class="imogi-cashier-shift-actions">
-					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
-						"Logout sementara — shift tetap terbuka"
-					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
-					${this.history_action_html()}
-					<button type="button" class="btn btn-xs btn-default imogi-cashier-close-shift-btn" title="${__(
-						"Tutup Shift"
-					)}">${mobile ? `<i class="fa fa-stop"></i> ${__("Tutup")}` : __("Tutup Shift")}</button>
-				</div>
-			`);
-			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
-			this.$shift_bar.find(".imogi-cashier-close-shift-btn").on("click", () => this.close_shift());
+			const status_html = this.shift_status_html({
+				mobile,
+				is_closed: false,
+				shift_short,
+				shift_name: this.pos_opening.name,
+				since,
+			});
+			this.$shift_mid.html(status_html);
+			this.sync_mobile_shift_row(status_html);
+			this.$shift_actions.html(this.header_actions_html({ mobile, mode: "open" }));
+			this.$shift_actions.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
+			this.$shift_actions.find(".imogi-cashier-close-shift-btn").on("click", () => this.close_shift());
 		} else if (this.requires_shift_workflow) {
 			this.$shift_bar.addClass("is-closed");
-			this.$shift_bar.html(`
-				<div class="imogi-cashier-shift-text"><i class="fa fa-lock"></i> ${__(
-					"Shift kasir belum dibuka — checkout dinonaktifkan"
-				)}</div>
-				<div class="imogi-cashier-shift-actions">
-					<button type="button" class="btn btn-xs imogi-cashier-btn-primary imogi-cashier-open-shift-btn">${__(
-						"Buka Shift"
-					)}</button>
-					${this.history_action_html()}
-					<button type="button" class="btn btn-xs btn-default imogi-cashier-logout-btn" title="${__(
-						"Logout dan ganti user kasir"
-					)}"><i class="fa fa-sign-out"></i> ${__("Logout")}</button>
-				</div>
-			`);
-			this.$shift_bar.find(".imogi-cashier-open-shift-btn").on("click", () => this.open_shift());
-			this.$shift_bar.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
+			const status_html = this.shift_status_html({ mobile, is_closed: true });
+			this.$shift_mid.html(status_html);
+			this.sync_mobile_shift_row(status_html);
+			this.$shift_actions.html(this.header_actions_html({ mobile, mode: "closed" }));
+			this.$shift_actions.find(".imogi-cashier-open-shift-btn").on("click", () => this.open_shift());
+			this.$shift_actions.find(".imogi-cashier-logout-btn").on("click", () => this.logout_cashier());
 		}
-		imogi_apply_shift_bar_theme(this.$shift_bar);
+		imogi_apply_shift_bar_theme(this.$shift_bar, this.$shift_actions);
 		this.wrapper
 			.find(".imogi-cashier-history-btn")
 			.toggleClass("is-tier-locked", !this.feature_allowed("order_history"));
@@ -2474,7 +2797,8 @@ imogi_pos.CashierPage = class CashierPage {
 				this.enable_pos_shift = cint(status.enabled);
 				if (!this.enable_pos_shift) {
 					this.pos_opening = null;
-					this.$shift_bar.hide();
+					this.$shift_mid.hide();
+					this.$shift_actions.hide();
 					return;
 				}
 				if (status.open) {
@@ -2967,8 +3291,8 @@ imogi_pos.CashierPage = class CashierPage {
 
 		this.$grid.html(items.map((item) => this.get_item_html(item)).join(""));
 
-		this.$grid.off("click", ".item-wrapper:not(.is-out)");
-		this.$grid.on("click", ".item-wrapper:not(.is-out)", (e) => {
+		this.$grid.off("click", ".imogi-pos-card:not(.is-out)");
+		this.$grid.on("click", ".imogi-pos-card:not(.is-out)", (e) => {
 			const $el = $(e.currentTarget);
 			const item = {
 				item_code: $el.data("code"),
@@ -3000,21 +3324,21 @@ imogi_pos.CashierPage = class CashierPage {
 			this.add_to_cart(item);
 		});
 
-		this.$grid.off("keydown", ".item-wrapper:not(.is-out)");
-		this.$grid.on("keydown", ".item-wrapper:not(.is-out)", (e) => {
+		this.$grid.off("keydown", ".imogi-pos-card:not(.is-out)");
+		this.$grid.on("keydown", ".imogi-pos-card:not(.is-out)", (e) => {
 			if (e.key === "Enter" || e.key === " ") {
 				e.preventDefault();
 				$(e.currentTarget).trigger("click");
 			}
 		});
 
-		this.$grid.off("error", ".item-img");
-		this.$grid.on("error", ".item-img", function () {
+		this.$grid.off("error", ".imogi-pos-card-img");
+		this.$grid.on("error", ".imogi-pos-card-img", function () {
 			const abbr = $(this).attr("alt") || "?";
 			$(this)
-				.closest(".item-media")
+				.closest(".imogi-pos-card-media")
 				.replaceWith(
-					`<div class="item-display abbr">${frappe.utils.escape_html(abbr)}</div>`
+					`<div class="imogi-pos-card-fallback">${frappe.utils.escape_html(abbr)}</div>`
 				);
 		});
 	}
@@ -3031,16 +3355,16 @@ imogi_pos.CashierPage = class CashierPage {
 		let stock_line = "";
 
 		if (is_combo) {
-			stock_line = `<div class="item-stock item-stock--combo"><span class="indicator-pill blue">${__(
+			stock_line = `<div class="imogi-pos-card-stock"><span class="indicator-pill blue">${__(
 				"Paket"
 			)}</span></div>`;
 		} else if (track_stock) {
 			if (qty <= 0) {
-				stock_line = `<div class="item-stock item-stock--out"><span class="indicator-pill red">${__(
+				stock_line = `<div class="imogi-pos-card-stock imogi-pos-card-stock--out"><span class="indicator-pill red">${__(
 					"Habis"
 				)}</span></div>`;
 			} else {
-				stock_line = `<div class="item-stock item-stock--ok"><span class="indicator-pill ${indicator}">${format_stock_pill(
+				stock_line = `<div class="imogi-pos-card-stock imogi-pos-card-stock--ok"><span class="indicator-pill ${indicator}">${format_stock_pill(
 					qty
 				)}</span> ${__("stok tersisa")}</div>`;
 			}
@@ -3051,14 +3375,14 @@ imogi_pos.CashierPage = class CashierPage {
 		);
 		let media;
 		if (item.image) {
-			media = `<div class="item-media"><img class="item-img" loading="lazy" decoding="async" src="${frappe.utils.escape_html(
+			media = `<div class="imogi-pos-card-media"><img class="imogi-pos-card-img" loading="lazy" decoding="async" src="${frappe.utils.escape_html(
 				item.image
 			)}" alt="${abbr}" /></div>`;
 		} else {
-			media = `<div class="item-display abbr">${abbr}</div>`;
+			media = `<div class="imogi-pos-card-fallback">${abbr}</div>`;
 		}
 
-		return `<div class="item-wrapper${out ? " is-out" : ""}${item.has_variants ? " has-variants" : ""}${is_combo ? " is-combo" : ""}" role="button" tabindex="0"
+		return `<div class="imogi-pos-card${out ? " is-out" : ""}${item.has_variants ? " has-variants" : ""}${is_combo ? " is-combo" : ""}" role="button" tabindex="0"
 			data-code="${frappe.utils.escape_html(item.item_code)}"
 			data-name="${frappe.utils.escape_html(item.item_name || item.item_code)}"
 			data-rate="${item.rate || 0}"
@@ -3069,12 +3393,12 @@ imogi_pos.CashierPage = class CashierPage {
 			data-combo-name="${frappe.utils.escape_html(item.combo_name || "")}"
 			data-has-addons="${item.has_addons ? 1 : 0}">
 			${media}
-			<div class="item-detail">
-				<div class="item-name">${frappe.utils.escape_html(item.item_name || item.item_code)}</div>
-				<div class="item-rate">${format_currency(item.rate || 0, item.currency, precision) || 0} <span class="item-uom">/ ${frappe.utils.escape_html(uom)}</span></div>
+			<div class="imogi-pos-card-body">
+				<div class="imogi-pos-card-name">${frappe.utils.escape_html(item.item_name || item.item_code)}</div>
+				<div class="imogi-pos-card-rate">${format_currency(item.rate || 0, item.currency, precision) || 0} <span class="imogi-pos-card-uom">/ ${frappe.utils.escape_html(uom)}</span></div>
 				${stock_line}
 			</div>
-			<span class="item-quick-add" aria-hidden="true"><i class="fa fa-plus"></i></span>
+			<span class="imogi-pos-card-add" aria-hidden="true"><i class="fa fa-plus"></i></span>
 		</div>`;
 	}
 
@@ -3450,8 +3774,11 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	is_cash_mode(mode_of_payment) {
-		const row = (this.context.payment_modes || []).find((m) => m.mode_of_payment === mode_of_payment);
-		return (row && row.type === "Cash") || /^cash$/i.test(mode_of_payment || "");
+		const name = String(mode_of_payment || "").trim();
+		if (!name) return false;
+		const row = (this.context.payment_modes || []).find((m) => m.mode_of_payment === name);
+		if (row?.type === "Cash") return true;
+		return /cash|tunai/i.test(name);
 	}
 
 	get_payment_mode_icon(mode_of_payment) {
@@ -3491,49 +3818,129 @@ imogi_pos.CashierPage = class CashierPage {
 			<div class="imogi-pay-modes">
 				<div class="imogi-pay-modes-grid">${cards}</div>
 			</div>
-			<div class="imogi-pay-cash-quick">
-				<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
-				<div class="imogi-pay-quick-row"></div>
+		</div>`;
+	}
+
+	get_dialog_paid_amount(dialog) {
+		if (dialog._imogi_paid_amount != null && dialog._imogi_paid_amount !== "") {
+			return flt(dialog._imogi_paid_amount);
+		}
+		return flt(dialog.get_value("paid_amount"));
+	}
+
+	set_dialog_paid_amount(dialog, amount) {
+		const paid = Math.round(flt(amount) || 0);
+		dialog._imogi_paid_amount = paid;
+		const field = dialog.fields_dict.paid_amount;
+		if (field) {
+			dialog._imogi_paid_syncing = true;
+			field.set_value(paid);
+			if (dialog.doc) {
+				dialog.doc.paid_amount = paid;
+			}
+			dialog._imogi_paid_syncing = false;
+		} else {
+			dialog.set_value("paid_amount", paid);
+		}
+		return paid;
+	}
+
+	get_cash_quick_preset_amount(denom, pay_total) {
+		const presets = {
+			pas: flt(pay_total),
+			"50": 50000,
+			"100": 100000,
+		};
+		return flt(presets[String(denom || "").toLowerCase()]);
+	}
+
+	build_cash_quick_buttons_markup(total, selected_amount = null, selected_denom = null) {
+		const pay_total = flt(total);
+		const paid_pick = flt(selected_amount) > 0 ? flt(selected_amount) : pay_total;
+		const presets = [
+			{ denom: "pas", label: __("Uang Pas") },
+			{ denom: "50", label: "50K" },
+			{ denom: "100", label: "100K" },
+		];
+		return presets
+			.map(({ denom, label }) => {
+				const amount = this.get_cash_quick_preset_amount(denom, pay_total);
+				const disabled = amount < pay_total;
+				const selected = selected_denom
+					? denom === selected_denom
+					: Math.round(amount) === Math.round(paid_pick);
+				const selected_cls = selected ? " is-selected" : "";
+				const disabled_cls = disabled ? " is-disabled" : "";
+				const title = disabled ? ` title="${__("Kurang dari total")}"` : "";
+				return `<button type="button" class="imogi-pay-quick-btn${selected_cls}${disabled_cls}" data-quick-denom="${denom}"${title}${
+					disabled ? " disabled" : ""
+				}>${label}</button>`;
+			})
+			.join("");
+	}
+
+	build_cash_quick_shell_html(total = 0, paid_amount = null) {
+		const paid = flt(paid_amount) > 0 ? flt(paid_amount) : flt(total);
+		const change = Math.max(0, paid - flt(total));
+		return `<div class="imogi-pay-cash-quick imogi-pay-checkout-block">
+			<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
+			<div class="imogi-pay-quick-row">${this.build_cash_quick_buttons_markup(total, paid)}</div>
+			<div class="imogi-pay-quick-feedback">
+				<span>${__("Diterima")}: <strong class="imogi-pay-quick-paid-val">${format_currency(paid)}</strong></span>
+				<span>${__("Kembalian")}: <strong class="imogi-pay-quick-change-val">${format_currency(change)}</strong></span>
 			</div>
 		</div>`;
 	}
 
-	render_cash_quick_buttons(dialog, total) {
-		this.ensure_cash_quick_ui(dialog);
-		const amounts = [
-			{ amount: flt(total), label: __("Uang Pas"), exact: true },
-			{ amount: 50000, label: "50K" },
-			{ amount: 100000, label: "100K" },
-		];
-		dialog.$wrapper.find(".imogi-pay-quick-row").html(
-			amounts
-				.map(({ amount, label, exact }) => {
-					const disabled = !exact && amount < flt(total);
-					const exact_cls = exact ? " is-exact" : "";
-					const disabled_cls = disabled ? " is-disabled" : "";
-					return `<button type="button" class="imogi-pay-quick-btn${exact_cls}${disabled_cls}" data-amount="${amount}"${
-						disabled ? " disabled" : ""
-					}>${label}</button>`;
-				})
-				.join("")
-		);
+	render_cash_quick_buttons(dialog, total, selected_amount = null, selected_denom = null) {
+		const $row = dialog.$wrapper.find(".imogi-pay-shell .imogi-pay-cash-quick .imogi-pay-quick-row");
+		if (!$row.length) return;
+		const paid =
+			selected_amount != null
+				? flt(selected_amount)
+				: this.get_dialog_paid_amount(dialog) || flt(total);
+		const denom = selected_denom != null ? selected_denom : dialog._imogi_quick_denom || null;
+		$row.html(this.build_cash_quick_buttons_markup(total, paid, denom));
 	}
 
-	ensure_cash_quick_ui(dialog) {
-		const $wrap = dialog.$wrapper;
-		let $quick = $wrap.find(".imogi-pay-cash-quick");
-		if ($quick.length) return $quick;
-		const $modes_field = $wrap.find('.frappe-control[data-fieldname="payment_modes_html"]');
-		$quick = $(`<div class="imogi-pay-cash-quick">
-			<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
-			<div class="imogi-pay-quick-row"></div>
-		</div>`);
-		if ($modes_field.length) {
-			$modes_field.after($quick);
-		} else {
-			$wrap.find(".imogi-pay-checkout-stack").prepend($quick);
+	sync_cash_quick_selection(dialog, total, paid_amount = null, selected_denom = null) {
+		const paid =
+			paid_amount != null
+				? flt(paid_amount)
+				: this.get_dialog_paid_amount(dialog) || flt(total);
+		const denom = selected_denom != null ? selected_denom : dialog._imogi_quick_denom || null;
+		this.render_cash_quick_buttons(dialog, total, paid, denom);
+	}
+
+	update_cash_quick_feedback(dialog, subtotal, paid_amount = null) {
+		const total = this.get_payment_total(dialog, subtotal);
+		const paid = paid_amount != null ? flt(paid_amount) : this.get_dialog_paid_amount(dialog);
+		const change = paid - total;
+		const $wrap = dialog.$wrapper.find(".imogi-pay-shell .imogi-pay-quick-feedback");
+		if (!$wrap.length) return;
+		$wrap.find(".imogi-pay-quick-paid-val").text(format_currency(paid));
+		const $change = $wrap.find(".imogi-pay-quick-change-val");
+		$change.text(format_currency(Math.max(change, 0)));
+		$change.removeClass("is-ok is-short");
+		if (paid < total) {
+			$change.addClass("is-short");
+		} else if (change > 0) {
+			$change.addClass("is-ok");
 		}
-		return $quick;
+	}
+
+	apply_quick_paid_amount(dialog, subtotal, amount, denom = null) {
+		const total = this.get_payment_total(dialog, subtotal);
+		const paid = this.set_dialog_paid_amount(dialog, amount);
+		if (denom) {
+			dialog._imogi_quick_denom = denom;
+		}
+		if (typeof dialog._imogi_sync_numpad_buffer === "function") {
+			dialog._imogi_sync_numpad_buffer(paid);
+		}
+		this.update_change_display(dialog, total, paid);
+		this.update_cash_quick_feedback(dialog, subtotal, paid);
+		this.sync_cash_quick_selection(dialog, total, paid, denom);
 	}
 
 	setup_payment_mode_cards(dialog, subtotal) {
@@ -4118,9 +4525,10 @@ imogi_pos.CashierPage = class CashierPage {
 		this.refresh_cart_dom_refs();
 		if (!this.cart.length) {
 			this.$cart_items.html(
-				`<div class="imogi-cashier-cart-empty"><i class="fa fa-hand-pointer-o fa-2x mb-2"></i><br>${__(
-					"Tap produk untuk menambah ke keranjang"
-				)}</div>`
+				`<div class="imogi-cashier-cart-empty">
+					<div class="imogi-cashier-cart-empty-icon"><i class="fa fa-shopping-cart"></i></div>
+					<p>${__("Tap produk untuk menambah ke keranjang")}</p>
+				</div>`
 			);
 			this.$total.text(format_currency(0));
 			this.$pay.prop("disabled", true);
@@ -4263,14 +4671,18 @@ imogi_pos.CashierPage = class CashierPage {
 		const sync_buffer = (next_buffer) => {
 			buffer = next_buffer;
 			const amount = buffer ? flt(buffer) : 0;
-			dialog.set_value("paid_amount", amount);
-			me.refresh_payment_dialog(dialog, subtotal);
+			const paid = me.set_dialog_paid_amount(dialog, amount);
+			dialog._imogi_quick_denom = null;
+			const total = me.get_payment_total(dialog, subtotal);
+			me.update_change_display(dialog, total, paid);
+			me.update_cash_quick_feedback(dialog, subtotal, paid);
+			me.sync_cash_quick_selection(dialog, total, paid, null);
 		};
 
 		const show_numpad = () => {
 			if (!me.is_cash_mode(dialog.get_value("mode_of_payment"))) return;
 			$numpad_wrap.addClass("is-visible");
-			buffer = String(Math.round(flt(dialog.get_value("paid_amount")) || 0));
+			buffer = String(Math.round(me.get_dialog_paid_amount(dialog) || 0));
 			if (buffer === "0") buffer = "";
 			if (input_el) {
 				input_el.readOnly = true;
@@ -4306,6 +4718,10 @@ imogi_pos.CashierPage = class CashierPage {
 
 		dialog._imogi_set_paid_amount = (amount) => {
 			sync_buffer(String(Math.round(flt(amount) || 0)));
+		};
+		dialog._imogi_sync_numpad_buffer = (amount) => {
+			buffer = String(Math.round(flt(amount) || 0));
+			if (buffer === "0") buffer = "";
 		};
 
 		if (me.is_cash_mode(dialog.get_value("mode_of_payment"))) {
@@ -4385,22 +4801,25 @@ imogi_pos.CashierPage = class CashierPage {
 			.find(".imogi-pay-taxable-breakdown-row, .imogi-pay-tax-breakdown-row, .imogi-pay-tax-divider")
 			.toggle(tax_enabled);
 
-		this.render_cash_quick_buttons(dialog, total);
+		this.render_cash_quick_buttons(
+			dialog,
+			total,
+			this.get_dialog_paid_amount(dialog) || total
+		);
 
 		this.update_payment_primary_action(dialog, subtotal);
 
 		if (this.is_cash_mode(dialog.get_value("mode_of_payment"))) {
+			let paid = this.get_dialog_paid_amount(dialog);
 			const prevTotal = flt(dialog._imogi_last_checkout_total);
-			const paid = flt(dialog.get_value("paid_amount"));
-			if (!paid || prevTotal !== total) {
-				if (typeof dialog._imogi_set_paid_amount === "function") {
-					dialog._imogi_set_paid_amount(total);
-				} else {
-					dialog.set_value("paid_amount", total);
-				}
+			if (!paid || paid < total || (prevTotal && prevTotal !== total && paid === prevTotal)) {
+				paid = this.set_dialog_paid_amount(dialog, total);
+				dialog._imogi_quick_denom = "pas";
 			}
 			dialog._imogi_last_checkout_total = total;
-			this.update_change_display(dialog, total);
+			this.update_change_display(dialog, total, paid);
+			this.update_cash_quick_feedback(dialog, subtotal, paid);
+			this.sync_cash_quick_selection(dialog, total, paid);
 		}
 	}
 
@@ -4425,7 +4844,7 @@ imogi_pos.CashierPage = class CashierPage {
 		const $summary = dialog.fields_dict.pay_summary_html?.$wrapper;
 		const $stack = $shell.find(".imogi-pay-checkout-stack");
 		const $extras = $shell.find(".imogi-pay-extras");
-		const checkout_fields = ["payment_modes_html", "change_html"];
+		const checkout_fields = ["payment_modes_html", "cash_quick_html", "change_html"];
 		const extra_fields = ["promo_html", "discount_html"];
 
 		$body.prepend($shell);
@@ -4556,6 +4975,11 @@ imogi_pos.CashierPage = class CashierPage {
 		const default_mode = this.context.default_payment_mode || modes[0];
 		const me = this;
 
+		const initial_total = imogi_compute_local_tax(
+			Math.max(0, subtotal),
+			me.context?.sales_tax || {}
+		).grand_total;
+
 		const dialog = new frappe.ui.Dialog({
 			title: __("Pembayaran"),
 			size: "extra-large",
@@ -4569,6 +4993,11 @@ imogi_pos.CashierPage = class CashierPage {
 					fieldtype: "HTML",
 					fieldname: "payment_modes_html",
 					options: me.build_payment_modes_html(default_mode),
+				},
+				{
+					fieldtype: "HTML",
+					fieldname: "cash_quick_html",
+					options: me.build_cash_quick_shell_html(initial_total),
 				},
 				{
 					fieldname: "mode_of_payment",
@@ -4685,17 +5114,21 @@ imogi_pos.CashierPage = class CashierPage {
 					return;
 				}
 				if (me.is_cash_mode(values.mode_of_payment)) {
-					const paid = flt(values.paid_amount);
+					const paid = me.get_dialog_paid_amount(dialog) || flt(values.paid_amount);
 					if (paid < total) {
 						frappe.msgprint(__("Uang diterima kurang dari total"));
 						return;
 					}
 				}
-				me.checkout(dialog, values.mode_of_payment, total, flt(values.paid_amount));
+				const paid_amount = me.get_dialog_paid_amount(dialog) || flt(values.paid_amount);
+				me.checkout(dialog, values.mode_of_payment, total, paid_amount);
 			},
 		});
 
 		dialog.$wrapper.addClass("imogi-pay-dialog");
+		dialog._imogi_paid_amount = Math.round(flt(initial_total));
+		dialog._imogi_quick_denom = "pas";
+		dialog._imogi_last_checkout_total = null;
 		this.sync_payment_dialog_layout(dialog);
 		if (!dialog._imogi_pay_layout_bound) {
 			dialog._imogi_pay_layout_bound = true;
@@ -4707,22 +5140,33 @@ imogi_pos.CashierPage = class CashierPage {
 				window.removeEventListener("resize", on_layout);
 				window.removeEventListener("orientationchange", on_layout);
 				dialog._imogi_pay_layout_bound = false;
+				dialog._imogi_paid_amount = null;
+				dialog._imogi_quick_denom = null;
 			});
 		}
 
-		dialog.$wrapper.on("click", ".imogi-pay-quick-btn", function () {
-			if ($(this).prop("disabled") || $(this).hasClass("is-disabled")) return;
-			const amount = flt($(this).data("amount"));
-			if (typeof dialog._imogi_set_paid_amount === "function") {
-				dialog._imogi_set_paid_amount(amount);
-			} else {
-				dialog.set_value("paid_amount", amount);
-			}
-			me.update_change_display(dialog, me.get_payment_total(dialog, subtotal));
+		dialog.$wrapper.off("click.imogiQuickPay", ".imogi-pay-quick-btn");
+		dialog.$wrapper.on("click.imogiQuickPay", ".imogi-pay-quick-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const $btn = $(this);
+			if ($btn.prop("disabled") || $btn.hasClass("is-disabled")) return;
+			const denom = String($btn.attr("data-quick-denom") || "").toLowerCase();
+			const total = me.get_payment_total(dialog, subtotal);
+			const amount = me.get_cash_quick_preset_amount(denom, total);
+			if (!amount) return;
+			me.apply_quick_paid_amount(dialog, subtotal, amount, denom);
 		});
 
 		dialog.fields_dict.paid_amount?.$input?.on("input change", () => {
-			me.update_change_display(dialog, me.get_payment_total(dialog, subtotal));
+			if (dialog._imogi_paid_syncing) return;
+			const total = me.get_payment_total(dialog, subtotal);
+			const paid = Math.round(flt(dialog.get_value("paid_amount")) || 0);
+			dialog._imogi_paid_amount = paid;
+			dialog._imogi_quick_denom = null;
+			me.update_change_display(dialog, total, paid);
+			me.update_cash_quick_feedback(dialog, subtotal, paid);
+			me.sync_cash_quick_selection(dialog, total, paid, null);
 		});
 
 		dialog.show();
@@ -4763,28 +5207,30 @@ imogi_pos.CashierPage = class CashierPage {
 		const $wrap = dialog.$wrapper;
 		$wrap.toggleClass("imogi-pay-cash-mode", is_cash);
 		$wrap.toggleClass("imogi-pay-qris-mode", !!is_qris);
-		$wrap.find(".imogi-pay-cash-section").toggle(is_cash);
-		$wrap.find(".imogi-pay-numpad-wrap").toggleClass("is-visible", is_cash && this.is_mobile_layout());
-		if (is_cash) {
-			this.ensure_cash_quick_ui(dialog);
-			this.render_cash_quick_buttons(dialog, total);
+		$wrap.find(".imogi-pay-cash-section").toggle(!!is_cash);
+		const $cashQuickField = dialog.fields_dict.cash_quick_html?.$wrapper;
+		if ($cashQuickField?.length) {
+			$cashQuickField.toggle(!!is_cash);
+		} else {
+			$wrap.find(".imogi-pay-cash-quick").closest(".frappe-control").toggle(!!is_cash);
 		}
+		$wrap.find(".imogi-pay-numpad-wrap").toggleClass("is-visible", is_cash && this.is_mobile_layout());
 		$wrap.find(".imogi-pay-qris-hint").toggle(!!is_qris);
 		$wrap.find(".imogi-pay-noncash-hint").toggle(!is_cash && !is_qris);
 		if (is_cash) {
-			if (!flt(dialog.get_value("paid_amount"))) {
-				if (typeof dialog._imogi_set_paid_amount === "function") {
-					dialog._imogi_set_paid_amount(total);
-				} else {
-					dialog.set_value("paid_amount", total);
-				}
+			let paid = this.get_dialog_paid_amount(dialog);
+			if (!paid) {
+				paid = this.set_dialog_paid_amount(dialog, total);
+				dialog._imogi_quick_denom = "pas";
 			}
-			this.update_change_display(dialog, total);
+			this.update_change_display(dialog, total, paid);
+			this.update_cash_quick_feedback(dialog, subtotal, paid);
+			this.sync_cash_quick_selection(dialog, total, paid);
 		}
 	}
 
-	update_change_display(dialog, total) {
-		const paid = flt(dialog.get_value("paid_amount"));
+	update_change_display(dialog, total, paid_amount = null) {
+		const paid = paid_amount != null ? flt(paid_amount) : this.get_dialog_paid_amount(dialog);
 		const change = paid - total;
 		const $box = dialog.$wrapper.find(".imogi-pay-change-box");
 		const display_change = Math.max(change, 0);
@@ -5014,16 +5460,18 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		actions.push({ id: "new", label: __("Order Baru"), icon: "fa-plus-circle", primary: true });
 
-		const actions_html = actions
-			.map(
-				(action) => `<button type="button"
-					class="imogi-success-action-btn${action.primary ? " is-primary" : ""}"
-					data-action="${action.id}">
-					<span class="imogi-success-action-icon"><i class="fa ${action.icon}"></i></span>
-					<span class="imogi-success-action-label">${action.label}</span>
-				</button>`
-			)
-			.join("");
+		const actions_html = (() => {
+			const secondary = actions.filter((action) => !action.primary);
+			const primary = actions.filter((action) => action.primary);
+			const render_btn = (action) => `<button type="button"
+				class="imogi-success-action-btn${action.primary ? " is-primary" : ""}"
+				data-action="${action.id}">
+				<span class="imogi-success-action-icon"><i class="fa ${action.icon}"></i></span>
+				<span class="imogi-success-action-label">${action.label}</span>
+			</button>`;
+			return `<div class="imogi-success-actions-grid">${secondary.map(render_btn).join("")}</div>
+				${primary.map(render_btn).join("")}`;
+		})();
 
 		const dialog = new frappe.ui.Dialog({
 			title: __("Transaksi Berhasil"),
@@ -5031,11 +5479,16 @@ imogi_pos.CashierPage = class CashierPage {
 				{
 					fieldtype: "HTML",
 					options: `<div class="imogi-pay-success-body">
-						<div class="imogi-pay-success-icon"><i class="fa fa-check-circle"></i></div>
-						<div class="imogi-pay-success-order">${frappe.utils.escape_html(order.name || "")}</div>
+						<div class="imogi-pay-success-hero">
+							<div class="imogi-pay-success-icon-wrap"><i class="fa fa-check"></i></div>
+							<div class="imogi-pay-success-order">${frappe.utils.escape_html(order.name || "")}</div>
+							<div class="imogi-pay-success-subtitle">${__("Pembayaran berhasil diproses")}</div>
+						</div>
 						${summary_html}
 						${stamp_html}
-						<div class="imogi-pay-success-status">${__("Status")}: ${frappe.utils.escape_html(order.status || "")}</div>
+						<div class="imogi-pay-success-footer-meta">
+							<span class="imogi-pay-success-status-pill">${__("Status")}: ${frappe.utils.escape_html(order.status || __("Completed"))}</span>
+						</div>
 						<div class="imogi-success-actions">${actions_html}</div>
 					</div>`,
 				},
@@ -5052,7 +5505,7 @@ imogi_pos.CashierPage = class CashierPage {
 			me.load_items({ force: true });
 		};
 
-		dialog.$wrapper.addClass("imogi-pay-dialog imogi-pay-success-dialog");
+		dialog.$wrapper.addClass("imogi-pay-success-dialog");
 		if (this.is_mobile_layout()) {
 			dialog.$wrapper.addClass("imogi-pay-success-mobile");
 		}

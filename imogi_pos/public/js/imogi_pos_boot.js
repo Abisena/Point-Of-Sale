@@ -30,9 +30,11 @@ imogi_pos.is_erp_enterprise_deployment = function () {
 	return imogi_pos.is_subscription_tier_disabled();
 };
 
+imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
+
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260615-cash-quick-buttons-v9";
+	const CACHE_VERSION = "20260616-mobile-scroll-search-v16";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",
@@ -53,6 +55,23 @@ imogi_pos.is_erp_enterprise_deployment = function () {
 	} catch (e) {
 		/* private browsing */
 	}
+})();
+
+(function imogi_pos_cleanup_legacy_variant_css() {
+	[
+		"imogi-variant-modal-css",
+		"imogi-variant-modal-css-v2",
+		"imogi-variant-modal-css-v3",
+		"imogi-variant-modal-css-v4",
+		"imogi-variant-modal-css-v5",
+		"imogi-variant-modal-css-v6",
+		"imogi-variant-modal-css-v7",
+		"imogi-variant-modal-css-v8",
+		"imogi-variant-modal-css-v9",
+		"imogi-variant-modal-css-v10",
+		"imogi-variant-modal-css-v11",
+		"imogi-variant-modal-css-v12",
+	].forEach((id) => document.getElementById(id)?.remove());
 })();
 
 imogi_pos.opening_entry_locked = false;
@@ -459,7 +478,7 @@ function imogi_pos_is_themed_route(route = frappe.get_route?.() || []) {
 		return true;
 	}
 	// Route can lag behind URL during SPA navigation — use path as fallback.
-	return imogi_pos_on_cashier_flow_page();
+	return imogi_pos_on_cashier_flow_page() || imogi_pos_on_order_history_page();
 }
 
 function imogi_pos_apply_desk_logo() {
@@ -476,9 +495,30 @@ function imogi_pos_apply_desk_logo() {
 
 function imogi_pos_sync_cashier_fullscreen() {
 	const active =
-		imogi_pos_requires_shift_workflow() &&
-		(imogi_pos_on_cashier_flow_page() || imogi_pos_on_order_history_page());
+		imogi_pos_on_order_history_page() ||
+		(imogi_pos_requires_shift_workflow() && imogi_pos_on_cashier_flow_page());
 	document.body.classList.toggle("imogi-pos-cashier-fullscreen", active);
+}
+
+function imogi_pos_paint_cashier_canvas() {
+	if (!document.body.classList.contains("imogi-cashier-active") && !document.querySelector(".imogi-cashier-page")) {
+		return;
+	}
+	document.body.classList.add("imogi-cashier-active");
+	const paint = (el) => {
+		if (!el) return;
+		el.style.setProperty("background", "#fff", "important");
+		el.style.setProperty("background-color", "#fff", "important");
+		el.style.setProperty("background-image", "none", "important");
+		el.style.setProperty("background-attachment", "scroll", "important");
+	};
+	paint(document.body);
+	paint(document.documentElement);
+	document
+		.querySelectorAll(
+			".layout-main, .layout-main-section-wrapper, .layout-main-section, .page-body, .page-container, .main-section, .container, .content.page-container, .imogi-cashier-page, .imogi-cashier-root, .imogi-cashier-shell"
+		)
+		.forEach(paint);
 }
 
 function imogi_pos_sync_desk_theme() {
@@ -486,6 +526,7 @@ function imogi_pos_sync_desk_theme() {
 	document.body.classList.toggle("imogi-pos-themed", themed);
 	imogi_pos_sync_cashier_fullscreen();
 	imogi_pos_apply_desk_logo();
+	imogi_pos_paint_cashier_canvas();
 }
 
 function imogi_pos_should_redirect_to_setup(route = frappe.get_route?.() || []) {
@@ -559,6 +600,7 @@ function imogi_pos_guard_cashier_settings_slug() {
 imogi_pos.settings_form_route = () => ["Form", IMOGI_SETTINGS_DOCTYPE, IMOGI_SETTINGS_DOCTYPE];
 
 imogi_pos.sync_desk_theme = imogi_pos_sync_desk_theme;
+imogi_pos.paint_cashier_canvas = imogi_pos_paint_cashier_canvas;
 
 $(document).on("app_ready", () => {
 	imogi_pos_ensure_logout();

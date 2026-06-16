@@ -1,6 +1,6 @@
 /* IMOGI POS — lightweight offline shell for cashier static assets */
 
-const CACHE_NAME = "imogi-pos-shell-v5";
+const CACHE_NAME = "imogi-pos-shell-v6";
 const SHELL_ASSETS = [
 	"/assets/imogi_pos/css/imogi_pos.css",
 	"/assets/imogi_pos/js/imogi_pos_boot.js",
@@ -10,7 +10,6 @@ const SHELL_ASSETS = [
 	"/assets/imogi_pos/js/qrcode.min.js",
 	"/assets/imogi_pos/js/imogi_pos_qris_payment.js",
 	"/assets/imogi_pos/js/imogi_pos_thermal_print.js",
-	"/assets/imogi_pos/js/imogi_pos_variant_modal.js",
 	"/assets/imogi_pos/images/imogi-pos-logo.png",
 	"/assets/imogi_pos/images/imogi-pos-favicon.png",
 ];
