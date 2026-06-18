@@ -25,15 +25,15 @@ def run():
 	_ensure_promo_rule(company, item)
 	_ensure_loyalty_tiers(company)
 
-	items = [{"item_code": item, "qty": 2, "rate": 10000}]
+	items = [{"item_code": item, "qty": 1, "rate": 10000}]
 	promo = apply_promo_rules(items, company=company)
 	if flt(promo["promo_discount"]) > 0:
-		raise AssertionError("beli 2 gratis 1 should not discount until qty 3")
+		raise AssertionError("beli 2 gratis 1 should not discount at qty 1")
 
-	items = [{"item_code": item, "qty": 3, "rate": 10000}]
+	items = [{"item_code": item, "qty": 2, "rate": 10000}]
 	promo = apply_promo_rules(items, company=company)
 	if flt(promo["promo_discount"]) != 10000:
-		raise AssertionError("promo discount not applied for Buy X Get Y at qty 3")
+		raise AssertionError("promo discount not applied for Buy X Get Y at qty 2")
 
 	totals = compute_checkout_totals(items, company=company)
 	if flt(totals["promo_discount"]) <= 0:

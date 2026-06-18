@@ -74,12 +74,16 @@ page_js = {
 doctype_js = {
 	"Riwayat Order": "public/js/imogi_pos_order.js",
 	"IMOGI POS Settings": "public/js/imogi_pos_settings.js",
+	"IMOGI POS Promo Rule": "public/js/imogi_pos_promo_rule.js",
 	"IMOGI POS Shift Opening": "public/js/imogi_pos_shift_opening.js",
 	"IMOGI Branch": "public/js/imogi_branch.js",
 	"POS Opening Entry": "public/js/imogi_pos_opening_entry.js",
 	"POS Closing Entry": "public/js/imogi_pos_closing_entry.js",
 }
-doctype_list_js = {"Riwayat Order": "public/js/imogi_pos_order_list.js"}
+doctype_list_js = {
+	"Riwayat Order": "public/js/imogi_pos_order_list.js",
+	"IMOGI POS Promo Rule": "public/js/imogi_pos_promo_rule_list.js",
+}
 
 fixtures = [
 	{

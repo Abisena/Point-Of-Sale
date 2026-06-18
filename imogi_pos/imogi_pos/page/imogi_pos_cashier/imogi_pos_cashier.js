@@ -209,6 +209,13 @@ function inject_cashier_css() {
 	document.getElementById("imogi-cashier-inline-css-v51")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v55")?.remove();
 	document.getElementById("imogi-cashier-inline-css-v60")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v63")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v64")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v65")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v66")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v67")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v68")?.remove();
+	document.getElementById("imogi-cashier-inline-css-v69")?.remove();
 	frappe.dom.set_style(`
 		body.imogi-cashier-active,
 		body.imogi-pos-themed.imogi-cashier-active,
@@ -883,15 +890,35 @@ function inject_cashier_css() {
 		.imogi-pay-change-box { align-items: center; background: var(--imogi-pay-surface-2, #f4f4f5); border: 2px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); display: flex; font-size: 26px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; min-height: 72px; padding: 12px; text-align: center; transition: background .15s, border-color .15s, color .15s; }
 		.imogi-pay-change-box.is-ok { background: #f0fdf4; border-color: #86efac; color: #166534; }
 		.imogi-pay-change-box.is-short { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
-		.imogi-pay-cash-quick { display: block; margin-top: 0; }
-		.imogi-pay-dialog .frappe-control[data-fieldname="cash_quick_html"] { margin: 0 0 12px !important; width: 100% !important; }
-		.imogi-pay-quick-row { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 8px; }
+		.imogi-pay-detail-slot { display: flex; flex: 1; flex-direction: column; margin-bottom: 0; min-height: 180px; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="cash_quick_html"] { flex: 1 1 auto; margin: 0 0 12px !important; min-height: 180px; width: 100% !important; }
+		.imogi-pay-detail-slot .imogi-pay-cash-quick,
+		.imogi-pay-detail-slot .imogi-pay-qris-panel,
+		.imogi-pay-detail-slot .imogi-pay-transfer-panel { display: none; flex: 1; min-height: 0; }
+		.imogi-pay-detail-slot .imogi-pay-cash-quick { flex-direction: column; }
+		.imogi-pay-detail-slot .imogi-pay-qris-panel { align-items: center; flex-direction: column; justify-content: flex-start; text-align: center; }
+		.imogi-pay-detail-slot .imogi-pay-transfer-panel { flex-direction: column; }
+		.imogi-pay-transfer-card { background: #f8fafc; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; display: flex; flex: 1; flex-direction: column; gap: 10px; margin-top: 12px; padding: 16px 14px; }
+		.imogi-pay-transfer-row { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; }
+		.imogi-pay-transfer-row span { color: #71717a; font-size: 12px; font-weight: 600; }
+		.imogi-pay-transfer-row strong { color: var(--imogi-navy-800, #0f1f35); font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; text-align: right; }
+		.imogi-pay-transfer-amount { background: #fff; border: 1px dashed #bfdbfe; border-radius: 10px; color: #1d4ed8; font-size: 22px; font-variant-numeric: tabular-nums; font-weight: 800; margin-top: 4px; padding: 12px; text-align: center; }
+		.imogi-pay-transfer-copy { background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 8px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 6px 10px; }
+		.imogi-pay-transfer-copy:hover { background: #f4f4f5; }
+		.imogi-pay-transfer-hint { color: #71717a; font-size: 12px; line-height: 1.45; margin-top: 4px; }
+		.imogi-pay-transfer-empty { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; color: #92400e; font-size: 13px; line-height: 1.45; margin-top: 12px; padding: 14px; text-align: center; }
+		.imogi-pay-quick-row { display: grid; flex-shrink: 0; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 8px; }
 		.imogi-pay-quick-btn { background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 10px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; font-size: 13px; font-weight: 700; min-height: 48px; padding: 10px 8px; touch-action: manipulation; transition: background .12s, border-color .12s, color .12s; }
 		.imogi-pay-quick-btn.is-selected { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); color: #fff; }
 		.imogi-pay-quick-btn.is-disabled, .imogi-pay-quick-btn:disabled { cursor: not-allowed; opacity: 0.42; pointer-events: none; }
-		.imogi-pay-quick-feedback { align-items: center; background: #f8fafc; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; margin-top: 10px; padding: 10px 12px; }
+		.imogi-pay-quick-feedback { align-items: center; background: #f8fafc; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; display: flex; flex: 1; flex-wrap: wrap; gap: 10px 18px; justify-content: space-between; margin-top: 12px; min-height: 76px; padding: 16px 14px; }
 		.imogi-pay-quick-feedback span { color: #71717a; font-size: 12px; font-weight: 600; }
-		.imogi-pay-quick-feedback strong { color: var(--imogi-navy-800, #0f1f35); font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 800; }
+		.imogi-pay-quick-feedback strong { color: var(--imogi-navy-800, #0f1f35); font-size: 17px; font-variant-numeric: tabular-nums; font-weight: 800; }
+		.imogi-pay-qris-panel { margin-bottom: 0; }
+		.imogi-pay-qris-inline-status { color: #52525b; font-size: 13px; font-weight: 600; margin: 4px 0 8px; }
+		.imogi-pay-qris-inline-image { align-items: center; display: flex; justify-content: center; min-height: 148px; padding: 4px 0 8px; width: 100%; }
+		.imogi-pay-qris-inline-image img, .imogi-pay-qris-inline-image canvas { display: block; height: auto !important; max-height: 180px !important; max-width: 180px !important; width: auto !important; }
+		.imogi-pay-qris-inline-hint { color: #71717a; font-size: 12px; font-weight: 500; line-height: 1.45; margin-top: 4px; max-width: 280px; }
 		.imogi-pay-quick-change-val.is-ok { color: #047857; }
 		.imogi-pay-quick-change-val.is-short { color: #b91c1c; }
 		.imogi-pay-quick-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-top: 14px; text-transform: uppercase; }
@@ -947,7 +974,7 @@ function inject_cashier_css() {
 		.imogi-pay-shell { display: grid; gap: 0; grid-template-columns: 1fr; min-height: 0; width: 100%; }
 		.imogi-pay-col { box-sizing: border-box; min-width: 0; padding: 16px 20px 20px; width: 100%; }
 		.imogi-pay-col--summary { background: var(--imogi-pay-surface); border-bottom: 1px solid var(--imogi-pay-border); }
-		.imogi-pay-col--checkout { background: var(--imogi-pay-surface-2); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+		.imogi-pay-col--checkout { background: var(--imogi-pay-surface-2); display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
 		.imogi-pay-checkout-stack { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; width: 100%; }
 		.imogi-pay-checkout-stack > .frappe-control,
 		.imogi-pay-extras > .frappe-control { margin: 0 !important; max-width: 100% !important; padding: 0 !important; width: 100% !important; }
@@ -974,7 +1001,7 @@ function inject_cashier_css() {
 		.imogi-pay-footer-amount { color: var(--imogi-navy-800, #0f1f35); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 800; }
 		.imogi-pay-top { display: flex; flex-direction: column; gap: 12px; }
 		.imogi-pay-total-strip { background: linear-gradient(135deg, var(--imogi-navy-800, #0f1f35) 0%, var(--imogi-navy-700, #1a3352) 100%); border-radius: 14px; color: #fff; padding: 16px 18px; }
-		.imogi-pay-total-strip-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+		.imogi-pay-total-strip-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 		.imogi-pay-item-badge, .imogi-pay-order-badge { align-items: center; background: rgba(255,255,255,.12); border-radius: 999px; color: rgba(255,255,255,.9); display: inline-flex; font-size: 11px; font-weight: 600; gap: 5px; padding: 4px 10px; }
 		.imogi-pay-total-strip-label { color: rgba(255,255,255,.7); display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; margin-bottom: 4px; text-transform: uppercase; }
 		.imogi-pay-hero-amount { color: #fff !important; font-size: 32px !important; font-variant-numeric: tabular-nums; font-weight: 800 !important; line-height: 1.05; }
@@ -1010,7 +1037,7 @@ function inject_cashier_css() {
 		.imogi-pay-section-head .fa { color: #71717a; }
 		.imogi-pay-cash-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
 		.imogi-pay-cash-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-bottom: 6px; text-transform: uppercase; }
-		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] { margin: 0 !important; }
+		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] { display: none !important; margin: 0 !important; }
 		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] .control-label { display: none; }
 		.imogi-pay-dialog .frappe-control[data-fieldname="paid_amount"] input {
 			background: #fff !important; border: 2px solid var(--imogi-pay-border) !important; border-radius: 12px !important;
@@ -1035,7 +1062,7 @@ function inject_cashier_css() {
 		.imogi-pay-total-footer { align-items: flex-end; border-top: 1px solid rgba(255,255,255,.14); display: flex; justify-content: space-between; padding-top: 12px; }
 		.imogi-pay-summary .imogi-pay-total-label { color: rgba(255,255,255,.72); font-size: 11px; font-weight: 700; letter-spacing: .04em; margin: 0; text-transform: uppercase; }
 		.imogi-pay-summary .imogi-pay-total-value { color: #fff !important; font-size: 28px !important; font-weight: 800 !important; line-height: 1.1; text-align: right; }
-		.imogi-pay-shell--split { grid-template-columns: minmax(260px, 34%) minmax(0, 1fr); min-height: 0; }
+		.imogi-pay-shell--split { align-items: stretch; grid-template-columns: minmax(260px, 34%) minmax(0, 1fr); min-height: min(68vh, 580px); }
 		.imogi-pay-shell--split .imogi-pay-col--summary { border-bottom: none; border-right: 1px solid var(--imogi-pay-border); }
 		.imogi-pay-shell--split .imogi-pay-modes-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 		@media (min-width: 993px) {
@@ -1827,7 +1854,7 @@ function inject_cashier_css() {
 			border-color: #0f1f35 !important;
 			color: #fff !important;
 		}
-	`, "imogi-cashier-inline-css-v63");
+	`, "imogi-cashier-inline-css-v73");
 }
 
 function format_stock_pill(qty) {
@@ -3774,6 +3801,8 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	is_cash_mode(mode_of_payment) {
+		if (this.is_qris_payment_mode(mode_of_payment)) return false;
+		if (this.is_transfer_payment_mode(mode_of_payment)) return false;
 		const name = String(mode_of_payment || "").trim();
 		if (!name) return false;
 		const row = (this.context.payment_modes || []).find((m) => m.mode_of_payment === name);
@@ -3781,12 +3810,53 @@ imogi_pos.CashierPage = class CashierPage {
 		return /cash|tunai/i.test(name);
 	}
 
+	is_qris_payment_mode(mode_of_payment) {
+		if (!mode_of_payment) return false;
+		const name = String(mode_of_payment).trim().toLowerCase();
+		if (name.includes("qris") || name.includes("wallet") || name.includes("ewallet")) return true;
+		const row = (this.context.payment_modes || []).find((m) => m.mode_of_payment === mode_of_payment);
+		if (row?.type && /qris|wallet|ewallet/i.test(String(row.type))) return true;
+		if (typeof imogi_pos !== "undefined" && imogi_pos.qris?.is_qris_mode) {
+			return imogi_pos.qris.is_qris_mode(this, mode_of_payment);
+		}
+		return false;
+	}
+
+	is_transfer_payment_mode(mode_of_payment) {
+		if (!mode_of_payment) return false;
+		if (this.is_qris_payment_mode(mode_of_payment)) return false;
+		const name = String(mode_of_payment).trim().toLowerCase();
+		if (/transfer|bank|va\b|virtual/i.test(name)) return true;
+		const row = (this.context.payment_modes || []).find((m) => m.mode_of_payment === mode_of_payment);
+		if (row?.type === "Bank") return true;
+		return false;
+	}
+
+	get_transfer_payment_config() {
+		return this.context?.transfer_payment || {};
+	}
+
+	get_payment_dialog_mode(dialog) {
+		if (dialog?._imogi_payment_mode) {
+			return String(dialog._imogi_payment_mode).trim();
+		}
+		const active_card = dialog.$wrapper.find(".imogi-pay-mode-card.is-active").attr("data-mode");
+		if (active_card) return String(active_card).trim();
+		const from_field =
+			dialog.get_value("mode_of_payment") ||
+			dialog.fields_dict.mode_of_payment?.get_value?.() ||
+			dialog.doc?.mode_of_payment;
+		if (from_field) return String(from_field).trim();
+		return String(
+			this.context.default_payment_mode ||
+				(this.context.payment_modes || [])[0]?.mode_of_payment ||
+				""
+		).trim();
+	}
+
 	get_payment_mode_icon(mode_of_payment) {
 		if (this.is_cash_mode(mode_of_payment)) return "fa-money";
-		if (this.context?.payment_gateway_enabled && imogi_pos.qris?.is_qris_mode(this, mode_of_payment)) {
-			return "fa-qrcode";
-		}
-		if (/qris/i.test(mode_of_payment || "")) return "fa-qrcode";
+		if (this.is_qris_payment_mode(mode_of_payment)) return "fa-qrcode";
 		if (/transfer|bank|va\b/i.test(mode_of_payment || "")) return "fa-university";
 		if (/card|kartu|debit|credit/i.test(mode_of_payment || "")) return "fa-credit-card";
 		return "fa-wallet";
@@ -3803,8 +3873,7 @@ imogi_pos.CashierPage = class CashierPage {
 			.map((row) => {
 				const mode = row.mode_of_payment;
 				const active = mode === default_mode ? " is-active" : "";
-				const is_qris =
-					this.context.payment_gateway_enabled && imogi_pos.qris?.is_qris_mode(this, mode);
+				const is_qris = this.is_qris_payment_mode(mode);
 				const icon = this.get_payment_mode_icon(mode);
 				return `<button type="button" class="imogi-pay-mode-card${active}${is_qris ? " is-qris" : ""}"
 					data-mode="${frappe.utils.escape_html(mode)}">
@@ -3879,17 +3948,262 @@ imogi_pos.CashierPage = class CashierPage {
 			.join("");
 	}
 
-	build_cash_quick_shell_html(total = 0, paid_amount = null) {
+	build_transfer_panel_html(total = 0) {
+		const cfg = this.get_transfer_payment_config();
+		const amount = format_currency(flt(total));
+		if (!cfg.enabled) {
+			return `<div class="imogi-pay-transfer-empty">${__(
+				"Rekening transfer belum dikonfigurasi. Atur di IMOGI POS Settings → Pembayaran → Transfer Bank."
+			)}</div>`;
+		}
+		const bank = frappe.utils.escape_html(cfg.bank_name || "");
+		const account = frappe.utils.escape_html(cfg.bank_account || "");
+		const holder = frappe.utils.escape_html(cfg.account_holder || "");
+		const instructions = (cfg.instructions || "").trim();
+		return `<div class="imogi-pay-transfer-card">
+			<div class="imogi-pay-transfer-row">
+				<span>${__("Bank")}</span>
+				<strong>${bank}</strong>
+			</div>
+			<div class="imogi-pay-transfer-row">
+				<span>${__("No. Rekening")}</span>
+				<div>
+					<strong class="imogi-pay-transfer-account">${account}</strong>
+					<button type="button" class="imogi-pay-transfer-copy" data-copy-value="${account}">${__("Salin")}</button>
+				</div>
+			</div>
+			<div class="imogi-pay-transfer-row">
+				<span>${__("Atas Nama")}</span>
+				<strong>${holder}</strong>
+			</div>
+			<div class="imogi-pay-transfer-row" style="flex-direction:column;gap:6px;">
+				<span>${__("Nominal Transfer")}</span>
+				<div class="imogi-pay-transfer-amount imogi-pay-transfer-amount-val">${amount}</div>
+			</div>
+			${
+				instructions
+					? `<div class="imogi-pay-transfer-hint"><i class="fa fa-info-circle"></i> ${frappe.utils.escape_html(
+							instructions
+					  )}</div>`
+					: `<div class="imogi-pay-transfer-hint">${__(
+							"Konfirmasi setelah pelanggan transfer, lalu tekan Bayar Sekarang."
+					  )}</div>`
+			}
+		</div>`;
+	}
+
+	build_payment_detail_html(total = 0, paid_amount = null) {
 		const paid = flt(paid_amount) > 0 ? flt(paid_amount) : flt(total);
 		const change = Math.max(0, paid - flt(total));
-		return `<div class="imogi-pay-cash-quick imogi-pay-checkout-block">
-			<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
-			<div class="imogi-pay-quick-row">${this.build_cash_quick_buttons_markup(total, paid)}</div>
-			<div class="imogi-pay-quick-feedback">
-				<span>${__("Diterima")}: <strong class="imogi-pay-quick-paid-val">${format_currency(paid)}</strong></span>
-				<span>${__("Kembalian")}: <strong class="imogi-pay-quick-change-val">${format_currency(change)}</strong></span>
+		return `<div class="imogi-pay-detail-slot imogi-pay-checkout-block">
+			<div class="imogi-pay-cash-quick">
+				<div class="imogi-pay-quick-label">${__("Nominal cepat")}</div>
+				<div class="imogi-pay-quick-row">${this.build_cash_quick_buttons_markup(total, paid)}</div>
+				<div class="imogi-pay-quick-feedback">
+					<span>${__("Diterima")}: <strong class="imogi-pay-quick-paid-val">${format_currency(paid)}</strong></span>
+					<span>${__("Kembalian")}: <strong class="imogi-pay-quick-change-val">${format_currency(change)}</strong></span>
+				</div>
+			</div>
+			<div class="imogi-pay-qris-panel">
+				<div class="imogi-pay-quick-label">${__("Bayar dengan QRIS")}</div>
+				<div class="imogi-pay-qris-inline-status">${__("Membuat QR...")}</div>
+				<div class="imogi-pay-qris-inline-image"></div>
+				<div class="imogi-pay-qris-inline-hint">${__(
+					"Minta pelanggan scan QR. Pembayaran akan otomatis terdeteksi."
+				)}</div>
+			</div>
+			<div class="imogi-pay-transfer-panel">
+				<div class="imogi-pay-quick-label">${__("Transfer Bank")}</div>
+				<div class="imogi-pay-transfer-body">${this.build_transfer_panel_html(total)}</div>
 			</div>
 		</div>`;
+	}
+
+	is_inline_qris_mode(mode) {
+		return this.is_qris_payment_mode(mode);
+	}
+
+	sync_payment_detail_panels(dialog, is_cash, is_qris, is_transfer = false) {
+		const $slot = dialog.$wrapper.find(".imogi-pay-detail-slot");
+		if (!$slot.length) return;
+		const $cash = $slot.find(".imogi-pay-cash-quick");
+		const $qris = $slot.find(".imogi-pay-qris-panel");
+		const $transfer = $slot.find(".imogi-pay-transfer-panel");
+		$cash.toggleClass("is-visible", !!is_cash).css("display", is_cash ? "flex" : "none");
+		$qris.toggleClass("is-visible", !!is_qris).css("display", is_qris ? "flex" : "none");
+		$transfer.toggleClass("is-visible", !!is_transfer).css("display", is_transfer ? "flex" : "none");
+	}
+
+	refresh_transfer_panel(dialog, subtotal) {
+		const total = this.get_payment_total(dialog, subtotal);
+		const $body = dialog.$wrapper.find(".imogi-pay-transfer-body");
+		if (!$body.length) return;
+		$body.html(this.build_transfer_panel_html(total));
+	}
+
+	setup_transfer_copy_buttons(dialog) {
+		const $wrap = dialog.$wrapper;
+		$wrap.off("click.imogiTransferCopy", ".imogi-pay-transfer-copy");
+		$wrap.on("click.imogiTransferCopy", ".imogi-pay-transfer-copy", function (e) {
+			e.preventDefault();
+			const value = String($(this).attr("data-copy-value") || "").trim();
+			if (!value) return;
+			const done = () => frappe.show_alert({ message: __("Nomor rekening disalin"), indicator: "green" });
+			if (navigator.clipboard?.writeText) {
+				navigator.clipboard.writeText(value).then(done).catch(() => {
+					frappe.utils.copy_to_clipboard(value);
+					done();
+				});
+				return;
+			}
+			frappe.utils.copy_to_clipboard(value);
+			done();
+		});
+	}
+
+	stop_inline_qris_poll(dialog) {
+		if (dialog?._imogi_qris_poll_timer) {
+			clearInterval(dialog._imogi_qris_poll_timer);
+			dialog._imogi_qris_poll_timer = null;
+		}
+	}
+
+	load_inline_qris(dialog, subtotal) {
+		const me = this;
+		const mode = me.get_payment_dialog_mode(dialog);
+		if (!me.is_inline_qris_mode(mode)) return;
+
+		const $panel = dialog.$wrapper.find(".imogi-pay-qris-panel");
+		const $status = $panel.find(".imogi-pay-qris-inline-status");
+		const $image = $panel.find(".imogi-pay-qris-inline-image");
+
+		if (!me.require_feature("qris")) {
+			$status.text(__("Fitur QRIS tidak tersedia di paket Anda"));
+			$image.empty();
+			return;
+		}
+		if (!me.context.payment_gateway_enabled) {
+			$status.text(__("Gateway pembayaran belum diaktifkan"));
+			$image.empty();
+			return;
+		}
+		if (typeof imogi_pos === "undefined" || !imogi_pos.qris?._render_qr) {
+			$status.text(__("Modul QRIS belum dimuat. Muat ulang halaman."));
+			$image.empty();
+			return;
+		}
+		const total = me.get_payment_total(dialog, subtotal);
+		if (
+			dialog._imogi_qris_payment_name &&
+			dialog._imogi_qris_total === total &&
+			!dialog._imogi_qris_paid
+		) {
+			return;
+		}
+
+		me.stop_inline_qris_poll(dialog);
+		dialog._imogi_qris_payment_name = null;
+		dialog._imogi_qris_total = total;
+		dialog._imogi_qris_paid = false;
+
+		$status.text(__("Membuat QR..."));
+		$image.empty();
+
+		const discount_state = me.get_payment_discount_state(dialog);
+		const args = {
+			items: JSON.stringify(
+				me.cart.map((row) => ({
+					item_code: row.item_code,
+					qty: row.qty,
+					rate: row.rate,
+					uom: row.uom || undefined,
+				}))
+			),
+			mode_of_payment: mode,
+			discount_type: discount_state.type || undefined,
+			discount_value: discount_state.value || undefined,
+			...me.branch_api_args(),
+		};
+		if (me.selected_customer) args.customer = me.selected_customer;
+		if (me.context.loyalty_enabled && imogi_pos.loyalty) {
+			const promo = imogi_pos.loyalty.get_promo_state(dialog);
+			if (promo.voucher_code) args.voucher_code = promo.voucher_code;
+			if (promo.loyalty_points_redeem) args.loyalty_points_redeem = promo.loyalty_points_redeem;
+		} else {
+			if (me.voucher_code) args.voucher_code = me.voucher_code;
+			if (me.loyalty_points_redeem) args.loyalty_points_redeem = me.loyalty_points_redeem;
+		}
+
+		frappe.call({
+			method: "imogi_pos.api.payment_gateway_api.create_qris_payment",
+			args,
+			freeze: false,
+			callback(r) {
+				if (r.exc) {
+					$status.text(__("Gagal membuat QR"));
+					return;
+				}
+				const msg = r.message || {};
+				dialog._imogi_qris_payment_name = msg.name;
+				$status.text(__("Menunggu pembayaran..."));
+				imogi_pos.qris._render_qr($image, msg, { size: 180 });
+
+				dialog._imogi_qris_poll_timer = setInterval(() => {
+					if (dialog._imogi_qris_paid) return;
+					frappe.call({
+						method: "imogi_pos.api.payment_gateway_api.poll_gateway_payment",
+						args: { payment_name: msg.name },
+						callback(res) {
+							if (dialog._imogi_qris_paid) return;
+							if (res.exc) return;
+							const row = res.message || {};
+							if (row.status === "Paid") {
+								me.finish_inline_qris_payment(dialog, subtotal, mode, row);
+							} else if (row.status === "Failed") {
+								me.stop_inline_qris_poll(dialog);
+								dialog._imogi_qris_payment_name = null;
+								$status.text(__("Pembayaran gagal / kedaluwarsa"));
+							}
+						},
+					});
+				}, 3000);
+			},
+		});
+	}
+
+	finish_inline_qris_payment(dialog, subtotal, mode, row) {
+		if (dialog._imogi_qris_paid) return;
+		dialog._imogi_qris_paid = true;
+		this.stop_inline_qris_poll(dialog);
+		const me = this;
+		const total = me.get_payment_total(dialog, subtotal);
+		dialog.hide();
+		const order_name = row.order;
+		const on_order = (order) => {
+			me.show_success(order || {}, {
+				change: 0,
+				paid_amount: total,
+				mode_of_payment: mode,
+				breakdown: me.get_checkout_breakdown(dialog, subtotal),
+			});
+			me.refresh_sales_target();
+		};
+		if (order_name) {
+			frappe.call({
+				method: "imogi_pos.api.payment_gateway_api.get_gateway_order",
+				args: { order_name },
+				callback(or) {
+					on_order(or.message || { name: order_name, status: "Completed" });
+				},
+			});
+		} else {
+			on_order({ name: order_name, status: "Completed" });
+		}
+	}
+
+	refresh_inline_qris_if_needed(dialog, subtotal) {
+		if (!this.is_inline_qris_mode(this.get_payment_dialog_mode(dialog))) return;
+		this.load_inline_qris(dialog, subtotal);
 	}
 
 	render_cash_quick_buttons(dialog, total, selected_amount = null, selected_denom = null) {
@@ -3948,12 +4262,13 @@ imogi_pos.CashierPage = class CashierPage {
 		const $wrap = dialog.$wrapper;
 		$wrap.off("click.imogiPayMode", ".imogi-pay-mode-card");
 		$wrap.on("click.imogiPayMode", ".imogi-pay-mode-card", function () {
-			const mode = $(this).data("mode");
+			const mode = $(this).attr("data-mode");
 			if (!mode) return;
 			$wrap.find(".imogi-pay-mode-card").removeClass("is-active");
 			$(this).addClass("is-active");
+			dialog._imogi_payment_mode = mode;
 			dialog.set_value("mode_of_payment", mode);
-			me.toggle_cash_fields(dialog, subtotal);
+			me.toggle_cash_fields(dialog, subtotal, mode);
 		});
 	}
 
@@ -4323,10 +4638,7 @@ imogi_pos.CashierPage = class CashierPage {
 		return `<div class="imogi-pay-top">
 			<div class="imogi-pay-total-strip">
 				<div class="imogi-pay-total-strip-meta">
-					<span class="imogi-pay-item-badge"><i class="fa fa-shopping-basket"></i> ${item_count} ${__(
-						"barang"
-					)}</span>
-					${order_badge}
+					
 				</div>
 				<span class="imogi-pay-total-strip-label">${__("Total Bayar")}</span>
 				<div class="imogi-pay-hero-amount imogi-pay-total-value">${imogi_format_pay_total(tax.grand_total)}</div>
@@ -4643,15 +4955,17 @@ imogi_pos.CashierPage = class CashierPage {
 		$wrap.toggleClass("imogi-pay-mobile", is_mobile);
 
 		const $field = dialog.fields_dict.paid_amount?.$wrapper;
-		if (!$field || !$field.length) return;
+		const $input = dialog.fields_dict.paid_amount?.$input;
+		if (!$field?.length || !$input?.length) return;
 
 		let $numpad_wrap = $wrap.find(".imogi-pay-numpad-wrap");
 		if (!$numpad_wrap.length) {
-			$wrap.find(".imogi-pay-cash-section").append(`<div class="imogi-pay-numpad-wrap">${this.build_pay_numpad_html()}</div>`);
+			const $cashQuick = $wrap.find(".imogi-pay-detail-slot .imogi-pay-cash-quick");
+			if (!$cashQuick.length) return;
+			$cashQuick.append(`<div class="imogi-pay-numpad-wrap">${this.build_pay_numpad_html()}</div>`);
 			$numpad_wrap = $wrap.find(".imogi-pay-numpad-wrap");
 		}
 
-		const $input = dialog.fields_dict.paid_amount.$input;
 		if (!is_mobile) {
 			$input.removeAttr("readonly inputmode tabindex");
 			$input.prop("readonly", false);
@@ -4821,6 +5135,17 @@ imogi_pos.CashierPage = class CashierPage {
 			this.update_cash_quick_feedback(dialog, subtotal, paid);
 			this.sync_cash_quick_selection(dialog, total, paid);
 		}
+		const mode = this.get_payment_dialog_mode(dialog);
+		const is_qris = this.is_inline_qris_mode(mode);
+		const is_transfer = this.is_transfer_payment_mode(mode);
+		const is_cash = !is_qris && !is_transfer && this.is_cash_mode(mode);
+		this.sync_payment_detail_panels(dialog, is_cash, is_qris, is_transfer);
+		if (is_transfer) {
+			this.refresh_transfer_panel(dialog, subtotal);
+		}
+		if (is_qris) {
+			this.load_inline_qris(dialog, subtotal);
+		}
 	}
 
 	update_payment_primary_action(dialog, subtotal) {
@@ -4844,7 +5169,7 @@ imogi_pos.CashierPage = class CashierPage {
 		const $summary = dialog.fields_dict.pay_summary_html?.$wrapper;
 		const $stack = $shell.find(".imogi-pay-checkout-stack");
 		const $extras = $shell.find(".imogi-pay-extras");
-		const checkout_fields = ["payment_modes_html", "cash_quick_html", "change_html"];
+		const checkout_fields = ["payment_modes_html", "cash_quick_html"];
 		const extra_fields = ["promo_html", "discount_html"];
 
 		$body.prepend($shell);
@@ -4936,17 +5261,7 @@ imogi_pos.CashierPage = class CashierPage {
 		);
 	}
 
-	setup_payment_layout(dialog) {
-		const $wrap = dialog.$wrapper;
-		const $paid = dialog.fields_dict.paid_amount?.$wrapper;
-		const $slot = $wrap.find(".imogi-pay-cash-received-slot");
-		if ($paid?.length && $slot.length && !$slot.find("[data-fieldname='paid_amount']").length) {
-			$slot.append(
-				`<div class="imogi-pay-cash-label">${__("Uang Diterima")}</div>`
-			);
-			$slot.append($paid);
-		}
-	}
+	setup_payment_layout(dialog) {}
 
 	is_landscape_layout() {
 		return window.matchMedia("(orientation: landscape)").matches;
@@ -4997,7 +5312,7 @@ imogi_pos.CashierPage = class CashierPage {
 				{
 					fieldtype: "HTML",
 					fieldname: "cash_quick_html",
-					options: me.build_cash_quick_shell_html(initial_total),
+					options: me.build_payment_detail_html(initial_total),
 				},
 				{
 					fieldname: "mode_of_payment",
@@ -5045,25 +5360,6 @@ imogi_pos.CashierPage = class CashierPage {
 					fieldtype: "Currency",
 					label: __("Uang Diterima"),
 					default: subtotal,
-					hidden: !me.is_cash_mode(default_mode),
-				},
-				{
-					fieldtype: "HTML",
-					fieldname: "change_html",
-					options: `<div class="imogi-pay-checkout-block imogi-pay-cash-section" style="display:none;">
-						<div class="imogi-pay-section-head"><i class="fa fa-money"></i> ${__("Uang Tunai")}</div>
-						<div class="imogi-pay-cash-grid">
-							<div class="imogi-pay-cash-col imogi-pay-cash-received-slot"></div>
-							<div class="imogi-pay-cash-col">
-								<div class="imogi-pay-cash-label">${__("Kembalian")}</div>
-								<div class="imogi-pay-change-box is-neutral"><span class="imogi-pay-change-value">${format_currency(0)}</span></div>
-							</div>
-						</div>
-					</div>
-					<div class="imogi-pay-noncash-hint" style="display:none;">
-						<i class="fa fa-check-circle"></i>
-						<span>${__("Konfirmasi metode pembayaran lalu tekan tombol bayar di bawah.")}</span>
-					</div>`,
 				},
 			],
 			primary_action_label: __("Bayar Sekarang"),
@@ -5080,36 +5376,15 @@ imogi_pos.CashierPage = class CashierPage {
 					me.voucher_code = promo.voucher_code;
 					me.loyalty_points_redeem = promo.loyalty_points_redeem;
 				}
-				if (
-					me.context.payment_gateway_enabled &&
-					typeof imogi_pos !== "undefined" &&
-					imogi_pos.qris &&
-					imogi_pos.qris.is_qris_mode(me, values.mode_of_payment)
-				) {
+				if (me.is_qris_payment_mode(values.mode_of_payment)) {
 					if (!me.require_feature("qris")) return;
-					dialog.hide();
-					imogi_pos.qris.open_dialog(me, {
-						items: me.cart.map((row) => ({
-							item_code: row.item_code,
-							qty: row.qty,
-							rate: row.rate,
-							uom: row.uom || undefined,
-						})),
-						total,
-						mode_of_payment: values.mode_of_payment,
-						discount_type: me.discount_type,
-						discount_value: me.discount_value,
-						voucher_code: me.voucher_code,
-						loyalty_points_redeem: me.loyalty_points_redeem,
-						on_success: (order) => {
-							me.show_success(order || {}, {
-								change: 0,
-								paid_amount: total,
-								mode_of_payment: values.mode_of_payment,
-								breakdown: me.get_checkout_breakdown(dialog, subtotal),
-							});
-							me.refresh_sales_target();
-						},
+					if (dialog._imogi_qris_paid) return;
+					if (!dialog._imogi_qris_payment_name) {
+						me.load_inline_qris(dialog, subtotal);
+					}
+					frappe.show_alert({
+						message: __("Scan QRIS untuk menyelesaikan pembayaran"),
+						indicator: "blue",
 					});
 					return;
 				}
@@ -5129,6 +5404,7 @@ imogi_pos.CashierPage = class CashierPage {
 		dialog._imogi_paid_amount = Math.round(flt(initial_total));
 		dialog._imogi_quick_denom = "pas";
 		dialog._imogi_last_checkout_total = null;
+		dialog._imogi_payment_mode = default_mode;
 		this.sync_payment_dialog_layout(dialog);
 		if (!dialog._imogi_pay_layout_bound) {
 			dialog._imogi_pay_layout_bound = true;
@@ -5142,6 +5418,11 @@ imogi_pos.CashierPage = class CashierPage {
 				dialog._imogi_pay_layout_bound = false;
 				dialog._imogi_paid_amount = null;
 				dialog._imogi_quick_denom = null;
+				me.stop_inline_qris_poll(dialog);
+				dialog._imogi_qris_payment_name = null;
+				dialog._imogi_qris_total = null;
+				dialog._imogi_qris_paid = false;
+				dialog._imogi_payment_mode = null;
 			});
 		}
 
@@ -5175,6 +5456,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.setup_payment_layout(dialog);
 		this.setup_payment_footer(dialog, subtotal);
 		this.setup_payment_mode_cards(dialog, subtotal);
+		this.setup_transfer_copy_buttons(dialog);
 		this.setup_payment_discount_ui(dialog, subtotal);
 		if (
 			this.context.loyalty_enabled &&
@@ -5183,8 +5465,8 @@ imogi_pos.CashierPage = class CashierPage {
 		) {
 			imogi_pos.loyalty.setup_payment_ui(this, dialog, subtotal);
 		}
+		this.toggle_cash_fields(dialog, subtotal, default_mode);
 		this.setup_mobile_pay_numpad(dialog, subtotal);
-		this.toggle_cash_fields(dialog, subtotal);
 		if (this.needs_checkout_preview()) {
 			this.refresh_payment_preview(dialog, subtotal);
 		} else {
@@ -5192,31 +5474,37 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		this.finalize_mobile_pay_dialog(dialog);
 		this.finalize_payment_dialog_layout(dialog);
-		this.toggle_cash_fields(dialog, subtotal);
+		const sync_payment_ui = () => me.toggle_cash_fields(dialog, subtotal, default_mode);
+		requestAnimationFrame(sync_payment_ui);
+		setTimeout(sync_payment_ui, 0);
 	}
 
-	toggle_cash_fields(dialog, subtotal) {
-		const mode = dialog.get_value("mode_of_payment");
-		const is_cash = this.is_cash_mode(mode);
-		const is_qris =
-			this.context.payment_gateway_enabled &&
-			imogi_pos.qris &&
-			imogi_pos.qris.is_qris_mode(this, mode);
+	toggle_cash_fields(dialog, subtotal, mode_override = null) {
+		const mode = mode_override || this.get_payment_dialog_mode(dialog);
+		dialog._imogi_payment_mode = mode;
+		if (mode) {
+			dialog.set_value("mode_of_payment", mode);
+			if (dialog.doc) dialog.doc.mode_of_payment = mode;
+		}
+		const is_qris = this.is_inline_qris_mode(mode);
+		const is_transfer = this.is_transfer_payment_mode(mode);
+		const is_cash = !is_qris && !is_transfer && this.is_cash_mode(mode);
 		const total = this.get_payment_total(dialog, subtotal);
-		dialog.toggle_field("paid_amount", is_cash);
+		dialog.fields_dict.paid_amount?.$wrapper?.hide();
 		const $wrap = dialog.$wrapper;
 		$wrap.toggleClass("imogi-pay-cash-mode", is_cash);
-		$wrap.toggleClass("imogi-pay-qris-mode", !!is_qris);
-		$wrap.find(".imogi-pay-cash-section").toggle(!!is_cash);
-		const $cashQuickField = dialog.fields_dict.cash_quick_html?.$wrapper;
-		if ($cashQuickField?.length) {
-			$cashQuickField.toggle(!!is_cash);
-		} else {
-			$wrap.find(".imogi-pay-cash-quick").closest(".frappe-control").toggle(!!is_cash);
-		}
+		$wrap.toggleClass("imogi-pay-qris-mode", is_qris);
+		$wrap.toggleClass("imogi-pay-transfer-mode", is_transfer);
+		this.sync_payment_detail_panels(dialog, is_cash, is_qris, is_transfer);
 		$wrap.find(".imogi-pay-numpad-wrap").toggleClass("is-visible", is_cash && this.is_mobile_layout());
-		$wrap.find(".imogi-pay-qris-hint").toggle(!!is_qris);
-		$wrap.find(".imogi-pay-noncash-hint").toggle(!is_cash && !is_qris);
+		$wrap.find(".imogi-pay-qris-hint").hide();
+		$wrap.find(".imogi-pay-noncash-hint").toggle(!is_cash && !is_qris && !is_transfer);
+		if (!is_qris) {
+			this.stop_inline_qris_poll(dialog);
+			dialog._imogi_qris_payment_name = null;
+			dialog._imogi_qris_total = null;
+			dialog._imogi_qris_paid = false;
+		}
 		if (is_cash) {
 			let paid = this.get_dialog_paid_amount(dialog);
 			if (!paid) {
@@ -5227,12 +5515,19 @@ imogi_pos.CashierPage = class CashierPage {
 			this.update_cash_quick_feedback(dialog, subtotal, paid);
 			this.sync_cash_quick_selection(dialog, total, paid);
 		}
+		if (is_qris) {
+			this.load_inline_qris(dialog, subtotal);
+		}
+		if (is_transfer) {
+			this.refresh_transfer_panel(dialog, subtotal);
+		}
 	}
 
 	update_change_display(dialog, total, paid_amount = null) {
+		const $box = dialog.$wrapper.find(".imogi-pay-change-box");
+		if (!$box.length) return;
 		const paid = paid_amount != null ? flt(paid_amount) : this.get_dialog_paid_amount(dialog);
 		const change = paid - total;
-		const $box = dialog.$wrapper.find(".imogi-pay-change-box");
 		const display_change = Math.max(change, 0);
 		$box.html(`<span class="imogi-pay-change-value">${format_currency(display_change)}</span>`);
 		$box.removeClass("is-short is-ok is-neutral");

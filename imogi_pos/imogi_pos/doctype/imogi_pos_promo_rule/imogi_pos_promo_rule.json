@@ -5,23 +5,36 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "identity_section",
   "promo_name",
+  "column_break_basic",
   "company",
   "is_active",
-  "column_break_main",
+  "type_section",
   "rule_type",
+  "condition_section",
   "min_qty",
+  "column_break_condition",
   "trigger_item_code",
   "trigger_item_group",
   "reward_section",
+  "reward_items",
   "reward_item_code",
   "reward_value",
   "validity_section",
   "valid_from",
+  "column_break_validity",
   "valid_upto",
-  "remarks"
+  "remarks",
+  "outlet_section",
+  "outlets"
  ],
  "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Informasi Promo"
+  },
   {
    "fieldname": "promo_name",
    "fieldtype": "Data",
@@ -29,6 +42,10 @@
    "label": "Nama Promo",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "company",
@@ -42,12 +59,14 @@
    "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Aktif"
+   "hidden": 1,
+   "label": "Aktif",
+   "read_only": 1
   },
   {
-   "fieldname": "column_break_main",
-   "fieldtype": "Column Break"
+   "fieldname": "type_section",
+   "fieldtype": "Section Break",
+   "label": "Tipe Promo"
   },
   {
    "default": "Buy X Get Y Free",
@@ -55,15 +74,25 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Tipe Rule",
-   "options": "Buy X Get Y Free\nBuy X Get Other Free\nQty Discount Percent",
+   "options": "Buy X Get Y Free\nBuy X Get Other Free\nQty Discount Percent\nQty Discount Amount",
    "reqd": 1
   },
   {
+   "fieldname": "condition_section",
+   "fieldtype": "Section Break",
+   "label": "Kondisi Trigger"
+  },
+  {
    "default": "2",
+   "description": "Beli X item → dapat 1 gratis. Mis. X=1: beli 1 dapat 1. X=2: beli 2 dapat 1.",
    "fieldname": "min_qty",
    "fieldtype": "Int",
-   "label": "Minimal Qty Trigger",
+   "label": "Qty Beli (X)",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_condition",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "trigger_item_code",
@@ -72,29 +101,29 @@
    "options": "Item"
   },
   {
-   "fieldname": "trigger_item_group",
-   "fieldtype": "Link",
-   "label": "Item Group Trigger",
-   "options": "Item Group"
-  },
-  {
    "fieldname": "reward_section",
    "fieldtype": "Section Break",
-   "label": "Reward"
+   "label": "Reward / Aksi"
   },
   {
-   "depends_on": "eval:doc.rule_type=='Buy X Get Other Free'",
+   "fieldname": "reward_items",
+   "fieldtype": "Table",
+   "label": "Item Reward",
+   "options": "IMOGI POS Promo Rule Reward"
+  },
+  {
+   "depends_on": "eval:0",
    "fieldname": "reward_item_code",
    "fieldtype": "Link",
-   "label": "Item Reward (gratis)",
-   "options": "Item"
+   "hidden": 1,
+   "label": "Item Reward (legacy)",
+   "options": "Item",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:doc.rule_type=='Qty Discount Percent'",
-   "description": "Persen diskon untuk item trigger.",
    "fieldname": "reward_value",
    "fieldtype": "Float",
-   "label": "Nilai Reward"
+   "label": "Diskon (%)"
   },
   {
    "fieldname": "validity_section",
@@ -107,6 +136,10 @@
    "label": "Berlaku Dari"
   },
   {
+   "fieldname": "column_break_validity",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "valid_upto",
    "fieldtype": "Date",
    "label": "Berlaku Sampai"
@@ -114,12 +147,24 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Catatan"
+   "hidden": 1,
+   "label": "Catatan Internal"
+  },
+  {
+   "fieldname": "outlet_section",
+   "fieldtype": "Section Break",
+   "label": "Outlet"
+  },
+  {
+   "fieldname": "outlets",
+   "fieldtype": "Table",
+   "label": "Outlet",
+   "options": "IMOGI POS Promo Rule Outlet"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-06-08 00:00:00.000000",
+ "modified": "2026-06-16 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Imogi POS",
  "name": "IMOGI POS Promo Rule",

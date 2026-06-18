@@ -181,6 +181,7 @@ def compute_checkout_totals(
 	customer=None,
 	company=None,
 	settings=None,
+	branch=None,
 ):
 	settings = settings or get_settings()
 	company = resolve_company(company, settings)
@@ -188,7 +189,7 @@ def compute_checkout_totals(
 
 	from imogi_pos.imogi_pos.utils.promo_rules import apply_promo_rules, serialize_applied_promos
 
-	promo_result = apply_promo_rules(items, company=company)
+	promo_result = apply_promo_rules(items, company=company, branch=branch)
 	items = promo_result["items"]
 	promo_discount = flt(promo_result["promo_discount"])
 

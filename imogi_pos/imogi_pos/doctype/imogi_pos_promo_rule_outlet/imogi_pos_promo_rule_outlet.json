@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-06-16 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "branch",
+  "branch_name",
+  "branch_code"
+ ],
+ "fields": [
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Outlet / Cabang",
+   "options": "IMOGI Branch",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "branch.branch_name",
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nama Cabang",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "branch.branch_code",
+   "fieldname": "branch_code",
+   "fieldtype": "Data",
+   "label": "Kode Cabang",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-16 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Promo Rule Outlet",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -33,6 +33,7 @@ def preview_promotions(
 	voucher_code=None,
 	loyalty_points_redeem=0,
 	company=None,
+	branch=None,
 ):
 	"""Preview totals with voucher + loyalty before checkout."""
 	_require_cashier_access()
@@ -46,6 +47,7 @@ def preview_promotions(
 		loyalty_points_redeem=cint(loyalty_points_redeem),
 		customer=customer,
 		company=company,
+		branch=branch,
 	)
 
 

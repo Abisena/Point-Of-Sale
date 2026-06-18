@@ -267,6 +267,7 @@ def create_gateway_payment(
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=customer,
 		company=branch_ctx["company"],
+		branch=branch_ctx.get("branch_code"),
 	)
 	amount = flt(totals["grand_total"])
 	if amount <= 0:

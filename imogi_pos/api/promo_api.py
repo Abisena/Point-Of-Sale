@@ -8,11 +8,11 @@ from imogi_pos.imogi_pos.utils.promo_rules import apply_promo_rules, is_promo_en
 
 
 @frappe.whitelist()
-def preview_cart_promos(items, company=None):
+def preview_cart_promos(items, company=None, branch=None):
 	"""Preview automatic promo rules for current cart."""
 	_require_cashier_access()
 	if not is_promo_enabled():
 		return {"enabled": False, "promo_discount": 0, "applied_promos": [], "items": []}
 	parsed = _parse_json(items, "items") or []
-	result = apply_promo_rules(parsed, company=company)
+	result = apply_promo_rules(parsed, company=company, branch=branch)
 	return {"enabled": True, **result}

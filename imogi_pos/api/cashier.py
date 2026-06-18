@@ -142,10 +142,11 @@ def _create_cashier_order(
 	loyalty_points_redeem=0,
 	offline_client_id=None,
 	restaurant_table=None,
+	branch=None,
 ):
 	"""Build and submit order without importing order._build_order (avoids stale worker signatures)."""
 	settings = get_settings()
-	branch_ctx = _resolve_cashier_branch(pos_profile=pos_profile)
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
 	pos_profile = branch_ctx["pos_profile"]
 	company = company or branch_ctx["company"]
 	default_warehouse = warehouse or branch_ctx["warehouse"]
@@ -165,6 +166,7 @@ def _create_cashier_order(
 		customer=customer,
 		company=company,
 		settings=settings,
+		branch=branch_ctx.get("branch_code"),
 	)
 
 	order = frappe.new_doc("Riwayat Order")
@@ -293,6 +295,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 	from imogi_pos.imogi_pos.utils.stamp_card import get_stamp_config, is_stamp_enabled
 	from imogi_pos.imogi_pos.utils.feature_registry import get_subscription_tier
 	from imogi_pos.imogi_pos.utils.marketplace import is_marketplace_enabled
+	from imogi_pos.imogi_pos.utils.transfer_payment import get_transfer_payment_config
 
 	branches = get_accessible_branches(company=branch_ctx["company"])
 	held = list_holds(pos_profile=pos_profile).get("holds") or []
@@ -312,6 +315,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 		"receipt_store_name": settings.default_company or branch_ctx["company"],
 		"payment_gateway_enabled": is_gateway_enabled(),
 		"payment_gateway_provider": settings.payment_gateway_provider or settings.payment_gateway or "",
+		"transfer_payment": get_transfer_payment_config(settings),
 		"loyalty_enabled": is_loyalty_enabled(settings),
 		"loyalty": get_loyalty_config(settings),
 		"enable_promo_rules": is_promo_enabled(settings),
@@ -459,6 +463,7 @@ def checkout(
 		customer=customer,
 		company=branch_ctx["company"],
 		settings=settings,
+		branch=branch_ctx.get("branch_code"),
 	)
 	discount_total = flt(checkout_totals.get("discount_amount"))
 	subtotal = flt(checkout_totals.get("subtotal"))
@@ -499,6 +504,7 @@ def checkout(
 			loyalty_points_redeem=loyalty_points_redeem,
 			offline_client_id=offline_client_id,
 			restaurant_table=restaurant_table,
+			branch=branch_ctx.get("branch_code"),
 		)
 	order.action_process_payment(silent=True)
 	order.reload()
