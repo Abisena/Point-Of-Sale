@@ -39,6 +39,7 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 	$(wrapper).find(".page-head").hide();
 	wrapper.cashier_page = new imogi_pos.CashierPage(page);
 	imogi_pos.active_cashier = wrapper.cashier_page;
+	imogi_pos.cashier_extras?.patch?.();
 	if (!imogi_pos._cashier_settings_listener) {
 		imogi_pos._cashier_settings_listener = true;
 		frappe.realtime.on("imogi_pos_settings_updated", () => {
@@ -963,6 +964,21 @@ function inject_cashier_css() {
 			display: flex; flex-direction: column; max-height: min(92vh, 880px); overflow: hidden;
 		}
 		.imogi-pay-dialog .modal-header { background: var(--imogi-pay-surface); border-bottom: 1px solid var(--imogi-pay-border); flex-shrink: 0; padding: 16px 20px 14px; }
+		.imogi-pay-tabs { background: #f4f4f5; border-radius: 10px; display: grid; gap: 4px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; padding: 4px; }
+		.imogi-pay-tab { background: transparent; border: none; border-radius: 8px; color: #71717a; cursor: pointer; font-size: 12px; font-weight: 700; min-height: 40px; padding: 8px 10px; touch-action: manipulation; transition: background .12s, color .12s, box-shadow .12s; }
+		.imogi-pay-tab:hover { color: var(--imogi-navy-800, #0f1f35); }
+		.imogi-pay-tab.is-active { background: #fff; box-shadow: 0 2px 8px rgba(7,17,31,.08); color: var(--imogi-navy-800, #0f1f35); }
+		.imogi-pay-tab-multi .imogi-pay-modes-wrap,
+		.imogi-pay-tab-multi .imogi-pay-detail-slot { display: none !important; }
+		.imogi-pay-tab-multi .imogi-pay-multi-wrap { display: block !important; margin-top: 0 !important; padding-top: 0 !important; border-top: none !important; }
+		.imogi-pay-tab-multi .imogi-pay-multi-toggle-wrap { display: none !important; }
+		.imogi-pay-tab-multi .imogi-pay-multi-panel { display: block !important; }
+		.imogi-pay-tab-split .imogi-pay-checkout-stack > .frappe-control { display: none !important; }
+		.imogi-pay-tab-split .imogi-pay-extras { display: none !important; }
+		.imogi-pay-tab-split .imogi-pay-split-panel { display: block !important; }
+		.imogi-pay-split-panel { display: none; }
+		.imogi-pay-split-item { align-items: center; background: var(--imogi-pay-surface-2, #f8fafc); border: 1px solid var(--imogi-pay-border); border-radius: 10px; cursor: pointer; display: flex; font-size: 13px; font-weight: 600; gap: 10px; margin-bottom: 8px; padding: 12px 14px; }
+		.imogi-pay-split-item input { flex-shrink: 0; margin: 0; }
 		.imogi-pay-dialog .modal-title { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
 		.imogi-pay-title-main { color: var(--imogi-navy-800, #0f1f35); font-size: 18px; font-weight: 800; }
 		.imogi-pay-title-sub { color: #71717a; font-size: 12px; font-weight: 500; }
@@ -4889,6 +4905,12 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	get_payment_discount_state(dialog) {
+		if (!dialog?.$wrapper?.length) {
+			return {
+				type: this.discount_type || "",
+				value: flt(this.discount_value),
+			};
+		}
 		const $wrap = dialog.$wrapper;
 		return {
 			type: $wrap.find(".imogi-pay-discount-type").val() || "",
@@ -5150,7 +5172,11 @@ imogi_pos.CashierPage = class CashierPage {
 
 	update_payment_primary_action(dialog, subtotal) {
 		const total = this.get_payment_total(dialog, subtotal);
-		dialog.set_primary_action_label(`${__("Selesaikan Pembayaran")} · ${format_currency(total)}`);
+		const label = `${__("Selesaikan Pembayaran")} · ${format_currency(total)}`;
+		const $btn = dialog.get_primary_btn?.();
+		if ($btn?.length) {
+			$btn.html(label);
+		}
 	}
 
 	setup_payment_shell(dialog) {
@@ -5261,6 +5287,146 @@ imogi_pos.CashierPage = class CashierPage {
 		);
 	}
 
+	build_payment_tabs_html(active = "single") {
+		const tabs = [
+			{ id: "single", label: __("Single Payment") },
+			{ id: "multi", label: __("Multi Payment") },
+			{ id: "split", label: __("Split Bill") },
+		];
+		return `<div class="imogi-pay-tabs" role="tablist">${tabs
+			.map(
+				(tab) =>
+					`<button type="button" class="imogi-pay-tab${active === tab.id ? " is-active" : ""}"
+					data-pay-tab="${tab.id}" role="tab">${tab.label}</button>`
+			)
+			.join("")}</div>`;
+	}
+
+	setup_payment_tabs(dialog, subtotal, initial_tab = "single") {
+		const me = this;
+		dialog._imogi_pay_tab = initial_tab || "single";
+		const $header = dialog.$wrapper.find(".modal-header");
+		$header.find(".imogi-pay-tabs").remove();
+		$header.append(this.build_payment_tabs_html(dialog._imogi_pay_tab));
+
+		$header.off("click.imogiPayTab").on("click.imogiPayTab", "[data-pay-tab]", function (e) {
+			e.preventDefault();
+			dialog._imogi_pay_tab = $(this).data("pay-tab");
+			$header.find(".imogi-pay-tab").removeClass("is-active");
+			$(this).addClass("is-active");
+			me.sync_payment_tab(dialog, subtotal);
+		});
+
+		this.sync_payment_tab(dialog, subtotal);
+	}
+
+	sync_payment_tab(dialog, subtotal) {
+		const tab = dialog._imogi_pay_tab || "single";
+		const $w = dialog.$wrapper;
+		const $header = $w.find(".modal-header");
+		$w.removeClass("imogi-pay-tab-single imogi-pay-tab-multi imogi-pay-tab-split");
+		$w.addClass(`imogi-pay-tab-${tab}`);
+
+		const $multiToggle = $w.find(".imogi-pay-multi-toggle");
+		if (tab === "multi") {
+			if (!this.feature_allowed("multi_payment")) {
+				this.require_feature("multi_payment");
+				dialog._imogi_pay_tab = "single";
+				$w.removeClass("imogi-pay-tab-multi").addClass("imogi-pay-tab-single");
+				$header.find(".imogi-pay-tab").removeClass("is-active");
+				$header.find('[data-pay-tab="single"]').addClass("is-active");
+				return;
+			}
+			$multiToggle.prop("checked", true);
+			$w.find(".imogi-pay-multi-panel").show();
+			if (!$w.find(".imogi-pay-multi-row").length) {
+				imogi_pos.cashier_extras.setup_multi_payment_ui(this);
+				$w.find(".imogi-pay-multi-toggle").prop("checked", true).trigger("change");
+			}
+		} else {
+			$multiToggle.prop("checked", false);
+			$w.find(".imogi-pay-multi-panel").hide();
+		}
+
+		if (tab === "split") {
+			if (!this.feature_allowed("split_bill")) {
+				this.require_feature("split_bill");
+				dialog._imogi_pay_tab = "single";
+				$w.removeClass("imogi-pay-tab-split").addClass("imogi-pay-tab-single");
+				$header.find(".imogi-pay-tab").removeClass("is-active");
+				$header.find('[data-pay-tab="single"]').addClass("is-active");
+				return;
+			}
+			this.render_payment_split_panel(dialog);
+			dialog.get_primary_btn?.()?.html(__("Bayar Item Terpilih"));
+		} else {
+			this.update_payment_primary_action(dialog, subtotal);
+		}
+
+		if (tab === "single") {
+			this.toggle_cash_fields(dialog, subtotal);
+		}
+	}
+
+	render_payment_split_panel(dialog) {
+		const $stack = dialog.$wrapper.find(".imogi-pay-checkout-stack");
+		let $panel = $stack.find(".imogi-pay-split-panel");
+		if (!$panel.length) {
+			$panel = $(`<div class="imogi-pay-split-panel imogi-pay-checkout-block"></div>`);
+			$stack.prepend($panel);
+		}
+		const rows = this.cart
+			.map(
+				(row, idx) => `<label class="imogi-pay-split-item">
+				<input type="checkbox" class="imogi-split-item" data-idx="${idx}" checked>
+				<span>${frappe.utils.escape_html(row.item_name)} × ${row.qty}</span>
+				<strong style="margin-left:auto">${format_currency(flt(row.rate) * flt(row.qty))}</strong>
+			</label>`
+			)
+			.join("");
+		$panel.html(`<div class="imogi-pay-block-title"><i class="fa fa-scissors"></i> ${__("Split Bill")}</div>
+			<p class="text-muted small">${__(
+				"Pilih item yang akan dibayar sekarang. Sisanya tetap di keranjang."
+			)}</p>${rows}`);
+	}
+
+	apply_split_selection_from_dialog(dialog) {
+		if (!this.require_feature("split_bill")) return false;
+		const picked = [];
+		const remain = [];
+		dialog.$wrapper.find(".imogi-split-item").each(function () {
+			const idx = cint($(this).data("idx"));
+			if ($(this).is(":checked")) picked.push(idx);
+			else remain.push(idx);
+		});
+		if (!picked.length) {
+			frappe.msgprint(__("Pilih minimal 1 item"));
+			return false;
+		}
+		const new_cart = picked.map((idx) => this.cart[idx]);
+		const rest = remain.map((idx) => this.cart[idx]);
+		this.cart = new_cart;
+		this.render_cart();
+		if (rest.length) {
+			this._split_remainder = rest;
+			const origClear = this.clear_cart_after_checkout;
+			this.clear_cart_after_checkout = function () {
+				origClear.call(this);
+				if (this._split_remainder && this._split_remainder.length) {
+					this.cart = this._split_remainder;
+					this._split_remainder = null;
+					this.render_cart();
+				}
+				this.clear_cart_after_checkout = origClear;
+			};
+			frappe.show_alert({
+				message: __("Setelah bayar, sisa {0} item bisa dilanjutkan", [rest.length]),
+				indicator: "blue",
+			});
+		}
+		return true;
+	}
+
 	setup_payment_layout(dialog) {}
 
 	is_landscape_layout() {
@@ -5276,7 +5442,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.finalize_payment_dialog_layout(dialog);
 	}
 
-	open_payment_dialog() {
+	open_payment_dialog(options = {}) {
 		if (!this.cart.length || this.busy) return;
 		this.close_mobile_cart();
 		if (this.enable_pos_shift && this.requires_shift_workflow && !this.pos_opening) {
@@ -5284,6 +5450,7 @@ imogi_pos.CashierPage = class CashierPage {
 			this.prompt_open_shift();
 			return;
 		}
+		const initial_tab = options.tab || "single";
 		this.payment_preview = null;
 		const subtotal = this.get_cart_subtotal();
 		const modes = (this.context.payment_modes || []).map((m) => m.mode_of_payment);
@@ -5365,6 +5532,15 @@ imogi_pos.CashierPage = class CashierPage {
 			primary_action_label: __("Bayar Sekarang"),
 			primary_action: (values) => {
 				if (me.busy) return;
+				if (dialog._imogi_pay_tab === "split") {
+					if (!me.apply_split_selection_from_dialog(dialog)) return;
+					dialog._imogi_pay_tab = "single";
+					const new_subtotal = me.get_cart_subtotal();
+					me.setup_payment_tabs(dialog, new_subtotal, "single");
+					me.refresh_payment_dialog(dialog, new_subtotal);
+					me.toggle_cash_fields(dialog, new_subtotal);
+					return;
+				}
 				const total = me.get_payment_total(dialog, subtotal);
 				const discount_state = me.get_payment_discount_state(dialog);
 				me.discount_type = discount_state.type;
@@ -5453,6 +5629,7 @@ imogi_pos.CashierPage = class CashierPage {
 		dialog.show();
 		this.setup_payment_shell(dialog);
 		this.setup_payment_header(dialog);
+		this.setup_payment_tabs(dialog, subtotal, initial_tab);
 		this.setup_payment_layout(dialog);
 		this.setup_payment_footer(dialog, subtotal);
 		this.setup_payment_mode_cards(dialog, subtotal);

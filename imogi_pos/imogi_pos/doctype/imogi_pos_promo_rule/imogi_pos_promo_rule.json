@@ -72,7 +72,6 @@
    "default": "Buy X Get Y Free",
    "fieldname": "rule_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Tipe Rule",
    "options": "Buy X Get Y Free\nBuy X Get Other Free\nQty Discount Percent\nQty Discount Amount",
    "reqd": 1

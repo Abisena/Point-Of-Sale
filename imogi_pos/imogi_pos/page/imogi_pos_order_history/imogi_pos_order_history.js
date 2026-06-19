@@ -1,8 +1,8 @@
 function inject_order_history_css() {
-	for (let v = 1; v <= 10; v += 1) {
+	for (let v = 1; v <= 14; v += 1) {
 		document.getElementById(`imogi-order-history-css-v${v}`)?.remove();
 	}
-	if (document.getElementById("imogi-order-history-css-v11")) return;
+	if (document.getElementById("imogi-order-history-css-v15")) return;
 	frappe.dom.set_style(
 		`
 		body.imogi-pos-themed:has(.imogi-pos-order-history),
@@ -130,10 +130,55 @@ function inject_order_history_css() {
 		.imogi-oh-action-btn { align-items: center; background: #fff; border: 1px solid #d4d4d8; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; height: 32px; justify-content: center; margin-left: 6px; width: 32px; }
 		.imogi-oh-action-btn:first-child { margin-left: 0; }
 		.imogi-oh-action-btn:hover { background: #f8fafc; border-color: #0f1f35; }
+		.imogi-oh-tabs { border-top: 1px solid #edf2f7; display: flex; flex-shrink: 0; gap: 8px; margin-top: 4px; padding: 14px 16px 12px; }
+		.imogi-oh-tab { background: #fff; border: 1px solid #d4d4d8; border-radius: 8px; color: #64748b; cursor: pointer; font-size: 12px; font-weight: 800; letter-spacing: .02em; min-height: 36px; padding: 0 16px; transition: background .15s, border-color .15s, color .15s; }
+		.imogi-oh-tab.is-active { background: #0f1f35; border-color: #0f1f35; color: #fff; }
+		.imogi-oh-tab:hover:not(.is-active) { background: #f8fafc; border-color: #94a3b8; color: #0f1f35; }
+		.imogi-oh-promo-badge { align-items: center; background: #ecfdf5; border-radius: 999px; color: #047857; display: inline-flex; font-size: 11px; font-weight: 800; gap: 4px; max-width: 180px; overflow: hidden; padding: 4px 10px; text-overflow: ellipsis; white-space: nowrap; }
+		.imogi-oh-promo-badge.is-empty { background: #f8fafc; color: #94a3b8; font-weight: 600; }
+		.imogi-oh-promo-amount { color: #047857; display: block; font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 700; margin-top: 2px; }
+		.imogi-oh-summary-kpi { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
+		.imogi-oh-summary-kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; }
+		.imogi-oh-summary-kpi-label { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+		.imogi-oh-summary-kpi-value { color: #0f1f35; font-size: 18px; font-variant-numeric: tabular-nums; font-weight: 800; margin-top: 4px; }
+		.imogi-oh-rank { align-items: center; background: #eff6ff; border-radius: 999px; color: #1d4ed8; display: inline-flex; font-size: 11px; font-weight: 800; height: 26px; justify-content: center; width: 26px; }
+		.imogi-oh-rank.is-top { background: #0f1f35; color: #fff; }
 		.imogi-oh-detail-tax-block { border-top: 1px dashed #d4d4d8; margin-top: 8px; padding-top: 8px; }
 		.imogi-oh-detail-tax-title { color: #71717a; font-size: 11px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
+		.imogi-oh-detail-dialog .modal-dialog { max-width: 980px !important; }
+		.imogi-oh-detail { align-items: stretch; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+		.imogi-oh-detail-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+		.imogi-oh-detail-card--payment .imogi-oh-detail-summary { flex: 1; }
+		.imogi-oh-detail-card--payment .imogi-oh-detail-grand { margin-top: auto !important; }
+		.imogi-oh-detail-card > .imogi-oh-detail-hero,
+		.imogi-oh-detail-card > .imogi-oh-detail-meta,
+		.imogi-oh-detail-card > .imogi-oh-detail-block,
+		.imogi-oh-detail-card > .imogi-oh-detail-summary {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-shadow: none !important;
+			margin: 0 !important;
+		}
+		.imogi-oh-detail-card > .imogi-oh-detail-grand {
+			background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-shadow: none !important;
+			margin: 0 !important;
+		}
+		.imogi-oh-detail-card > .imogi-oh-detail-hero,
+		.imogi-oh-detail-card > .imogi-oh-detail-meta,
+		.imogi-oh-detail-card--payment > .imogi-oh-detail-block,
+		.imogi-oh-detail-card--payment > .imogi-oh-detail-summary {
+			border-bottom: 1px solid #e2e8f0 !important;
+		}
+		@media (max-width: 860px) {
+			.imogi-oh-detail-dialog .modal-dialog { max-width: 720px !important; }
+			.imogi-oh-detail { grid-template-columns: 1fr; }
+		}
 		`,
-		"imogi-order-history-css-v11"
+		"imogi-order-history-css-v15"
 	);
 }
 
@@ -171,7 +216,7 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 	const $panel = $(`
 		<div class="imogi-web-panel">
 			<div class="imogi-web-panel-head">
-				<div class="imogi-web-panel-title">${__("Transaksi")}</div>
+				<div class="imogi-web-panel-title imogi-oh-panel-title">${__("Transaksi")}</div>
 				<div class="imogi-oh-toolbar">
 					<div class="imogi-oh-search-wrap">
 						<i class="fa fa-search imogi-oh-search-icon" aria-hidden="true"></i>
@@ -181,7 +226,7 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 						<i class="fa fa-calendar imogi-oh-date-icon" aria-hidden="true"></i>
 						<select class="imogi-oh-date-filter" aria-label="${__("Filter tanggal")}">
 							<option value="">${__("Semua Tanggal")}</option>
-							<option value="today">${__("Hari ini")}</option>
+							<option value="today" selected>${__("Hari ini")}</option>
 							<option value="yesterday">${__("Kemarin")}</option>
 							<option value="7days">${__("7 Hari Terakhir")}</option>
 						</select>
@@ -190,6 +235,11 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 						"Muat ulang"
 					)}</button>
 				</div>
+			</div>
+			<div class="imogi-oh-tabs" role="tablist">
+				<button type="button" class="imogi-oh-tab is-active" data-tab="orders" role="tab">${__("Transaksi")}</button>
+				<button type="button" class="imogi-oh-tab" data-tab="promo" role="tab">${__("Summary Promo")}</button>
+				<button type="button" class="imogi-oh-tab" data-tab="products" role="tab">${__("Produk Laku")}</button>
 			</div>
 			<div class="imogi-web-panel-body imogi-oh-body">
 				<div class="imogi-web-empty">${__("Memuat...")}</div>
@@ -202,6 +252,51 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 	let current_page = 1;
 	const page_size = 10;
 	let total_rows = 0;
+	let active_tab = "orders";
+
+	const tab_titles = {
+		orders: __("Transaksi"),
+		promo: __("Summary Promo"),
+		products: __("Produk Laku"),
+	};
+
+	const parse_applied_promo = (raw) => {
+		if (!raw) return [];
+		if (Array.isArray(raw)) return raw;
+		try {
+			const parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? parsed : [];
+		} catch (e) {
+			return [];
+		}
+	};
+
+	const promo_display_name = (promo) => {
+		if (!promo) return "";
+		const name = (promo.promo || "").trim();
+		if (name) return name;
+		const label = (promo.label || "").trim();
+		if (!label) return "";
+		const colon = label.indexOf(":");
+		return colon > 0 ? label.slice(0, colon).trim() : label;
+	};
+
+	const render_promo_cell = (row) => {
+		const amount = flt(row.promo_discount_amount);
+		if (amount <= 0) {
+			return `<span class="imogi-oh-promo-badge is-empty">—</span>`;
+		}
+		const promos = parse_applied_promo(row.applied_promo);
+		const label = promos.length
+			? promos
+					.map((p) => promo_display_name(p))
+					.filter(Boolean)
+					.join(", ")
+			: __("Promo");
+		return `<span class="imogi-oh-promo-badge" title="${frappe.utils.escape_html(label)}">${frappe.utils.escape_html(
+			label
+		)}</span>`;
+	};
 
 	const status_class = (status) => {
 		const key = String(status || "")
@@ -255,13 +350,18 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 			<div class="imogi-oh-detail-meta-value">${value}</div>
 		</div>`;
 
+	const promo_row_label = (promo) => {
+		const name = promo_display_name(promo);
+		return name ? `${__("Promo")} ${name}` : __("Promo");
+	};
+
 	const build_order_discount_rows = (order) => {
 		const rows = [];
-		const promo = flt(order.promo_discount_amount);
+		const promo_total = flt(order.promo_discount_amount);
 		const voucher = flt(order.voucher_discount_amount);
 		const loyalty = flt(order.loyalty_discount_amount);
 		const total_disc = flt(order.discount_amount);
-		const manual = Math.max(0, total_disc - promo - voucher - loyalty);
+		const manual = Math.max(0, total_disc - promo_total - voucher - loyalty);
 		const push = (label, amount) => {
 			if (flt(amount) <= 0) return;
 			rows.push(
@@ -270,7 +370,17 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 				)}</strong></div>`
 			);
 		};
-		push(__("Promo otomatis"), promo);
+		const promos = parse_applied_promo(order.applied_promo);
+		const promos_with_discount = promos.filter((p) => flt(p.discount) > 0);
+		if (promos_with_discount.length) {
+			promos_with_discount.forEach((p) => {
+				push(frappe.utils.escape_html(promo_row_label(p)), p.discount);
+			});
+		} else if (promo_total > 0) {
+			const names = promos.map((p) => promo_display_name(p)).filter(Boolean).join(", ");
+			const label = names ? `${__("Promo")} ${names}` : __("Promo");
+			push(frappe.utils.escape_html(label), promo_total);
+		}
 		push(__("Diskon"), manual);
 		push(
 			`${__("Voucher")}${order.voucher_code ? ` (${frappe.utils.escape_html(order.voucher_code)})` : ""}`,
@@ -360,53 +470,57 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 		const status_label = frappe.utils.escape_html(status || "—");
 
 		return `<div class="imogi-oh-detail">
-			<div class="imogi-oh-detail-hero">
-				<div>
-					<div class="imogi-oh-detail-order">${frappe.utils.escape_html(order.name || "")}</div>
-					<div class="imogi-oh-detail-subtitle">${frappe.datetime.str_to_user(order.creation)}</div>
+			<div class="imogi-oh-detail-card imogi-oh-detail-card--order">
+				<div class="imogi-oh-detail-hero">
+					<div>
+						<div class="imogi-oh-detail-order">${frappe.utils.escape_html(order.name || "")}</div>
+						<div class="imogi-oh-detail-subtitle">${frappe.datetime.str_to_user(order.creation)}</div>
+					</div>
+					<span class="imogi-oh-status ${status_class(status)}">${status_label}</span>
 				</div>
-				<span class="imogi-oh-status ${status_class(status)}">${status_label}</span>
-			</div>
-			<div class="imogi-oh-detail-meta">
-				${render_meta_item(__("Customer"), frappe.utils.escape_html(order.customer_name || order.customer || "—"))}
-				${render_meta_item(__("Kasir"), frappe.utils.escape_html(order.cashier_name || order.cashier || "—"))}
-				${render_meta_item(__("Tipe Order"), frappe.utils.escape_html(order.order_type || "—"))}
-				${render_meta_item(__("Channel"), frappe.utils.escape_html(order.order_channel || "—"))}
-				${render_meta_item(__("POS Invoice"), pos_invoice_html)}
-				${render_meta_item(__("Metode Bayar"), frappe.utils.escape_html(order.payment_method || payments.map((p) => p.mode_of_payment).filter(Boolean).join(", ") || "—"))}
-				${render_meta_item(__("Dibayar"), format_currency(order.paid_amount || 0))}
-				${render_meta_item(__("Shift / Profile"), frappe.utils.escape_html(order.pos_profile || "—"))}
-			</div>
-			<div class="imogi-oh-detail-block">
-				<div class="imogi-oh-detail-block-title">${__("Item")}</div>
-				<div class="imogi-oh-detail-table-wrap">
-					<table class="imogi-oh-detail-items">
-						<thead><tr>
-							<th>${__("Produk")}</th><th>${__("Qty")}</th><th>${__("Harga")}</th><th>${__("Subtotal")}</th>
-						</tr></thead>
-						<tbody>${item_rows}</tbody>
-					</table>
+				<div class="imogi-oh-detail-meta">
+					${render_meta_item(__("Customer"), frappe.utils.escape_html(order.customer_name || order.customer || "—"))}
+					${render_meta_item(__("Kasir"), frappe.utils.escape_html(order.cashier_name || order.cashier || "—"))}
+					${render_meta_item(__("Tipe Order"), frappe.utils.escape_html(order.order_type || "—"))}
+					${render_meta_item(__("Channel"), frappe.utils.escape_html(order.order_channel || "—"))}
+					${render_meta_item(__("POS Invoice"), pos_invoice_html)}
+					${render_meta_item(__("Metode Bayar"), frappe.utils.escape_html(order.payment_method || payments.map((p) => p.mode_of_payment).filter(Boolean).join(", ") || "—"))}
+					${render_meta_item(__("Dibayar"), format_currency(order.paid_amount || 0))}
+					${render_meta_item(__("Shift / Profile"), frappe.utils.escape_html(order.pos_profile || "—"))}
 				</div>
-			</div>
-			<div class="imogi-oh-detail-block">
-				<div class="imogi-oh-detail-block-title">${__("Pembayaran")}</div>
-				<div class="imogi-oh-detail-table-wrap">
-					<table class="imogi-oh-detail-items imogi-oh-detail-items--pay">
-						<thead><tr><th>${__("Metode")}</th><th>${__("Jumlah")}</th></tr></thead>
-						<tbody>${payment_rows}</tbody>
-					</table>
+				<div class="imogi-oh-detail-block">
+					<div class="imogi-oh-detail-block-title">${__("Item")}</div>
+					<div class="imogi-oh-detail-table-wrap">
+						<table class="imogi-oh-detail-items">
+							<thead><tr>
+								<th>${__("Produk")}</th><th>${__("Qty")}</th><th>${__("Harga")}</th><th>${__("Subtotal")}</th>
+							</tr></thead>
+							<tbody>${item_rows}</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
-			<div class="imogi-oh-detail-summary">
-				<div class="imogi-oh-detail-total-row"><span>${__("Subtotal")}</span><strong>${format_currency(
-					order.subtotal || 0
-				)}</strong></div>
-				${discount_rows.join("")}
-				${tax_rows}
-			</div>
-			<div class="imogi-oh-detail-grand">
-				<span>${__("Total Bayar")}</span>
-				<strong>${format_currency(order.grand_total || 0)}</strong>
+			<div class="imogi-oh-detail-card imogi-oh-detail-card--payment">
+				<div class="imogi-oh-detail-block">
+					<div class="imogi-oh-detail-block-title">${__("Pembayaran")}</div>
+					<div class="imogi-oh-detail-table-wrap">
+						<table class="imogi-oh-detail-items imogi-oh-detail-items--pay">
+							<thead><tr><th>${__("Metode")}</th><th>${__("Jumlah")}</th></tr></thead>
+							<tbody>${payment_rows}</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="imogi-oh-detail-summary">
+					<div class="imogi-oh-detail-total-row"><span>${__("Subtotal")}</span><strong>${format_currency(
+						order.subtotal || 0
+					)}</strong></div>
+					${discount_rows.join("")}
+					${tax_rows}
+				</div>
+				<div class="imogi-oh-detail-grand">
+					<span>${__("Total Bayar")}</span>
+					<strong>${format_currency(order.grand_total || 0)}</strong>
+				</div>
 			</div>
 		</div>`;
 	};
@@ -454,7 +568,7 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 		});
 	};
 
-	const load = (page_no = current_page) => {
+	const load_orders = (page_no = current_page) => {
 		current_page = page_no;
 		const search = ($panel.find(".imogi-oh-search").val() || "").trim();
 		const date_filter = ($panel.find(".imogi-oh-date-filter").val() || "").trim();
@@ -474,13 +588,13 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 				if (!rows.length) {
 					$panel.find(".imogi-oh-body").html(`<div class="imogi-web-empty">${__("Belum ada order")}</div>`);
 					const pag = imogi_pos.page_shell.render_pagination(current_page, total_rows, page_size);
-					$panel.find(".imogi-oh-pagination-host").html(pag.html);
+					$panel.find(".imogi-oh-pagination-host").html(pag.html).show();
 					return;
 				}
 				const html = [`<table class="imogi-web-table"><thead><tr>
 					<th>${__("Order")}</th><th>${__("Tanggal")}</th><th>${__("Kasir")}</th><th>${__("Customer")}</th>${
 					show_branch ? `<th>${__("Outlet")}</th>` : ""
-				}<th>${__("Total")}</th><th>${__("Metode Bayar")}</th><th>${__("Status")}</th><th class="imogi-oh-col-action">${__(
+				}<th>${__("Total")}</th><th>${__("Promo")}</th><th>${__("Metode Bayar")}</th><th>${__("Status")}</th><th class="imogi-oh-col-action">${__(
 					"Aksi"
 				)}</th>
 				</tr></thead><tbody>`];
@@ -493,6 +607,7 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 						<td>${frappe.utils.escape_html(row.customer_name || "-")}</td>
 						${show_branch ? `<td>${frappe.utils.escape_html(row.pos_profile || "-")}</td>` : ""}
 						<td>${format_currency(row.grand_total || 0)}</td>
+						<td>${render_promo_cell(row)}</td>
 						<td>${payment_label}</td>
 						<td><span class="imogi-oh-status ${status_class(row.status)}">${frappe.utils.escape_html(row.status || "")}</span></td>
 						<td class="imogi-oh-col-action">
@@ -513,9 +628,134 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 				$panel.find(".imogi-oh-body").html(html.join(""));
 
 				const pag = imogi_pos.page_shell.render_pagination(current_page, total_rows, page_size);
-				$panel.find(".imogi-oh-pagination-host").html(pag.html);
+				$panel.find(".imogi-oh-pagination-host").html(pag.html).show();
 			},
 		});
+	};
+
+	const load_promo_summary = () => {
+		const search = ($panel.find(".imogi-oh-search").val() || "").trim();
+		const date_filter = ($panel.find(".imogi-oh-date-filter").val() || "").trim();
+		const date_args = date_range_for_filter(date_filter);
+		frappe.call({
+			method: "imogi_pos.api.free_tier_api.get_order_history_promo_summary",
+			args: { search, ...date_args },
+			callback(r) {
+				const payload = r.message || {};
+				const rows = payload.rows || [];
+				view_mode = payload.view_mode || view_mode;
+				page.main.find(".imogi-web-hero p").first().text(subtitle_for_mode(view_mode));
+				const kpi = `<div class="imogi-oh-summary-kpi">
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("Transaksi pakai promo")}</div>
+						<div class="imogi-oh-summary-kpi-value">${payload.order_count || 0}</div>
+					</div>
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("Total diskon promo")}</div>
+						<div class="imogi-oh-summary-kpi-value">${format_currency(payload.total_discount || 0)}</div>
+					</div>
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("Jenis promo aktif")}</div>
+						<div class="imogi-oh-summary-kpi-value">${rows.length}</div>
+					</div>
+				</div>`;
+				if (!rows.length) {
+					$panel.find(".imogi-oh-body").html(
+						`${kpi}<div class="imogi-web-empty">${__("Belum ada transaksi dengan promo pada periode ini")}</div>`
+					);
+					$panel.find(".imogi-oh-pagination-host").hide();
+					return;
+				}
+				const html = [
+					kpi,
+					`<table class="imogi-web-table"><thead><tr>
+						<th>${__("Promo")}</th><th>${__("Transaksi")}</th><th>${__("Total Diskon")}</th>
+					</tr></thead><tbody>`,
+				];
+				rows.forEach((row) => {
+					html.push(`<tr>
+						<td>${frappe.utils.escape_html((row.promo || row.label || "—").split(":")[0].trim())}</td>
+						<td>${row.order_count || 0}</td>
+						<td>${format_currency(row.total_discount || 0)}</td>
+					</tr>`);
+				});
+				html.push("</tbody></table>");
+				$panel.find(".imogi-oh-body").html(html.join(""));
+				$panel.find(".imogi-oh-pagination-host").hide();
+			},
+		});
+	};
+
+	const load_product_sales = () => {
+		const search = ($panel.find(".imogi-oh-search").val() || "").trim();
+		const date_filter = ($panel.find(".imogi-oh-date-filter").val() || "").trim();
+		const date_args = date_range_for_filter(date_filter);
+		frappe.call({
+			method: "imogi_pos.api.free_tier_api.get_order_history_product_sales",
+			args: { search, limit: 20, ...date_args },
+			callback(r) {
+				const payload = r.message || {};
+				const rows = payload.rows || [];
+				view_mode = payload.view_mode || view_mode;
+				page.main.find(".imogi-web-hero p").first().text(subtitle_for_mode(view_mode));
+				const kpi = `<div class="imogi-oh-summary-kpi">
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("Produk terjual")}</div>
+						<div class="imogi-oh-summary-kpi-value">${flt(payload.total_qty || 0)}</div>
+					</div>
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("Omzet produk")}</div>
+						<div class="imogi-oh-summary-kpi-value">${format_currency(payload.total_sales || 0)}</div>
+					</div>
+					<div class="imogi-oh-summary-kpi-card">
+						<div class="imogi-oh-summary-kpi-label">${__("SKU unik")}</div>
+						<div class="imogi-oh-summary-kpi-value">${rows.length}</div>
+					</div>
+				</div>`;
+				if (!rows.length) {
+					$panel.find(".imogi-oh-body").html(
+						`${kpi}<div class="imogi-web-empty">${__("Belum ada produk terjual pada periode ini")}</div>`
+					);
+					$panel.find(".imogi-oh-pagination-host").hide();
+					return;
+				}
+				const html = [
+					kpi,
+					`<table class="imogi-web-table"><thead><tr>
+						<th>#</th><th>${__("Produk")}</th><th>${__("Qty Terjual")}</th><th>${__("Omzet")}</th><th>${__("Order")}</th>
+					</tr></thead><tbody>`,
+				];
+				rows.forEach((row, idx) => {
+					const rank_class = idx < 3 ? "is-top" : "";
+					html.push(`<tr>
+						<td><span class="imogi-oh-rank ${rank_class}">${idx + 1}</span></td>
+						<td>
+							<strong>${frappe.utils.escape_html(row.item_name || row.item_code || "—")}</strong>
+							<div style="color:#94a3b8;font-size:11px;margin-top:2px">${frappe.utils.escape_html(row.item_code || "")}</div>
+						</td>
+						<td>${flt(row.qty)}</td>
+						<td>${format_currency(row.sales || 0)}</td>
+						<td>${row.order_count || 0}</td>
+					</tr>`);
+				});
+				html.push("</tbody></table>");
+				$panel.find(".imogi-oh-body").html(html.join(""));
+				$panel.find(".imogi-oh-pagination-host").hide();
+			},
+		});
+	};
+
+	const load = (page_no = 1) => {
+		$panel.find(".imogi-oh-panel-title").text(tab_titles[active_tab] || __("Transaksi"));
+		if (active_tab === "promo") {
+			load_promo_summary();
+			return;
+		}
+		if (active_tab === "products") {
+			load_product_sales();
+			return;
+		}
+		load_orders(page_no);
 	};
 
 	$panel.on("click", ".imogi-oh-view-btn", function (e) {
@@ -531,13 +771,27 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 	});
 
 	$panel.find(".imogi-oh-refresh").on("click", () => load(1));
+	$panel.on("click", ".imogi-oh-tab", function () {
+		const tab = $(this).data("tab");
+		if (!tab || tab === active_tab) return;
+		active_tab = tab;
+		$panel.find(".imogi-oh-tab").removeClass("is-active");
+		$(this).addClass("is-active");
+		load(1);
+	});
 	$panel.find(".imogi-oh-search").on(
 		"input",
 		frappe.utils.debounce(() => load(1), 300)
 	);
 	$panel.find(".imogi-oh-date-filter").on("change", () => load(1));
-	$panel.on("click", ".imogi-web-page-prev:not([disabled])", () => load(current_page - 1));
-	$panel.on("click", ".imogi-web-page-next:not([disabled])", () => load(current_page + 1));
+	$panel.on("click", ".imogi-web-page-prev:not([disabled])", () => {
+		if (active_tab !== "orders") return;
+		load(current_page - 1);
+	});
+	$panel.on("click", ".imogi-web-page-next:not([disabled])", () => {
+		if (active_tab !== "orders") return;
+		load(current_page + 1);
+	});
 	page.main.find(".imogi-oh-logout-btn").on("click", () => imogi_pos.logout_cashier?.({ shift_active: true }));
 	load(1);
 };

@@ -89,6 +89,12 @@
   "payment_gateway",
   "payment_gateway_key",
   "payment_gateway_client_key",
+  "transfer_payment_section",
+  "enable_transfer_payment_info",
+  "transfer_bank_name",
+  "transfer_bank_account",
+  "transfer_account_holder",
+  "transfer_instructions",
   "api_section",
   "enable_order_api",
   "order_api_user",
@@ -638,6 +644,46 @@
    "fieldname": "payment_gateway_client_key",
    "fieldtype": "Data",
    "label": "Gateway Client Key"
+  },
+  {
+   "fieldname": "transfer_payment_section",
+   "fieldtype": "Section Break",
+   "label": "Transfer Bank"
+  },
+  {
+   "default": "0",
+   "description": "Tampilkan rekening bank di kasir saat pelanggan memilih metode Transfer.",
+   "fieldname": "enable_transfer_payment_info",
+   "fieldtype": "Check",
+   "label": "Aktifkan Info Rekening Transfer"
+  },
+  {
+   "depends_on": "eval:doc.enable_transfer_payment_info",
+   "fieldname": "transfer_bank_name",
+   "fieldtype": "Data",
+   "label": "Nama Bank",
+   "mandatory_depends_on": "eval:doc.enable_transfer_payment_info"
+  },
+  {
+   "depends_on": "eval:doc.enable_transfer_payment_info",
+   "fieldname": "transfer_bank_account",
+   "fieldtype": "Data",
+   "label": "Nomor Rekening",
+   "mandatory_depends_on": "eval:doc.enable_transfer_payment_info"
+  },
+  {
+   "depends_on": "eval:doc.enable_transfer_payment_info",
+   "fieldname": "transfer_account_holder",
+   "fieldtype": "Data",
+   "label": "Atas Nama",
+   "mandatory_depends_on": "eval:doc.enable_transfer_payment_info"
+  },
+  {
+   "depends_on": "eval:doc.enable_transfer_payment_info",
+   "description": "Catatan opsional untuk kasir / pelanggan (mis. konfirmasi via WhatsApp).",
+   "fieldname": "transfer_instructions",
+   "fieldtype": "Small Text",
+   "label": "Instruksi Transfer"
   },
   {
    "fieldname": "loyalty_section",

@@ -1,4 +1,4 @@
-// imogi-promo-ui-v12.2 — Reward tab terpisah dari Detail
+// imogi-promo-ui-v12.4 — diskon 2 baris vertikal + value kanan (v19)
 frappe.provide("imogi_pos.promo_rule");
 
 imogi_pos.promo_rule.TYPE_REGISTRY = [
@@ -131,9 +131,10 @@ let _cart_preview_seq = 0;
 const _item_rate_cache = new Map();
 
 function ensure_promo_rule_styles() {
-	["v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17"].forEach((v) =>
+	["v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19"].forEach((v) =>
 		document.getElementById(`imogi-promo-rule-css-${v}`)?.remove()
 	);
+	document.getElementById("imogi-promo-rule-css-v20")?.remove();
 	frappe.dom.set_style(
 		`
 		.imogi-promo-rule-page .page-head { display: none !important; }
@@ -439,55 +440,172 @@ function ensure_promo_rule_styles() {
 			display: none;
 		}
 		.imogi-promo-discount-mode {
-			background: #f3f4f6;
-			border-radius: 6px;
-			display: inline-flex;
-			gap: 2px;
-			padding: 3px;
+			display: none;
 		}
-		.imogi-promo-discount-mode-btn {
+		.imogi-promo-discount-rows {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			max-width: 420px;
+		}
+		.imogi-promo-discount-row {
 			align-items: center;
+			background: #f9fafb;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			display: grid;
+			gap: 10px;
+			grid-template-columns: minmax(108px, 132px) minmax(0, 1fr);
+			min-height: 42px;
+			padding: 6px 8px 6px 6px;
+			transition: border-color .12s, background .12s, box-shadow .12s;
+		}
+		.imogi-promo-discount-row.is-active {
+			background: #fff;
+			border-color: #0f1f35;
+			box-shadow: 0 0 0 1px rgba(15, 31, 53, 0.08);
+		}
+		.imogi-promo-discount-row-choice {
+			align-items: flex-start;
 			background: transparent;
 			border: none;
-			border-radius: 4px;
+			border-radius: 6px;
 			color: #6b7280;
 			cursor: pointer;
-			display: inline-flex;
+			display: flex;
 			flex-direction: column;
-			font-size: 12px;
-			font-weight: 700;
+			font-size: 11px;
+			font-weight: 600;
 			gap: 1px;
 			justify-content: center;
-			line-height: 1.2;
-			min-width: 76px;
-			padding: 8px 10px;
-			transition: background .12s, color .12s, box-shadow .12s;
+			line-height: 1.25;
+			min-height: 34px;
+			padding: 6px 8px;
+			text-align: left;
+			transition: background .12s, color .12s;
 		}
-		.imogi-promo-discount-mode-btn span {
-			font-size: 14px;
+		.imogi-promo-discount-row.is-active .imogi-promo-discount-row-choice {
+			color: #0f1f35;
+		}
+		.imogi-promo-discount-row-choice span {
+			font-size: 13px;
 			font-weight: 800;
+			line-height: 1.2;
 		}
-		.imogi-promo-discount-mode-btn small {
-			font-size: 9px;
+		.imogi-promo-discount-row-choice small {
+			font-size: 10px;
 			font-weight: 600;
-			letter-spacing: .02em;
-			opacity: .85;
+			opacity: .88;
 		}
-		.imogi-promo-discount-mode-btn:hover {
-			background: rgba(255,255,255,.55);
-			color: #0f1f35;
+		.imogi-promo-discount-row-choice:hover {
+			background: rgba(255, 255, 255, 0.7);
 		}
-		.imogi-promo-discount-mode-btn.is-active {
-			background: #fff;
-			box-shadow: 0 1px 3px rgba(15,31,53,.12);
-			color: #0f1f35;
+		.imogi-promo-discount-row-value {
+			align-items: center;
+			display: flex;
+			justify-content: flex-end;
+			min-height: 34px;
+			min-width: 0;
+		}
+		.imogi-promo-discount-row-value.is-inactive {
+			opacity: 0.45;
+			pointer-events: none;
+		}
+		.imogi-promo-discount-row-value.is-inactive:empty::after {
+			background: #f3f4f6;
+			border: 1px dashed #d1d5db;
+			border-radius: 6px;
+			color: #9ca3af;
+			content: "—";
+			display: block;
+			font-size: 12px;
+			font-weight: 600;
+			height: 34px;
+			line-height: 34px;
+			text-align: center;
+			width: 100%;
+			max-width: 148px;
+		}
+		.imogi-promo-discount-row-value .imogi-promo-discount-value-control,
+		.imogi-promo-discount-row-value .frappe-control[data-fieldname="reward_value"] {
+			display: block !important;
+			margin-bottom: 0 !important;
+			max-width: 148px;
+			opacity: 1 !important;
+			visibility: visible !important;
+			width: 100%;
+		}
+		.imogi-promo-discount-value-control {
+			margin-bottom: 0 !important;
+			max-width: 148px;
+			width: 100%;
+		}
+		.imogi-promo-discount-value-control .control-label {
+			display: none !important;
+		}
+		.imogi-promo-discount-value-control .form-group {
+			margin-bottom: 0 !important;
+		}
+		.imogi-promo-discount-value-control .control-input-wrapper {
+			position: relative;
+		}
+		.imogi-promo-discount-value-control .form-control {
+			display: block !important;
+			font-size: 13px !important;
+			font-weight: 600;
+			height: 34px !important;
+			min-height: 34px !important;
+			padding: 6px 10px !important;
+			visibility: visible !important;
+			width: 100% !important;
+		}
+		.imogi-promo-discount-native-input {
+			border: 1px solid #d1d5db;
+			border-radius: 6px;
+			font-size: 13px;
+			font-weight: 600;
+			height: 34px;
+			max-width: 148px;
+			padding: 6px 10px;
+			text-align: right;
+			width: 100%;
+		}
+		.imogi-promo-discount-row.is-percent .imogi-promo-discount-value-control .form-control {
+			padding-right: 26px !important;
+			text-align: right;
+		}
+		.imogi-promo-discount-row.is-percent .imogi-promo-discount-value-control .control-input-wrapper::after {
+			color: #6b7280;
+			content: "%";
+			font-size: 11px;
+			font-weight: 700;
+			pointer-events: none;
+			position: absolute;
+			right: 10px;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+		.imogi-promo-discount-row.is-amount .imogi-promo-discount-value-control .form-control {
+			padding-left: 30px !important;
+			text-align: right;
+		}
+		.imogi-promo-discount-row.is-amount .imogi-promo-discount-value-control .control-input-wrapper::before {
+			color: #6b7280;
+			content: "Rp";
+			font-size: 10px;
+			font-weight: 700;
+			left: 10px;
+			pointer-events: none;
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
 		}
 		.imogi-promo-tab-pane-reward,
 		.imogi-promo-tab-pane-outlet {
 			padding: 0;
 		}
 		.imogi-promo-discount-block {
-			max-width: 480px;
+			max-width: 440px;
 		}
 		.imogi-promo-discount-panel-intro {
 			display: none;
@@ -505,56 +623,18 @@ function ensure_promo_rule_styles() {
 			margin-top: 4px;
 		}
 		.imogi-promo-discount-panel-body {
-			align-items: end;
-			display: grid;
-			gap: 14px 20px;
-			grid-template-columns: 168px minmax(0, 220px);
+			display: block;
+			margin-top: 10px;
 		}
 		.imogi-promo-discount-field-label {
 			color: #4b5563;
 			display: block;
 			font-size: 11px;
 			font-weight: 600;
-			margin-bottom: 6px;
+			margin-bottom: 8px;
 		}
-		.imogi-promo-discount-value-control {
-			margin-bottom: 0 !important;
-		}
-		.imogi-promo-discount-value-control .control-label {
-			display: none !important;
-		}
-		.imogi-promo-discount-value-control .control-input-wrapper {
-			position: relative;
-		}
-		.imogi-promo-discount-value-field.is-percent .imogi-promo-discount-value-control .form-control {
-			padding-right: 28px !important;
-		}
-		.imogi-promo-discount-value-field.is-percent .imogi-promo-discount-value-control .control-input-wrapper::after {
-			color: #6b7280;
-			content: "%";
-			font-size: 12px;
-			font-weight: 700;
-			pointer-events: none;
-			position: absolute;
-			right: 10px;
-			top: 50%;
-			transform: translateY(-50%);
-		}
-		.imogi-promo-discount-value-field.is-amount .imogi-promo-discount-value-control .form-control {
-			padding-left: 34px !important;
-		}
-		.imogi-promo-discount-value-field.is-amount .imogi-promo-discount-value-control .control-input-wrapper::before {
-			color: #6b7280;
-			content: "Rp";
-			font-size: 11px;
-			font-weight: 700;
-			left: 10px;
-			pointer-events: none;
-			position: absolute;
-			top: 50%;
-			transform: translateY(-50%);
-		}
-		.imogi-promo-reward-frappe-host:empty {
+		.imogi-promo-reward-frappe-host .frappe-control[data-fieldname="reward_value"],
+		.imogi-promo-reward-frappe-host .frappe-control[data-fieldname="reward_items"] {
 			display: none !important;
 		}
 
@@ -1062,8 +1142,18 @@ function ensure_promo_rule_styles() {
 				max-height: none;
 				min-height: 68px;
 			}
-			.imogi-promo-discount-panel-body {
+			.imogi-promo-discount-rows {
+				max-width: none;
+			}
+			.imogi-promo-discount-row {
 				grid-template-columns: 1fr;
+				padding: 8px;
+			}
+			.imogi-promo-discount-row-value {
+				justify-content: stretch;
+			}
+			.imogi-promo-discount-value-control {
+				max-width: none;
 			}
 			.imogi-promo-discount-block {
 				max-width: none;
@@ -1075,7 +1165,7 @@ function ensure_promo_rule_styles() {
 			}
 		}
 		`,
-		"imogi-promo-rule-css-v17"
+		"imogi-promo-rule-css-v20"
 	);
 }
 
@@ -1476,12 +1566,56 @@ function toggle_promo_rule_sections(frm) {
 
 	frm.fields_dict.reward_items?.$wrapper?.hide();
 	frm.fields_dict.reward_value?.$wrapper?.hide();
+	frm.toggle_display("reward_value", false);
+	frm.toggle_display("reward_items", false);
 
-	frm.toggle_display("reward_value", is_discount_rule_type(rule_type));
 	frm.toggle_reqd("reward_items", rule_type === "Buy X Get Other Free");
 	frm.toggle_reqd("reward_value", is_discount_rule_type(rule_type));
 
 	collapse_empty_columns(frm);
+}
+
+function mount_discount_value_field(frm, $host, is_percent) {
+	if (!$host?.length) return false;
+
+	const field = frm.fields_dict.reward_value;
+	const $wrapper = field?.$wrapper;
+
+	if ($wrapper?.length && $wrapper.find("input").length) {
+		frm.set_df_property("reward_value", "hidden", 0);
+		if (field.df) field.df.hidden = 0;
+		$wrapper
+			.detach()
+			.appendTo($host)
+			.removeClass("hide")
+			.show()
+			.css({ display: "block", marginBottom: 0, width: "100%", maxWidth: "148px" })
+			.addClass("imogi-promo-discount-value-control");
+		$wrapper.find(".control-label, .help-box").hide();
+		const $input = $wrapper.find("input").first();
+		$input
+			.prop("readonly", false)
+			.prop("disabled", false)
+			.removeClass("hide")
+			.show()
+			.css({ display: "block", width: "100%" })
+			.attr("placeholder", is_percent ? __("mis. 10") : __("mis. 5000"));
+		field.toggle?.(true);
+		return true;
+	}
+
+	$host.find(".imogi-promo-discount-native-input").remove();
+	const $native = $(
+		`<input type="number" min="0" step="${is_percent ? "0.01" : "1"}"
+			class="form-control imogi-promo-discount-native-input"
+			placeholder="${is_percent ? __("mis. 10") : __("mis. 5000")}" />`
+	);
+	$native.val(flt(frm.doc.reward_value) || "");
+	$native.on("input change", function () {
+		frm.set_value("reward_value", flt($(this).val()));
+	});
+	$host.append($native);
+	return true;
 }
 
 function render_rewards_column(frm) {
@@ -1511,56 +1645,39 @@ function render_rewards_column(frm) {
 					"Diskon otomatis diterapkan di kasir saat syarat trigger terpenuhi."
 				)}</div>
 				<div class="imogi-promo-discount-panel-body">
-					<div class="imogi-promo-discount-field">
-						<label class="imogi-promo-discount-field-label">${__("Jenis diskon")}</label>
-						<div class="imogi-promo-discount-mode" role="group" aria-label="${__("Jenis diskon")}">
-							<button type="button" class="imogi-promo-discount-mode-btn ${
-								is_percent ? "is-active" : ""
-							}" data-rule-type="Qty Discount Percent">
+					<label class="imogi-promo-discount-field-label">${__("Jenis diskon")}</label>
+					<div class="imogi-promo-discount-rows" role="group" aria-label="${__("Jenis diskon")}"
+						style="display:flex;flex-direction:column;gap:8px;max-width:420px">
+						<div class="imogi-promo-discount-row is-percent${is_percent ? " is-active" : ""}" data-rule-type="Qty Discount Percent"
+							style="display:grid;grid-template-columns:minmax(108px,132px) minmax(0,1fr);gap:10px;align-items:center;min-height:42px;padding:6px 8px 6px 6px;border:1px solid ${is_percent ? "#0f1f35" : "#e5e7eb"};border-radius:8px;background:${is_percent ? "#fff" : "#f9fafb"}">
+							<button type="button" class="imogi-promo-discount-row-choice">
 								<span>%</span>
 								<small>${__("Persen")}</small>
 							</button>
-							<button type="button" class="imogi-promo-discount-mode-btn ${
-								!is_percent ? "is-active" : ""
-							}" data-rule-type="Qty Discount Amount">
+							<div class="imogi-promo-discount-row-value${is_percent ? "" : " is-inactive"}"></div>
+						</div>
+						<div class="imogi-promo-discount-row is-amount${!is_percent ? " is-active" : ""}" data-rule-type="Qty Discount Amount"
+							style="display:grid;grid-template-columns:minmax(108px,132px) minmax(0,1fr);gap:10px;align-items:center;min-height:42px;padding:6px 8px 6px 6px;border:1px solid ${!is_percent ? "#0f1f35" : "#e5e7eb"};border-radius:8px;background:${!is_percent ? "#fff" : "#f9fafb"}">
+							<button type="button" class="imogi-promo-discount-row-choice">
 								<span>Rp</span>
 								<small>${__("Nominal")}</small>
 							</button>
+							<div class="imogi-promo-discount-row-value${!is_percent ? "" : " is-inactive"}"></div>
 						</div>
-					</div>
-					<div class="imogi-promo-discount-field imogi-promo-discount-value-field ${
-						is_percent ? "is-percent" : "is-amount"
-					}">
-						<label class="imogi-promo-discount-field-label">${
-							is_percent ? __("Diskon (%)") : __("Diskon (Rp)")
-						}</label>
-						<div class="imogi-promo-discount-value-host"></div>
 					</div>
 				</div>
 			</div>
 		`);
 		$mount.append($panel);
-		$panel.find(".imogi-promo-discount-mode-btn").on("click", function () {
+		$panel.find(".imogi-promo-discount-row").on("click", function (e) {
+			if ($(e.target).closest("input, .form-control").length) return;
 			const value = $(this).data("rule-type");
 			if (!value || value === frm.doc.rule_type) return;
 			frm.set_value("rule_type", value);
 		});
 
-		const $field = frm.fields_dict.reward_value?.$wrapper;
-		if ($field?.length) {
-			$field
-				.detach()
-				.appendTo($panel.find(".imogi-promo-discount-value-host"))
-				.show()
-				.addClass("imogi-promo-discount-value-control");
-			const $input = $field.find("input");
-			if ($input.length) {
-				$input.attr(
-					"placeholder",
-					is_percent ? __("mis. 10") : __("mis. 5000")
-				);
-			}
-		} else {
+		const $activeHost = $panel.find(".imogi-promo-discount-row.is-active .imogi-promo-discount-row-value").first();
+		if (!mount_discount_value_field(frm, $activeHost, is_percent)) {
 			$mount.append(`<div class="imogi-promo-reward-empty">${__("Field diskon tidak tersedia.")}</div>`);
 		}
 		frm.$wrapper.find(".imogi-promo-reward-frappe-host").hide();

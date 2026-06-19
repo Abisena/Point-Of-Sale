@@ -1,0 +1,1175 @@
+/* IMOGI POS — Enterprise Payment Modal v1 */
+
+:root {
+	--paym-space-1: 4px;
+	--paym-space-2: 8px;
+	--paym-space-3: 12px;
+	--paym-space-4: 16px;
+	--paym-space-5: 20px;
+	--paym-space-6: 24px;
+	--paym-space-8: 32px;
+	--paym-radius-sm: 8px;
+	--paym-radius-md: 12px;
+	--paym-radius-lg: 16px;
+	--paym-navy-900: #07111f;
+	--paym-navy-800: #0f1f35;
+	--paym-navy-700: #1a3352;
+	--paym-green-600: #16a34a;
+	--paym-green-50: #f0fdf4;
+	--paym-orange-600: #ea580c;
+	--paym-orange-50: #fff7ed;
+	--paym-blue-600: #2563eb;
+	--paym-blue-50: #eff6ff;
+	--paym-red-600: #dc2626;
+	--paym-surface: #ffffff;
+	--paym-surface-2: #f8fafc;
+	--paym-surface-3: #f1f5f9;
+	--paym-border: #e2e8f0;
+	--paym-border-strong: #cbd5e1;
+	--paym-text: #0f172a;
+	--paym-text-muted: #64748b;
+	--paym-text-subtle: #94a3b8;
+	--paym-shadow: 0 24px 64px rgba(7, 17, 31, 0.18);
+	--paym-shadow-sm: 0 4px 16px rgba(7, 17, 31, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+	.imogi-paym-overlay:not(.is-light) {
+		--paym-surface: #111827;
+		--paym-surface-2: #0f172a;
+		--paym-surface-3: #1e293b;
+		--paym-border: #334155;
+		--paym-border-strong: #475569;
+		--paym-text: #f8fafc;
+		--paym-text-muted: #94a3b8;
+		--paym-text-subtle: #64748b;
+		--paym-green-50: rgba(22, 163, 74, 0.12);
+		--paym-orange-50: rgba(234, 88, 12, 0.12);
+		--paym-blue-50: rgba(37, 99, 235, 0.12);
+		--paym-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+	}
+}
+
+body.imogi-paym-open {
+	overflow: hidden;
+}
+
+.imogi-paym-overlay {
+	align-items: center;
+	background: rgba(7, 17, 31, 0.58);
+	backdrop-filter: blur(4px);
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	padding: var(--paym-space-4);
+	position: fixed;
+	z-index: 1070;
+}
+
+.imogi-paym-modal {
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-lg);
+	box-shadow: var(--paym-shadow);
+	display: flex;
+	flex-direction: column;
+	max-height: min(92vh, 860px);
+	max-width: min(1120px, 96vw);
+	overflow: hidden;
+	width: 100%;
+}
+
+/* Header */
+.imogi-paym-header {
+	background: var(--paym-surface);
+	border-bottom: 1px solid var(--paym-border);
+	flex-shrink: 0;
+	padding: var(--paym-space-4) var(--paym-space-5);
+}
+
+.imogi-paym-header-top {
+	align-items: flex-start;
+	display: flex;
+	gap: var(--paym-space-4);
+	justify-content: space-between;
+	margin-bottom: var(--paym-space-4);
+}
+
+.imogi-paym-title-block h2 {
+	color: var(--paym-text);
+	font-size: 20px;
+	font-weight: 800;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.imogi-paym-title-block p {
+	color: var(--paym-text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	margin: var(--paym-space-1) 0 0;
+}
+
+.imogi-paym-close {
+	align-items: center;
+	background: var(--paym-surface-3);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-text-muted);
+	cursor: pointer;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 16px;
+	height: 36px;
+	justify-content: center;
+	transition: background 0.12s, color 0.12s;
+	width: 36px;
+}
+
+.imogi-paym-close:hover {
+	background: var(--paym-surface-2);
+	color: var(--paym-text);
+}
+
+/* Segmented tabs */
+.imogi-paym-tabs {
+	background: var(--paym-surface-3);
+	border-radius: var(--paym-radius-md);
+	display: grid;
+	gap: var(--paym-space-1);
+	grid-template-columns: repeat(3, 1fr);
+	padding: var(--paym-space-1);
+}
+
+.imogi-paym-tab {
+	background: transparent;
+	border: none;
+	border-radius: 10px;
+	color: var(--paym-text-muted);
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 700;
+	min-height: 44px;
+	padding: var(--paym-space-2) var(--paym-space-3);
+	touch-action: manipulation;
+	transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+}
+
+.imogi-paym-tab:hover {
+	color: var(--paym-text);
+}
+
+.imogi-paym-tab.is-active {
+	background: var(--paym-surface);
+	box-shadow: var(--paym-shadow-sm);
+	color: var(--paym-navy-800);
+}
+
+@media (prefers-color-scheme: dark) {
+	.imogi-paym-overlay:not(.is-light) .imogi-paym-tab.is-active {
+		color: #f8fafc;
+	}
+}
+
+.imogi-paym-tab kbd {
+	background: var(--paym-surface-3);
+	border-radius: 4px;
+	color: var(--paym-text-subtle);
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	margin-left: 6px;
+	padding: 2px 5px;
+}
+
+/* Body layout */
+.imogi-paym-body {
+	display: grid;
+	flex: 1;
+	grid-template-columns: 300px 1fr;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.imogi-paym-summary {
+	background: var(--paym-surface);
+	border-right: 1px solid var(--paym-border);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.imogi-paym-summary-inner {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--paym-space-3);
+	min-height: 0;
+	overflow-y: auto;
+	padding: var(--paym-space-5);
+}
+
+.imogi-paym-summary-sticky {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+}
+
+.imogi-paym-kpi {
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	padding: var(--paym-space-3) var(--paym-space-4);
+}
+
+.imogi-paym-kpi-label {
+	color: var(--paym-text-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	margin-bottom: var(--paym-space-1);
+	text-transform: uppercase;
+}
+
+.imogi-paym-kpi-value {
+	color: var(--paym-text);
+	font-size: 22px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+.imogi-paym-kpi-value.is-lg {
+	font-size: 28px;
+}
+
+.imogi-paym-kpi.is-total {
+	background: linear-gradient(135deg, var(--paym-navy-800) 0%, var(--paym-navy-700) 100%);
+	border-color: transparent;
+}
+
+.imogi-paym-kpi.is-total .imogi-paym-kpi-label {
+	color: rgba(255, 255, 255, 0.72);
+}
+
+.imogi-paym-kpi.is-total .imogi-paym-kpi-value {
+	color: #fff;
+}
+
+.imogi-paym-kpi.is-paid .imogi-paym-kpi-value {
+	color: var(--paym-green-600);
+}
+
+.imogi-paym-kpi.is-remaining .imogi-paym-kpi-value {
+	color: var(--paym-orange-600);
+}
+
+.imogi-paym-kpi.is-change .imogi-paym-kpi-value {
+	color: var(--paym-blue-600);
+}
+
+.imogi-paym-kpi.is-change.is-visible {
+	background: var(--paym-blue-50);
+	border-color: rgba(37, 99, 235, 0.25);
+}
+
+.imogi-paym-content {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.imogi-paym-content-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: var(--paym-space-5);
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Cards & blocks */
+.imogi-paym-card {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	margin-bottom: var(--paym-space-4);
+	overflow: hidden;
+}
+
+.imogi-paym-card-head {
+	align-items: center;
+	border-bottom: 1px solid var(--paym-border);
+	display: flex;
+	gap: var(--paym-space-2);
+	justify-content: space-between;
+	padding: var(--paym-space-3) var(--paym-space-4);
+}
+
+.imogi-paym-card-title {
+	color: var(--paym-text);
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	margin: 0;
+}
+
+.imogi-paym-card-body {
+	padding: var(--paym-space-4);
+}
+
+/* Payment allocation table */
+.imogi-paym-table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.imogi-paym-table th {
+	border-bottom: 1px solid var(--paym-border);
+	color: var(--paym-text-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	padding: var(--paym-space-2) var(--paym-space-3);
+	text-align: left;
+	text-transform: uppercase;
+}
+
+.imogi-paym-table td {
+	border-bottom: 1px solid var(--paym-border);
+	color: var(--paym-text);
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+	padding: var(--paym-space-3);
+	vertical-align: middle;
+}
+
+.imogi-paym-table tr:last-child td {
+	border-bottom: none;
+}
+
+.imogi-paym-table .col-amount {
+	font-weight: 800;
+	text-align: right;
+}
+
+.imogi-paym-table .col-status {
+	text-align: center;
+	width: 88px;
+}
+
+.imogi-paym-table .col-action {
+	text-align: center;
+	width: 48px;
+}
+
+.imogi-paym-status {
+	border-radius: 999px;
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 10px;
+}
+
+.imogi-paym-status.is-added {
+	background: var(--paym-green-50);
+	color: var(--paym-green-600);
+}
+
+.imogi-paym-method-cell {
+	align-items: center;
+	display: flex;
+	font-weight: 700;
+	gap: var(--paym-space-2);
+}
+
+.imogi-paym-method-icon {
+	align-items: center;
+	background: var(--paym-surface-3);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-text-muted);
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 13px;
+	height: 32px;
+	justify-content: center;
+	width: 32px;
+}
+
+.imogi-paym-remove {
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+	color: var(--paym-text-subtle);
+	cursor: pointer;
+	font-size: 14px;
+	height: 32px;
+	transition: background 0.12s, color 0.12s;
+	width: 32px;
+}
+
+.imogi-paym-remove:hover {
+	background: rgba(220, 38, 38, 0.08);
+	color: var(--paym-red-600);
+}
+
+.imogi-paym-empty-row td {
+	color: var(--paym-text-subtle);
+	font-size: 13px;
+	font-style: italic;
+	padding: var(--paym-space-6) var(--paym-space-3);
+	text-align: center;
+}
+
+/* Payment method cards grid */
+.imogi-paym-methods-grid {
+	display: grid;
+	gap: var(--paym-space-2);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.imogi-paym-method-card {
+	align-items: center;
+	background: var(--paym-surface);
+	border: 2px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: var(--paym-space-2);
+	justify-content: center;
+	min-height: 88px;
+	padding: var(--paym-space-3);
+	touch-action: manipulation;
+	transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.imogi-paym-method-card:hover {
+	border-color: var(--paym-border-strong);
+}
+
+.imogi-paym-method-card.is-active {
+	background: var(--paym-blue-50);
+	border-color: var(--paym-blue-600);
+	box-shadow: 0 0 0 1px var(--paym-blue-600);
+}
+
+.imogi-paym-method-card-icon {
+	align-items: center;
+	background: var(--paym-surface-3);
+	border-radius: 10px;
+	color: var(--paym-navy-800);
+	display: inline-flex;
+	font-size: 18px;
+	height: 40px;
+	justify-content: center;
+	width: 40px;
+}
+
+.imogi-paym-method-card.is-active .imogi-paym-method-card-icon {
+	background: var(--paym-blue-600);
+	color: #fff;
+}
+
+.imogi-paym-method-card-label {
+	color: var(--paym-text);
+	font-size: 12px;
+	font-weight: 700;
+	text-align: center;
+}
+
+/* Amount input panel */
+.imogi-paym-amount-panel {
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	margin-top: var(--paym-space-4);
+	padding: var(--paym-space-4);
+}
+
+.imogi-paym-amount-panel-head {
+	align-items: center;
+	display: flex;
+	gap: var(--paym-space-3);
+	justify-content: space-between;
+	margin-bottom: var(--paym-space-3);
+}
+
+.imogi-paym-amount-panel-head strong {
+	color: var(--paym-text);
+	font-size: 14px;
+	font-weight: 800;
+}
+
+.imogi-paym-amount-display {
+	background: var(--paym-surface);
+	border: 2px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	color: var(--paym-text);
+	font-size: 32px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	margin-bottom: var(--paym-space-3);
+	min-height: 64px;
+	padding: var(--paym-space-3);
+	text-align: right;
+}
+
+.imogi-paym-amount-display.is-focused {
+	border-color: var(--paym-blue-600);
+}
+
+.imogi-paym-quick-amounts {
+	display: grid;
+	gap: var(--paym-space-2);
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin-bottom: var(--paym-space-3);
+}
+
+.imogi-paym-quick-amt {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-text);
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 700;
+	min-height: 40px;
+	padding: var(--paym-space-2);
+	touch-action: manipulation;
+	transition: background 0.12s, border-color 0.12s;
+}
+
+.imogi-paym-quick-amt:hover {
+	border-color: var(--paym-navy-800);
+}
+
+.imogi-paym-numpad {
+	display: grid;
+	gap: var(--paym-space-2);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.imogi-paym-numpad-key {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-text);
+	cursor: pointer;
+	font-size: 18px;
+	font-weight: 700;
+	min-height: 48px;
+	touch-action: manipulation;
+	transition: background 0.1s;
+}
+
+.imogi-paym-numpad-key:hover {
+	background: var(--paym-surface-3);
+}
+
+.imogi-paym-numpad-key.is-action {
+	color: var(--paym-text-muted);
+	font-size: 14px;
+}
+
+.imogi-paym-add-payment-btn {
+	background: var(--paym-navy-800);
+	border: none;
+	border-radius: var(--paym-radius-sm);
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 700;
+	margin-top: var(--paym-space-3);
+	min-height: 44px;
+	width: 100%;
+}
+
+.imogi-paym-add-payment-btn:disabled {
+	background: var(--paym-border-strong);
+	cursor: not-allowed;
+}
+
+/* Split bill */
+.imogi-paym-split-methods {
+	display: grid;
+	gap: var(--paym-space-3);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.imogi-paym-split-method {
+	background: var(--paym-surface);
+	border: 2px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	cursor: pointer;
+	min-height: 120px;
+	padding: var(--paym-space-4);
+	text-align: left;
+	touch-action: manipulation;
+	transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.imogi-paym-split-method:hover {
+	border-color: var(--paym-border-strong);
+}
+
+.imogi-paym-split-method.is-active {
+	border-color: var(--paym-blue-600);
+	box-shadow: 0 0 0 1px var(--paym-blue-600);
+}
+
+.imogi-paym-split-method-icon {
+	align-items: center;
+	background: var(--paym-surface-3);
+	border-radius: 10px;
+	color: var(--paym-navy-800);
+	display: inline-flex;
+	font-size: 18px;
+	height: 40px;
+	justify-content: center;
+	margin-bottom: var(--paym-space-3);
+	width: 40px;
+}
+
+.imogi-paym-split-method.is-active .imogi-paym-split-method-icon {
+	background: var(--paym-blue-600);
+	color: #fff;
+}
+
+.imogi-paym-split-method h4 {
+	color: var(--paym-text);
+	font-size: 14px;
+	font-weight: 800;
+	margin: 0 0 var(--paym-space-1);
+}
+
+.imogi-paym-split-method p {
+	color: var(--paym-text-muted);
+	font-size: 12px;
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* Split equally */
+.imogi-paym-field-row {
+	align-items: center;
+	display: flex;
+	gap: var(--paym-space-3);
+	margin-bottom: var(--paym-space-4);
+}
+
+.imogi-paym-field-row label {
+	color: var(--paym-text-muted);
+	flex-shrink: 0;
+	font-size: 13px;
+	font-weight: 700;
+	min-width: 140px;
+}
+
+.imogi-paym-input {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-text);
+	flex: 1;
+	font-size: 15px;
+	font-weight: 700;
+	min-height: 44px;
+	min-width: 0;
+	padding: var(--paym-space-2) var(--paym-space-3);
+}
+
+.imogi-paym-input:focus {
+	border-color: var(--paym-blue-600);
+	outline: none;
+}
+
+.imogi-paym-customer-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--paym-space-2);
+}
+
+.imogi-paym-customer-row {
+	align-items: center;
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	display: grid;
+	gap: var(--paym-space-3);
+	grid-template-columns: 1fr auto;
+	padding: var(--paym-space-3);
+}
+
+.imogi-paym-customer-row input {
+	background: transparent;
+	border: none;
+	color: var(--paym-text);
+	font-size: 14px;
+	font-weight: 700;
+	min-width: 0;
+	outline: none;
+	padding: 0;
+}
+
+.imogi-paym-customer-amount {
+	color: var(--paym-text);
+	font-size: 16px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	text-align: right;
+}
+
+/* Split by item — two panel */
+.imogi-paym-split-panels {
+	display: grid;
+	gap: var(--paym-space-4);
+	grid-template-columns: 1fr 1fr;
+	min-height: 320px;
+}
+
+.imogi-paym-item-panel,
+.imogi-paym-group-panel {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.imogi-paym-panel-head {
+	background: var(--paym-surface-2);
+	border-bottom: 1px solid var(--paym-border);
+	color: var(--paym-text-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	padding: var(--paym-space-3) var(--paym-space-4);
+	text-transform: uppercase;
+}
+
+.imogi-paym-panel-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: var(--paym-space-3);
+}
+
+.imogi-paym-draggable-item {
+	align-items: center;
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-sm);
+	cursor: grab;
+	display: flex;
+	gap: var(--paym-space-2);
+	justify-content: space-between;
+	margin-bottom: var(--paym-space-2);
+	padding: var(--paym-space-3);
+	touch-action: none;
+	user-select: none;
+}
+
+.imogi-paym-draggable-item.is-assigned {
+	opacity: 0.45;
+}
+
+.imogi-paym-draggable-item:active {
+	cursor: grabbing;
+}
+
+.imogi-paym-item-name {
+	color: var(--paym-text);
+	flex: 1;
+	font-size: 13px;
+	font-weight: 600;
+	min-width: 0;
+}
+
+.imogi-paym-item-price {
+	color: var(--paym-text);
+	flex-shrink: 0;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+}
+
+.imogi-paym-customer-group {
+	background: var(--paym-surface-2);
+	border: 2px dashed var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	margin-bottom: var(--paym-space-3);
+	min-height: 100px;
+	padding: var(--paym-space-3);
+	transition: border-color 0.12s, background 0.12s;
+}
+
+.imogi-paym-customer-group.is-drag-over {
+	background: var(--paym-blue-50);
+	border-color: var(--paym-blue-600);
+}
+
+.imogi-paym-customer-group-head {
+	align-items: center;
+	display: flex;
+	gap: var(--paym-space-2);
+	justify-content: space-between;
+	margin-bottom: var(--paym-space-2);
+}
+
+.imogi-paym-customer-group-head input {
+	background: transparent;
+	border: none;
+	color: var(--paym-text);
+	flex: 1;
+	font-size: 13px;
+	font-weight: 800;
+	min-width: 0;
+	outline: none;
+}
+
+.imogi-paym-customer-group-meta {
+	color: var(--paym-text-muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.imogi-paym-customer-group-total {
+	color: var(--paym-navy-800);
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+}
+
+.imogi-paym-group-items {
+	display: flex;
+	flex-direction: column;
+	gap: var(--paym-space-1);
+}
+
+.imogi-paym-group-item {
+	align-items: center;
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: 6px;
+	display: flex;
+	font-size: 12px;
+	gap: var(--paym-space-2);
+	justify-content: space-between;
+	padding: 6px 8px;
+}
+
+.imogi-paym-group-item button {
+	background: transparent;
+	border: none;
+	color: var(--paym-text-subtle);
+	cursor: pointer;
+	font-size: 11px;
+}
+
+/* Custom split summary */
+.imogi-paym-split-summary {
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	display: grid;
+	gap: var(--paym-space-3);
+	grid-template-columns: 1fr 1fr;
+	margin-top: var(--paym-space-4);
+	padding: var(--paym-space-4);
+}
+
+.imogi-paym-split-summary-item span {
+	color: var(--paym-text-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 700;
+	margin-bottom: var(--paym-space-1);
+	text-transform: uppercase;
+}
+
+.imogi-paym-split-summary-item strong {
+	font-size: 18px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+}
+
+.imogi-paym-split-summary-item.is-valid strong {
+	color: var(--paym-green-600);
+}
+
+.imogi-paym-split-summary-item.is-invalid strong {
+	color: var(--paym-orange-600);
+}
+
+/* Post-split payment cards */
+.imogi-paym-pay-cards {
+	display: grid;
+	gap: var(--paym-space-3);
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.imogi-paym-pay-card {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	display: flex;
+	flex-direction: column;
+	gap: var(--paym-space-3);
+	padding: var(--paym-space-4);
+}
+
+.imogi-paym-pay-card.is-paid {
+	background: var(--paym-green-50);
+	border-color: rgba(22, 163, 74, 0.35);
+}
+
+.imogi-paym-pay-card-head {
+	align-items: flex-start;
+	display: flex;
+	justify-content: space-between;
+}
+
+.imogi-paym-pay-card-name {
+	color: var(--paym-text);
+	font-size: 15px;
+	font-weight: 800;
+}
+
+.imogi-paym-pay-card-amount {
+	color: var(--paym-navy-800);
+	font-size: 22px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+}
+
+.imogi-paym-pay-card-badge {
+	background: var(--paym-green-50);
+	border-radius: 999px;
+	color: var(--paym-green-600);
+	font-size: 10px;
+	font-weight: 800;
+	padding: 4px 8px;
+	text-transform: uppercase;
+}
+
+.imogi-paym-pay-card-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--paym-space-2);
+}
+
+.imogi-paym-pay-card-btn {
+	background: var(--paym-navy-800);
+	border: none;
+	border-radius: var(--paym-radius-sm);
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 700;
+	min-height: 40px;
+	touch-action: manipulation;
+}
+
+.imogi-paym-pay-card-btn.is-secondary {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	color: var(--paym-text);
+}
+
+.imogi-paym-pay-card-btn:disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* Single payment tab */
+.imogi-paym-single-modes {
+	display: grid;
+	gap: var(--paym-space-2);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin-bottom: var(--paym-space-4);
+}
+
+.imogi-paym-single-paid {
+	margin-top: var(--paym-space-4);
+}
+
+/* Footer */
+.imogi-paym-footer {
+	background: var(--paym-surface);
+	border-top: 1px solid var(--paym-border);
+	display: flex;
+	flex-shrink: 0;
+	gap: var(--paym-space-3);
+	justify-content: flex-end;
+	padding: var(--paym-space-4) var(--paym-space-5);
+}
+
+.imogi-paym-btn {
+	border: none;
+	border-radius: var(--paym-radius-sm);
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 800;
+	min-height: 48px;
+	min-width: 140px;
+	padding: var(--paym-space-3) var(--paym-space-5);
+	touch-action: manipulation;
+	transition: background 0.12s, opacity 0.12s;
+}
+
+.imogi-paym-btn.is-secondary {
+	background: var(--paym-surface);
+	border: 1px solid var(--paym-border);
+	color: var(--paym-text);
+}
+
+.imogi-paym-btn.is-secondary:hover {
+	background: var(--paym-surface-2);
+}
+
+.imogi-paym-btn.is-primary {
+	background: var(--paym-navy-800);
+	color: #fff;
+	flex: 1;
+	max-width: 320px;
+}
+
+.imogi-paym-btn.is-primary:hover:not(:disabled) {
+	background: var(--paym-navy-700);
+}
+
+.imogi-paym-btn.is-primary:disabled {
+	background: var(--paym-border-strong);
+	cursor: not-allowed;
+	opacity: 0.7;
+}
+
+.imogi-paym-btn.is-confirm {
+	background: var(--paym-blue-600);
+	color: #fff;
+}
+
+.imogi-paym-hint {
+	color: var(--paym-text-subtle);
+	font-size: 12px;
+	margin-top: var(--paym-space-2);
+}
+
+.imogi-paym-error {
+	background: rgba(220, 38, 38, 0.08);
+	border: 1px solid rgba(220, 38, 38, 0.2);
+	border-radius: var(--paym-radius-sm);
+	color: var(--paym-red-600);
+	font-size: 12px;
+	font-weight: 600;
+	margin-top: var(--paym-space-3);
+	padding: var(--paym-space-3);
+}
+
+/* Nested customer payment drawer */
+.imogi-paym-nested {
+	background: var(--paym-surface-2);
+	border: 1px solid var(--paym-border);
+	border-radius: var(--paym-radius-md);
+	margin-top: var(--paym-space-4);
+	padding: var(--paym-space-4);
+}
+
+.imogi-paym-nested-head {
+	align-items: center;
+	display: flex;
+	gap: var(--paym-space-3);
+	justify-content: space-between;
+	margin-bottom: var(--paym-space-3);
+}
+
+.imogi-paym-nested-head h4 {
+	color: var(--paym-text);
+	font-size: 14px;
+	font-weight: 800;
+	margin: 0;
+}
+
+.imogi-paym-nested-back {
+	background: transparent;
+	border: 1px solid var(--paym-border);
+	border-radius: 6px;
+	color: var(--paym-text-muted);
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 6px 10px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+	.imogi-paym-body {
+		grid-template-columns: 1fr;
+	}
+
+	.imogi-paym-summary {
+		border-bottom: 1px solid var(--paym-border);
+		border-right: none;
+		max-height: none;
+	}
+
+	.imogi-paym-summary-inner {
+		flex-direction: row;
+		flex-wrap: wrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: var(--paym-space-3);
+	}
+
+	.imogi-paym-kpi {
+		flex: 1 1 140px;
+		min-width: 140px;
+	}
+
+	.imogi-paym-kpi-value.is-lg {
+		font-size: 22px;
+	}
+
+	.imogi-paym-split-panels {
+		grid-template-columns: 1fr;
+	}
+
+	.imogi-paym-methods-grid,
+	.imogi-paym-split-methods {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.imogi-paym-footer {
+		flex-direction: column-reverse;
+	}
+
+	.imogi-paym-btn.is-primary {
+		max-width: none;
+	}
+}
+
+@media (max-width: 520px) {
+	.imogi-paym-overlay {
+		padding: 0;
+	}
+
+	.imogi-paym-modal {
+		border-radius: 0;
+		max-height: 100vh;
+		max-width: 100vw;
+	}
+
+	.imogi-paym-tabs {
+		grid-template-columns: 1fr;
+	}
+
+	.imogi-paym-tab kbd {
+		display: none;
+	}
+}

@@ -126,89 +126,40 @@ imogi_pos.cashier_extras.render_split_button = function (page) {
 				<i class="fa fa-scissors"></i> ${__("Split Bill")}
 			</button>`);
 		$btn = page.wrapper.find(".imogi-cashier-split-btn");
-		$btn.on("click", () => imogi_pos.cashier_extras.open_split_bill(page));
+		$btn.on("click", () => page.open_payment_dialog({ tab: "split" }));
 	}
 	const on = page.feature_allowed("split_bill");
-	$btn.toggleClass("is-tier-locked", !on).prop("disabled", !on).toggle(page.cart.length > 1);
+	$btn.toggleClass("is-tier-locked", !on).prop("disabled", !on).toggle(page.cart.length > 0);
 };
 
 imogi_pos.cashier_extras.open_split_bill = function (page) {
 	if (!page.require_feature("split_bill")) return;
-	if (page.cart.length < 2) {
-		frappe.show_alert({ message: __("Minimal 2 item untuk split bill"), indicator: "orange" });
+	if (!page.cart.length) {
+		frappe.show_alert({ message: __("Keranjang kosong"), indicator: "orange" });
 		return;
 	}
-	const rows = page.cart
-		.map(
-			(row, idx) => `<label class="checkbox-inline" style="display:block;margin-bottom:6px;">
-			<input type="checkbox" class="imogi-split-item" data-idx="${idx}" checked>
-			${frappe.utils.escape_html(row.item_name)} × ${row.qty}
-		</label>`
-		)
-		.join("");
-	const d = new frappe.ui.Dialog({
-		title: __("Split Bill"),
-		fields: [
-			{
-				fieldtype: "HTML",
-				options: `<p class="text-muted small">${__(
-					"Pilih item yang akan dibayar sekarang. Sisanya tetap di keranjang."
-				)}</p>${rows}`,
-			},
-		],
-		primary_action_label: __("Bayar Terpilih"),
-		primary_action() {
-			const picked = [];
-			const remain = [];
-			d.$wrapper.find(".imogi-split-item").each(function () {
-				const idx = cint($(this).data("idx"));
-				if ($(this).is(":checked")) picked.push(page.cart[idx]);
-				else remain.push(page.cart[idx]);
-			});
-			if (!picked.length) {
-				frappe.msgprint(__("Pilih minimal 1 item"));
-				return;
-			}
-			page.cart = picked;
-			page.render_cart();
-			d.hide();
-			page.open_payment_dialog();
-			frappe.show_alert({
-				message: __("Setelah bayar, sisa {0} item bisa dilanjutkan", [remain.length]),
-				indicator: "blue",
-			});
-			page._split_remainder = remain;
-			const origClear = page.clear_cart_after_checkout;
-			page.clear_cart_after_checkout = function () {
-				origClear.call(page);
-				if (page._split_remainder && page._split_remainder.length) {
-					page.cart = page._split_remainder;
-					page._split_remainder = null;
-					page.render_cart();
-				}
-				page.clear_cart_after_checkout = origClear;
-			};
-		},
-	});
-	d.show();
+	page.open_payment_dialog({ tab: "split" });
 };
 
 imogi_pos.cashier_extras.setup_multi_payment_ui = function (page) {
-	const $foot = page.wrapper.find(".imogi-pay-dialog .modal-body");
-	if (!$foot.length || !page.feature_allowed("multi_payment")) return;
-	let $wrap = $foot.find(".imogi-pay-multi-wrap");
+	const $stack = page.wrapper.find(".imogi-pay-dialog .imogi-pay-checkout-stack");
+	if (!$stack.length || !page.feature_allowed("multi_payment")) return;
+	let $wrap = $stack.find(".imogi-pay-multi-wrap");
 	if (!$wrap.length) {
-		$foot.append(`
+		$stack.append(`
 			<div class="imogi-pay-multi-wrap">
-				<label class="checkbox-inline small">
-					<input type="checkbox" class="imogi-pay-multi-toggle"> ${__("Multi Payment")}
-				</label>
+				<div class="imogi-pay-multi-toggle-wrap">
+					<label class="checkbox-inline small">
+						<input type="checkbox" class="imogi-pay-multi-toggle"> ${__("Multi Payment")}
+					</label>
+				</div>
 				<div class="imogi-pay-multi-panel" style="display:none;">
+					<div class="imogi-pay-block-title">${__("Alokasi Pembayaran")}</div>
 					<div class="imogi-pay-multi-rows"></div>
 					<button type="button" class="btn btn-xs btn-default imogi-pay-multi-add">+ ${__("Metode")}</button>
 				</div>
 			</div>`);
-		$wrap = $foot.find(".imogi-pay-multi-wrap");
+		$wrap = $stack.find(".imogi-pay-multi-wrap");
 	}
 	const modes = (page.context?.payment_modes || []).map((m) => m.mode_of_payment);
 	const buildRow = (mode, amount) => `
@@ -239,7 +190,8 @@ imogi_pos.cashier_extras.setup_multi_payment_ui = function (page) {
 
 imogi_pos.cashier_extras.get_multi_payments = function (page, dialog, total) {
 	const $wrap = dialog.$wrapper.find(".imogi-pay-multi-wrap");
-	if (!$wrap.length || !$wrap.find(".imogi-pay-multi-toggle").is(":checked")) return null;
+	const multi_tab = dialog._imogi_pay_tab === "multi";
+	if (!$wrap.length || (!multi_tab && !$wrap.find(".imogi-pay-multi-toggle").is(":checked"))) return null;
 	const rows = [];
 	$wrap.find(".imogi-pay-multi-row").each(function () {
 		const mode = $(this).find(".imogi-pay-multi-mode").val();

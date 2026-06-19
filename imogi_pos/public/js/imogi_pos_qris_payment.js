@@ -107,23 +107,24 @@ imogi_pos.qris.open_dialog = function (page, opts) {
 	});
 };
 
-imogi_pos.qris._render_qr = function ($el, msg) {
+imogi_pos.qris._render_qr = function ($el, msg, opts = {}) {
+	const size = Math.max(120, Math.min(280, flt(opts.size) || 240));
 	$el.empty();
 	const qrImage = (msg.qr_image || "").trim();
 
 	if (qrImage.startsWith("data:image/")) {
-		$el.html(`<img src="${qrImage}" alt="QRIS" style="max-width:240px;height:auto">`);
+		$el.html(`<img src="${qrImage}" alt="QRIS" style="max-width:${size}px;height:auto">`);
 		return;
 	}
 	const imageUrl = (msg.qr_url || "").trim();
 	if (imageUrl && (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith("/"))) {
-		$el.html(`<img src="${frappe.utils.escape_html(imageUrl)}" alt="QRIS" style="max-width:240px;height:auto">`);
+		$el.html(`<img src="${frappe.utils.escape_html(imageUrl)}" alt="QRIS" style="max-width:${size}px;height:auto">`);
 		return;
 	}
 	const qrString = (msg.qr_string || "").trim();
 	if (!qrString) return;
 	if (/^https?:\/\//i.test(qrString)) {
-		$el.html(`<img src="${frappe.utils.escape_html(qrString)}" alt="QRIS" style="max-width:240px">`);
+		$el.html(`<img src="${frappe.utils.escape_html(qrString)}" alt="QRIS" style="max-width:${size}px">`);
 		return;
 	}
 	const renderWithLib = () => {
@@ -131,8 +132,8 @@ imogi_pos.qris._render_qr = function ($el, msg) {
 		$el.append($holder);
 		new QRCode($holder[0], {
 			text: qrString,
-			width: 240,
-			height: 240,
+			width: size,
+			height: size,
 			correctLevel: QRCode.CorrectLevel.L,
 		});
 	};

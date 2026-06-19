@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+
 import frappe
 from frappe import _
 from frappe.utils import add_days, flt, getdate, today
@@ -211,6 +213,8 @@ def _fetch_order_history_rows(filters, access, limit=50, offset=0):
 			ro.delivery_task,
 			ro.pos_profile,
 			ro.payment_method,
+			ro.promo_discount_amount,
+			ro.applied_promo,
 			COALESCE(NULLIF(ro.cashier, ''), ro.owner) as cashier,
 			COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) as cashier_name
 		from `tabRiwayat Order` ro
@@ -311,6 +315,172 @@ def list_order_history(
 	}
 
 
+def _parse_applied_promo(raw):
+	if not raw:
+		return []
+	if isinstance(raw, list):
+		return raw
+	try:
+		parsed = json.loads(raw)
+	except (TypeError, ValueError):
+		return []
+	return parsed if isinstance(parsed, list) else []
+
+
+def _promo_display_name(promo: dict) -> str:
+	name = (promo.get("promo") or "").strip()
+	if name:
+		return name
+	label = (promo.get("label") or "").strip()
+	if not label:
+		return _("Promo")
+	if ":" in label:
+		return label.split(":", 1)[0].strip()
+	return label
+
+
+@frappe.whitelist()
+def get_order_history_promo_summary(
+	branch=None,
+	pos_profile=None,
+	from_date=None,
+	to_date=None,
+	search=None,
+):
+	"""Aggregate promo usage for Riwayat Order summary tab."""
+	_require_login()
+	require_feature_doctype_access("order_history")
+
+	access = _order_history_access(branch, pos_profile)
+	filters = {}
+	if from_date:
+		filters["from_date"] = getdate(from_date)
+	if to_date:
+		filters["to_date"] = add_days(getdate(to_date), 1)
+	search_term = (search or "").strip()
+	if search_term:
+		filters["search"] = f"%{search_term}%"
+
+	where, values = _order_history_where(filters, access)
+	rows = frappe.db.sql(
+		f"""
+		select ro.name, ro.promo_discount_amount, ro.applied_promo
+		from `tabRiwayat Order` ro
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+			and coalesce(ro.promo_discount_amount, 0) > 0
+		""",
+		values,
+		as_dict=True,
+	)
+
+	buckets: dict[str, dict] = {}
+	total_discount = 0.0
+	for order in rows:
+		order_discount = flt(order.promo_discount_amount)
+		total_discount += order_discount
+		promos = _parse_applied_promo(order.applied_promo)
+		if not promos:
+			key = "__promo__"
+			entry = buckets.setdefault(
+				key,
+				{
+					"promo": "",
+					"label": _("Promo otomatis"),
+					"order_count": 0,
+					"total_discount": 0.0,
+				},
+			)
+			entry["order_count"] += 1
+			entry["total_discount"] += order_discount
+			continue
+
+		for promo in promos:
+			key = promo.get("promo") or promo.get("label") or "__promo__"
+			entry = buckets.setdefault(
+				key,
+				{
+					"promo": promo.get("promo") or "",
+					"label": _promo_display_name(promo),
+					"order_count": 0,
+					"total_discount": 0.0,
+				},
+			)
+			entry["order_count"] += 1
+			entry["total_discount"] += flt(promo.get("discount")) or order_discount
+
+	summary_rows = sorted(
+		buckets.values(),
+		key=lambda row: (-flt(row.get("total_discount")), row.get("label") or ""),
+	)
+
+	return {
+		"rows": summary_rows,
+		"order_count": len(rows),
+		"total_discount": flt(total_discount),
+		"view_mode": access["view_mode"],
+	}
+
+
+@frappe.whitelist()
+def get_order_history_product_sales(
+	branch=None,
+	pos_profile=None,
+	from_date=None,
+	to_date=None,
+	search=None,
+	limit=20,
+):
+	"""Top-selling products for Riwayat Order summary tab."""
+	_require_login()
+	require_feature_doctype_access("order_history")
+
+	access = _order_history_access(branch, pos_profile)
+	filters = {}
+	if from_date:
+		filters["from_date"] = getdate(from_date)
+	if to_date:
+		filters["to_date"] = add_days(getdate(to_date), 1)
+	search_term = (search or "").strip()
+	if search_term:
+		filters["search"] = f"%{search_term}%"
+
+	where, values = _order_history_where(filters, access)
+	limit = min(max(1, int(limit or 20)), 50)
+
+	rows = frappe.db.sql(
+		f"""
+		select
+			oi.item_code,
+			max(oi.item_name) as item_name,
+			coalesce(sum(oi.qty), 0) as qty,
+			coalesce(sum(oi.amount), 0) as sales,
+			count(distinct oi.parent) as order_count
+		from `tabIMOGI POS Order Item` oi
+		inner join `tabRiwayat Order` ro on ro.name = oi.parent
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+			and ro.status = 'Completed'
+			and coalesce(oi.rate, 0) > 0
+		group by oi.item_code
+		order by qty desc, sales desc
+		limit {limit}
+		""",
+		values,
+		as_dict=True,
+	)
+
+	total_qty = sum(flt(row.qty) for row in rows)
+	total_sales = sum(flt(row.sales) for row in rows)
+
+	return {
+		"rows": rows,
+		"total_qty": flt(total_qty),
+		"total_sales": flt(total_sales),
+		"view_mode": access["view_mode"],
+	}
+
+
 @frappe.whitelist()
 def get_order_history_detail(order_name, branch=None, pos_profile=None):
 	"""Full order payload for Riwayat Order detail modal."""
@@ -344,6 +514,7 @@ def get_order_history_detail(order_name, branch=None, pos_profile=None):
 			"loyalty_discount_amount": flt(order.loyalty_discount_amount),
 			"loyalty_points_earned": flt(order.loyalty_points_earned),
 			"promo_discount_amount": flt(order.promo_discount_amount),
+			"applied_promo": order.applied_promo or "",
 			"taxable_amount": flt(order.taxable_amount),
 			"tax_amount": flt(order.tax_amount),
 			"payment_method": order.payment_method,

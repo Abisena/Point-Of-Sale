@@ -3,7 +3,7 @@
 frappe.provide("imogi_pos.page_shell");
 
 imogi_pos.page_shell.inject_css = function (page_key) {
-	const id = `imogi-page-shell-${page_key}-v10`;
+	const id = `imogi-page-shell-${page_key}-v14`;
 	document.getElementById(`imogi-page-shell-${page_key}`)?.remove();
 	document.getElementById(`imogi-page-shell-${page_key}-v2`)?.remove();
 	document.getElementById(`imogi-page-shell-${page_key}-v3`)?.remove();
@@ -13,6 +13,10 @@ imogi_pos.page_shell.inject_css = function (page_key) {
 	document.getElementById(`imogi-page-shell-${page_key}-v7`)?.remove();
 	document.getElementById(`imogi-page-shell-${page_key}-v8`)?.remove();
 	document.getElementById(`imogi-page-shell-${page_key}-v9`)?.remove();
+	document.getElementById(`imogi-page-shell-${page_key}-v10`)?.remove();
+	document.getElementById(`imogi-page-shell-${page_key}-v11`)?.remove();
+	document.getElementById(`imogi-page-shell-${page_key}-v12`)?.remove();
+	document.getElementById(`imogi-page-shell-${page_key}-v13`)?.remove();
 	if (document.getElementById(id)) return;
 	frappe.dom.set_style(
 		`
@@ -86,18 +90,22 @@ imogi_pos.page_shell.inject_css = function (page_key) {
 		.imogi-oh-view-btn .fa{line-height:1;pointer-events:none}
 		.imogi-oh-view-btn:hover{background:linear-gradient(180deg,#dbeafe 0%,#bfdbfe 100%);border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,.2);color:#1d4ed8;transform:translateY(-1px)}
 		.imogi-oh-view-btn:active{transform:translateY(0)}
-		.imogi-oh-detail-dialog .modal-content{border:none;border-radius:14px;box-shadow:0 24px 48px rgba(15,23,42,.18);overflow:hidden}
-		.imogi-oh-detail-dialog .modal-header{background:linear-gradient(145deg,#0f1f35 0%,#1a3352 100%);border-bottom:none;color:#fff;padding:16px 20px}
+		.imogi-oh-detail-dialog .modal-dialog{background:transparent;border:none;box-shadow:none;max-width:980px}
+		.imogi-oh-detail-dialog .modal-content{background:#fff;border:none;border-radius:14px;box-shadow:0 24px 48px rgba(15,23,42,.18);overflow:hidden}
+		.imogi-oh-detail-dialog .modal-header{background:linear-gradient(145deg,#0f1f35 0%,#1a3352 100%);border-bottom:none;border-radius:14px 14px 0 0;color:#fff;padding:16px 20px}
 		.imogi-oh-detail-dialog .modal-title{color:#fff!important;font-size:16px;font-weight:800;letter-spacing:.01em}
 		.imogi-oh-detail-dialog .modal-header .close{color:#fff!important;font-size:22px;font-weight:400;line-height:1;opacity:.85;text-shadow:none}
 		.imogi-oh-detail-dialog .modal-header .close:hover{opacity:1}
 		.imogi-oh-detail-dialog .modal-body{background:#f8fafc;max-height:min(72vh,640px);overflow-x:hidden;overflow-y:auto;padding:16px 20px 20px}
-		.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-content,.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-dialog,.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-body{overflow:visible!important}
+		.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-dialog,.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-body{overflow:visible!important}
 		.imogi-oh-detail-dialog.imogi-oh-detail-dialog--compact .modal-body{max-height:none!important}
-		.imogi-oh-detail-dialog .modal-footer{background:#fff;border-top:1px solid #e2e8f0;padding:12px 20px 16px}
+		.imogi-oh-detail-dialog .modal-footer{background:#fff;border-radius:0 0 14px 14px;border-top:1px solid #e2e8f0;padding:12px 20px 16px}
 		.imogi-oh-detail-dialog .modal-footer .btn-primary,.imogi-oh-detail-dialog .modal-footer .imogi-oh-detail-close-btn{background:#0f1f35!important;border-color:#0f1f35!important;border-radius:10px;color:#fff!important;font-weight:700;min-width:108px;padding:8px 18px}
 		.imogi-oh-detail-dialog .modal-footer .btn-primary:hover,.imogi-oh-detail-dialog .modal-footer .imogi-oh-detail-close-btn:hover{background:#1a3352!important;border-color:#1a3352!important;color:#fff!important}
-		.imogi-oh-detail{display:flex;flex-direction:column;gap:14px}
+		.imogi-oh-detail{align-items:stretch;display:grid;gap:14px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+		.imogi-oh-detail-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+		.imogi-oh-detail-card--payment .imogi-oh-detail-summary{flex:1}
+		.imogi-oh-detail-card--payment .imogi-oh-detail-grand{margin-top:auto!important}
 		.imogi-oh-detail-hero{align-items:flex-start;background:#fff;border:1px solid #e2e8f0;border-radius:12px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;padding:14px 16px}
 		.imogi-oh-detail-order{color:#0f172a;font-size:20px;font-variant-numeric:tabular-nums;font-weight:800;line-height:1.2}
 		.imogi-oh-detail-subtitle{color:#64748b;font-size:12px;font-weight:600;margin-top:4px}
@@ -129,9 +137,16 @@ imogi_pos.page_shell.inject_css = function (page_key) {
 		.imogi-oh-detail-grand{align-items:center;background:linear-gradient(145deg,#0f1f35 0%,#1a3352 100%);border-radius:12px;color:#fff;display:flex;justify-content:space-between;margin-top:4px;padding:14px 16px}
 		.imogi-oh-detail-grand span{color:rgba(255,255,255,.78);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 		.imogi-oh-detail-grand strong{color:#fff;font-size:22px;font-variant-numeric:tabular-nums;font-weight:800}
+		.imogi-oh-detail-card>.imogi-oh-detail-hero,.imogi-oh-detail-card>.imogi-oh-detail-meta,.imogi-oh-detail-card>.imogi-oh-detail-block,.imogi-oh-detail-card>.imogi-oh-detail-summary{background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin:0!important}
+		.imogi-oh-detail-card>.imogi-oh-detail-grand{background:linear-gradient(145deg,#0f1f35 0%,#1a3352 100%)!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin:0!important}
+		.imogi-oh-detail-card>.imogi-oh-detail-hero,.imogi-oh-detail-card>.imogi-oh-detail-meta,.imogi-oh-detail-card--payment>.imogi-oh-detail-block,.imogi-oh-detail-card--payment>.imogi-oh-detail-summary{border-bottom:1px solid #e2e8f0!important}
+		.imogi-oh-detail-card>.imogi-oh-detail-grand{margin-top:0!important}
 		.imogi-oh-detail-link{color:#2563eb;font-weight:700;text-decoration:none}
 		.imogi-oh-detail-link:hover{text-decoration:underline}
-		.imogi-oh-detail-dialog .modal-dialog{max-width:720px}
+		@media (max-width:860px){
+			.imogi-oh-detail-dialog .modal-dialog{max-width:720px}
+			.imogi-oh-detail{grid-template-columns:1fr}
+		}
 		.imogi-web-empty{align-items:center;color:#94a3b8;display:flex;flex-direction:column;font-size:12px;gap:8px;justify-content:center;min-height:100px;padding:24px;text-align:center}
 		.imogi-web-stat-grid{background:#fff;border:1px solid #cbd5e1;border-radius:8px;display:grid;gap:0;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px;overflow:hidden}
 		.imogi-web-stat{align-items:center;border-right:1px solid #edf2f7;display:flex;gap:10px;min-height:68px;padding:10px 14px}

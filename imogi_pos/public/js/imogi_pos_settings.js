@@ -48,6 +48,26 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_payment_dock_summary(frm);
 	},
 
+	enable_transfer_payment_info(frm) {
+		render_transfer_dock_summary(frm);
+	},
+
+	transfer_bank_name(frm) {
+		render_transfer_dock_summary(frm);
+	},
+
+	transfer_bank_account(frm) {
+		render_transfer_dock_summary(frm);
+	},
+
+	transfer_account_holder(frm) {
+		render_transfer_dock_summary(frm);
+	},
+
+	transfer_instructions(frm) {
+		render_transfer_dock_summary(frm);
+	},
+
 	enable_offline_cashier(frm) {
 		render_integrations_dock_summary(frm);
 	},
@@ -69,6 +89,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_target_dock_summary(frm);
 		render_loyalty_dock_summary(frm);
 		render_payment_dock_summary(frm);
+		render_transfer_dock_summary(frm);
 		render_integrations_dock_summary(frm);
 		render_franchise_dock_summary(frm);
 		if (is_erp_enterprise_deployment()) {
@@ -102,7 +123,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		if (__imogi_settings_active_tab === "general") {
 			render_receipt_preview(frm);
 		}
-		if (__imogi_settings_active_tab === "notifications") {
+		if (__imogi_settings_active_tab === "more") {
 			render_target_dock_summary(frm);
 		}
 	},
@@ -365,8 +386,8 @@ const SETTINGS_TABS = [
 		id: "payment",
 		label: __("Pembayaran"),
 		icon: "fa-credit-card",
-		desc: __("Payment gateway QRIS (Midtrans / Xendit)"),
-		sections: ["payment_gateway_section"],
+		desc: __("Payment gateway QRIS dan rekening transfer bank"),
+		sections: ["payment_gateway_section", "transfer_payment_section"],
 	},
 	{
 		id: "inventory",
@@ -397,34 +418,11 @@ const SETTINGS_TABS = [
 		sections: ["api_section", "integrations_section", "billing_section"],
 	},
 	{
-		id: "roles",
-		label: __("Role & Akses"),
-		icon: "fa-users",
-		desc: __("Owner / Manager / Kasir, approval workflow & central kitchen"),
-		sections: ["operations_section"],
-	},
-	{
-		id: "notifications",
-		label: __("Notifikasi"),
-		icon: "fa-bell",
-		desc: __("Notifikasi realtime dan refresh dashboard"),
-		sections: ["analytics_section"],
-	},
-	{
-		id: "security",
-		label: __("Keamanan"),
-		icon: "fa-lock",
-		desc: __("Pengaturan keamanan lanjutan"),
-		placeholder: true,
-		sections: [],
-	},
-	{
-		id: "activity",
-		label: __("Log Aktivitas"),
-		icon: "fa-list-alt",
-		desc: __("Riwayat perubahan pengaturan"),
-		placeholder: true,
-		sections: [],
+		id: "more",
+		label: __("Lainnya"),
+		icon: "fa-ellipsis-h",
+		desc: __("Role & akses, notifikasi, pajak, dan pengaturan lanjutan"),
+		sections: ["operations_section", "analytics_section", "franchise_section"],
 	},
 ];
 
@@ -522,6 +520,12 @@ const SETTINGS_FORM_LAYOUT = [
 	"payment_gateway",
 	"payment_gateway_key",
 	"payment_gateway_client_key",
+	{ section: "transfer_payment_section" },
+	"enable_transfer_payment_info",
+	"transfer_bank_name",
+	"transfer_bank_account",
+	"transfer_account_holder",
+	"transfer_instructions",
 	{ section: "api_section" },
 	"enable_order_api",
 	"order_api_user",
@@ -592,6 +596,25 @@ const SETTINGS_ALWAYS_HIDDEN_FIELDS = new Set([
 
 let __imogi_settings_active_tab = "general";
 
+const LEGACY_SETTINGS_TAB_MAP = {
+	roles: "more",
+	notifications: "more",
+	tax: "more",
+	security: "more",
+	activity: "more",
+};
+
+function normalize_settings_tab_id(tabId) {
+	return LEGACY_SETTINGS_TAB_MAP[tabId] || tabId || "general";
+}
+
+function settings_flat_head_html(title, hint) {
+	const hint_html = hint
+		? `<div class="imogi-settings-flat-hint">${frappe.utils.escape_html(hint)}</div>`
+		: "";
+	return `<div class="imogi-settings-flat-head">${frappe.utils.escape_html(title)}</div>${hint_html}`;
+}
+
 function get_settings_section_fields(section_name) {
 	const fields = [];
 	let capture = false;
@@ -649,14 +672,408 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v7")) return;
+	if (document.getElementById("imogi-settings-inline-css-v14")) return;
 	document.getElementById("imogi-settings-inline-css")?.remove();
 	document.getElementById("imogi-settings-inline-css-v2")?.remove();
 	document.getElementById("imogi-settings-inline-css-v3")?.remove();
 	document.getElementById("imogi-settings-inline-css-v4")?.remove();
 	document.getElementById("imogi-settings-inline-css-v5")?.remove();
 	document.getElementById("imogi-settings-inline-css-v6")?.remove();
+	document.getElementById("imogi-settings-inline-css-v7")?.remove();
+	document.getElementById("imogi-settings-inline-css-v8")?.remove();
+	document.getElementById("imogi-settings-inline-css-v9")?.remove();
+	document.getElementById("imogi-settings-inline-css-v10")?.remove();
+	document.getElementById("imogi-settings-inline-css-v11")?.remove();
+	document.getElementById("imogi-settings-inline-css-v12")?.remove();
+	document.getElementById("imogi-settings-inline-css-v13")?.remove();
 	frappe.dom.set_style(`
+		.imogi-settings-page .layout-side-section,
+		.imogi-settings-page .form-sidebar { display: none !important; }
+		.imogi-settings-page .layout-main-section-wrapper,
+		.imogi-settings-page .layout-main-section,
+		.imogi-settings-page .form-page { background: #fff !important; }
+		.imogi-settings-page .page-head {
+			background: #fff !important;
+			border-bottom: 1px solid #e2e6ec;
+			margin: 0 0 12px;
+			padding: 10px 18px 12px;
+		}
+		.imogi-settings-page .page-head .page-title {
+			color: #111827;
+			font-size: 18px;
+			font-weight: 700;
+		}
+		.imogi-settings-page .page-head .page-icon-group { display: none; }
+		.imogi-settings-workspace {
+			--imogi-settings-gutter: 18px;
+			background: #fff;
+			border: 1px solid #e2e6ec;
+			margin-bottom: 16px;
+		}
+		.imogi-settings-tabbar {
+			align-items: stretch;
+			background: #fff;
+			border-bottom: 1px solid #e2e6ec;
+			display: flex;
+			flex-wrap: nowrap;
+			gap: 0;
+			min-height: 40px;
+			overflow: hidden;
+			padding: 0;
+		}
+		.imogi-settings-tab-nav-wrap {
+			align-items: stretch;
+			display: flex;
+			flex: 1;
+			margin: 0;
+			min-width: 0;
+			overflow: hidden;
+			position: static;
+			top: auto;
+		}
+		.imogi-settings-tab-nav-scroll {
+			flex: 1;
+			min-width: 0;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scrollbar-width: thin;
+			-webkit-overflow-scrolling: touch;
+		}
+		.imogi-settings-tab-nav-scroll::-webkit-scrollbar { height: 4px; }
+		.imogi-settings-tab-nav-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+		.imogi-settings-tab-nav {
+			background: transparent;
+			border: none;
+			border-radius: 0;
+			display: inline-flex;
+			flex: 0 0 auto;
+			flex-wrap: nowrap;
+			gap: 0;
+			min-width: max-content;
+			padding: 0 var(--imogi-settings-gutter, 18px);
+			width: max-content;
+		}
+		.imogi-settings-tab-btn {
+			align-items: center;
+			background: none;
+			border: none;
+			border-bottom: 2px solid transparent;
+			border-radius: 0;
+			box-shadow: none;
+			color: #6b7280;
+			cursor: pointer;
+			display: inline-flex;
+			flex: 0 0 auto;
+			font-size: 13px;
+			font-weight: 600;
+			justify-content: center;
+			margin-bottom: -1px;
+			min-height: 42px;
+			padding: 10px 14px;
+			transition: color .15s, border-color .15s;
+			white-space: nowrap;
+		}
+		.imogi-settings-tab-btn:hover { background: none; color: #0f1f35; }
+		.imogi-settings-tab-btn.is-active {
+			background: none;
+			border-bottom-color: #0f1f35;
+			box-shadow: none;
+			color: #0f1f35;
+		}
+		.imogi-settings-tab-desc { display: none !important; }
+		.imogi-settings-sidebar-label,
+		.imogi-settings-tab-icon,
+		.imogi-settings-card-head,
+		.imogi-settings-card-icon,
+		.imogi-settings-help-card,
+		.imogi-settings-trust-row { display: none !important; }
+		.imogi-settings-body { display: block; margin-bottom: 0; overflow: visible; }
+		.imogi-settings-main {
+			display: flex;
+			flex-direction: column;
+			gap: 0;
+			margin: 0;
+			max-width: none;
+			overflow: visible;
+			padding: 0 var(--imogi-settings-gutter, 18px);
+			width: 100%;
+		}
+		.imogi-settings-content { min-width: 0; overflow: visible; }
+		.imogi-settings-tab-intro {
+			border-bottom: 1px solid #f3f4f6;
+			margin: 0;
+			padding: 14px 0 12px;
+		}
+		.imogi-settings-tab-intro-title {
+			color: #111827;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.25;
+			margin-bottom: 2px;
+		}
+		.imogi-settings-tab-intro-desc {
+			color: #6b7280;
+			font-size: 11px;
+			line-height: 1.4;
+			max-width: 640px;
+		}
+		.imogi-settings-content-inner {
+			margin: 0;
+			max-width: none;
+			padding: 16px 0 24px;
+			width: 100%;
+		}
+		.imogi-settings-main .form-section[data-fieldname="setup_section"] .section-body {
+			margin: 0;
+			max-width: none;
+			padding: 16px 0 0;
+		}
+		.imogi-settings-page .imogi-settings-main .form-section {
+			padding-left: 0;
+			padding-right: 0;
+		}
+		.imogi-settings-page .imogi-settings-main .section-body > .row {
+			margin-left: 0;
+			margin-right: 0;
+		}
+		.imogi-settings-page .imogi-settings-main .form-column,
+		.imogi-settings-page .imogi-settings-main .section-body .col-sm-12,
+		.imogi-settings-page .imogi-settings-main .section-body .col-sm-6 {
+			padding-left: 0 !important;
+			padding-right: 0 !important;
+		}
+		.imogi-settings-page .imogi-settings-flat-section > .imogi-settings-flat-head,
+		.imogi-settings-page .imogi-settings-flat-section > .imogi-settings-flat-hint,
+		.imogi-settings-page .imogi-settings-main .section-body .imogi-settings-flat-head,
+		.imogi-settings-page .imogi-settings-main .section-body .imogi-settings-flat-hint {
+			margin-left: 0;
+			padding-left: 0;
+		}
+		.imogi-settings-page:not([data-active-tab="general"]) .form-section[data-fieldname="setup_section"] {
+			display: none !important;
+		}
+		.imogi-settings-tab-panel--general .form-section[data-fieldname="setup_section"] {
+			border-bottom: 1px solid #f3f4f6;
+		}
+		.imogi-settings-tab-panel .form-section:not(.hide-control):last-child {
+			padding-bottom: 0;
+		}
+		.imogi-settings-flat-head {
+			color: #0f1f35;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.25;
+			margin: 0 0 6px;
+		}
+		.imogi-settings-flat-hint {
+			color: #6b7280;
+			font-size: 11px;
+			line-height: 1.35;
+			margin: -2px 0 10px;
+		}
+		.imogi-settings-page .imogi-settings-flat-section {
+			margin-bottom: 20px;
+		}
+		.imogi-settings-page .imogi-settings-flat-section .section-body {
+			background: #fafafa !important;
+			border: 1px solid #eceef2 !important;
+			border-radius: 8px !important;
+			box-shadow: none !important;
+			margin-bottom: 16px !important;
+			padding: 16px 18px !important;
+		}
+		.imogi-settings-page .imogi-store-identity-section .section-body {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			margin-bottom: 0 !important;
+			padding: 0 !important;
+		}
+		/* ── Field grid: label atas, 2 kolom ── */
+		.imogi-settings-page .imogi-settings-field-grid .form-column.col-sm-12 > form {
+			align-items: start;
+			display: grid;
+			gap: 14px 20px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			width: 100%;
+		}
+		.imogi-settings-page .imogi-settings-field-grid .form-column > form > .frappe-control,
+		.imogi-settings-page .imogi-settings-field-grid .form-column > form > .input-max-width {
+			margin-bottom: 0 !important;
+			max-width: 100% !important;
+			padding: 0 !important;
+			width: 100% !important;
+		}
+		.imogi-settings-page .imogi-settings-field-grid .frappe-control .control-label {
+			color: #374151;
+			float: none !important;
+			font-size: 11px;
+			font-weight: 600;
+			line-height: 1.35;
+			margin-bottom: 4px !important;
+			padding: 0 !important;
+			width: auto !important;
+		}
+		.imogi-settings-page .imogi-settings-field-grid .frappe-control .form-control {
+			font-size: 12px;
+			min-height: 34px;
+			padding: 5px 10px;
+		}
+		.imogi-settings-page .imogi-store-form-grid,
+		.imogi-settings-page .imogi-shift-form-grid,
+		.imogi-settings-page .imogi-kitchen-form-grid {
+			display: grid;
+			gap: 12px 16px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.imogi-settings-page .imogi-store-form-grid > .frappe-control,
+		.imogi-settings-page .imogi-shift-form-grid > .frappe-control,
+		.imogi-settings-page .imogi-kitchen-form-grid > .frappe-control {
+			margin-bottom: 0 !important;
+			max-width: 100% !important;
+			width: 100% !important;
+		}
+		.imogi-settings-field-grid .form-column .control-input,
+		.imogi-settings-field-grid .form-column .control-input-wrapper,
+		.imogi-settings-field-grid .form-column input.form-control,
+		.imogi-settings-field-grid .form-column select.form-control,
+		.imogi-settings-field-grid .form-column .link-field {
+			max-width: 100% !important;
+			width: 100% !important;
+		}
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Check"],
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Small Text"],
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Text"],
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Text Editor"],
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Table"],
+		.imogi-settings-field-grid .frappe-control[data-fieldtype="Button"],
+		.imogi-settings-field-grid .imogi-api-dock,
+		.imogi-settings-field-grid .imogi-loyalty-dock,
+		.imogi-settings-field-grid .imogi-payment-dock,
+		.imogi-settings-field-grid .imogi-transfer-dock,
+		.imogi-settings-field-grid .imogi-integrations-dock,
+		.imogi-settings-field-grid .imogi-franchise-dock,
+		.imogi-settings-field-grid .imogi-billing-dock,
+		.imogi-settings-field-grid .imogi-import-dock,
+		.imogi-settings-field-grid .imogi-target-dock,
+		.imogi-settings-field-grid .imogi-shift-settings-dock,
+		.imogi-settings-field-grid .imogi-kitchen-settings-dock {
+			grid-column: 1 / -1;
+		}
+		.imogi-settings-tab-panel--general .imogi-settings-flow-strip {
+			align-items: center;
+			background: #fafafa;
+			border: 1px solid #eceef2;
+			border-radius: 8px;
+			display: grid;
+			gap: 12px 16px;
+			grid-template-columns: minmax(0, 1fr) auto;
+			margin-bottom: 16px;
+			padding: 14px 16px;
+		}
+		.imogi-settings-tab-panel--general .imogi-store-identity-layout {
+			align-items: start;
+			gap: 16px;
+			grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+		}
+		.imogi-settings-dock-grid {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			margin-top: 12px;
+		}
+		.imogi-settings-help-link {
+			align-items: center;
+			border-left: 1px solid #f3f4f6;
+			color: #6b7280;
+			display: inline-flex;
+			flex-shrink: 0;
+			font-size: 11px;
+			font-weight: 600;
+			gap: 5px;
+			height: 40px;
+			padding: 0 14px;
+			text-decoration: none !important;
+			white-space: nowrap;
+		}
+		.imogi-settings-help-link:hover { color: #0f1f35; }
+		.imogi-settings-flow-main { min-width: 0; }
+		.imogi-settings-flow-desc { font-size: 11px; line-height: 1.4; margin-bottom: 0 !important; }
+		.imogi-settings-flow-actions {
+			align-items: center;
+			display: flex;
+			flex-shrink: 0;
+			flex-wrap: wrap;
+			gap: 6px;
+			justify-content: flex-end;
+		}
+		.imogi-settings-flow-actions .btn { font-size: 11px; padding: 4px 10px; }
+		.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap { position: sticky; top: 8px; }
+		.imogi-settings-tab-panel--more .imogi-settings-target-host { margin-bottom: 12px; }
+		.imogi-settings-tab-panel--inventory .imogi-import-dock {
+			gap: 10px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.imogi-settings-page .imogi-settings-card-section:last-child .section-body,
+		.imogi-settings-page .form-section:last-child .section-body { border-bottom: none !important; }
+		.imogi-settings-page .frappe-control { margin-bottom: 0 !important; }
+		.imogi-settings-page .frappe-control .control-label {
+			color: #6b7280;
+			font-size: 11px;
+			font-weight: 600;
+		}
+		.imogi-settings-page .form-control {
+			border-color: #d1d5db;
+			border-radius: 6px;
+			min-height: 34px;
+		}
+		.imogi-settings-page .form-control:focus {
+			border-color: #111827;
+			box-shadow: 0 0 0 1px #111827;
+		}
+		.imogi-settings-flow-strip {
+			margin-bottom: 0;
+			padding-bottom: 0;
+		}
+		.imogi-settings-chip {
+			background: #fff;
+			border: 1px solid #d1d5db;
+			border-radius: 999px;
+			color: #374151;
+			font-size: 10px;
+			font-weight: 700;
+			padding: 2px 8px;
+		}
+		.imogi-settings-flow-top {
+			align-items: center;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-bottom: 6px;
+		}
+		.imogi-settings-flow-top strong { color: #111827; font-size: 14px; }
+		.imogi-settings-flow-desc {
+			color: #6b7280;
+			font-size: 12px;
+			line-height: 1.5;
+			margin: 0 0 12px;
+		}
+		.imogi-settings-flow-actions .btn-primary {
+			background: #111827 !important;
+			border-color: #111827 !important;
+		}
+		.imogi-receipt-preview-wrap {
+			background: #fafafa !important;
+			border: 1px solid #eceef2 !important;
+			border-radius: 8px !important;
+			padding: 14px !important;
+		}
+		.imogi-receipt-preview-paper {
+			background: #fff !important;
+			border: 1px solid #e5e7eb !important;
+			border-radius: 6px !important;
+			box-shadow: none !important;
+		}
 		.imogi-settings-page .imogi-mode-summary-host .control-label,
 		.imogi-settings-page .form-section[data-fieldname="setup_section"] .section-head,
 		.imogi-settings-page .imogi-section-api .section-head,
@@ -671,33 +1088,150 @@ function inject_imogi_settings_css() {
 		.imogi-ep-panel:not(.is-active) { display: none !important; }
 		.imogi-settings-page .btn.imogi-toolbar-docs-btn,
 		.imogi-settings-page .custom-btn.imogi-toolbar-docs-btn {
-			background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
-			border: 1px solid #f39c12 !important; color: #b45309 !important; font-weight: 600 !important;
+			background: #fff !important;
+			border: 1px solid #d1d5db !important;
+			color: #111827 !important;
+			font-weight: 600 !important;
 		}
 		.imogi-settings-page .btn.imogi-toolbar-docs-btn:hover,
 		.imogi-settings-page .custom-btn.imogi-toolbar-docs-btn:hover {
-			background: #f39c12 !important; border-color: #d68910 !important; color: #fff !important;
+			background: #111827 !important;
+			border-color: #111827 !important;
+			color: #fff !important;
 		}
 		.imogi-settings-page .frappe-control[data-imogi-tier-locked="1"] .control-label::after {
 			content: " 🔒"; font-size: 11px; opacity: 0.75;
 		}
-		.imogi-shift-settings-dock{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-top:14px;padding:14px 16px}
-		.imogi-shift-form-grid{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:10px}
-		.imogi-shift-quick-links{align-items:center;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px}
-		.imogi-shift-quick-links a{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;display:inline-flex;font-size:11px;font-weight:600;gap:5px;padding:6px 10px;text-decoration:none!important}
-		.imogi-shift-quick-links a:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
-		.imogi-shift-status{align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;display:flex;font-size:12px;font-weight:600;gap:8px;margin-top:10px;padding:8px 12px}
-		.imogi-shift-status.is-off{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
-		.imogi-kitchen-settings-dock{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-top:14px;padding:14px 16px}
-		.imogi-kitchen-form-grid{display:grid;gap:10px 14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:10px}
+		.imogi-settings-page .imogi-pill.is-green,
+		.imogi-settings-page .imogi-pill.is-orange {
+			background: #fff !important;
+			border: 1px solid #d1d5db !important;
+			border-radius: 999px !important;
+			color: #374151 !important;
+			font-size: 10px !important;
+			font-weight: 700 !important;
+			padding: 2px 8px !important;
+		}
+		.imogi-loyalty-dock {
+			margin-bottom: 12px;
+		}
+		.imogi-loyalty-panel {
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			border-radius: 6px;
+			padding: 10px 12px;
+		}
+		.imogi-mini-stats--grid {
+			align-items: center;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px 20px;
+		}
+		.imogi-mini-stat {
+			align-items: center;
+			background: transparent;
+			display: inline-flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			padding: 0;
+		}
+		.imogi-mini-stat-label {
+			color: #9ca3af;
+			display: inline;
+			font-size: 10px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			margin: 0;
+			text-transform: uppercase;
+		}
+		.imogi-mini-stat-val {
+			color: #374151;
+			display: inline;
+			font-size: 11px;
+			font-weight: 600;
+			margin: 0;
+		}
+		.imogi-api-dock-icon {
+			background: #fff !important;
+			border: 1px solid #e5e7eb;
+			box-shadow: none !important;
+			color: #374151 !important;
+		}
+		.imogi-shift-settings-dock,
+		.imogi-kitchen-settings-dock {
+			background: transparent;
+			border: none;
+			border-top: 1px solid #f3f4f6;
+			border-radius: 0;
+			margin-top: 18px;
+			padding: 18px 0 0;
+		}
+		.imogi-shift-form-grid,
+		.imogi-kitchen-form-grid { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 10px; }
 		.imogi-kitchen-form-grid .frappe-control[data-fieldname="kitchen_item_groups"],
-		.imogi-kitchen-form-grid .frappe-control[data-fieldname="fulfillment_for_order_types"]{grid-column:1/-1}
-		.imogi-kitchen-quick-links{align-items:center;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px}
-		.imogi-kitchen-quick-links a{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;display:inline-flex;font-size:11px;font-weight:600;gap:5px;padding:6px 10px;text-decoration:none!important}
-		.imogi-kitchen-quick-links a:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
-		.imogi-kitchen-status{align-items:center;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;display:flex;font-size:12px;font-weight:600;gap:8px;margin-top:10px;padding:8px 12px}
-		.imogi-kitchen-status.is-off{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
-	`, "imogi-settings-inline-css-v7");
+		.imogi-kitchen-form-grid .frappe-control[data-fieldname="fulfillment_for_order_types"] { grid-column: 1 / -1; }
+		.imogi-shift-quick-links,
+		.imogi-kitchen-quick-links {
+			align-items: center;
+			border-top: 1px solid #f3f4f6;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 12px;
+			padding-top: 12px;
+		}
+		.imogi-shift-quick-links a,
+		.imogi-kitchen-quick-links a {
+			align-items: center;
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			border-radius: 0;
+			color: #374151;
+			display: inline-flex;
+			font-size: 11px;
+			font-weight: 600;
+			gap: 5px;
+			padding: 6px 10px;
+			text-decoration: none !important;
+		}
+		.imogi-shift-quick-links a:hover,
+		.imogi-kitchen-quick-links a:hover { background: #f9fafb; border-color: #111827; color: #111827; }
+		.imogi-shift-status,
+		.imogi-kitchen-status {
+			align-items: center;
+			background: #fafafa;
+			border: 1px solid #e5e7eb;
+			border-radius: 0;
+			color: #374151;
+			display: flex;
+			font-size: 12px;
+			font-weight: 600;
+			gap: 8px;
+			margin-top: 10px;
+			padding: 8px 12px;
+		}
+		.imogi-shift-status.is-off,
+		.imogi-kitchen-status.is-off { color: #6b7280; }
+		@media (max-width: 860px) {
+			.imogi-settings-page .imogi-settings-field-grid .form-column.col-sm-12 > form,
+			.imogi-settings-page .imogi-store-form-grid,
+			.imogi-settings-page .imogi-shift-form-grid,
+			.imogi-settings-page .imogi-kitchen-form-grid {
+				grid-template-columns: 1fr;
+			}
+			.imogi-settings-tab-panel--general .imogi-store-identity-layout,
+			.imogi-settings-tab-panel--inventory .imogi-import-dock {
+				grid-template-columns: 1fr;
+			}
+			.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap { position: static; }
+			.imogi-settings-tab-panel--general .imogi-settings-flow-strip { grid-template-columns: 1fr; }
+			.imogi-settings-flow-actions { justify-content: flex-start; }
+		}
+		@media (max-width: 900px) {
+			.imogi-settings-workspace { --imogi-settings-gutter: 14px; }
+			.imogi-settings-tab-intro { padding: 10px 0 8px; }
+		}
+	`, "imogi-settings-inline-css-v14");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -727,6 +1261,7 @@ function can_manage_api(frm) {
 
 function init_settings_page(frm) {
 	frm.$wrapper.addClass("imogi-settings-page");
+	hide_settings_form_sidebar(frm);
 	["generate_order_api_key", "order_api_key", "order_api_secret", "order_api_info", "business_type", "business_template"].forEach(
 		(f) => frm.toggle_display(f, false)
 	);
@@ -737,6 +1272,7 @@ function init_settings_page(frm) {
 	build_api_dock(frm);
 	build_loyalty_dock(frm);
 	build_payment_dock(frm);
+	build_transfer_dock(frm);
 	build_integrations_dock(frm);
 	build_franchise_dock(frm);
 	build_import_dock(frm);
@@ -752,8 +1288,8 @@ function init_settings_page(frm) {
 	style_form_sections(frm);
 	style_setting_cards(frm);
 	build_sidebar_help(frm);
-	build_trust_cards(frm);
-	activate_settings_tab(frm, __imogi_settings_active_tab);
+	ensure_settings_content_inner(frm);
+	activate_settings_tab(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
 }
 
 function apply_billing_ui_state(frm) {
@@ -958,9 +1494,12 @@ function apply_settings_tier_locks(frm, data) {
 	});
 
 	if (__imogi_settings_active_tab === "transactions") render_loyalty_dock_summary(frm);
-	if (__imogi_settings_active_tab === "payment") render_payment_dock_summary(frm);
+	if (__imogi_settings_active_tab === "payment") {
+		render_payment_dock_summary(frm);
+		render_transfer_dock_summary(frm);
+	}
 	if (__imogi_settings_active_tab === "integrations") render_integrations_dock_summary(frm);
-	if (__imogi_settings_active_tab === "tax") render_franchise_dock_summary(frm);
+	if (__imogi_settings_active_tab === "more") render_franchise_dock_summary(frm);
 }
 
 function set_settings_button_enabled(frm, fieldname, enabled, message) {
@@ -1045,63 +1584,119 @@ function set_settings_section_visible(frm, fieldname, show) {
 
 function get_visible_settings_tabs(frm) {
 	const is_umkm = frm.doc.business_type === "UMKM";
-	return SETTINGS_TABS.filter((tab) => {
-		if (is_umkm && tab.id === "tax") {
-			return false;
+	return SETTINGS_TABS.filter((tab) => true).map((tab) => {
+		let sections = tab.sections || [];
+		if (is_umkm) {
+			sections = sections.filter((section) => section !== "franchise_section");
 		}
-		return true;
-	}).map((tab) => {
-		if (!is_erp_enterprise_deployment() || tab.id !== "integrations") {
-			return tab;
+		if (!is_erp_enterprise_deployment() && tab.id === "integrations") {
+			sections = sections.filter((section) => section !== "billing_section");
 		}
-		return {
-			...tab,
-			sections: tab.sections.filter((section) => section !== "billing_section"),
-		};
+		return { ...tab, sections };
 	});
 }
 
+function hide_settings_form_sidebar(frm) {
+	frm.$wrapper.find(".layout-side-section, .form-sidebar").hide();
+	const $col = frm.$wrapper.find(".row > .col-lg-10, .row > .col-md-9").first();
+	if ($col.length) {
+		$col.removeClass("col-lg-10 col-md-9").addClass("col-lg-12 col-md-12");
+	}
+}
+
 function layout_settings_shell(frm) {
-	const $layout = frm.$wrapper.find(".form-layout");
+	const $layout = frm.$wrapper.find(".form-layout").first();
 	if (!$layout.length) return;
-	if (frm.$wrapper.find(".imogi-settings-main").length) return;
 
-	const $navWrap = frm.$wrapper.find(".imogi-settings-tab-nav-wrap");
+	const $navWrap = frm.$wrapper.find(".imogi-settings-tab-nav-wrap").first();
 	const $heroSection = frm.$wrapper.find('.form-section[data-fieldname="setup_section"]');
-	const $existingBody = frm.$wrapper.find(".imogi-settings-body");
-	const $main = $('<div class="imogi-settings-main"></div>');
+	const $existingWorkspace = frm.$wrapper.find(".imogi-settings-workspace");
+	const $legacyBody = frm.$wrapper.find(".imogi-settings-body").first();
 
-	const mount_shell = ($body, $content) => {
-		$main.empty().append($heroSection).append($content);
-		$body.empty().append($navWrap).append($main);
-	};
+	if (!$existingWorkspace.length && $legacyBody.length && $legacyBody.find(".imogi-settings-main").length) {
+		const $legacyNav = $legacyBody.find(".imogi-settings-tab-nav-wrap").first().detach();
+		const $legacyMain = $legacyBody.find(".imogi-settings-main").first().detach();
+		$legacyBody.remove();
+		frm.$wrapper.find(".imogi-settings-help-card").remove();
 
-	if ($existingBody.length) {
-		let $content = $existingBody.find(".imogi-settings-content");
-		$navWrap.detach();
-		$heroSection.detach();
+		const $tabbar = $('<div class="imogi-settings-tabbar"></div>');
+		if ($legacyNav.length) {
+			$tabbar.append($legacyNav);
+		} else if ($navWrap.length) {
+			$tabbar.append($navWrap.detach());
+		}
+
+		const $workspace = $('<div class="imogi-settings-workspace"></div>');
+		$workspace.append($tabbar).append($('<div class="imogi-settings-body"></div>').append($legacyMain));
+
+		let $anchor = frm.$wrapper.find(".form-page").first();
+		if (!$anchor.length) {
+			$anchor = frm.$wrapper.find(".layout-main-section").first();
+		}
+		if (!$anchor.length) {
+			$anchor = $layout.parent();
+		}
+		$anchor.append($workspace);
+		return;
+	}
+
+	const build_content_shell = () => {
+		let $content = frm.$wrapper.find(".imogi-settings-content");
 		if (!$content.length) {
 			$content = $('<div class="imogi-settings-content"></div>');
 			$layout.detach();
 			$content.append($layout);
-		} else {
-			$content.detach();
 		}
-		mount_shell($existingBody, $content);
+		return $content;
+	};
+
+	if ($existingWorkspace.length) {
+		const $content = build_content_shell();
+		const $main = $existingWorkspace.find(".imogi-settings-main");
+		if ($main.length) {
+			if ($heroSection.length && !$main.find('.form-section[data-fieldname="setup_section"]').length) {
+				$main.prepend($heroSection);
+			}
+			if (!$main.find(".imogi-settings-content").length) {
+				$main.append($content);
+			}
+		}
+		if ($navWrap.length && !$existingWorkspace.find(".imogi-settings-tabbar .imogi-settings-tab-nav-wrap").length) {
+			let $tabbar = $existingWorkspace.find(".imogi-settings-tabbar");
+			if (!$tabbar.length) {
+				$tabbar = $('<div class="imogi-settings-tabbar"></div>');
+				$existingWorkspace.prepend($tabbar);
+			}
+			$tabbar.prepend($navWrap);
+		}
 		return;
 	}
 
-	const $anchor = $layout.parent();
-	$navWrap.detach();
+	const $content = build_content_shell();
 	$heroSection.detach();
-	$layout.detach();
+	$navWrap.detach();
 
-	const $content = $('<div class="imogi-settings-content"></div>');
-	$content.append($layout);
+	const $main = $('<div class="imogi-settings-main"></div>');
+	$main.append($heroSection).append($content);
 
-	const $body = $('<div class="imogi-settings-body"></div>');
-	mount_shell($body, $content);
-	$anchor.append($body);
+	const $body = $('<div class="imogi-settings-body"></div>').append($main);
+
+	const $tabbar = $('<div class="imogi-settings-tabbar"></div>');
+	if ($navWrap.length) {
+		$tabbar.append($navWrap);
+	}
+
+	const $workspace = $('<div class="imogi-settings-workspace"></div>');
+	$workspace.append($tabbar).append($body);
+
+	let $anchor = frm.$wrapper.find(".form-page").first();
+	if (!$anchor.length) {
+		$anchor = frm.$wrapper.find(".layout-main-section").first();
+	}
+	if (!$anchor.length) {
+		$anchor = $layout.parent();
+	}
+	$anchor.append($workspace);
 }
 
 function build_settings_tabs(frm) {
@@ -1115,7 +1710,6 @@ function build_settings_tabs(frm) {
 		.map(
 			(tab) => `
 		<button type="button" class="imogi-settings-tab-btn" data-tab="${tab.id}" title="${frappe.utils.escape_html(tab.desc)}">
-			<span class="imogi-settings-tab-icon"><i class="fa ${tab.icon}"></i></span>
 			<span class="imogi-settings-tab-label">${tab.label}</span>
 		</button>`
 		)
@@ -1125,9 +1719,9 @@ function build_settings_tabs(frm) {
 	if (!$nav.length) {
 		const $navWrap = $(`
 			<div class="imogi-settings-tab-nav-wrap">
-				<div class="imogi-settings-sidebar-label">${__("Pengaturan")}</div>
-				<div class="imogi-settings-tab-nav">${tabs_html}</div>
-				<div class="imogi-settings-tab-desc"></div>
+				<div class="imogi-settings-tab-nav-scroll">
+					<div class="imogi-settings-tab-nav">${tabs_html}</div>
+				</div>
 			</div>`);
 
 		const $hero = frm.$wrapper.find(".imogi-mode-summary-host");
@@ -1138,11 +1732,14 @@ function build_settings_tabs(frm) {
 		}
 	} else {
 		$nav.html(tabs_html);
+		if (!$nav.parent().hasClass("imogi-settings-tab-nav-scroll")) {
+			$nav.wrap('<div class="imogi-settings-tab-nav-scroll"></div>');
+		}
 	}
 
 	layout_settings_shell(frm);
 
-	if (!visible_tabs.some((tab) => tab.id === __imogi_settings_active_tab)) {
+	if (!visible_tabs.some((tab) => tab.id === normalize_settings_tab_id(__imogi_settings_active_tab))) {
 		__imogi_settings_active_tab = "general";
 	}
 
@@ -1152,16 +1749,79 @@ function build_settings_tabs(frm) {
 			activate_settings_tab(frm, $(this).data("tab"));
 		});
 
-	update_settings_tab_desc(frm, __imogi_settings_active_tab);
+	update_settings_tab_desc(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
 }
 
 function update_settings_tab_desc(frm, tabId) {
+	tabId = normalize_settings_tab_id(tabId);
 	const tab = SETTINGS_TABS.find((t) => t.id === tabId);
 	if (!tab) return;
-	frm.$wrapper.find(".imogi-settings-tab-desc").text(tab.desc || "");
+	render_settings_tab_intro(frm, tab);
+}
+
+function ensure_settings_content_inner(frm) {
+	const $content = frm.$wrapper.find(".imogi-settings-content").first();
+	if (!$content.length) return $content;
+
+	let $inner = $content.children(".imogi-settings-content-inner");
+	if (!$inner.length) {
+		const $layout = $content.children(".form-layout").first();
+		$inner = $('<div class="imogi-settings-content-inner"></div>');
+		if ($layout.length) {
+			$layout.detach();
+			$inner.append($layout);
+		}
+		$content.prepend(
+			`<div class="imogi-settings-tab-intro" aria-live="polite"></div>`
+		);
+		$content.append($inner);
+	}
+	if (!$content.find(".imogi-settings-tab-intro").length) {
+		$content.prepend(`<div class="imogi-settings-tab-intro" aria-live="polite"></div>`);
+	}
+	return $inner;
+}
+
+function render_settings_tab_intro(frm, tab) {
+	if (!tab) return;
+	const $intro = frm.$wrapper.find(".imogi-settings-tab-intro");
+	if (!$intro.length) return;
+	$intro.html(`
+		<div class="imogi-settings-tab-intro-title">${frappe.utils.escape_html(tab.label)}</div>
+		<div class="imogi-settings-tab-intro-desc">${frappe.utils.escape_html(tab.desc || "")}</div>
+	`);
+}
+
+function apply_settings_tab_layout(frm, tabId) {
+	ensure_settings_content_inner(frm);
+	const $inner = frm.$wrapper.find(".imogi-settings-content-inner");
+	$inner.removeClass((_, cls) => (cls.match(/imogi-settings-tab-panel--\S+/g) || []).join(" "));
+	$inner.addClass(`imogi-settings-tab-panel imogi-settings-tab-panel--${tabId}`);
+	frm.$wrapper
+		.find(".imogi-settings-card-section")
+		.toggleClass("imogi-settings-field-grid", tabId !== "general");
+	frm.$wrapper.find(".imogi-store-identity-section").toggleClass("imogi-settings-field-grid", tabId === "general");
+}
+
+function layout_general_dock_grid(frm) {
+	const ctx = get_settings_section(frm, "store_identity_section");
+	if (!ctx || !ctx.$wrapper) return;
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	const $shift = $body.find(".imogi-shift-settings-dock");
+	const $kitchen = $body.find(".imogi-kitchen-settings-dock");
+	if (!$shift.length && !$kitchen.length) return;
+
+	let $grid = $body.children(".imogi-settings-dock-grid");
+	if (!$grid.length) {
+		$grid = $('<div class="imogi-settings-dock-grid"></div>');
+		$body.append($grid);
+	}
+	if ($shift.length) $grid.append($shift);
+	if ($kitchen.length) $grid.append($kitchen);
 }
 
 function activate_settings_tab(frm, tabId) {
+	tabId = normalize_settings_tab_id(tabId);
 	if (!SETTINGS_TABS.some((t) => t.id === tabId)) {
 		tabId = "general";
 	}
@@ -1170,15 +1830,20 @@ function activate_settings_tab(frm, tabId) {
 	frm.$wrapper.find(".imogi-settings-tab-btn").removeClass("is-active");
 	frm.$wrapper.find(`.imogi-settings-tab-btn[data-tab="${tabId}"]`).addClass("is-active");
 	update_settings_tab_desc(frm, tabId);
+	apply_settings_tab_layout(frm, tabId);
 
 	const visible_sections = new Set(
-		(SETTINGS_TABS.find((t) => t.id === tabId)?.sections || []).flat()
+		(get_visible_settings_tabs(frm).find((t) => t.id === tabId)?.sections || []).flat()
 	);
 
 	get_all_settings_tab_sections().forEach((sectionName) => {
 		const show = visible_sections.has(sectionName);
 		set_settings_section_visible(frm, sectionName, show);
 	});
+
+	frm.$wrapper
+		.find('.form-section[data-fieldname="setup_section"]')
+		.toggle(tabId === "general");
 
 	if (tabId === "integrations") {
 		render_api_dock_summary(frm);
@@ -1189,52 +1854,49 @@ function activate_settings_tab(frm, tabId) {
 	}
 	if (tabId === "payment") {
 		render_payment_dock_summary(frm);
+		render_transfer_dock_summary(frm);
 	}
-	if (tabId === "tax") {
-		render_franchise_dock_summary(frm);
-	}
-	if (tabId === "roles") {
+	if (tabId === "more") {
 		const ops_ctx = get_settings_section(frm, "operations_section");
 		if (ops_ctx && ops_ctx.$wrapper) {
 			ops_ctx.$wrapper.addClass("imogi-section-operations");
 		}
+		render_franchise_dock_summary(frm);
+		position_target_dock(frm);
+		render_target_dock_summary(frm);
 	}
 	if (tabId === "general") {
 		render_billing_dock_summary(frm);
 	}
-	if (tabId === "notifications") {
-		position_target_dock(frm);
-		render_target_dock_summary(frm);
-	}
 	if (tabId === "inventory") {
 		build_import_dock(frm);
 	}
-	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "notifications");
-	frm.$wrapper.find(".imogi-settings-trust-row").toggle(tabId === "general");
+	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "more");
+	frm.$wrapper.find(".imogi-settings-trust-row").remove();
 	frm.$wrapper.find(".imogi-settings-placeholder").remove();
 	toggle_general_tab_sections(frm, tabId);
 	if (tabId === "general") {
 		layout_store_identity(frm);
 		layout_shift_settings(frm);
 		layout_kitchen_settings(frm);
+		layout_general_dock_grid(frm);
 		render_receipt_preview(frm);
-	}
-	if (SETTINGS_TABS.find((t) => t.id === tabId)?.placeholder) {
-		show_settings_placeholder(frm, tabId);
 	}
 }
 
 function position_target_dock(frm) {
 	const $host = frm.$wrapper.find(".imogi-settings-target-host");
-	const $content = frm.$wrapper.find(".imogi-settings-content");
-	if ($host.length && $content.length) {
-		$content.prepend($host);
+	const $inner = frm.$wrapper.find(".imogi-settings-content-inner");
+	if ($host.length && $inner.length) {
+		$inner.prepend($host);
 	}
 }
 
 function style_setting_cards(frm) {
 	const card_sections = {
 		store_identity_section: { icon: "fa-store", title: __("Identitas Toko") },
+		branch_pricing_section: { icon: "fa-tags", title: __("Harga & Menu Multi Cabang") },
+		general_section: { icon: "fa-sliders", title: __("Pengaturan Dasar POS") },
 		inventory_section: { icon: "fa-cubes", title: __("Stok Otomatis") },
 		receipt_section: { icon: "fa-print", title: __("Struk / Receipt") },
 		import_section: { icon: "fa-upload", title: __("Import Data Menu") },
@@ -1244,34 +1906,35 @@ function style_setting_cards(frm) {
 		stamp_section: { icon: "fa-ticket", title: __("Stamp Card") },
 		promo_section: { icon: "fa-tags", title: __("Promo Otomatis") },
 		payment_gateway_section: { icon: "fa-credit-card", title: __("Payment Gateway") },
+		transfer_payment_section: { icon: "fa-university", title: __("Transfer Bank") },
 		integrations_section: { icon: "fa-random", title: __("Offline & Marketplace") },
 		operations_section: { icon: "fa-shield", title: __("Operasional Lanjutan") },
 		franchise_section: { icon: "fa-building", title: __("Franchise & Royalty") },
 		billing_section: { icon: "fa-credit-card", title: __("SaaS Billing Sync") },
+		api_section: { icon: "fa-globe", title: __("Order API (Website)") },
 	};
 
 	Object.entries(card_sections).forEach(([fieldname, meta]) => {
 		const ctx = get_settings_section(frm, fieldname);
 		if (!ctx || !ctx.$wrapper) return;
-		ctx.$wrapper.addClass("imogi-settings-card-section");
-
-		if (ctx.$wrapper.find(".imogi-settings-card-head").length) return;
+		ctx.$wrapper.addClass("imogi-settings-card-section imogi-settings-flat-section");
 
 		const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-		$body.prepend(`
-			<div class="imogi-settings-card-head">
-				<span class="imogi-settings-card-icon"><i class="fa ${meta.icon}"></i></span>
-				<div>
-					<div class="imogi-settings-card-title">${meta.title}</div>
-					<div class="imogi-settings-card-sub">${get_section_subtitle(fieldname)}</div>
-				</div>
-			</div>`);
+		$body.find(".imogi-settings-card-head, .imogi-settings-flat-head, .imogi-settings-flat-hint").remove();
+		ctx.$wrapper.find("> .imogi-settings-flat-head, > .imogi-settings-flat-hint").remove();
+		if (ctx.$wrapper.find("> .imogi-settings-flat-head").length) return;
+
+		const subtitle = get_section_subtitle(fieldname);
+		const head_html = settings_flat_head_html(meta.title, subtitle);
+		ctx.$wrapper.prepend(head_html);
 	});
 }
 
 function get_section_subtitle(fieldname) {
 	const map = {
 		store_identity_section: __("Kota, kontak owner, multi cabang, dan target omzet bulanan."),
+		branch_pricing_section: __("Price list master, sinkron harga ke cabang, dan push menu dari HQ."),
+		general_section: __("Perusahaan, profil kasir, gudang, dan shift kasir."),
 		inventory_section: __("Interval cek stok, role notifikasi, dan batas stok."),
 		receipt_section: __("Format cetak struk di layar kasir."),
 		import_section: __("Upload Excel/CSV: menu lengkap (Product+BOM) atau import terpisah."),
@@ -1281,10 +1944,12 @@ function get_section_subtitle(fieldname) {
 		stamp_section: __("Kumpulkan stamp per transaksi — reward voucher otomatis."),
 		promo_section: __("Rule Buy X Get Y diterapkan otomatis saat checkout."),
 		payment_gateway_section: __("QRIS via Midtrans atau Xendit di kasir."),
+		transfer_payment_section: __("Rekening bank yang ditampilkan saat pelanggan bayar transfer."),
 		integrations_section: __("Kasir offline (IndexedDB) dan order Grab/GoFood/ShopeeFood."),
 		operations_section: __("Role gating, approval workflow & central kitchen."),
 		franchise_section: __("Generate accrual royalty & posting ke Journal Entry."),
 		billing_section: __("Webhook billing eksternal untuk sinkron paket langganan otomatis."),
+		api_section: __("REST API untuk order online, katalog produk, dan customer."),
 	};
 	return map[fieldname] || "";
 }
@@ -1293,11 +1958,11 @@ function build_target_dock(frm) {
 	let $host = frm.$wrapper.find(".imogi-settings-target-host");
 	if (!$host.length) {
 		$host = $(`<div class="imogi-settings-target-host" style="display:none;"></div>`);
-		const $content = frm.$wrapper.find(".imogi-settings-content");
-		if ($content.length) {
-			$content.prepend($host);
+		const $inner = ensure_settings_content_inner(frm);
+		if ($inner.length) {
+			$inner.prepend($host);
 		} else {
-			frm.$wrapper.find(".form-layout").prepend($host);
+			frm.$wrapper.find(".imogi-settings-content").prepend($host);
 		}
 	}
 
@@ -1460,23 +2125,9 @@ function style_form_sections(frm) {
 		identity_ctx.$wrapper.addClass("imogi-section-store imogi-settings-card-section");
 	}
 
-	const ctx = get_settings_section(frm, "general_section");
-	if (!ctx || !ctx.$wrapper) return;
-
-	ctx.$wrapper.addClass("imogi-section-general imogi-settings-card-section");
-
-	if (!ctx.$wrapper.find(".imogi-settings-card-head").length) {
-		const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-		$body.prepend(`
-				<div class="imogi-settings-card-head">
-					<span class="imogi-settings-card-icon"><i class="fa fa-cog"></i></span>
-					<div>
-						<div class="imogi-settings-card-title">${__("Pengaturan Dasar POS")}</div>
-						<div class="imogi-settings-card-sub">${__(
-							"Perusahaan, profil kasir, gudang, dan shift kasir."
-						)}</div>
-					</div>
-				</div>`);
+	const general_ctx = get_settings_section(frm, "general_section");
+	if (general_ctx && general_ctx.$wrapper) {
+		general_ctx.$wrapper.addClass("imogi-section-general imogi-settings-card-section");
 	}
 }
 
@@ -1541,19 +2192,7 @@ function build_loyalty_dock(frm) {
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	if ($body.find(".imogi-loyalty-dock").length) return;
 
-	$body.prepend(`
-		<div class="imogi-loyalty-dock mb-3">
-			<div class="imogi-api-dock-intro">
-				<div class="imogi-api-dock-icon"><i class="fa fa-gift fa-lg"></i></div>
-				<div>
-					<div class="imogi-api-dock-title">${__("Program Loyalty & Stamp")}</div>
-					<div class="imogi-api-dock-sub">${__(
-						"Poin member, stamp card, dan promo otomatis di kasir IMOGI."
-					)}</div>
-				</div>
-			</div>
-			<div class="imogi-loyalty-panel"></div>
-		</div>`);
+	$body.prepend(`<div class="imogi-loyalty-dock"><div class="imogi-loyalty-panel"></div></div>`);
 	render_loyalty_dock_summary(frm);
 }
 
@@ -1658,6 +2297,92 @@ function render_payment_dock_summary(frm) {
 						<span class="imogi-mini-stat-val">${frm.doc.payment_gateway_key ? __("Tersimpan") : __("Belum diisi")}</span>
 					</div>
 				</div>
+			</div>
+		</div>`);
+}
+
+function build_transfer_dock(frm) {
+	const ctx = get_settings_section(frm, "transfer_payment_section");
+	if (!ctx || !ctx.$wrapper) return;
+	ctx.$wrapper.addClass("imogi-section-transfer");
+
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	if ($body.find(".imogi-transfer-dock").length) return;
+
+	$body.prepend(`
+		<div class="imogi-transfer-dock mb-3">
+			<div class="imogi-api-dock-intro">
+				<div class="imogi-api-dock-icon"><i class="fa fa-university fa-lg"></i></div>
+				<div>
+					<div class="imogi-api-dock-title">${__("Rekening Transfer")}</div>
+					<div class="imogi-api-dock-sub">${__(
+						"Ditampilkan di kasir saat metode Transfer dipilih."
+					)}</div>
+				</div>
+			</div>
+			<div class="imogi-transfer-panel"></div>
+		</div>`);
+	render_transfer_dock_summary(frm);
+}
+
+function render_transfer_dock_summary(frm) {
+	const $panel = frm.$wrapper.find(".imogi-transfer-panel");
+	if (!$panel.length) return;
+
+	const on = cint(frm.doc.enable_transfer_payment_info);
+	const bank = (frm.doc.transfer_bank_name || "").trim();
+	const account = (frm.doc.transfer_bank_account || "").trim();
+	const holder = (frm.doc.transfer_account_holder || "").trim();
+	const instructions = (frm.doc.transfer_instructions || "").trim();
+
+	if (!on) {
+		$panel.html(`
+			<div class="imogi-status-card is-warning">
+				<div class="imogi-status-card-body">
+					<p class="imogi-muted mb-0">${__(
+						"Info rekening transfer belum aktif. Aktifkan toggle di bawah lalu isi data bank."
+					)}</p>
+				</div>
+			</div>`);
+		return;
+	}
+
+	if (!bank || !account || !holder) {
+		$panel.html(`
+			<div class="imogi-status-card is-warning">
+				<div class="imogi-status-card-body">
+					<p class="imogi-muted mb-0">${__(
+						"Lengkapi nama bank, nomor rekening, dan atas nama agar tampil di kasir."
+					)}</p>
+				</div>
+			</div>`);
+		return;
+	}
+
+	$panel.html(`
+		<div class="imogi-status-card is-success">
+			<div class="imogi-status-card-body">
+				<div class="imogi-mini-stats">
+					<div class="imogi-mini-stat">
+						<span class="imogi-mini-stat-label">${__("Bank")}</span>
+						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(bank)}</span>
+					</div>
+					<div class="imogi-mini-stat">
+						<span class="imogi-mini-stat-label">${__("Rekening")}</span>
+						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(account)}</span>
+					</div>
+					<div class="imogi-mini-stat">
+						<span class="imogi-mini-stat-label">${__("Atas Nama")}</span>
+						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(holder)}</span>
+					</div>
+				</div>
+				${
+					instructions
+						? `<p class="imogi-muted mb-0 mt-2"><i class="fa fa-info-circle"></i> ${frappe.utils.escape_html(
+								instructions
+						  )}</p>`
+						: ""
+				}
 			</div>
 		</div>`);
 }
@@ -1979,26 +2704,22 @@ function render_mode_summary(frm) {
 	field.$wrapper.closest(".frappe-control").find(".control-label").hide();
 
 	field.$wrapper.html(`
-		<div class="imogi-hero-grid imogi-hero-grid--mode-only">
-			<div class="imogi-mode-panel ${kds_on || fulfillment_on ? "is-restaurant" : "is-umkm"}">
-				<div class="imogi-panel-head">
-					<div class="imogi-panel-title">${__("Alur Operasional")}</div>
+		<div class="imogi-settings-flow-strip">
+			<div class="imogi-settings-flow-main">
+				${settings_flat_head_html(__("Alur Operasional"))}
+				<div class="imogi-settings-flow-top">
+					<strong>${summary.title}</strong>
+					<span class="imogi-settings-chip">${__("Aktif")}</span>
 				</div>
-				<div class="imogi-mode-card">
-					<div class="imogi-mode-card-top">
-						<strong>${summary.title}</strong>
-						<span class="imogi-pill is-green">${__("Aktif digunakan")}</span>
-					</div>
-					<p class="imogi-mode-card-desc">${summary.text}</p>
-					<div class="imogi-mode-card-actions">
-						<button type="button" class="btn btn-primary btn-sm imogi-settings-action" data-route="imogi-pos-cashier">
-							<i class="fa fa-shopping-cart"></i> ${__("Buka Kasir")}
-						</button>
-						<button type="button" class="btn btn-default btn-sm imogi-settings-action" data-route="imogi-pos-dashboard">
-							${__("Lihat Dashboard")}
-						</button>
-					</div>
-				</div>
+				<p class="imogi-settings-flow-desc">${summary.text}</p>
+			</div>
+			<div class="imogi-settings-flow-actions">
+				<button type="button" class="btn btn-primary btn-sm imogi-settings-action" data-route="imogi-pos-cashier">
+					<i class="fa fa-shopping-cart"></i> ${__("Buka Kasir")}
+				</button>
+				<button type="button" class="btn btn-default btn-sm imogi-settings-action" data-route="imogi-pos-dashboard">
+					${__("Lihat Dashboard")}
+				</button>
 			</div>
 		</div>`);
 
@@ -2060,15 +2781,6 @@ function layout_store_identity(frm) {
 	if (!$body.find(".imogi-store-identity-layout").length) {
 		$body.find(".imogi-settings-card-head").remove();
 		$body.prepend(`
-			<div class="imogi-settings-card-head">
-				<span class="imogi-settings-card-icon"><i class="fa fa-store"></i></span>
-				<div>
-					<div class="imogi-settings-card-title">${__("Identitas Toko")}</div>
-					<div class="imogi-settings-card-sub">${__(
-						"Nama toko, kontak, multi cabang, dan target omzet bulanan."
-					)}</div>
-				</div>
-			</div>
 			<div class="imogi-store-identity-layout">
 				<div class="imogi-store-form-grid"></div>
 				<div class="imogi-receipt-preview-wrap">
@@ -2113,15 +2825,10 @@ function layout_shift_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-shift-settings-dock">
-				<div class="imogi-settings-card-head">
-					<span class="imogi-settings-card-icon"><i class="fa fa-clock-o"></i></span>
-					<div>
-						<div class="imogi-settings-card-title">${__("Shift Kasir & Opening/Closing Entry")}</div>
-						<div class="imogi-settings-card-sub">${__(
-							"Wajib buka/tutup shift, profil kasir ERPNext, dan jam operasional default."
-						)}</div>
-					</div>
-				</div>
+				${settings_flat_head_html(
+					__("Shift Kasir & Opening/Closing Entry"),
+					__("Wajib buka/tutup shift, profil kasir ERPNext, dan jam operasional default.")
+				)}
 				<div class="imogi-shift-status"></div>
 				<div class="imogi-shift-form-grid"></div>
 				<div class="imogi-shift-quick-links">
@@ -2156,15 +2863,10 @@ function layout_kitchen_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-kitchen-settings-dock">
-				<div class="imogi-settings-card-head">
-					<span class="imogi-settings-card-icon"><i class="fa fa-cutlery"></i></span>
-					<div>
-						<div class="imogi-settings-card-title">${__("Kitchen & Fulfillment")}</div>
-						<div class="imogi-settings-card-sub">${__(
-							"Aktifkan Kitchen Display untuk antrian dapur. Aktifkan Fulfillment untuk packing takeaway/delivery."
-						)}</div>
-					</div>
-				</div>
+				${settings_flat_head_html(
+					__("Kitchen & Fulfillment"),
+					__("Aktifkan Kitchen Display untuk antrian dapur. Aktifkan Fulfillment untuk packing takeaway/delivery.")
+				)}
 				<div class="imogi-kitchen-status"></div>
 				<div class="imogi-kitchen-form-grid"></div>
 				<div class="imogi-kitchen-quick-links">
@@ -2278,45 +2980,18 @@ function render_receipt_preview(frm) {
 	}
 }
 
-function build_trust_cards(frm) {
-	const $content = frm.$wrapper.find(".imogi-settings-content");
-	if (!$content.length || $content.find(".imogi-settings-trust-row").length) return;
-
-	$content.append(`
-		<div class="imogi-settings-trust-row">
-			<div class="imogi-trust-card">
-				<span class="imogi-trust-icon is-green"><i class="fa fa-shield"></i></span>
-				<div class="imogi-trust-title">${__("Aman & Terpercaya")}</div>
-				<div class="imogi-trust-desc">${__("Data terenkripsi dan backup otomatis.")}</div>
-			</div>
-			<div class="imogi-trust-card">
-				<span class="imogi-trust-icon is-blue"><i class="fa fa-refresh"></i></span>
-				<div class="imogi-trust-title">${__("Update Berkala")}</div>
-				<div class="imogi-trust-desc">${__("Fitur baru tanpa biaya tambahan.")}</div>
-			</div>
-			<div class="imogi-trust-card">
-				<span class="imogi-trust-icon is-purple"><i class="fa fa-plug"></i></span>
-				<div class="imogi-trust-title">${__("Integrasi Lengkap")}</div>
-				<div class="imogi-trust-desc">${__("Payment gateway, marketplace & API.")}</div>
-			</div>
-			<div class="imogi-trust-card">
-				<span class="imogi-trust-icon is-orange"><i class="fa fa-headphones"></i></span>
-				<div class="imogi-trust-title">${__("Support Prioritas")}</div>
-				<div class="imogi-trust-desc">${__("Tim support siap bantu operasional.")}</div>
-			</div>
-		</div>`);
+function build_trust_cards() {
+	/* Trust cards removed — cleaner settings layout aligned with Promo Rule UI */
 }
 
 function build_sidebar_help(frm) {
-	const $navWrap = frm.$wrapper.find(".imogi-settings-tab-nav-wrap");
-	if (!$navWrap.length || $navWrap.find(".imogi-settings-help-card").length) return;
+	const $tabbar = frm.$wrapper.find(".imogi-settings-tabbar");
+	if (!$tabbar.length || $tabbar.find(".imogi-settings-help-link").length) return;
 
-	$navWrap.append(`
-		<div class="imogi-settings-help-card">
-			<div class="imogi-settings-help-title">${__("Butuh bantuan?")}</div>
-			<p class="imogi-settings-help-desc">${__("Tim support IMOGI siap membantu setup dan troubleshooting.")}</p>
-			<a class="btn btn-default btn-sm btn-block" href="mailto:support@imogi.id">${__("Hubungi Support")}</a>
-		</div>`);
+	$tabbar.append(`
+		<a class="imogi-settings-help-link" href="mailto:support@imogi.id" title="${__("Hubungi Support")}">
+			<i class="fa fa-life-ring"></i> ${__("Bantuan")}
+		</a>`);
 }
 
 function show_settings_placeholder(frm, tabId) {
@@ -2355,7 +3030,7 @@ function toggle_settings_by_business_type(frm) {
 		build_settings_tabs(frm);
 	}
 	if (__imogi_settings_active_tab) {
-		activate_settings_tab(frm, __imogi_settings_active_tab);
+		activate_settings_tab(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
 	}
 }
 

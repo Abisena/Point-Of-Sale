@@ -1837,30 +1837,103 @@
 
 /* ═══════════════════════════════════════════════════════════
    IMOGI POS Settings & API Docs — design system
-   Accent: #f39c12 (brand orange)
+   Accent: monochrome (#0f1f35 / #111827)
    ═══════════════════════════════════════════════════════════ */
 
 .imogi-settings-page .form-layout {
 	max-width: none;
 }
 
+.imogi-settings-workspace {
+	--imogi-settings-gutter: 18px;
+	background: #fff;
+	border: 1px solid #e2e6ec;
+	margin-bottom: 16px;
+}
+
+.imogi-settings-tabbar {
+	align-items: stretch;
+	background: #fff;
+	border-bottom: 1px solid #e2e6ec;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0;
+	min-height: 40px;
+	overflow: hidden;
+	padding: 0;
+}
+
 .imogi-settings-body {
-	align-items: start;
-	display: grid;
-	gap: 20px;
-	grid-template-columns: 220px minmax(0, 1fr);
-	margin-bottom: 24px;
+	display: block;
+	margin-bottom: 0;
+	overflow: visible;
 }
 
 .imogi-settings-main {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 0;
+	margin: 0;
+	max-width: none;
 	min-width: 0;
+	padding: 0 var(--imogi-settings-gutter, 18px);
+	width: 100%;
 }
 
 .imogi-settings-content {
 	min-width: 0;
+}
+
+.imogi-settings-tab-intro {
+	background: #fafafa;
+	border-bottom: 1px solid #eceef2;
+	padding: 14px 0 12px;
+}
+
+.imogi-settings-tab-intro-title {
+	color: #111827;
+	font-size: 14px;
+	font-weight: 700;
+	margin-bottom: 3px;
+}
+
+.imogi-settings-tab-intro-desc {
+	color: #6b7280;
+	font-size: 12px;
+	line-height: 1.45;
+	max-width: 680px;
+}
+
+.imogi-settings-content-inner {
+	margin: 0;
+	max-width: none;
+	padding: 16px 0 24px;
+	width: 100%;
+}
+
+.imogi-settings-page .imogi-settings-main .form-section {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.imogi-settings-page .imogi-settings-main .section-body > .row {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.imogi-settings-page .imogi-settings-main .form-column,
+.imogi-settings-page .imogi-settings-main .section-body .col-sm-12,
+.imogi-settings-page .imogi-settings-main .section-body .col-sm-6 {
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
+.imogi-settings-page .imogi-settings-flat-section > .imogi-settings-flat-head,
+.imogi-settings-page .imogi-settings-flat-section > .imogi-settings-flat-hint,
+.imogi-settings-page .imogi-settings-main .section-body .imogi-settings-flat-head,
+.imogi-settings-page .imogi-settings-main .section-body .imogi-settings-flat-hint {
+	margin-left: 0;
+	padding-left: 0;
 }
 
 .imogi-settings-page .imogi-settings-content .form-section.hide-control,
@@ -1872,106 +1945,133 @@
 	max-width: none;
 }
 
-/* ── Settings tab navigation (sidebar) ── */
+/* ── Settings tab navigation (horizontal tabsheet) ── */
 .imogi-settings-tab-nav-wrap {
-	margin-bottom: 0;
-	position: sticky;
-	top: 56px;
+	align-items: stretch;
+	display: flex;
+	flex: 1;
+	margin: 0;
+	min-width: 0;
+	overflow: hidden;
+	position: static;
+	top: auto;
+}
+
+.imogi-settings-tab-nav-scroll {
+	flex: 1;
+	min-width: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: thin;
 }
 
 .imogi-settings-sidebar-label {
-	color: #94a3b8;
-	font-size: 11px;
-	font-weight: 800;
-	letter-spacing: 0.06em;
-	margin-bottom: 8px;
-	padding-left: 6px;
-	text-transform: uppercase;
+	display: none;
 }
 
 .imogi-settings-tab-nav {
-	background: #f8fafc;
-	border: 1px solid #e2e8f0;
-	border-radius: 14px;
-	display: flex;
-	flex-direction: column;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	display: inline-flex;
 	flex-wrap: nowrap;
-	gap: 4px;
-	padding: 8px;
+	gap: 0;
+	min-width: max-content;
+	padding: 0 var(--imogi-settings-gutter, 18px);
+	width: max-content;
 }
 
 .imogi-settings-tab-btn {
 	align-items: center;
-	background: transparent;
+	background: none;
 	border: none;
-	border-radius: 10px;
-	color: #64748b;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	box-shadow: none;
+	color: #6b7280;
 	cursor: pointer;
 	display: inline-flex;
-	flex: none;
+	flex: 0 0 auto;
 	font-size: 13px;
-	font-weight: 700;
-	gap: 8px;
-	justify-content: flex-start;
-	min-width: 0;
-	padding: 10px 12px;
-	transition: all 0.15s ease;
-	width: 100%;
+	font-weight: 600;
+	gap: 0;
+	justify-content: center;
+	margin-bottom: -1px;
+	min-height: 42px;
+	padding: 10px 14px;
+	transition: color 0.15s ease, border-color 0.15s ease;
+	white-space: nowrap;
+	width: auto;
 }
 
 .imogi-settings-tab-btn:hover {
-	background: #fff;
-	color: #334155;
+	background: none;
+	color: #0f1f35;
 }
 
 .imogi-settings-tab-btn.is-active {
-	background: #fff;
-	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-	color: #b45309;
+	background: none;
+	border-bottom-color: #0f1f35;
+	box-shadow: none;
+	color: #0f1f35;
 }
 
 .imogi-settings-tab-icon {
-	align-items: center;
-	background: #fff;
-	border-radius: 8px;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-	color: #94a3b8;
-	display: flex;
-	height: 28px;
-	justify-content: center;
-	width: 28px;
-}
-
-.imogi-settings-tab-btn.is-active .imogi-settings-tab-icon {
-	background: #fff7ed;
-	color: #f39c12;
+	display: none;
 }
 
 .imogi-settings-tab-desc {
-	background: #fff;
-	border: 1px solid #e8ecf1;
-	border-radius: 10px;
-	color: #64748b;
-	font-size: 12px;
-	line-height: 1.45;
-	margin-top: 10px;
-	padding: 10px 12px;
+	display: none;
+}
+
+.imogi-settings-help-link {
+	align-items: center;
+	border-left: 1px solid #f3f4f6;
+	color: #6b7280;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 600;
+	gap: 5px;
+	height: 40px;
+	padding: 0 14px;
+	text-decoration: none !important;
+	white-space: nowrap;
+}
+
+.imogi-settings-help-link:hover {
+	color: #0f1f35;
 }
 
 .imogi-mini-stats--grid {
-	display: grid;
-	gap: 10px 16px;
-	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 20px;
 }
 
-.imogi-section-loyalty .imogi-loyalty-dock,
+.imogi-section-loyalty .imogi-loyalty-dock {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	margin-bottom: 12px;
+	padding: 0;
+}
+
+.imogi-section-loyalty .imogi-loyalty-panel {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 10px 12px;
+}
+
 .imogi-section-payment .imogi-payment-dock,
 .imogi-section-integrations .imogi-integrations-dock,
 .imogi-section-franchise .imogi-franchise-dock,
 .imogi-section-billing .imogi-billing-dock {
-	background: #f8fafc;
-	border: 1px solid #e2e8f0;
-	border-radius: 12px;
+	background: #fafafa;
+	border: 1px solid #eceef2;
+	border-radius: 8px;
 	padding: 14px 16px;
 }
 
@@ -1980,38 +2080,95 @@
 }
 
 @media (max-width: 900px) {
-	.imogi-settings-body {
-		grid-template-columns: 1fr;
+	.imogi-settings-workspace {
+		--imogi-settings-gutter: 14px;
+	}
+
+	.imogi-settings-tabbar {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 8px;
+		padding: 10px 14px 0;
 	}
 
 	.imogi-settings-tab-nav-wrap {
-		position: static;
+		align-items: flex-start;
+		flex-direction: column;
+		width: 100%;
 	}
 
-	.imogi-settings-tab-nav {
-		flex-direction: row;
-		flex-wrap: wrap;
+	.imogi-settings-tab-desc {
+		max-width: none;
+		text-align: left;
 	}
 
-	.imogi-settings-tab-btn {
-		flex: 1 1 calc(33.333% - 4px);
-		justify-content: center;
-		padding: 8px 6px;
-		width: auto;
-	}
-
-	.imogi-settings-tab-label {
-		font-size: 11px;
+	.imogi-settings-help-link {
+		align-self: flex-end;
+		margin-bottom: 8px;
 	}
 }
 
-/* ── Settings card sections ── */
+/* ── Settings card sections (flat) ── */
+.imogi-settings-flat-head {
+	color: #0f1f35;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.3;
+	margin: 0 0 6px;
+}
+
+.imogi-settings-flat-head::before {
+	color: #9ca3af;
+	content: "| ";
+	font-weight: 400;
+}
+
+.imogi-settings-flat-hint {
+	color: #6b7280;
+	font-size: 11px;
+	line-height: 1.45;
+	margin: -2px 0 10px;
+}
+
+.imogi-settings-page .imogi-settings-flat-section {
+	margin-bottom: 20px;
+}
+
 .imogi-settings-page .imogi-settings-card-section .section-body {
-	background: #fff;
-	border: 1px solid #e8ecf1;
-	border-radius: 14px;
-	margin-bottom: 14px;
-	padding: 18px 20px 10px;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	margin-bottom: 0;
+	padding: 0;
+}
+
+.imogi-settings-page .imogi-settings-flat-section .section-body {
+	background: #fafafa;
+	border: 1px solid #eceef2;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	padding: 16px 18px;
+}
+
+.imogi-settings-page .imogi-store-identity-section .section-body {
+	background: transparent;
+	border: none;
+	margin-bottom: 0;
+	padding: 0;
+}
+
+/* ── Field grids inside card sections ── */
+.imogi-settings-page .imogi-settings-field-grid .form-column.col-sm-12 > form {
+	align-items: start;
+	display: grid;
+	gap: 14px 20px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	width: 100%;
+}
+
+.imogi-settings-page:not([data-active-tab="general"]) .form-section[data-fieldname="setup_section"] {
+	display: none !important;
 }
 
 .imogi-settings-card-head {
@@ -2025,10 +2182,10 @@
 
 .imogi-settings-card-icon {
 	align-items: center;
-	background: linear-gradient(135deg, #fff7ed, #fff);
-	border: 1px solid #fed7aa;
-	border-radius: 12px;
-	color: #f39c12;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
+	color: #374151;
 	display: flex;
 	flex-shrink: 0;
 	font-size: 16px;
@@ -2055,11 +2212,20 @@
 }
 
 .imogi-settings-page .imogi-settings-card-section .form-column.col-sm-12 > form {
-	column-gap: 24px;
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	row-gap: 12px;
+	column-gap: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	grid-template-columns: none;
+	row-gap: 0;
 	width: 100%;
+}
+
+.imogi-settings-page .imogi-settings-field-grid .form-column.col-sm-12 > form {
+	display: grid;
+	flex-direction: unset;
+	gap: 14px 20px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .imogi-settings-page .imogi-settings-card-section .form-column > form > .frappe-control,
@@ -2116,16 +2282,16 @@
 
 .imogi-import-dock {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	margin-top: 4px;
 }
 
 .imogi-import-card {
 	position: relative;
 	background: #fff;
-	border: 1px solid #e2e8f0;
-	border-radius: 14px;
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
 	padding: 18px 16px 16px;
 	display: flex;
 	flex-direction: column;
@@ -2270,7 +2436,9 @@
 }
 
 .imogi-settings-main .form-section[data-fieldname="setup_section"] .section-body {
-	padding: 0;
+	margin: 0;
+	max-width: none;
+	padding: 16px 0 0;
 }
 
 .imogi-page-hero {
@@ -2629,16 +2797,16 @@
 /* ── Toolbar docs button ── */
 .imogi-settings-page .custom-btn.imogi-toolbar-docs-btn,
 .imogi-settings-page .btn.imogi-toolbar-docs-btn {
-	background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
-	border: 1px solid #f39c12 !important;
-	color: #b45309 !important;
+	background: #fff !important;
+	border: 1px solid #d1d5db !important;
+	color: #111827 !important;
 	font-weight: 600 !important;
 }
 
 .imogi-settings-page .custom-btn.imogi-toolbar-docs-btn:hover,
 .imogi-settings-page .btn.imogi-toolbar-docs-btn:hover {
-	background: #f39c12 !important;
-	border-color: #d68910 !important;
+	background: #111827 !important;
+	border-color: #111827 !important;
 	color: #fff !important;
 }
 
@@ -2653,9 +2821,9 @@
 
 .imogi-api-dock-intro {
 	align-items: center;
-	background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
-	border: 1px solid #fed7aa;
-	border-radius: 14px 14px 0 0;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
 	display: flex;
 	gap: 14px;
 	padding: 16px 20px;
@@ -2664,9 +2832,10 @@
 .imogi-api-dock-icon {
 	align-items: center;
 	background: #fff;
-	border-radius: 12px;
-	box-shadow: 0 2px 8px rgba(243, 156, 18, 0.15);
-	color: #f39c12;
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
+	box-shadow: none;
+	color: #374151;
 	display: flex;
 	height: 48px;
 	justify-content: center;
@@ -2803,27 +2972,31 @@
 }
 
 .imogi-mini-stat {
-	background: rgba(255, 255, 255, 0.8);
-	border-radius: 8px;
-	padding: 8px 10px;
+	align-items: center;
+	background: transparent;
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 0;
 }
 
 .imogi-mini-stat-label {
-	color: #94a3b8;
-	display: block;
+	color: #9ca3af;
+	display: inline;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
+	margin: 0;
 	text-transform: uppercase;
 }
 
 .imogi-mini-stat-val {
-	color: #334155;
-	display: block;
-	font-family: ui-monospace, monospace;
+	color: #374151;
+	display: inline;
 	font-size: 11px;
-	margin-top: 2px;
-	word-break: break-all;
+	font-weight: 600;
+	margin: 0;
+	word-break: break-word;
 }
 
 .imogi-status-card-actions {
@@ -3794,9 +3967,9 @@
 .imogi-mode-panel,
 .imogi-tier-panel {
 	background: #fff;
-	border: 1px solid #e8ecf1;
-	border-radius: 16px;
-	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
+	box-shadow: none;
 	overflow: hidden;
 }
 
@@ -3873,8 +4046,8 @@
 }
 
 .imogi-mode-card-actions .btn-primary {
-	background: #001f3f;
-	border-color: #001f3f;
+	background: #111827;
+	border-color: #111827;
 }
 
 .imogi-tier-panel {
@@ -4024,12 +4197,12 @@
 
 .imogi-store-identity-layout {
 	display: grid;
-	gap: 20px;
-	grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+	gap: 24px;
+	grid-template-columns: minmax(0, 1.15fr) minmax(280px, 360px);
 	margin-top: 4px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
 	.imogi-store-identity-layout {
 		grid-template-columns: 1fr;
 	}
@@ -4052,9 +4225,9 @@
 }
 
 .imogi-receipt-preview-wrap {
-	background: #f8fafc;
-	border: 1px solid #e2e8f0;
-	border-radius: 12px;
+	background: #fafafa;
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
 	padding: 12px;
 }
 
@@ -4069,9 +4242,9 @@
 
 .imogi-receipt-preview-paper {
 	background: #fff;
-	border: 1px dashed #cbd5e1;
-	border-radius: 8px;
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+	border: 1px solid #e5e7eb;
+	border-radius: 0;
+	box-shadow: none;
 	font-family: "Courier New", Courier, monospace;
 	font-size: 11px;
 	line-height: 1.45;
@@ -4236,7 +4409,7 @@
 }
 
 .imogi-settings-page .imogi-store-identity-section .section-body {
-	padding-top: 16px;
+	padding-top: 0;
 }
 
 .imogi-pill.is-green {
