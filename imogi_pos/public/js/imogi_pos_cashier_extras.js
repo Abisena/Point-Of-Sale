@@ -166,6 +166,9 @@ imogi_pos.cashier_extras.apply_table_prefill = function (page) {
 		page.set_order_type("Dine-in", true);
 	}
 	page.selected_table = prefill.restaurant_table;
+	if (prefill.customer_label) {
+		page.wrapper.find(".imogi-cashier-customer-search").val(prefill.customer_label);
+	}
 	page._tables_loaded = false;
 	imogi_pos.cashier_extras.render_table_row(page);
 	imogi_pos.cashier_extras.load_tables(page, { force: true });
@@ -378,7 +381,7 @@ imogi_pos.cashier_extras.start_multi_qris_checkout = function (
 	const discount_state = page.get_payment_discount_state?.(dialog) || {};
 	const args = {
 		items: JSON.stringify(
-			page.cart.map((row) => ({
+			(page.get_checkout_cart ? page.get_checkout_cart() : page.cart).map((row) => ({
 				item_code: row.item_code,
 				qty: row.qty,
 				rate: row.rate,
@@ -466,7 +469,7 @@ imogi_pos.cashier_extras.finish_multi_qris_checkout = function (page, dialog, su
 imogi_pos.cashier_extras.build_checkout_args = function (page, extra = {}) {
 	const args = {
 		items: JSON.stringify(
-			page.cart.map((row) => ({
+			(page.get_checkout_cart ? page.get_checkout_cart() : page.cart).map((row) => ({
 				item_code: row.item_code,
 				qty: row.qty,
 				rate: row.rate,

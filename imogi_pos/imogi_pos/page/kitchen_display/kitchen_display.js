@@ -104,6 +104,11 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		frappe.call({
 			method: "imogi_pos.api.kitchen.get_kitchen_queue",
 			callback: (r) => {
+				if (r.exc) {
+					this.orders = [];
+					this.render(this.orders);
+					return;
+				}
 				this.orders = r.message || [];
 				this.render(this.orders);
 			},

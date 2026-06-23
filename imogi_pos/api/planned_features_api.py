@@ -48,9 +48,7 @@ def _require_ops_access():
 
 @frappe.whitelist()
 def merge_tables(primary_order, secondary_order):
-	from imogi_pos.api.cashier import _require_cashier_access
-
-	_require_cashier_access()
+	_require_ops_access()
 	require_feature_operational("merge_table")
 	return merge_restaurant_orders(primary_order, secondary_order)
 
@@ -137,9 +135,9 @@ def seat_table_reservation_api(name):
 	require_feature_operational("table_reservation")
 	doc = frappe.get_doc("IMOGI POS Table Reservation", name)
 	doc.check_permission("write")
-	seat_table_reservation(name)
+	result = seat_table_reservation(name)
 	frappe.db.commit()
-	return {"name": name, "status": "Seated"}
+	return result
 
 
 @frappe.whitelist()

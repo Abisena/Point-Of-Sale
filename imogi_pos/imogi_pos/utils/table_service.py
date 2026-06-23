@@ -96,10 +96,22 @@ def seat_table_reservation(reservation_name: str):
 	if doc.status != "Booked":
 		frappe.throw(_("Reservasi sudah tidak aktif"))
 
+	table_name = doc.restaurant_table
 	doc.db_set("status", "Seated")
-	if doc.restaurant_table:
-		mark_table_reserved(doc.restaurant_table)
-	return doc.name
+	if table_name:
+		# Tamu sudah datang — lepas status dipesan agar meja siap dipakai / dibuka di kasir.
+		release_table_if_reserved(table_name)
+
+	return {
+		"name": doc.name,
+		"status": "Seated",
+		"restaurant_table": table_name,
+		"table_number": frappe.db.get_value("IMOGI Restaurant Table", table_name, "table_number")
+		if table_name
+		else None,
+		"customer_name": doc.customer_name,
+		"party_size": doc.party_size,
+	}
 
 
 def get_open_orders_by_table(company: str | None = None) -> dict[str, dict]:

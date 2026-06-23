@@ -13,8 +13,11 @@ def _require_kitchen_access():
 
 @frappe.whitelist()
 def get_kitchen_queue(station_type=None):
-	_require_kitchen_access()
 	from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
+
+	if not is_feature_operational("kitchen_display"):
+		return []
+	_require_kitchen_access()
 
 	station_filter = ""
 	values = {}

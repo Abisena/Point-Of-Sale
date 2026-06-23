@@ -126,7 +126,7 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("IMOGI POS Loyalty Transaction", {"read": 1}),
 	],
 	"IMOGI Waiter": [
-		("Riwayat Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+		("Riwayat Order", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
 		("IMOGI Restaurant Table", {"read": 1, "write": 1, "create": 1}),
 		("IMOGI POS Table Reservation", {"read": 1, "write": 1, "create": 1}),
 		("IMOGI POS Waiting List", {"read": 1, "write": 1, "create": 1}),

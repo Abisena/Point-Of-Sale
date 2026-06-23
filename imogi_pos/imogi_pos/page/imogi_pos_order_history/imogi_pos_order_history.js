@@ -49,6 +49,7 @@ function inject_order_history_css() {
 		.imogi-pos-order-history .imogi-oh-stat-icon{align-items:center;border-radius:999px;display:inline-flex;flex-shrink:0;font-size:16px;height:42px;justify-content:center;width:42px}
 		.imogi-pos-order-history .imogi-oh-stat-icon--blue{background:#eff6ff;color:#2563eb}
 		.imogi-pos-order-history .imogi-oh-stat-icon--green{background:#ecfdf5;color:#059669}
+		.imogi-pos-order-history .imogi-oh-stat-icon--red{background:#fef2f2;color:#dc2626}
 		.imogi-pos-order-history .imogi-oh-stat-body{min-width:0}
 		.imogi-pos-order-history .imogi-oh-stat-label{color:#64748b;font-size:12px;font-weight:600;line-height:1.25}
 		.imogi-pos-order-history .imogi-oh-stat-value{color:#0f1f35;font-size:20px;font-variant-numeric:tabular-nums;font-weight:800;line-height:1.15;margin-top:4px}
@@ -326,8 +327,8 @@ frappe.pages["imogi-pos-order-history"].on_page_load = function (wrapper) {
 		return [
 			render_stat_card(__("Total transaksi"), s.total_today || 0, "fa-file-text-o", "blue", __("Hari ini")),
 			render_stat_card(__("Completed"), s.completed_today || 0, "fa-check-circle", "green", __("Hari ini")),
+			render_stat_card(__("Dibatalkan"), s.cancelled_today || 0, "fa-ban", "red", __("Hari ini")),
 			render_stat_card(__("Pendapatan hari ini"), format_currency(s.revenue_today || 0), "fa-money", "green"),
-			render_stat_card(__("Rata-rata transaksi"), format_currency(s.average_today || 0), "fa-line-chart", "blue"),
 		].join("");
 	};
 

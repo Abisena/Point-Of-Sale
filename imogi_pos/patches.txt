@@ -47,3 +47,4 @@ imogi_pos.patches.update_pos_category_combo_option
 imogi_pos.patches.sync_workspace_order_menu_split
 imogi_pos.patches.sync_waiter_dedicated_home
 imogi_pos.patches.grant_cashier_riwayat_order_cancel
+imogi_pos.patches.grant_waiter_cashier_page

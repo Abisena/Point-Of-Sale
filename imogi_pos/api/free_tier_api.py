@@ -115,7 +115,7 @@ def _assert_order_history_access(order, access):
 
 
 def _order_history_where(filters, access):
-	conditions = ["ro.docstatus < 2"]
+	conditions = ["ro.docstatus in (1, 2)"]
 	values = {}
 
 	if filters.get("from_date"):
@@ -241,6 +241,7 @@ def _fetch_order_history_summary(access):
 		select
 			count(*) as total_count,
 			sum(case when ro.status = 'Completed' then 1 else 0 end) as completed_count,
+			sum(case when ro.status = 'Cancelled' then 1 else 0 end) as cancelled_count,
 			sum(case when ro.status = 'Completed' then ro.grand_total else 0 end) as revenue
 		from `tabRiwayat Order` ro
 		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
@@ -252,10 +253,12 @@ def _fetch_order_history_summary(access):
 	row = row[0] if row else {}
 	total = int(row.get("total_count") or 0)
 	completed = int(row.get("completed_count") or 0)
+	cancelled = int(row.get("cancelled_count") or 0)
 	revenue = flt(row.get("revenue"))
 	return {
 		"total_today": total,
 		"completed_today": completed,
+		"cancelled_today": cancelled,
 		"revenue_today": revenue,
 		"average_today": (revenue / completed) if completed else 0,
 	}

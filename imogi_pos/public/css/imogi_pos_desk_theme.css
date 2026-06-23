@@ -206,6 +206,7 @@ body.imogi-pos-themed .container:has(.imogi-pos-order-history),
 
 .imogi-cashier-page .imogi-cashier-panel-head,
 .imogi-cashier-header,
+.imogi-ts-topbar.imogi-ts-topbar--desk,
 .imogi-open-shift-page .imogi-shift-header,
 .imogi-close-shift-page .imogi-shift-header {
 	background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;

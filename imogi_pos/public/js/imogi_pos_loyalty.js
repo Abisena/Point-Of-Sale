@@ -121,7 +121,7 @@ imogi_pos.loyalty.refresh_preview = function (page, dialog, subtotal) {
 	const discount = page.get_payment_discount_state(dialog);
 	const args = {
 		items: JSON.stringify(
-			page.cart.map((row) => ({
+			(page.get_checkout_cart ? page.get_checkout_cart() : page.cart).map((row) => ({
 				item_code: row.item_code,
 				qty: row.qty,
 				rate: row.rate,

@@ -4,6 +4,493 @@ const IMOGI_TABLE_STATUS_CLASS = {
 	Reserved: "is-reserved",
 };
 
+const IMOGI_TS_STATUS_LABEL = {
+	Available: __("Kosong"),
+	Occupied: __("Terisi"),
+	Reserved: __("Dipesan"),
+};
+
+const IMOGI_TS_V2_STYLE_ID = "imogi-ts-v2-css-b";
+
+function imogi_ts_ensure_v2_css() {
+	const legacy_id = "imogi-ts-v2-css";
+	document.getElementById(legacy_id)?.remove();
+	if (document.getElementById(IMOGI_TS_V2_STYLE_ID)) {
+		return;
+	}
+	frappe.dom.set_style(
+		`
+		.imogi-ts-shell--v2 {
+			--ts-bg: #eef1f5;
+			--ts-surface: #fff;
+			--ts-border: #e4e8ee;
+			--ts-text: #1a2332;
+			--ts-muted: #6b7a90;
+			--ts-accent: #714b67;
+			--ts-available: #16a34a;
+			--ts-occupied: #ea580c;
+			--ts-reserved: #2563eb;
+			background: var(--ts-bg);
+			gap: 0;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 {
+			background: var(--ts-bg);
+		}
+		.imogi-ts-shell--v2 .imogi-ts-kpi-strip {
+			background: var(--ts-surface);
+			border-bottom: 1px solid var(--ts-border);
+			display: grid;
+			gap: 10px;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			padding: 12px 16px;
+		}
+		@media (max-width: 900px) {
+			.imogi-ts-shell--v2 .imogi-ts-kpi-strip {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+		.imogi-ts-shell--v2 .imogi-ts-kpi {
+			align-items: center;
+			background: #f8fafc;
+			border: 1px solid var(--ts-border);
+			border-radius: 12px;
+			display: flex;
+			gap: 12px;
+			min-width: 0;
+			padding: 12px 14px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-kpi__icon {
+			align-items: center;
+			border-radius: 10px;
+			color: #fff;
+			display: flex;
+			flex-shrink: 0;
+			font-size: 16px;
+			height: 40px;
+			justify-content: center;
+			width: 40px;
+		}
+		.imogi-ts-kpi--total .imogi-ts-kpi__icon { background: linear-gradient(135deg, #475569, #64748b); }
+		.imogi-ts-kpi--available .imogi-ts-kpi__icon { background: linear-gradient(135deg, #15803d, #22c55e); }
+		.imogi-ts-kpi--occupied .imogi-ts-kpi__icon { background: linear-gradient(135deg, #c2410c, #f97316); }
+		.imogi-ts-kpi--waiting .imogi-ts-kpi__icon { background: linear-gradient(135deg, #1d4ed8, #3b82f6); }
+		.imogi-ts-shell--v2 .imogi-ts-kpi__val {
+			color: var(--ts-text);
+			font-size: 22px;
+			font-weight: 800;
+			line-height: 1;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-kpi__label {
+			color: var(--ts-muted);
+			font-size: 11px;
+			font-weight: 600;
+			letter-spacing: 0.04em;
+			margin-top: 4px;
+			text-transform: uppercase;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-layout--v2 {
+			display: grid;
+			gap: 0;
+			grid-template-columns: minmax(0, 1fr) 320px;
+			min-height: 0;
+		}
+		@media (max-width: 1100px) {
+			.imogi-ts-shell--v2 .imogi-ts-layout--v2 {
+				grid-template-columns: 1fr;
+			}
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor {
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			padding: 14px 16px 16px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor-head {
+			align-items: flex-start;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+			justify-content: space-between;
+			margin-bottom: 12px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor-title {
+			color: var(--ts-text);
+			font-size: 18px;
+			font-weight: 800;
+			margin: 0;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor-sub {
+			color: var(--ts-muted);
+			font-size: 12px;
+			margin: 4px 0 0;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor-toolbar {
+			align-items: center;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-legend {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-legend-item {
+			align-items: center;
+			color: var(--ts-muted);
+			display: inline-flex;
+			font-size: 11px;
+			font-weight: 600;
+			gap: 6px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-legend-dot {
+			border-radius: 50%;
+			height: 8px;
+			width: 8px;
+		}
+		.imogi-ts-legend-dot--available { background: var(--ts-available); }
+		.imogi-ts-legend-dot--occupied { background: var(--ts-occupied); }
+		.imogi-ts-legend-dot--reserved { background: var(--ts-reserved); }
+		.imogi-ts-shell--v2 .imogi-ts-zone-filter {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-bottom: 12px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-zone-chip {
+			background: var(--ts-surface);
+			border: 1px solid var(--ts-border);
+			border-radius: 999px;
+			color: var(--ts-muted);
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: 600;
+			padding: 5px 12px;
+			transition: all 0.15s ease;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-zone-chip:hover {
+			border-color: #cbd5e1;
+			color: var(--ts-text);
+		}
+		.imogi-ts-shell--v2 .imogi-ts-zone-chip.is-active {
+			background: var(--ts-accent);
+			border-color: var(--ts-accent);
+			color: #fff;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-manage-btn {
+			background: var(--ts-surface) !important;
+			border: 1px solid var(--ts-border) !important;
+			border-radius: 8px !important;
+			color: var(--ts-text) !important;
+			font-size: 12px !important;
+			font-weight: 700 !important;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-grid {
+			align-content: start;
+			display: grid;
+			flex: 1;
+			gap: 12px;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			min-height: 200px;
+			overflow: auto;
+			padding: 0;
+		}
+		@media (min-width: 1400px) {
+			.imogi-ts-shell--v2 .imogi-ts-table-grid {
+				grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+			}
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card {
+			background: var(--ts-surface);
+			border: 1px solid var(--ts-border);
+			border-radius: 12px;
+			box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+			display: flex;
+			flex-direction: column;
+			gap: 0;
+			min-height: 0;
+			overflow: hidden;
+			padding: 0;
+			position: relative;
+			transition: box-shadow 0.15s ease, transform 0.15s ease;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card:hover {
+			box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+			transform: translateY(-1px);
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card::before {
+			background: #94a3b8;
+			bottom: 0;
+			content: "";
+			left: 0;
+			position: absolute;
+			top: 0;
+			width: 5px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card.is-available::before { background: var(--ts-available); }
+		.imogi-ts-shell--v2 .imogi-ts-table-card.is-occupied::before { background: var(--ts-occupied); }
+		.imogi-ts-shell--v2 .imogi-ts-table-card.is-reserved::before { background: var(--ts-reserved); }
+		.imogi-ts-shell--v2 .imogi-ts-table-card__main {
+			align-items: flex-start;
+			display: flex;
+			gap: 12px;
+			justify-content: space-between;
+			padding: 14px 16px 10px 18px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card__info {
+			flex: 1;
+			min-width: 0;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-card__status {
+			flex-shrink: 0;
+			text-align: right;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-badge {
+			border-radius: 999px;
+			font-size: 10px;
+			font-weight: 800;
+			letter-spacing: 0.06em;
+			padding: 3px 8px;
+			text-transform: uppercase;
+		}
+		.imogi-ts-table-card.is-available .imogi-ts-table-badge {
+			background: #dcfce7;
+			color: #166534;
+		}
+		.imogi-ts-table-card.is-occupied .imogi-ts-table-badge {
+			background: #ffedd5;
+			color: #9a3412;
+		}
+		.imogi-ts-table-card.is-reserved .imogi-ts-table-badge {
+			background: #dbeafe;
+			color: #1e40af;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-meta-row {
+			align-items: center;
+			color: var(--ts-muted);
+			display: flex;
+			flex-wrap: wrap;
+			font-size: 12px;
+			font-weight: 600;
+			gap: 8px;
+			margin-top: 4px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-cap {
+			align-items: center;
+			display: inline-flex;
+			gap: 4px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-num {
+			color: var(--ts-text);
+			font-size: 24px;
+			font-weight: 800;
+			line-height: 1;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-zone {
+			color: var(--ts-muted);
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-order {
+			background: #f8fafc;
+			border-top: 1px solid var(--ts-border);
+			padding: 8px 16px 8px 18px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-order-ref {
+			color: var(--ts-text);
+			font-size: 12px;
+			font-weight: 800;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-order-meta {
+			color: var(--ts-muted);
+			font-size: 12px;
+			margin-top: 2px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-actions {
+			border-top: 1px solid var(--ts-border);
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-top: auto;
+			padding: 10px 12px 12px 18px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-table-actions--single .imogi-ts-act {
+			flex: 1;
+			min-width: 140px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-act {
+			align-items: center;
+			background: #f8fafc;
+			border: 1px solid var(--ts-border);
+			border-radius: 8px;
+			color: var(--ts-text);
+			cursor: pointer;
+			display: inline-flex;
+			flex: 1;
+			font-size: 11px;
+			font-weight: 700;
+			gap: 5px;
+			justify-content: center;
+			min-width: 0;
+			padding: 8px 12px;
+			transition: background 0.12s ease;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-act:hover {
+			background: #eef2f7;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-act--primary {
+			background: var(--ts-accent);
+			border-color: var(--ts-accent);
+			color: #fff;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-act--primary:hover {
+			background: #5c3d55;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-sidebar {
+			background: var(--ts-surface);
+			border-left: 1px solid var(--ts-border);
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+		}
+		@media (max-width: 1100px) {
+			.imogi-ts-shell--v2 .imogi-ts-sidebar {
+				border-left: 0;
+				border-top: 1px solid var(--ts-border);
+			}
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-panel {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			min-height: 220px;
+			overflow: hidden;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-panel + .imogi-ts-side-panel {
+			border-top: 1px solid var(--ts-border);
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-head {
+			align-items: center;
+			background: #fafbfc;
+			border-bottom: 1px solid var(--ts-border);
+			display: flex;
+			gap: 8px;
+			justify-content: space-between;
+			padding: 12px 14px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-head h4 {
+			align-items: center;
+			color: var(--ts-text);
+			display: flex;
+			font-size: 13px;
+			font-weight: 800;
+			gap: 8px;
+			margin: 0;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-count {
+			background: #e2e8f0;
+			border-radius: 999px;
+			color: #334155;
+			font-size: 11px;
+			font-weight: 800;
+			min-width: 22px;
+			padding: 2px 7px;
+			text-align: center;
+		}
+		.imogi-ts-side-panel--reservations .imogi-ts-side-count {
+			background: #ffedd5;
+			color: #9a3412;
+		}
+		.imogi-ts-side-panel--waiting .imogi-ts-side-count {
+			background: #dbeafe;
+			color: #1e40af;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-side-add {
+			background: transparent !important;
+			border: 1px solid var(--ts-border) !important;
+			border-radius: 8px !important;
+			color: var(--ts-accent) !important;
+			font-size: 11px !important;
+			font-weight: 700 !important;
+			padding: 4px 10px !important;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-reservation-list,
+		.imogi-ts-shell--v2 .imogi-ts-waiting-list {
+			flex: 1;
+			gap: 8px;
+			overflow: auto;
+			padding: 10px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-list-item {
+			background: #fff;
+			border: 1px solid var(--ts-border);
+			border-left: 3px solid #cbd5e1;
+			border-radius: 10px;
+			padding: 10px 12px;
+		}
+		.imogi-ts-list-item--reservation { border-left-color: var(--ts-occupied); }
+		.imogi-ts-list-item--waiting { border-left-color: var(--ts-reserved); }
+		.imogi-ts-shell--v2 .imogi-ts-list-head strong {
+			color: var(--ts-text);
+			font-size: 13px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-list-meta {
+			color: var(--ts-muted);
+			font-size: 11px;
+			line-height: 1.45;
+			margin-top: 4px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-list-actions {
+			gap: 6px;
+			margin-top: 8px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-list-actions .btn {
+			border-radius: 8px !important;
+			font-size: 11px !important;
+			font-weight: 700 !important;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-empty,
+		.imogi-ts-shell--v2 .imogi-ts-list-empty {
+			align-items: center;
+			background: #f8fafc;
+			border: 1px dashed #cbd5e1;
+			border-radius: 12px;
+			color: var(--ts-muted);
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			font-size: 13px;
+			gap: 8px;
+			justify-content: center;
+			margin: 10px;
+			min-height: 140px;
+			padding: 20px;
+			text-align: center;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-empty i {
+			color: var(--ts-accent);
+			font-size: 26px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-topbar.imogi-ts-topbar--desk {
+			background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+			box-shadow: none;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-layout--v2 {
+			flex: 1;
+			min-height: 0;
+			overflow: hidden;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-floor {
+			min-height: 0;
+			overflow: hidden;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-table-grid {
+			min-height: 0;
+		}
+		`,
+		IMOGI_TS_V2_STYLE_ID
+	);
+}
+
 const IMOGI_TS_WAITER_ESCALATION = [
 	"Administrator",
 	"System Manager",
@@ -23,7 +510,7 @@ function imogi_ts_is_dedicated_waiter() {
 	return roles.includes("IMOGI Waiter") && !IMOGI_TS_WAITER_ESCALATION.some((role) => roles.includes(role));
 }
 
-const IMOGI_TS_DESK_TOPBAR_STYLE_ID = "imogi-ts-desk-topbar-css-v1";
+const IMOGI_TS_DESK_TOPBAR_STYLE_ID = "imogi-ts-desk-topbar-css-v2";
 const IMOGI_TS_FULLWIDTH_STYLE_ID = "imogi-ts-fullwidth-css-v1";
 
 function imogi_ts_ensure_fullwidth_css() {
@@ -77,6 +564,7 @@ function imogi_ts_ensure_fullwidth_css() {
 }
 
 function imogi_ts_ensure_desk_topbar_css() {
+	document.getElementById("imogi-ts-desk-topbar-css-v1")?.remove();
 	if (document.getElementById(IMOGI_TS_DESK_TOPBAR_STYLE_ID)) {
 		return;
 	}
@@ -85,12 +573,17 @@ function imogi_ts_ensure_desk_topbar_css() {
 		.imogi-ts-topbar.imogi-ts-topbar--desk,
 		body.imogi-table-service-fullscreen .imogi-ts-topbar.imogi-ts-topbar--desk,
 		body.imogi-table-service-active .imogi-ts-topbar.imogi-ts-topbar--desk {
-			background: #0b141a !important;
-			background-color: #0b141a !important;
+			background: linear-gradient(145deg, #0f1f35 0%, #1a3352 100%) !important;
+			background-color: #0f1f35 !important;
 			border: 0 !important;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 			border-radius: 0 !important;
 			box-shadow: none !important;
 			color: #fff !important;
+			padding: 10px 14px !important;
+		}
+		.imogi-ts-topbar.imogi-ts-topbar--desk .imogi-ts-topbar-left {
+			padding-left: 2px;
 		}
 		.imogi-ts-topbar.imogi-ts-topbar--desk .imogi-ts-desk-brand-title,
 		.imogi-ts-topbar.imogi-ts-topbar--desk .imogi-ts-topbar-left,
@@ -130,8 +623,12 @@ function imogi_ts_paint_desk_topbar(root) {
 	imogi_ts_ensure_desk_topbar_css();
 	const scope = root && root.querySelector ? root : document;
 	scope.querySelectorAll(".imogi-ts-topbar--desk").forEach((bar) => {
-		bar.style.setProperty("background", "#0b141a", "important");
-		bar.style.setProperty("background-color", "#0b141a", "important");
+		bar.style.setProperty("background", "linear-gradient(145deg, #0f1f35 0%, #1a3352 100%)", "important");
+		bar.style.setProperty("background-color", "#0f1f35", "important");
+		bar.style.setProperty("padding-left", "14px", "important");
+		bar.style.setProperty("padding-right", "14px", "important");
+		bar.style.setProperty("padding-top", "10px", "important");
+		bar.style.setProperty("padding-bottom", "10px", "important");
 		bar.style.setProperty("color", "#fff", "important");
 		bar.style.setProperty("border", "0", "important");
 	});
@@ -489,6 +986,10 @@ function imogi_ts_apply_layout_fix() {
 			el.style.setProperty("padding-bottom", "0", "important");
 		} else if (el.classList?.contains("imogi-ts-topbar--desk")) {
 			el.style.setProperty("flex-shrink", "0", "important");
+			el.style.setProperty("padding-left", "14px", "important");
+			el.style.setProperty("padding-right", "14px", "important");
+			el.style.setProperty("padding-top", "10px", "important");
+			el.style.setProperty("padding-bottom", "10px", "important");
 			el.style.removeProperty("height");
 			el.style.removeProperty("max-height");
 		} else {
@@ -575,6 +1076,8 @@ imogi_pos.TableService = class TableService {
 		this.dedicated_waiter = imogi_ts_is_dedicated_waiter();
 		this.board = { tables: [], reservations: [], waiting: [], features: {} };
 		this.refresh_interval = 30;
+		this.active_zone = __("Semua");
+		imogi_ts_ensure_v2_css();
 		this.make();
 		this.refresh();
 	}
@@ -589,11 +1092,11 @@ imogi_pos.TableService = class TableService {
 			frappe.boot?.imogi_pos_logo_white_url || "/assets/imogi_pos/images/imogi-pos-logo-white.png";
 		const topbar = this.dedicated_waiter
 			? `
-				<div class="imogi-ts-topbar imogi-ts-topbar--desk" style="background:#0b141a!important;background-color:#0b141a!important;color:#fff!important;border:0!important;">
+				<div class="imogi-ts-topbar imogi-ts-topbar--desk">
 					<div class="imogi-ts-topbar-left">
 						<div class="imogi-ts-desk-brand">
 							<img class="imogi-ts-desk-logo" src="${frappe.utils.escape_html(logo_url)}" alt="IMOGI" />
-							<div class="imogi-ts-desk-brand-title" style="color:#fff!important;">${__("Table Service")}</div>
+							<div class="imogi-ts-desk-brand-title">${__("Table Service")}</div>
 						</div>
 					</div>
 					<div class="imogi-ts-topbar-right">
@@ -632,35 +1135,81 @@ imogi_pos.TableService = class TableService {
 				</div>`;
 
 		this.wrapper.html(`
-			<div class="imogi-ts-shell ${this.dedicated_waiter ? "imogi-ts-shell--desk" : ""}">
+			<div class="imogi-ts-shell imogi-ts-shell--v2 ${this.dedicated_waiter ? "imogi-ts-shell--desk" : ""}">
 				${topbar}
-				<div class="imogi-ts-layout">
-					<section class="imogi-ts-panel imogi-ts-panel--tables">
-						<div class="imogi-ts-panel-head">
-							<h4>${__("Denah Meja")}</h4>
-							<button type="button" class="btn btn-xs btn-default imogi-ts-new-table">${__("Kelola Meja")}</button>
+				<div class="imogi-ts-kpi-strip">
+					<div class="imogi-ts-kpi imogi-ts-kpi--total">
+						<div class="imogi-ts-kpi__icon"><i class="fa fa-th"></i></div>
+						<div>
+							<div class="imogi-ts-kpi__val imogi-ts-kpi-total">0</div>
+							<div class="imogi-ts-kpi__label">${__("Total Meja")}</div>
 						</div>
+					</div>
+					<div class="imogi-ts-kpi imogi-ts-kpi--available">
+						<div class="imogi-ts-kpi__icon"><i class="fa fa-check-circle"></i></div>
+						<div>
+							<div class="imogi-ts-kpi__val imogi-ts-kpi-available">0</div>
+							<div class="imogi-ts-kpi__label">${__("Kosong")}</div>
+						</div>
+					</div>
+					<div class="imogi-ts-kpi imogi-ts-kpi--occupied">
+						<div class="imogi-ts-kpi__icon"><i class="fa fa-cutlery"></i></div>
+						<div>
+							<div class="imogi-ts-kpi__val imogi-ts-kpi-occupied">0</div>
+							<div class="imogi-ts-kpi__label">${__("Terisi")}</div>
+						</div>
+					</div>
+					<div class="imogi-ts-kpi imogi-ts-kpi--waiting">
+						<div class="imogi-ts-kpi__icon"><i class="fa fa-clock-o"></i></div>
+						<div>
+							<div class="imogi-ts-kpi__val imogi-ts-kpi-waiting">0</div>
+							<div class="imogi-ts-kpi__label">${__("Antrian")}</div>
+						</div>
+					</div>
+				</div>
+				<div class="imogi-ts-layout imogi-ts-layout--v2">
+					<main class="imogi-ts-floor">
+						<div class="imogi-ts-floor-head">
+							<div>
+								<h2 class="imogi-ts-floor-title">${__("Denah Meja")}</h2>
+								<p class="imogi-ts-floor-sub">${__("Kelola meja, order, pindah, dan gabung meja")}</p>
+							</div>
+							<div class="imogi-ts-floor-toolbar">
+								<div class="imogi-ts-legend">
+									<span class="imogi-ts-legend-item"><span class="imogi-ts-legend-dot imogi-ts-legend-dot--available"></span>${__("Kosong")}</span>
+									<span class="imogi-ts-legend-item"><span class="imogi-ts-legend-dot imogi-ts-legend-dot--occupied"></span>${__("Terisi")}</span>
+									<span class="imogi-ts-legend-item"><span class="imogi-ts-legend-dot imogi-ts-legend-dot--reserved"></span>${__("Dipesan")}</span>
+								</div>
+								<button type="button" class="btn btn-xs btn-default imogi-ts-manage-btn imogi-ts-new-table">
+									<i class="fa fa-cog"></i> ${__("Kelola Meja")}
+								</button>
+							</div>
+						</div>
+						<div class="imogi-ts-zone-filter"></div>
 						<div class="imogi-ts-table-grid"></div>
-					</section>
-					<section class="imogi-ts-panel imogi-ts-panel--reservations">
-						<div class="imogi-ts-panel-head">
-							<h4>${__("Reservasi")}</h4>
-							<button type="button" class="btn btn-xs btn-primary imogi-ts-add-reservation">${__("Tambah")}</button>
-						</div>
-						<div class="imogi-ts-reservation-list"></div>
-					</section>
-					<section class="imogi-ts-panel imogi-ts-panel--waiting">
-						<div class="imogi-ts-panel-head">
-							<h4>${__("Waiting List")}</h4>
-							<button type="button" class="btn btn-xs btn-primary imogi-ts-add-waiting">${__("Tambah")}</button>
-						</div>
-						<div class="imogi-ts-waiting-list"></div>
-					</section>
+					</main>
+					<aside class="imogi-ts-sidebar">
+						<section class="imogi-ts-side-panel imogi-ts-side-panel--reservations imogi-ts-panel--reservations">
+							<div class="imogi-ts-side-head">
+								<h4><i class="fa fa-calendar"></i> ${__("Reservasi")} <span class="imogi-ts-side-count imogi-ts-side-count-reservations">0</span></h4>
+								<button type="button" class="btn btn-xs btn-default imogi-ts-side-add imogi-ts-add-reservation">${__("Tambah")}</button>
+							</div>
+							<div class="imogi-ts-reservation-list"></div>
+						</section>
+						<section class="imogi-ts-side-panel imogi-ts-side-panel--waiting imogi-ts-panel--waiting">
+							<div class="imogi-ts-side-head">
+								<h4><i class="fa fa-users"></i> ${__("Waiting List")} <span class="imogi-ts-side-count imogi-ts-side-count-waiting">0</span></h4>
+								<button type="button" class="btn btn-xs btn-default imogi-ts-side-add imogi-ts-add-waiting">${__("Tambah")}</button>
+							</div>
+							<div class="imogi-ts-waiting-list"></div>
+						</section>
+					</aside>
 				</div>
 			</div>
 		`);
 
 		this.$table_grid = this.wrapper.find(".imogi-ts-table-grid");
+		this.$zone_filter = this.wrapper.find(".imogi-ts-zone-filter");
 		this.$reservation_list = this.wrapper.find(".imogi-ts-reservation-list");
 		this.$waiting_list = this.wrapper.find(".imogi-ts-waiting-list");
 
@@ -696,9 +1245,14 @@ imogi_pos.TableService = class TableService {
 
 	render() {
 		const { tables = [], reservations = [], waiting = [], features = {} } = this.board;
-		this.wrapper.find(".imogi-ts-stat-tables").text(tables.length);
-		this.wrapper.find(".imogi-ts-stat-reservations").text(reservations.length);
-		this.wrapper.find(".imogi-ts-stat-waiting").text(waiting.length);
+		const available_count = tables.filter((t) => t.status === "Available").length;
+		const occupied_count = tables.filter((t) => t.status === "Occupied").length;
+
+		this.wrapper.find(".imogi-ts-stat-tables, .imogi-ts-kpi-total").text(tables.length);
+		this.wrapper.find(".imogi-ts-kpi-available").text(available_count);
+		this.wrapper.find(".imogi-ts-kpi-occupied").text(occupied_count);
+		this.wrapper.find(".imogi-ts-stat-reservations, .imogi-ts-side-count-reservations").text(reservations.length);
+		this.wrapper.find(".imogi-ts-stat-waiting, .imogi-ts-kpi-waiting, .imogi-ts-side-count-waiting").text(waiting.length);
 
 		this.wrapper.find(".imogi-ts-add-reservation").toggle(!!features.table_reservation);
 		this.wrapper.find(".imogi-ts-panel--reservations").toggle(!!features.table_reservation);
@@ -710,25 +1264,80 @@ imogi_pos.TableService = class TableService {
 		this.render_waiting(waiting, features);
 	}
 
+	render_zone_filter(tables) {
+		if (!this.$zone_filter?.length) {
+			return;
+		}
+		const zones = [
+			...new Set(
+				tables.map((table) => (table.location || "").trim() || __("Tanpa zona"))
+			),
+		].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+		if (!zones.length) {
+			this.$zone_filter.empty();
+			return;
+		}
+
+		const all_label = __("Semua");
+		const chips = [
+			`<button type="button" class="imogi-ts-zone-chip ${this.active_zone === all_label ? "is-active" : ""}" data-zone="__all__">${frappe.utils.escape_html(all_label)}</button>`,
+			...zones.map((zone) => {
+				const active = this.active_zone === zone ? "is-active" : "";
+				return `<button type="button" class="imogi-ts-zone-chip ${active}" data-zone="${frappe.utils.escape_html(zone)}">${frappe.utils.escape_html(zone)}</button>`;
+			}),
+		];
+		this.$zone_filter.html(chips.join(""));
+		this.$zone_filter.off("click.zone").on("click.zone", ".imogi-ts-zone-chip", (e) => {
+			const zone = $(e.currentTarget).attr("data-zone");
+			this.active_zone = zone === "__all__" ? all_label : String(zone || "");
+			this.render_tables(this.board.tables || [], this.board.features || {});
+		});
+	}
+
 	render_tables(tables, features) {
+		this.render_zone_filter(tables);
+		const all_label = __("Semua");
+		const filtered_tables =
+			this.active_zone && this.active_zone !== all_label
+				? tables.filter((table) => {
+						const zone = (table.location || "").trim() || __("Tanpa zona");
+						return zone === this.active_zone;
+					})
+				: tables;
+
 		this.$table_grid.empty();
-		if (!tables.length) {
+		if (!filtered_tables.length) {
+			const empty_msg = tables.length
+				? __("Tidak ada meja di zona ini.")
+				: __("Buat meja restoran terlebih dahulu.");
 			this.$table_grid.html(`
 				<div class="imogi-ts-empty">
 					<i class="fa fa-th-large"></i>
-					<h4>${__("Belum ada meja")}</h4>
-					<p>${__("Buat meja restoran terlebih dahulu.")}</p>
+					<h4>${tables.length ? __("Zona kosong") : __("Belum ada meja")}</h4>
+					<p>${empty_msg}</p>
 				</div>`);
 			return;
 		}
 
-		tables.forEach((table) => {
+		filtered_tables.forEach((table) => {
 			const status_class = IMOGI_TABLE_STATUS_CLASS[table.status] || "";
+			const status_label = IMOGI_TS_STATUS_LABEL[table.status] || table.status || "Available";
+			const zone_label = (table.location || "").trim() || __("Tanpa zona");
 			const $card = $(`
 				<article class="imogi-ts-table-card ${status_class}">
-					<div class="imogi-ts-table-num">${frappe.utils.escape_html(table.table_number || table.name)}</div>
-					<div class="imogi-ts-table-meta">${frappe.utils.escape_html(table.location || __("Tanpa zona"))} · ${table.capacity || 0} ${__("org")}</div>
-					<div class="imogi-ts-table-status">${frappe.utils.escape_html(table.status || "Available")}</div>
+					<div class="imogi-ts-table-card__main">
+						<div class="imogi-ts-table-card__info">
+							<div class="imogi-ts-table-num">${frappe.utils.escape_html(table.table_number || table.name)}</div>
+							<div class="imogi-ts-table-meta-row">
+								<span class="imogi-ts-table-zone">${frappe.utils.escape_html(zone_label)}</span>
+								<span class="imogi-ts-table-cap"><i class="fa fa-user"></i> ${table.capacity || 0} ${__("org")}</span>
+							</div>
+						</div>
+						<div class="imogi-ts-table-card__status">
+							<span class="imogi-ts-table-badge">${frappe.utils.escape_html(status_label)}</span>
+						</div>
+					</div>
 					<div class="imogi-ts-table-order"></div>
 					<div class="imogi-ts-table-actions"></div>
 				</article>
@@ -739,16 +1348,25 @@ imogi_pos.TableService = class TableService {
 					<div class="imogi-ts-order-ref">${frappe.utils.escape_html(table.open_order)}</div>
 					<div class="imogi-ts-order-meta">${frappe.utils.escape_html(table.open_order_customer || __("Walk-in"))} · ${format_currency(table.open_order_total || 0)}</div>
 				`);
+			} else {
+				$card.find(".imogi-ts-table-order").remove();
 			}
 
 			const $actions = $card.find(".imogi-ts-table-actions");
 			if (table.open_order) {
-				$actions.append(`<button type="button" class="btn btn-xs btn-default" data-action="open-order">${__("Order")}</button>`);
+				$actions.removeClass("imogi-ts-table-actions--single");
+				$actions.append(`<button type="button" class="imogi-ts-act" data-action="open-order"><i class="fa fa-file-text-o"></i> ${__("Order")}</button>`);
 				if (features.move_table) {
-					$actions.append(`<button type="button" class="btn btn-xs btn-default" data-action="move">${__("Pindah")}</button>`);
+					$actions.append(`<button type="button" class="imogi-ts-act" data-action="move"><i class="fa fa-arrows"></i> ${__("Pindah")}</button>`);
+				}
+				if (features.merge_table) {
+					$actions.append(`<button type="button" class="imogi-ts-act" data-action="merge"><i class="fa fa-compress"></i> ${__("Gabung")}</button>`);
 				}
 			} else if (table.status === "Available" || table.status === "Reserved") {
-				$actions.append(`<button type="button" class="btn btn-xs btn-primary" data-action="new-order">${__("Order Baru")}</button>`);
+				$actions.addClass("imogi-ts-table-actions--single");
+				$actions.append(`<button type="button" class="imogi-ts-act imogi-ts-act--primary" data-action="new-order"><i class="fa fa-plus"></i> ${__("Order Baru")}</button>`);
+			} else {
+				$actions.remove();
 			}
 
 			$card.on("click", "[data-action='open-order']", (e) => {
@@ -758,6 +1376,10 @@ imogi_pos.TableService = class TableService {
 			$card.on("click", "[data-action='move']", (e) => {
 				e.stopPropagation();
 				this.prompt_move_table(table);
+			});
+			$card.on("click", "[data-action='merge']", (e) => {
+				e.stopPropagation();
+				this.prompt_merge_table(table);
 			});
 			$card.on("click", "[data-action='new-order']", (e) => {
 				e.stopPropagation();
@@ -771,20 +1393,24 @@ imogi_pos.TableService = class TableService {
 	render_reservations(reservations) {
 		this.$reservation_list.empty();
 		if (!reservations.length) {
-			this.$reservation_list.html(`<div class="imogi-ts-list-empty">${__("Tidak ada reservasi aktif")}</div>`);
+			this.$reservation_list.html(`
+				<div class="imogi-ts-list-empty">
+					<i class="fa fa-calendar-o"></i>
+					<div>${__("Tidak ada reservasi aktif")}</div>
+				</div>`);
 			return;
 		}
 
-		reservations.forEach((row, idx) => {
+		reservations.forEach((row) => {
 			const when = frappe.datetime.str_to_user(row.reservation_datetime);
 			const $item = $(`
 				<div class="imogi-ts-list-item imogi-ts-list-item--reservation">
 					<div class="imogi-ts-list-head">
-						<strong><i class="fa fa-calendar-o" style="margin-right:6px;color:#fb923c;"></i>${frappe.utils.escape_html(row.customer_name)}</strong>
+						<strong>${frappe.utils.escape_html(row.customer_name)}</strong>
 						<span class="imogi-ts-list-badge imogi-ts-list-badge--reserved">${row.party_size} ${__("org")}</span>
 					</div>
 					<div class="imogi-ts-list-meta">${frappe.utils.escape_html(when)}${row.restaurant_table ? ` · ${frappe.utils.escape_html(row.restaurant_table)}` : ""}${row.phone ? ` · ${frappe.utils.escape_html(row.phone)}` : ""}</div>
-					${row.notes ? `<div class="imogi-ts-list-meta" style="margin-top:4px;font-style:italic;">${frappe.utils.escape_html(row.notes)}</div>` : ""}
+					${row.notes ? `<div class="imogi-ts-list-meta">${frappe.utils.escape_html(row.notes)}</div>` : ""}
 					<div class="imogi-ts-list-actions"></div>
 				</div>
 			`);
@@ -800,7 +1426,11 @@ imogi_pos.TableService = class TableService {
 	render_waiting(waiting, features) {
 		this.$waiting_list.empty();
 		if (!waiting.length) {
-			this.$waiting_list.html(`<div class="imogi-ts-list-empty">${__("Antrian kosong")}</div>`);
+			this.$waiting_list.html(`
+				<div class="imogi-ts-list-empty">
+					<i class="fa fa-users"></i>
+					<div>${__("Antrian kosong")}</div>
+				</div>`);
 			return;
 		}
 
@@ -809,11 +1439,11 @@ imogi_pos.TableService = class TableService {
 			const $item = $(`
 				<div class="imogi-ts-list-item imogi-ts-list-item--waiting">
 					<div class="imogi-ts-list-head">
-						<strong><i class="fa fa-users" style="margin-right:6px;color:#3b82f6;"></i>${frappe.utils.escape_html(row.customer_name)}</strong>
+						<strong>${frappe.utils.escape_html(row.customer_name)}</strong>
 						<span class="imogi-ts-list-badge imogi-ts-list-badge--waiting">#${idx + 1} · ${row.party_size} ${__("org")}</span>
 					</div>
 					<div class="imogi-ts-list-meta">${when ? `${frappe.utils.escape_html(when)} · ` : ""}${__("Menunggu meja")}${row.phone ? ` · ${frappe.utils.escape_html(row.phone)}` : ""}</div>
-					${row.notes ? `<div class="imogi-ts-list-meta" style="margin-top:4px;font-style:italic;">${frappe.utils.escape_html(row.notes)}</div>` : ""}
+					${row.notes ? `<div class="imogi-ts-list-meta">${frappe.utils.escape_html(row.notes)}</div>` : ""}
 					<div class="imogi-ts-list-actions"></div>
 				</div>
 			`);
@@ -826,11 +1456,17 @@ imogi_pos.TableService = class TableService {
 		});
 	}
 
-	open_cashier_for_table(table) {
+	open_cashier_for_table(table, extra = {}) {
 		try {
 			localStorage.setItem(
 				"_imogi_pos_cashier_prefill",
-				JSON.stringify({ order_type: "Dine-in", restaurant_table: table.name, table_number: table.table_number })
+				JSON.stringify({
+					order_type: "Dine-in",
+					restaurant_table: table.name,
+					table_number: table.table_number || table.name,
+					customer_label: extra.customer_name || "",
+					party_size: extra.party_size || null,
+				})
 			);
 		} catch (e) {
 			/* ignore */
@@ -867,6 +1503,59 @@ imogi_pos.TableService = class TableService {
 					freeze: true,
 					callback: () => {
 						frappe.show_alert({ message: __("Meja dipindahkan"), indicator: "green" });
+						this.refresh();
+					},
+				});
+			},
+		});
+	}
+
+	prompt_merge_table(table) {
+		const sources = (this.board.tables || []).filter(
+			(t) => t.name !== table.name && t.open_order
+		);
+		if (!sources.length) {
+			frappe.msgprint(__("Tidak ada meja lain dengan order aktif untuk digabung"));
+			return;
+		}
+		imogi_ts_open_form_dialog({
+			title: __("Gabung Meja"),
+			subtitle: __(
+				"Gabungkan order dari meja lain ke {0} ({1})",
+				[table.table_number || table.name, table.open_order]
+			),
+			icon: "fa-object-group",
+			fields: [
+				{
+					fieldname: "source_table",
+					fieldtype: "Select",
+					label: __("Meja sumber order"),
+					options: sources.map((t) => t.name),
+					reqd: 1,
+					description: sources
+						.map(
+							(t) =>
+								`${t.table_number || t.name}: ${t.open_order} · ${format_currency(t.open_order_total || 0)}`
+						)
+						.join(" · "),
+				},
+			],
+			primary_label: __("Gabungkan"),
+			on_submit: (values) => {
+				const source = sources.find((t) => t.name === values.source_table);
+				if (!source?.open_order) {
+					frappe.msgprint(__("Meja sumber tidak valid"));
+					return false;
+				}
+				frappe.call({
+					method: "imogi_pos.api.planned_features_api.merge_tables",
+					args: {
+						primary_order: table.open_order,
+						secondary_order: source.open_order,
+					},
+					freeze: true,
+					callback: () => {
+						frappe.show_alert({ message: __("Order berhasil digabung"), indicator: "green" });
 						this.refresh();
 					},
 				});
@@ -980,11 +1669,48 @@ imogi_pos.TableService = class TableService {
 			method: "imogi_pos.api.planned_features_api.seat_table_reservation_api",
 			args: { name: row.name },
 			freeze: true,
-			callback: () => {
+			callback: (r) => {
+				const result = r.message || {};
 				frappe.show_alert({ message: __("Tamu reservasi hadir"), indicator: "green" });
 				this.refresh();
+				if (!result.restaurant_table) {
+					return;
+				}
+				if (!this.can_open_cashier()) {
+					frappe.msgprint({
+						title: __("Reservasi ditempatkan"),
+						message: __(
+							"Meja {0} siap. Buka order dari kasir atau minta kasir memproses order untuk {1}.",
+							[result.table_number || result.restaurant_table, result.customer_name || row.customer_name]
+						),
+						indicator: "green",
+					});
+					return;
+				}
+				this.open_cashier_for_table(
+					{
+						name: result.restaurant_table,
+						table_number: result.table_number || row.restaurant_table,
+					},
+					{
+						customer_name: result.customer_name || row.customer_name,
+						party_size: result.party_size || row.party_size,
+					}
+				);
 			},
 		});
+	}
+
+	can_open_cashier() {
+		if (imogi_ts_is_dedicated_waiter()) {
+			return true;
+		}
+		const roles = frappe.boot?.user?.roles || [];
+		return roles.some((role) =>
+			["IMOGI Cashier", "IMOGI Waiter", "IMOGI Supervisor", "IMOGI Manager", "IMOGI Owner", "Administrator", "System Manager", "Sales Manager"].includes(
+				role
+			)
+		);
 	}
 
 	cancel_reservation(row) {

@@ -13,6 +13,8 @@
  "roles": [
   {"role": "System Manager"},
   {"role": "Sales Manager"},
+  {"role": "IMOGI Waiter"},
+  {"role": "IMOGI Supervisor"},
   {"role": "IMOGI Cashier"}
  ],
  "standard": "Yes",

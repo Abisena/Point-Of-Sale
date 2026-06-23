@@ -226,7 +226,6 @@
    "label": "Push Menu dari Cabang Template"
   },
   {
-   "description": "Target penjualan bulanan untuk progress bar di kasir dan dashboard.",
    "fieldname": "target_monthly_sales",
    "fieldtype": "Currency",
    "label": "Target Omzet Bulanan"

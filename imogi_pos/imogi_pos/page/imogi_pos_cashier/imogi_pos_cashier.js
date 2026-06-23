@@ -4180,7 +4180,7 @@ imogi_pos.CashierPage = class CashierPage {
 		const discount_state = me.get_payment_discount_state(dialog);
 		const args = {
 			items: JSON.stringify(
-				me.cart.map((row) => ({
+				me.get_checkout_cart().map((row) => ({
 					item_code: row.item_code,
 					qty: row.qty,
 					rate: row.rate,
@@ -4447,15 +4447,32 @@ imogi_pos.CashierPage = class CashierPage {
 		row.qty += delta;
 		if (row.qty <= 0) this.cart = this.cart.filter((r) => r.item_code !== item_code);
 		this.render_cart();
+		this.sync_pending_order_with_cart();
+	}
+
+	sync_pending_order_with_cart(options = {}) {
+		if (this.busy) return;
+		const order_name = this.pending_checkout_order_name || this.marketplace_order_name;
+		if (!order_name || this.cart.length) return;
+		this.void_pending_checkout_order(order_name, {
+			reason: options.reason || __("Keranjang dikosongkan"),
+			approval_code: options.approval_code,
+			on_done: options.on_done,
+			on_fail: options.on_fail,
+		});
 	}
 
 	clear_cart() {
-		if (!this.cart.length && !this.discount_type && !flt(this.discount_value)) return;
+		const order_name = this.pending_checkout_order_name || this.marketplace_order_name;
+		if (!this.cart.length && !this.discount_type && !flt(this.discount_value) && !order_name) return;
 		this.cart = [];
-		this.marketplace_order_name = null;
 		this.discount_type = "";
 		this.discount_value = 0;
+		if (!order_name) {
+			this.marketplace_order_name = null;
+		}
 		this.render_cart();
+		this.sync_pending_order_with_cart({ reason: __("Keranjang dikosongkan") });
 	}
 
 	search_customer(term) {
@@ -4623,6 +4640,32 @@ imogi_pos.CashierPage = class CashierPage {
 		return this.cart.reduce((sum, row) => sum + flt(row.rate) * flt(row.qty), 0);
 	}
 
+	get_checkout_cart() {
+		if (this._split_checkout_active && this._split_checkout_cart?.length) {
+			return this._split_checkout_cart;
+		}
+		return this.cart;
+	}
+
+	get_cart_subtotal_for_checkout() {
+		return this.get_checkout_cart().reduce((sum, row) => sum + flt(row.rate) * flt(row.qty), 0);
+	}
+
+	_payment_preview_matches_subtotal(subtotal) {
+		const preview = this.payment_preview;
+		if (!preview || flt(preview.grand_total) < 0) return false;
+		const preview_subtotal = flt(preview.subtotal);
+		if (!preview_subtotal) return false;
+		return Math.abs(preview_subtotal - flt(subtotal)) <= 0.01;
+	}
+
+	get_cart_promo_discount() {
+		if (this._split_checkout_active) {
+			return flt(this._remainder_promo_discount);
+		}
+		return flt(this.promo_discount);
+	}
+
 	refresh_cart_promos(subtotal) {
 		this.$cart_items.siblings(".imogi-cashier-promo-hint").remove();
 		if (!this.context?.enable_promo_rules || !this.cart.length) {
@@ -4654,21 +4697,27 @@ imogi_pos.CashierPage = class CashierPage {
 						return;
 					}
 					const msg = r.message || {};
+					const discount = flt(msg.promo_discount);
+					if (this._split_checkout_active) {
+						this._remainder_promo_discount = discount;
+					} else {
+						this.promo_discount = discount;
+					}
 					this.applied_promos = msg.applied_promos || [];
-					this.promo_discount = flt(msg.promo_discount);
 					const pending = msg.pending_promos || [];
 					const hints = [
 						...this.applied_promos.map((row) => row.label),
 						...pending.map((row) => row.label),
 					];
+					const cart_promo = this.get_cart_promo_discount();
 					if (hints.length) {
 						const savings =
-							this.promo_discount > 0
-								? ` · ${__("hemat")} ${format_currency(this.promo_discount)}`
+							cart_promo > 0
+								? ` · ${__("hemat")} ${format_currency(cart_promo)}`
 								: "";
 						this.$cart_items.before(
 							`<div class="imogi-cashier-promo-hint imogi-cashier-promo-hint--${
-								this.promo_discount > 0 ? "active" : "pending"
+								cart_promo > 0 ? "active" : "pending"
 							}"><i class="fa fa-gift"></i> ${frappe.utils.escape_html(
 								hints.join(" · ")
 							)}${savings}</div>`
@@ -4709,12 +4758,12 @@ imogi_pos.CashierPage = class CashierPage {
 	get_cart_total() {
 		const subtotal = this.get_cart_subtotal();
 		const manual = this.get_discount_amount(subtotal);
-		const net = Math.max(0, subtotal - manual - flt(this.promo_discount));
+		const net = Math.max(0, subtotal - manual - this.get_cart_promo_discount());
 		return imogi_compute_local_tax(net, this.context?.sales_tax || {}).grand_total;
 	}
 
 	get_pay_item_count() {
-		return this.cart.reduce((sum, row) => sum + flt(row.qty), 0);
+		return this.get_checkout_cart().reduce((sum, row) => sum + flt(row.qty), 0);
 	}
 
 	get_order_type_label() {
@@ -4810,25 +4859,39 @@ imogi_pos.CashierPage = class CashierPage {
 
 	get_checkout_breakdown(dialog, subtotal) {
 		const preview = this.payment_preview || {};
+		const pay_subtotal = flt(subtotal);
+		const use_preview = this._payment_preview_matches_subtotal(pay_subtotal);
 		const { type, value } = this.get_payment_discount_state(dialog);
-		const promo_discount = flt(preview.promo_discount ?? this.promo_discount);
-		const manual_discount = this.get_discount_amount(subtotal, type, value);
-		const voucher_discount = flt(preview.voucher_discount);
-		const loyalty_discount = flt(preview.loyalty_discount);
+		const promo_discount = use_preview
+			? flt(preview.promo_discount ?? 0)
+			: this._split_checkout_active
+			? 0
+			: flt(this.promo_discount);
+		const manual_discount = this.get_discount_amount(pay_subtotal, type, value);
+		const voucher_discount = use_preview ? flt(preview.voucher_discount) : 0;
+		const loyalty_discount = use_preview ? flt(preview.loyalty_discount) : 0;
 		const net_before_tax =
-			preview.net_before_tax != null
+			use_preview && preview.net_before_tax != null
 				? flt(preview.net_before_tax)
-				: Math.max(0, subtotal - promo_discount - manual_discount - voucher_discount - loyalty_discount);
-		const tax = preview.tax_amount != null
-			? {
-					taxable_amount: flt(preview.taxable_amount),
-					tax_amount: flt(preview.tax_amount),
-					grand_total: flt(preview.grand_total),
-					tax_rate: flt(preview.tax_rate) || flt(this.context?.sales_tax?.rate) || 11,
-			  }
-			: imogi_compute_local_tax(net_before_tax, this.context?.sales_tax || {});
+				: Math.max(
+						0,
+						pay_subtotal -
+							promo_discount -
+							manual_discount -
+							voucher_discount -
+							loyalty_discount
+				  );
+		const tax =
+			use_preview && preview.tax_amount != null
+				? {
+						taxable_amount: flt(preview.taxable_amount),
+						tax_amount: flt(preview.tax_amount),
+						grand_total: flt(preview.grand_total),
+						tax_rate: flt(preview.tax_rate) || flt(this.context?.sales_tax?.rate) || 11,
+				  }
+				: imogi_compute_local_tax(net_before_tax, this.context?.sales_tax || {});
 		return {
-			subtotal,
+			subtotal: pay_subtotal,
 			promo_discount,
 			manual_discount,
 			voucher_discount,
@@ -5053,10 +5116,12 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	get_payment_total(dialog, subtotal) {
-		if (this.payment_preview && flt(this.payment_preview.grand_total) >= 0) {
+		const pay_subtotal =
+			subtotal != null ? flt(subtotal) : this.get_cart_subtotal_for_checkout();
+		if (this._payment_preview_matches_subtotal(pay_subtotal)) {
 			return flt(this.payment_preview.grand_total);
 		}
-		return this.get_checkout_breakdown(dialog, subtotal).grand_total;
+		return this.get_checkout_breakdown(dialog, pay_subtotal).grand_total;
 	}
 
 	build_pay_numpad_html() {
@@ -5580,6 +5645,7 @@ imogi_pos.CashierPage = class CashierPage {
 			}
 			this.render_payment_split_panel(dialog);
 			dialog.get_primary_btn?.()?.html(__("Bayar Item Terpilih"));
+			return;
 		} else {
 			this.update_payment_primary_action(dialog, subtotal);
 		}
@@ -5680,13 +5746,15 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	render_payment_split_panel(dialog) {
+		const me = this;
 		const $stack = dialog.$wrapper.find(".imogi-pay-checkout-stack");
 		let $panel = $stack.find(".imogi-pay-split-panel");
 		if (!$panel.length) {
 			$panel = $(`<div class="imogi-pay-split-panel imogi-pay-checkout-block"></div>`);
 			$stack.prepend($panel);
 		}
-		const rows = this.cart
+		dialog._imogi_split_cart_snapshot = this.cart.map((row) => ({ ...row }));
+		const rows = dialog._imogi_split_cart_snapshot
 			.map(
 				(row, idx) => `<label class="imogi-pay-split-item">
 				<input type="checkbox" class="imogi-split-item" data-idx="${idx}" checked>
@@ -5696,7 +5764,7 @@ imogi_pos.CashierPage = class CashierPage {
 			)
 			.join("");
 		const single_line_hint =
-			this.cart.length < 2
+			dialog._imogi_split_cart_snapshot.length < 2
 				? `<div class="alert alert-warning small" style="margin-bottom:12px">${__(
 						"Tambahkan minimal 2 jenis item di keranjang untuk mencoba split bill. Dengan 1 item saja, centang semua = bayar penuh."
 				  )}</div>`
@@ -5709,11 +5777,102 @@ imogi_pos.CashierPage = class CashierPage {
 			</ol>
 			<p class="text-muted small">${__(
 				"Split per baris item. Untuk bayar sebagian qty, kurangi qty di keranjang dulu lalu checkout lagi."
-			)}</p>${single_line_hint}${rows}`);
+			)}</p>${single_line_hint}
+			<div class="imogi-pay-split-selected-total small text-muted" style="margin-bottom:10px"></div>
+			${rows}`);
+		$panel.off("change.imogiSplit").on("change.imogiSplit", ".imogi-split-item", () => {
+			me.update_split_bill_summary(dialog);
+		});
+		this.update_split_bill_summary(dialog);
+	}
+
+	get_split_selected_cart(dialog) {
+		const source = dialog?._imogi_split_cart_snapshot || this.cart;
+		const picked = [];
+		dialog?.$wrapper?.find(".imogi-split-item:checked").each(function () {
+			const idx = cint($(this).data("idx"));
+			if (source[idx]) picked.push({ ...source[idx] });
+		});
+		return picked;
+	}
+
+	update_split_bill_summary(dialog) {
+		const me = this;
+		const selected = this.get_split_selected_cart(dialog);
+		const $wrap = dialog.$wrapper;
+		const $hint = $wrap.find(".imogi-pay-split-selected-total");
+		if (!selected.length) {
+			$hint.text(__("Pilih minimal 1 item untuk dibayar"));
+			return;
+		}
+
+		const paint_totals = (totals) => {
+			const subtotal = flt(totals.subtotal);
+			const breakdown = {
+				subtotal,
+				promo_discount: flt(totals.promo_discount),
+				manual_discount: flt(totals.manual_discount),
+				voucher_discount: flt(totals.voucher_discount),
+				loyalty_discount: flt(totals.loyalty_discount),
+				taxable_amount: flt(totals.taxable_amount),
+				tax_amount: flt(totals.tax_amount),
+				grand_total: flt(totals.grand_total),
+				tax_rate: flt(totals.tax_rate) || flt(me.context?.sales_tax?.rate) || 11,
+			};
+			$hint.html(
+				`${__("Total item terpilih")}: <strong>${format_currency(breakdown.grand_total)}</strong>`
+			);
+			$wrap.find(".imogi-pay-hero-amount, .imogi-pay-total-value").html(
+				imogi_format_pay_total(breakdown.grand_total)
+			);
+			$wrap.find(".imogi-pay-footer-amount").text(format_currency(breakdown.grand_total));
+			$wrap.find(".imogi-pay-subtotal-value").text(format_currency(breakdown.subtotal));
+			$wrap
+				.find(".imogi-pay-promo-discount-display")
+				.text(`-${format_currency(breakdown.promo_discount)}`);
+			$wrap.find(".imogi-pay-promo-breakdown-row").toggle(breakdown.promo_discount > 0);
+			$wrap.find(".imogi-pay-taxable-value").text(format_currency(breakdown.taxable_amount));
+			$wrap.find(".imogi-pay-tax-value").text(format_currency(breakdown.tax_amount));
+			dialog.get_primary_btn?.()?.html(
+				`${__("Bayar Item Terpilih")} · ${format_currency(breakdown.grand_total)}`
+			);
+		};
+
+		if (!this.needs_checkout_preview()) {
+			const subtotal = selected.reduce((sum, row) => sum + flt(row.rate) * flt(row.qty), 0);
+			const tax = imogi_compute_local_tax(subtotal, this.context?.sales_tax || {});
+			paint_totals({ subtotal, promo_discount: 0, ...tax });
+			return;
+		}
+
+		clearTimeout(dialog._imogi_split_preview_timer);
+		dialog._imogi_split_preview_timer = setTimeout(() => {
+			frappe.call({
+				method: "imogi_pos.api.loyalty_api.preview_promotions",
+				args: {
+					items: JSON.stringify(
+						selected.map((row) => ({
+							item_code: row.item_code,
+							qty: row.qty,
+							rate: row.rate,
+							uom: row.uom || undefined,
+						}))
+					),
+					...me.branch_api_args(),
+				},
+				callback(r) {
+					if (r.exc || dialog._imogi_pay_tab !== "split") return;
+					const totals = r.message || {};
+					dialog._imogi_split_tab_preview = totals;
+					paint_totals(totals);
+				},
+			});
+		}, 200);
 	}
 
 	apply_split_selection_from_dialog(dialog) {
 		if (!this.require_feature("split_bill")) return false;
+		const source = dialog._imogi_split_cart_snapshot || this.cart;
 		const picked = [];
 		const remain = [];
 		dialog.$wrapper.find(".imogi-split-item").each(function () {
@@ -5725,28 +5884,116 @@ imogi_pos.CashierPage = class CashierPage {
 			frappe.msgprint(__("Pilih minimal 1 item"));
 			return false;
 		}
-		const new_cart = picked.map((idx) => this.cart[idx]);
-		const rest = remain.map((idx) => this.cart[idx]);
-		this.cart = new_cart;
+		const checkout_cart = picked.map((idx) => ({ ...source[idx] }));
+		const remainder_cart = remain.map((idx) => ({ ...source[idx] }));
+
+		this._split_checkout_cart = checkout_cart;
+		this._split_checkout_active = true;
+		this._split_remainder = remainder_cart;
+		this._remainder_promo_discount = 0;
+		this.cart = remainder_cart.length ? remainder_cart : checkout_cart;
+		this.payment_preview = null;
+		this.promo_discount = 0;
+		this.applied_promos = [];
+		dialog._imogi_split_tab_preview = null;
+
 		this.render_cart();
-		if (rest.length) {
-			this._split_remainder = rest;
-			const origClear = this.clear_cart_after_checkout;
-			this.clear_cart_after_checkout = function () {
-				origClear.call(this);
-				if (this._split_remainder && this._split_remainder.length) {
-					this.cart = this._split_remainder;
-					this._split_remainder = null;
-					this.render_cart();
-				}
-				this.clear_cart_after_checkout = origClear;
-			};
+		if (remainder_cart.length) {
+			this.$cart_items.prepend(
+				`<div class="alert alert-info small imogi-split-remainder-hint" style="margin-bottom:8px">${__(
+					"Item di bawah menunggu pembayaran setelah transaksi ini selesai."
+				)}</div>`
+			);
 			frappe.show_alert({
-				message: __("Setelah bayar, sisa {0} item bisa dilanjutkan", [rest.length]),
+				message: __("Membayar {0} item sekarang. Sisa {1} item tetap di keranjang.", [
+					checkout_cart.length,
+					remainder_cart.length,
+				]),
 				indicator: "blue",
 			});
 		}
+
+		const origClear = this.clear_cart_after_checkout;
+		this.clear_cart_after_checkout = function () {
+			this.marketplace_order_name = null;
+			this.pending_checkout_order_name = null;
+			this.voucher_code = "";
+			this.loyalty_points_redeem = 0;
+			this.payment_preview = null;
+			this.promo_discount = 0;
+			this.applied_promos = [];
+			this.discount_type = "";
+			this.discount_value = 0;
+			this._split_checkout_cart = null;
+			this._split_checkout_active = false;
+			this._split_remainder = null;
+			this._remainder_promo_discount = 0;
+			this.wrapper.find(".imogi-split-remainder-hint").remove();
+			if (!this.cart.length) {
+				this.render_cart();
+			}
+			this._invalidate_catalog_cache();
+			this.load_items({ force: true });
+			this.load_holds();
+			this.clear_cart_after_checkout = origClear;
+		};
 		return true;
+	}
+
+	resync_awaiting_order_after_split(dialog, done) {
+		const me = this;
+		const old_name = dialog._imogi_pending_order_name || me.pending_checkout_order_name;
+		const submit_new = () => {
+			frappe.call({
+				method: "imogi_pos.api.cashier.submit_awaiting_order",
+				args: me.build_submit_awaiting_args(),
+				callback(r) {
+					if (!r.exc) {
+						const order = r.message || {};
+						me.pending_checkout_order_name = order.name || null;
+						dialog._imogi_pending_order_name = order.name || null;
+					}
+					done?.();
+				},
+			});
+		};
+		if (!old_name) {
+			submit_new();
+			return;
+		}
+		frappe.call({
+			method: "imogi_pos.api.cashier.void_cashier_order",
+			args: { order_name: old_name, reason: __("Split bill") },
+			callback(r) {
+				me.pending_checkout_order_name = null;
+				dialog._imogi_pending_order_name = null;
+				if (r.exc) {
+					done?.();
+					return;
+				}
+				submit_new();
+			},
+		});
+	}
+
+	finish_split_payment_setup(dialog) {
+		const me = this;
+		const subtotal = this.get_cart_subtotal_for_checkout();
+		this.payment_preview = null;
+		dialog._imogi_paid_amount = null;
+		dialog._imogi_quick_denom = "pas";
+		dialog._imogi_last_checkout_total = null;
+		const run = () => {
+			dialog._imogi_pay_tab = "single";
+			me.setup_payment_tabs(dialog, subtotal, "single");
+			if (me.needs_checkout_preview()) {
+				me.refresh_payment_preview(dialog, subtotal);
+			} else {
+				me.refresh_payment_dialog(dialog, subtotal);
+			}
+			me.toggle_cash_fields(dialog, subtotal);
+		};
+		this.resync_awaiting_order_after_split(dialog, run);
 	}
 
 	setup_payment_layout(dialog) {}
@@ -5811,7 +6058,7 @@ imogi_pos.CashierPage = class CashierPage {
 	build_submit_awaiting_args(extra = {}) {
 		const args = {
 			items: JSON.stringify(
-				this.cart.map((row) => ({
+				this.get_checkout_cart().map((row) => ({
 					item_code: row.item_code,
 					qty: row.qty,
 					rate: row.rate,
@@ -6005,14 +6252,11 @@ imogi_pos.CashierPage = class CashierPage {
 				if (me.busy) return;
 				if (dialog._imogi_pay_tab === "split") {
 					if (!me.apply_split_selection_from_dialog(dialog)) return;
-					dialog._imogi_pay_tab = "single";
-					const new_subtotal = me.get_cart_subtotal();
-					me.setup_payment_tabs(dialog, new_subtotal, "single");
-					me.refresh_payment_dialog(dialog, new_subtotal);
-					me.toggle_cash_fields(dialog, new_subtotal);
+					me.finish_split_payment_setup(dialog);
 					return;
 				}
-				const total = me.get_payment_total(dialog, subtotal);
+				const checkout_subtotal = me.get_cart_subtotal_for_checkout();
+				const total = me.get_payment_total(dialog, checkout_subtotal);
 				const discount_state = me.get_payment_discount_state(dialog);
 				me.discount_type = discount_state.type;
 				me.discount_value = discount_state.value;
@@ -6027,7 +6271,7 @@ imogi_pos.CashierPage = class CashierPage {
 					if (!me.require_feature("qris")) return;
 					if (dialog._imogi_qris_paid) return;
 					if (!dialog._imogi_qris_payment_name) {
-						me.load_inline_qris(dialog, subtotal);
+						me.load_inline_qris(dialog, checkout_subtotal);
 					}
 					frappe.show_alert({
 						message: __("Scan QRIS untuk menyelesaikan pembayaran"),
@@ -6162,10 +6406,12 @@ imogi_pos.CashierPage = class CashierPage {
 			dialog.set_value("mode_of_payment", mode);
 			if (dialog.doc) dialog.doc.mode_of_payment = mode;
 		}
+		const pay_subtotal =
+			subtotal != null ? flt(subtotal) : this.get_cart_subtotal_for_checkout();
 		const is_qris = this.is_inline_qris_mode(mode);
 		const is_transfer = this.is_transfer_payment_mode(mode);
 		const is_cash = !is_qris && !is_transfer && this.is_cash_mode(mode);
-		const total = this.get_payment_total(dialog, subtotal);
+		const total = this.get_payment_total(dialog, pay_subtotal);
 		dialog.fields_dict.paid_amount?.$wrapper?.hide();
 		const $wrap = dialog.$wrapper;
 		$wrap.toggleClass("imogi-pay-cash-mode", is_cash);
@@ -6188,14 +6434,14 @@ imogi_pos.CashierPage = class CashierPage {
 				dialog._imogi_quick_denom = "pas";
 			}
 			this.update_change_display(dialog, total, paid);
-			this.update_cash_quick_feedback(dialog, subtotal, paid);
+			this.update_cash_quick_feedback(dialog, pay_subtotal, paid);
 			this.sync_cash_quick_selection(dialog, total, paid);
 		}
 		if (is_qris) {
-			this.load_inline_qris(dialog, subtotal);
+			this.load_inline_qris(dialog, pay_subtotal);
 		}
 		if (is_transfer) {
-			this.refresh_transfer_panel(dialog, subtotal);
+			this.refresh_transfer_panel(dialog, pay_subtotal);
 		}
 	}
 
@@ -6221,35 +6467,18 @@ imogi_pos.CashierPage = class CashierPage {
 		this.update_mobile_dock();
 		dialog.get_primary_btn().prop("disabled", true);
 
+		const checkout_subtotal = this.get_cart_subtotal_for_checkout();
 		const args = {
-			items: JSON.stringify(
-				this.cart.map((row) => ({
-					item_code: row.item_code,
-					qty: row.qty,
-					rate: row.rate,
-					uom: row.uom || undefined,
-				}))
-			),
+			...this.build_submit_awaiting_args(),
 			payments: JSON.stringify([{ mode_of_payment, amount: total }]),
-			...this.branch_api_args(),
+			total,
 		};
-		if (this.selected_customer) args.customer = this.selected_customer;
-		if (this.discount_type) {
-			args.discount_type = this.discount_type;
-			args.discount_value = this.discount_value;
-		}
-		if (this.voucher_code) args.voucher_code = this.voucher_code;
-		if (this.loyalty_points_redeem) args.loyalty_points_redeem = this.loyalty_points_redeem;
-		args.order_type = this.order_type || "Takeaway";
-		args.total = total;
 		if (this.marketplace_order_name) {
 			args.marketplace_order_name = this.marketplace_order_name;
 		}
-		if (this.selected_table) args.restaurant_table = this.selected_table;
-		if (this._pending_approval_code) args.approval_code = this._pending_approval_code;
 		if (this.pending_checkout_order_name) args.order_name = this.pending_checkout_order_name;
 
-		const checkout_breakdown = this.get_checkout_breakdown(dialog, this.get_cart_subtotal());
+		const checkout_breakdown = this.get_checkout_breakdown(dialog, checkout_subtotal);
 		const finish = (order, change) => {
 			dialog._imogi_checkout_completed = true;
 			this.pending_checkout_order_name = null;

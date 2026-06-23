@@ -372,7 +372,7 @@ const SETTINGS_TABS = [
 		id: "general",
 		label: __("Dasar"),
 		icon: "fa-sliders",
-		desc: __("Mode operasional dan identitas toko"),
+		desc: "",
 		sections: ["store_identity_section", "branch_pricing_section", "general_section", "flow_section"],
 	},
 	{
@@ -585,6 +585,7 @@ const SETTINGS_ALWAYS_HIDDEN_FIELDS = new Set([
 	"business_type",
 	"business_template",
 	"setup_complete",
+	"mode_summary",
 	"subscription_tier",
 	"upgrade_subscription_tier",
 	"printer_setup_status",
@@ -660,10 +661,11 @@ const ENDPOINT_GROUPS = {
 
 function ensure_imogi_styles(callback) {
 	const run = () => callback && callback();
-	if (window.__imogi_settings_styles_ready) {
+	if (document.getElementById("imogi-settings-inline-css-v27")) {
 		run();
 		return;
 	}
+	window.__imogi_settings_styles_ready = false;
 	inject_imogi_settings_css();
 	frappe.require("/assets/imogi_pos/css/imogi_pos.css").then(() => {
 		window.__imogi_settings_styles_ready = true;
@@ -672,7 +674,8 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v14")) return;
+	if (document.getElementById("imogi-settings-inline-css-v27")) return;
+	document.getElementById("imogi-settings-inline-css-v26")?.remove();
 	document.getElementById("imogi-settings-inline-css")?.remove();
 	document.getElementById("imogi-settings-inline-css-v2")?.remove();
 	document.getElementById("imogi-settings-inline-css-v3")?.remove();
@@ -926,6 +929,110 @@ function inject_imogi_settings_css() {
 			gap: 12px 16px;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
+		.imogi-settings-page .imogi-store-form-grid.imogi-store-form-grid--horizontal {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field {
+			margin-bottom: 0 !important;
+			max-width: 100% !important;
+			width: 100% !important;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field .form-group {
+			align-items: center;
+			display: grid;
+			gap: 8px 16px;
+			grid-template-columns: minmax(150px, 32%) minmax(0, 1fr);
+			margin-bottom: 0;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field .clearfix {
+			margin: 0;
+			padding: 0;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field .control-label {
+			color: #374151;
+			float: none !important;
+			font-size: 12px;
+			font-weight: 600;
+			line-height: 1.35;
+			margin: 0 !important;
+			padding: 0 !important;
+			text-align: left;
+			width: auto !important;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field .control-input-wrapper,
+		.imogi-store-form-grid--horizontal .imogi-store-field .control-value,
+		.imogi-store-form-grid--horizontal .imogi-store-field .control-input,
+		.imogi-store-form-grid--horizontal .imogi-store-field input.form-control,
+		.imogi-store-form-grid--horizontal .imogi-store-field select.form-control,
+		.imogi-store-form-grid--horizontal .imogi-store-field .link-field {
+			max-width: 100% !important;
+			min-width: 0;
+			width: 100% !important;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field .form-control {
+			font-size: 12px;
+			min-height: 34px;
+			padding: 5px 10px;
+		}
+		.imogi-store-target-combo .form-group {
+			align-items: start;
+			display: grid;
+			gap: 8px 16px;
+			grid-template-columns: minmax(150px, 32%) minmax(0, 1fr);
+			margin-bottom: 0;
+		}
+		.imogi-store-target-combo .imogi-store-target-value-stack {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			min-width: 0;
+		}
+		.imogi-store-target-combo .imogi-store-target-input-row {
+			align-items: center;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px 16px;
+			min-width: 0;
+		}
+		.imogi-store-target-combo .imogi-store-target-input-row > .control-input-wrapper {
+			flex: 1 1 180px;
+			margin: 0;
+			max-width: none !important;
+			min-width: 0;
+			width: auto !important;
+		}
+		.imogi-store-target-combo .imogi-store-target-input-row > .frappe-control[data-fieldname="multi_branch"] {
+			display: block !important;
+			flex: 0 0 auto;
+			grid-column: auto !important;
+			margin: 0 !important;
+			max-width: none !important;
+			width: auto !important;
+		}
+		.imogi-store-target-combo .frappe-control[data-fieldname="multi_branch"] .form-group {
+			display: block;
+			margin: 0;
+		}
+		.imogi-store-target-combo .frappe-control[data-fieldname="multi_branch"] .checkbox {
+			margin: 0;
+		}
+		.imogi-store-target-combo .help-box,
+		.imogi-store-form-grid--horizontal .frappe-control[data-fieldname="target_monthly_sales"] .help-box,
+		.imogi-store-form-grid--horizontal .frappe-control[data-fieldname="target_monthly_sales"] .small.text-muted {
+			display: none !important;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field[data-fieldtype="Check"] .form-group {
+			align-items: center;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field[data-fieldtype="Check"] .checkbox {
+			margin: 0;
+			padding-top: 0;
+		}
+		.imogi-store-form-grid--horizontal .imogi-store-field[data-fieldtype="Check"] .checkbox label {
+			margin: 0;
+		}
 		.imogi-settings-page .imogi-store-form-grid > .frappe-control,
 		.imogi-settings-page .imogi-shift-form-grid > .frappe-control,
 		.imogi-settings-page .imogi-kitchen-form-grid > .frappe-control {
@@ -973,8 +1080,8 @@ function inject_imogi_settings_css() {
 		}
 		.imogi-settings-tab-panel--general .imogi-store-identity-layout {
 			align-items: start;
-			gap: 16px;
-			grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+			gap: 24px;
+			grid-template-columns: minmax(0, 1.15fr) minmax(280px, 360px);
 		}
 		.imogi-settings-dock-grid {
 			display: flex;
@@ -1231,7 +1338,17 @@ function inject_imogi_settings_css() {
 			.imogi-settings-workspace { --imogi-settings-gutter: 14px; }
 			.imogi-settings-tab-intro { padding: 10px 0 8px; }
 		}
-	`, "imogi-settings-inline-css-v14");
+		.imogi-settings-page .frappe-control[data-fieldname="mode_summary"],
+		.imogi-settings-page .form-section[data-fieldname="setup_section"],
+		.imogi-settings-page .imogi-settings-flow-strip,
+		.imogi-settings-page .imogi-mode-summary-host,
+		.imogi-settings-page .imogi-settings-target-host {
+			display: none !important;
+		}
+		.imogi-settings-page[data-active-tab="general"] .imogi-settings-tab-intro {
+			display: none !important;
+		}
+	`, "imogi-settings-inline-css-v27");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -1266,6 +1383,7 @@ function init_settings_page(frm) {
 		(f) => frm.toggle_display(f, false)
 	);
 	hide_marketplace_integration_ui(frm);
+	hide_settings_general_extras(frm);
 	render_mode_summary(frm);
 	toggle_settings_by_business_type(frm);
 	build_settings_tabs(frm);
@@ -1276,7 +1394,6 @@ function init_settings_page(frm) {
 	build_integrations_dock(frm);
 	build_franchise_dock(frm);
 	build_import_dock(frm);
-	build_target_dock(frm);
 	build_subscription_tier_dock(frm);
 	if (is_erp_enterprise_deployment()) {
 		hide_enterprise_subscription_ui(frm);
@@ -1782,10 +1899,23 @@ function ensure_settings_content_inner(frm) {
 	return $inner;
 }
 
+function hide_settings_general_extras(frm) {
+	frm.toggle_display("mode_summary", false);
+	const field = frm.fields_dict?.mode_summary;
+	field?.$wrapper?.closest(".frappe-control").hide();
+	frm.$wrapper
+		.find('.form-section[data-fieldname="setup_section"]')
+		.hide();
+	frm.$wrapper.find(".imogi-mode-summary-host, .imogi-settings-flow-strip, .imogi-settings-target-host").hide();
+}
+
 function render_settings_tab_intro(frm, tab) {
-	if (!tab) return;
+	if (!tab || tab.id === "general") {
+		frm.$wrapper.find(".imogi-settings-tab-intro").empty().hide();
+		return;
+	}
 	const $intro = frm.$wrapper.find(".imogi-settings-tab-intro");
-	if (!$intro.length) return;
+	$intro.show();
 	$intro.html(`
 		<div class="imogi-settings-tab-intro-title">${frappe.utils.escape_html(tab.label)}</div>
 		<div class="imogi-settings-tab-intro-desc">${frappe.utils.escape_html(tab.desc || "")}</div>
@@ -1843,7 +1973,7 @@ function activate_settings_tab(frm, tabId) {
 
 	frm.$wrapper
 		.find('.form-section[data-fieldname="setup_section"]')
-		.toggle(tabId === "general");
+		.hide();
 
 	if (tabId === "integrations") {
 		render_api_dock_summary(frm);
@@ -1862,8 +1992,6 @@ function activate_settings_tab(frm, tabId) {
 			ops_ctx.$wrapper.addClass("imogi-section-operations");
 		}
 		render_franchise_dock_summary(frm);
-		position_target_dock(frm);
-		render_target_dock_summary(frm);
 	}
 	if (tabId === "general") {
 		render_billing_dock_summary(frm);
@@ -1871,7 +1999,7 @@ function activate_settings_tab(frm, tabId) {
 	if (tabId === "inventory") {
 		build_import_dock(frm);
 	}
-	frm.$wrapper.find(".imogi-settings-target-host").toggle(tabId === "more");
+	frm.$wrapper.find(".imogi-settings-target-host").hide();
 	frm.$wrapper.find(".imogi-settings-trust-row").remove();
 	frm.$wrapper.find(".imogi-settings-placeholder").remove();
 	toggle_general_tab_sections(frm, tabId);
@@ -1881,6 +2009,8 @@ function activate_settings_tab(frm, tabId) {
 		layout_kitchen_settings(frm);
 		layout_general_dock_grid(frm);
 		render_receipt_preview(frm);
+		hide_settings_general_extras(frm);
+		render_settings_tab_intro(frm, SETTINGS_TABS.find((t) => t.id === "general"));
 	}
 }
 
@@ -1920,9 +2050,13 @@ function style_setting_cards(frm) {
 		ctx.$wrapper.addClass("imogi-settings-card-section imogi-settings-flat-section");
 
 		const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-		$body.find(".imogi-settings-card-head, .imogi-settings-flat-head, .imogi-settings-flat-hint").remove();
+		$body
+			.find(".imogi-settings-card-head, .imogi-settings-flat-head, .imogi-settings-flat-hint")
+			.filter(function () {
+				return !$(this).closest(".imogi-shift-settings-dock, .imogi-kitchen-settings-dock").length;
+			})
+			.remove();
 		ctx.$wrapper.find("> .imogi-settings-flat-head, > .imogi-settings-flat-hint").remove();
-		if (ctx.$wrapper.find("> .imogi-settings-flat-head").length) return;
 
 		const subtitle = get_section_subtitle(fieldname);
 		const head_html = settings_flat_head_html(meta.title, subtitle);
@@ -1932,7 +2066,7 @@ function style_setting_cards(frm) {
 
 function get_section_subtitle(fieldname) {
 	const map = {
-		store_identity_section: __("Kota, kontak owner, multi cabang, dan target omzet bulanan."),
+		store_identity_section: "",
 		branch_pricing_section: __("Price list master, sinkron harga ke cabang, dan push menu dari HQ."),
 		general_section: __("Perusahaan, profil kasir, gudang, dan shift kasir."),
 		inventory_section: __("Interval cek stok, role notifikasi, dan batas stok."),
@@ -2675,55 +2809,12 @@ function copy_to_clipboard(text, success_message) {
 }
 
 function render_mode_summary(frm) {
-	const kds_on = cint(frm.doc.enable_kitchen_display);
-	const fulfillment_on = cint(frm.doc.enable_fulfillment);
-	const summary =
-		!kds_on && !fulfillment_on
-			? {
-					title: __("Alur Langsung"),
-					text: __(
-						"Order selesai saat pembayaran. Aktifkan Kitchen Display atau Fulfillment di bawah jika perlu alur dapur/packing."
-					),
-			  }
-			: {
-					title: __("Alur Dapur & Packing"),
-					text: [
-						kds_on ? __("Kitchen Display aktif — item dapur masuk antrian masak.") : null,
-						fulfillment_on
-							? __("Fulfillment aktif — packing takeaway/delivery setelah siap.")
-							: null,
-					]
-						.filter(Boolean)
-						.join(" "),
-			  };
-
+	frm.toggle_display("mode_summary", false);
 	const field = frm.get_field("mode_summary");
-	if (!field || !field.$wrapper) return;
-
-	field.$wrapper.closest(".frappe-control").addClass("imogi-mode-summary-host");
-	field.$wrapper.closest(".frappe-control").find(".control-label").hide();
-
-	field.$wrapper.html(`
-		<div class="imogi-settings-flow-strip">
-			<div class="imogi-settings-flow-main">
-				${settings_flat_head_html(__("Alur Operasional"))}
-				<div class="imogi-settings-flow-top">
-					<strong>${summary.title}</strong>
-					<span class="imogi-settings-chip">${__("Aktif")}</span>
-				</div>
-				<p class="imogi-settings-flow-desc">${summary.text}</p>
-			</div>
-			<div class="imogi-settings-flow-actions">
-				<button type="button" class="btn btn-primary btn-sm imogi-settings-action" data-route="imogi-pos-cashier">
-					<i class="fa fa-shopping-cart"></i> ${__("Buka Kasir")}
-				</button>
-				<button type="button" class="btn btn-default btn-sm imogi-settings-action" data-route="imogi-pos-dashboard">
-					${__("Lihat Dashboard")}
-				</button>
-			</div>
-		</div>`);
-
-	bind_mode_summary_handlers(frm, field.$wrapper);
+	if (field?.$wrapper) {
+		field.$wrapper.closest(".frappe-control").hide();
+		field.$wrapper.empty();
+	}
 }
 
 function bind_mode_summary_handlers(frm, $host) {
@@ -2745,13 +2836,121 @@ function bind_mode_summary_handlers(frm, $host) {
 	}
 }
 
-const STORE_IDENTITY_FIELDS = [
-	"default_company",
-	"multi_branch",
-	"store_city",
-	"target_monthly_sales",
-	"owner_whatsapp",
-];
+const STORE_IDENTITY_GRID_ORDER = ["default_company", "store_city", "owner_whatsapp"];
+
+function unwrap_store_identity_target_combo($grid, frm) {
+	const $combo = $grid.find(".imogi-store-target-combo");
+	if (!$combo.length) return;
+
+	const $group = $combo.children(".form-group").first();
+	const $clearfix = $group.children(".clearfix").first().detach();
+	const $stack = $group.children(".imogi-store-target-value-stack").first();
+	const $input_wrap = $stack.find("> .imogi-store-target-input-row > .control-input-wrapper").first().detach();
+	const $multi_ctrl = $stack
+		.find("> .imogi-store-target-input-row > .frappe-control[data-fieldname='multi_branch']")
+		.first()
+		.detach();
+	const $help = $stack.find("> .help-box, > .small.text-muted").detach().remove();
+
+	const target_field = frm.get_field("target_monthly_sales");
+	const multi_field = frm.get_field("multi_branch");
+	if (!target_field?.$wrapper || !multi_field?.$wrapper) {
+		$combo.remove();
+		return;
+	}
+
+	const $target = target_field.$wrapper.closest(".frappe-control");
+	const $multi = multi_field.$wrapper.closest(".frappe-control");
+	$target.empty().append($('<div class="form-group"></div>').append($clearfix).append($input_wrap));
+	if ($multi_ctrl.length) {
+		$multi.replaceWith($multi_ctrl);
+	} else {
+		$multi.show();
+	}
+	$combo.before($target);
+	if ($multi_ctrl.length) {
+		$combo.before($multi_ctrl);
+	}
+	$combo.remove();
+}
+
+function layout_store_identity_target_combo($grid, frm) {
+	let $combo = $grid.find(".imogi-store-target-combo");
+	if (!$combo.length) {
+		$combo = $('<div class="imogi-store-target-combo imogi-store-field"></div>');
+	}
+
+	const target_field = frm.get_field("target_monthly_sales");
+	const multi_field = frm.get_field("multi_branch");
+	if (!target_field?.$wrapper || !multi_field?.$wrapper) {
+		return $combo;
+	}
+
+	frm.toggle_display("target_monthly_sales", true);
+	frm.toggle_display("multi_branch", true);
+
+	const $target = target_field.$wrapper.closest(".frappe-control").addClass("imogi-store-field").show();
+	const $multi = multi_field.$wrapper.closest(".frappe-control");
+	$multi.addClass("imogi-store-field").show();
+	$multi.find("> .form-group > .clearfix").remove();
+	$multi.find("> .form-group").data("imogi-horizontal-check", 0);
+
+	const $target_group = $target.children(".form-group").first();
+	const $clearfix = $target_group.children(".clearfix").first().detach();
+	const $input_wrap = $target_group.children(".control-input-wrapper").first().detach();
+	$target_group.children(".help-box, .small.text-muted").remove();
+
+	$combo.empty();
+	const $group = $('<div class="form-group"></div>');
+	const $stack = $('<div class="imogi-store-target-value-stack"></div>');
+	const $row = $('<div class="imogi-store-target-input-row"></div>');
+
+	$group.append($clearfix);
+	$row.append($input_wrap).append($multi);
+	$stack.append($row);
+	$group.append($stack);
+	$combo.append($group);
+
+	$target.detach().empty();
+	return $combo;
+}
+
+function normalize_store_identity_field_layout($ctrl) {
+	if (!$ctrl || !$ctrl.length) return;
+	const $group = $ctrl.find("> .form-group").first();
+	if (!$group.length) return;
+
+	if ($ctrl.attr("data-fieldtype") === "Check") {
+		if ($group.data("imogi-horizontal-check")) return;
+		const $checkbox = $group.find(".checkbox").first();
+		const $label_area = $checkbox.find(".label-area").first();
+		const label_text = (
+			$label_area.text() ||
+			$checkbox.find("label").text() ||
+			$ctrl.find(".control-label").first().text() ||
+			""
+		).trim();
+		if (label_text) {
+			$label_area.remove();
+			$checkbox.find("label").each(function () {
+				$(this)
+					.contents()
+					.filter(function () {
+						return this.nodeType === 3 || (this.nodeType === 1 && !$(this).is("input"));
+					})
+					.remove();
+			});
+			if (!$group.find("> .clearfix .control-label").length) {
+				$group.prepend(
+					`<div class="clearfix"><label class="control-label">${frappe.utils.escape_html(
+						label_text
+					)}</label></div>`
+				);
+			}
+		}
+		$group.data("imogi-horizontal-check", 1);
+	}
+}
 
 const SHIFT_SETTINGS_FIELDS = [
 	"enable_pos_shift",
@@ -2777,6 +2976,7 @@ function layout_store_identity(frm) {
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 
 	frm.set_df_property("default_company", "label", __("Nama Toko"));
+	frm.set_df_property("target_monthly_sales", "description", "");
 
 	if (!$body.find(".imogi-store-identity-layout").length) {
 		$body.find(".imogi-settings-card-head").remove();
@@ -2793,14 +2993,7 @@ function layout_store_identity(frm) {
 	}
 
 	const $grid = $body.find(".imogi-store-form-grid");
-	STORE_IDENTITY_FIELDS.forEach((fieldname) => {
-		const field = frm.get_field(fieldname);
-		if (!field || !field.$wrapper) return;
-		const $ctrl = field.$wrapper.closest(".frappe-control");
-		$ctrl.addClass("imogi-store-field");
-		$grid.append($ctrl);
-	});
-
+	$grid.addClass("imogi-store-form-grid--horizontal");
 	if (!$grid.find(".imogi-store-email-field").length) {
 		$grid.append(`
 			<div class="frappe-control imogi-store-field imogi-store-email-field" data-fieldtype="Data">
@@ -2814,6 +3007,42 @@ function layout_store_identity(frm) {
 				</div>
 			</div>`);
 	}
+
+	unwrap_store_identity_target_combo($grid, frm);
+	$grid.find(".imogi-store-target-row, .imogi-store-target-stack").each(function () {
+		$(this)
+			.children(".frappe-control")
+			.each(function () {
+				$grid.append($(this));
+			});
+		$(this).remove();
+	});
+
+	const $ordered = [$grid.find(".imogi-store-email-field")];
+	STORE_IDENTITY_GRID_ORDER.forEach((fieldname) => {
+		const field = frm.get_field(fieldname);
+		if (!field || !field.$wrapper) return;
+		frm.toggle_display(fieldname, true);
+		const $ctrl = field.$wrapper.closest(".frappe-control");
+		$ctrl.addClass("imogi-store-field").show();
+		normalize_store_identity_field_layout($ctrl);
+		$ordered.push($ctrl);
+	});
+
+	$ordered.push(layout_store_identity_target_combo($grid, frm));
+
+	$ordered.forEach(($el) => {
+		if ($el && $el.length) {
+			$grid.append($el);
+		}
+	});
+	hide_settings_general_extras(frm);
+}
+
+function ensure_dock_section_head($dock, title, hint) {
+	if (!$dock || !$dock.length) return;
+	$dock.children(".imogi-settings-flat-head, .imogi-settings-flat-hint").remove();
+	$dock.prepend(settings_flat_head_html(title, hint));
 }
 
 function layout_shift_settings(frm) {
@@ -2825,10 +3054,6 @@ function layout_shift_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-shift-settings-dock">
-				${settings_flat_head_html(
-					__("Shift Kasir & Opening/Closing Entry"),
-					__("Wajib buka/tutup shift, profil kasir ERPNext, dan jam operasional default.")
-				)}
 				<div class="imogi-shift-status"></div>
 				<div class="imogi-shift-form-grid"></div>
 				<div class="imogi-shift-quick-links">
@@ -2840,6 +3065,7 @@ function layout_shift_settings(frm) {
 			</div>`);
 		$body.append($dock);
 	}
+	ensure_dock_section_head($dock, __("Session Kasir & Opening/Closing Entry"), "");
 
 	const $grid = $dock.find(".imogi-shift-form-grid");
 	SHIFT_SETTINGS_FIELDS.forEach((fieldname) => {
@@ -2863,10 +3089,6 @@ function layout_kitchen_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-kitchen-settings-dock">
-				${settings_flat_head_html(
-					__("Kitchen & Fulfillment"),
-					__("Aktifkan Kitchen Display untuk antrian dapur. Aktifkan Fulfillment untuk packing takeaway/delivery.")
-				)}
 				<div class="imogi-kitchen-status"></div>
 				<div class="imogi-kitchen-form-grid"></div>
 				<div class="imogi-kitchen-quick-links">
@@ -2875,6 +3097,7 @@ function layout_kitchen_settings(frm) {
 			</div>`);
 		$body.append($dock);
 	}
+	ensure_dock_section_head($dock, __("Kitchen & Fulfillment"), "");
 
 	const $grid = $dock.find(".imogi-kitchen-form-grid");
 	KITCHEN_SETTINGS_FIELDS.forEach((fieldname) => {
@@ -3022,7 +3245,10 @@ function toggle_general_tab_sections(frm, tabId) {
 		"default_warehouse",
 		"enable_pos_shift",
 	].forEach((fieldname) => frm.toggle_display(fieldname, false));
-	STORE_IDENTITY_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
+	[...STORE_IDENTITY_GRID_ORDER, "target_monthly_sales", "multi_branch"].forEach((fieldname) =>
+		frm.toggle_display(fieldname, true)
+	);
+	hide_settings_general_extras(frm);
 }
 
 function toggle_settings_by_business_type(frm) {
