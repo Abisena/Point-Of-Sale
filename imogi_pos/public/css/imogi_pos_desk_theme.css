@@ -611,8 +611,10 @@ body.imogi-pos-themed .container:has(.imogi-pos-order-history),
 /* IMOGI Cashier — white canvas (override login navy gradient on body.imogi-pos-themed) */
 html:has(body.imogi-cashier-active),
 body.imogi-cashier-active,
+body.imogi-table-service-active,
 body.imogi-pos-themed.imogi-cashier-active,
 body.imogi-pos-themed:has(.imogi-cashier-page),
+body.imogi-pos-themed:has(.imogi-table-service-page),
 body.imogi-pos-themed.imogi-pos-cashier-fullscreen {
 	background: #fff !important;
 	background-attachment: scroll !important;
@@ -638,10 +640,20 @@ body.imogi-pos-cashier-fullscreen .imogi-cashier-root {
 
 body.imogi-pos-cashier-fullscreen .navbar,
 body.imogi-pos-cashier-fullscreen header.navbar,
+body.imogi-pos-cashier-fullscreen header.app-header,
 body.imogi-pos-cashier-fullscreen .sticky-top,
 body.imogi-pos-cashier-fullscreen #navbar-breadcrumbs,
 body.imogi-pos-cashier-fullscreen .layout-side-section,
-body.imogi-pos-cashier-fullscreen .desk-sidebar {
+body.imogi-pos-cashier-fullscreen .desk-sidebar,
+body.imogi-pos-cashier-fullscreen .page-head,
+html.imogi-pos-waiter-dedicated .navbar,
+html.imogi-pos-waiter-dedicated header.navbar,
+html.imogi-pos-waiter-dedicated header.app-header,
+html.imogi-pos-waiter-dedicated .sticky-top,
+html.imogi-pos-waiter-dedicated #navbar-breadcrumbs,
+html.imogi-pos-waiter-dedicated .layout-side-section,
+html.imogi-pos-waiter-dedicated .desk-sidebar,
+html.imogi-pos-waiter-dedicated .page-head {
 	display: none !important;
 }
 
@@ -723,6 +735,64 @@ body.imogi-pos-cashier-fullscreen .imogi-pos-order-history {
 
 body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body {
 	padding: 0 !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page,
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page .page-body,
+body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper:has(.imogi-table-service-page) {
+	background: #fff !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page.layout-main-section,
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page {
+	box-sizing: border-box;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	height: auto !important;
+	max-height: none !important;
+	min-height: 0 !important;
+	overflow: hidden;
+	padding: 0 !important;
+}
+
+body.imogi-pos-cashier-fullscreen .imogi-table-service-page .page-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0 !important;
+	overflow: hidden;
+	padding: 0 !important;
+}
+
+body.imogi-pos-cashier-fullscreen .layout-main-section-wrapper:has(.imogi-table-service-page) {
+	display: flex;
+	flex-direction: column;
+	height: 100dvh !important;
+	max-height: 100dvh !important;
+	min-height: 0 !important;
+	overflow: hidden;
+}
+
+html.imogi-pos-waiter-dedicated .desk-sidebar,
+html.imogi-pos-waiter-dedicated .layout-side-section,
+html.imogi-pos-waiter-dedicated .navbar,
+html.imogi-pos-waiter-dedicated header.navbar,
+html.imogi-pos-waiter-dedicated header.app-header,
+html.imogi-pos-waiter-dedicated .sticky-top,
+html.imogi-pos-waiter-dedicated #navbar-breadcrumbs,
+html.imogi-pos-waiter-dedicated .page-head {
+	display: none !important;
+}
+
+html.imogi-pos-waiter-dedicated .layout-main,
+html.imogi-pos-waiter-dedicated .layout-main-section-wrapper,
+html.imogi-pos-waiter-dedicated .page-container,
+html.imogi-pos-waiter-dedicated .main-section {
+	margin-left: 0 !important;
+	max-width: 100% !important;
+	width: 100% !important;
 }
 
 .imogi-open-shift-page .imogi-cash-denom-add,

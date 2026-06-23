@@ -7,7 +7,8 @@ from imogi_pos.imogi_pos.utils.dashboard_focus import dashboard_route_with_focus
 
 FEATURE_WORKSPACE_ROUTES: dict[str, dict] = {
 	"pos_order": {"label": "POS Order / Kasir", "route": "imogi-pos-cashier"},
-	"order_history": {"label": "Riwayat Order", "route": "imogi-pos-order-history"},
+	"order_history": {"label": "Riwayat Transaksi", "route": "imogi-pos-order-history"},
+	"order_management": {"label": "Manajemen Order", "route": "List/Riwayat Order"},
 	"customer": {"label": "Customer", "route": "imogi-pos-cashier"},
 	"take_away": {"label": "Take Away", "route": "imogi-pos-cashier"},
 	"delivery_order": {"label": "Delivery Order", "route": "imogi-pos-cashier"},
@@ -99,8 +100,11 @@ FEATURE_WORKSPACE_ROUTES: dict[str, dict] = {
 	"login_history": {"label": "Activity Log", "route": "List/Activity Log"},
 	"membership": {"label": "Loyalty Member", "route": "List/IMOGI POS Loyalty Member"},
 	"combo_package": {"label": "Combo Package", "route": "List/IMOGI POS Combo Package"},
-	"table_reservation": {"label": "Reservasi Meja", "route": "List/IMOGI POS Table Reservation"},
-	"waiting_list": {"label": "Waiting List", "route": "List/IMOGI POS Waiting List"},
+	"table_management": {"label": "Table Management", "route": "table-service"},
+	"move_table": {"label": "Pindah Meja", "route": "table-service"},
+	"merge_table": {"label": "Gabung Meja", "route": "table-service"},
+	"table_reservation": {"label": "Reservasi Meja", "route": "table-service"},
+	"waiting_list": {"label": "Waiting List", "route": "table-service"},
 	"ingredient_substitution": {"label": "BOM Substitusi", "route": "List/BOM"},
 	"recipe_versioning": {"label": "Versi BOM", "route": "List/Version"},
 	"central_inventory": {"label": "Stok Cabang", "route": "List/IMOGI Branch"},

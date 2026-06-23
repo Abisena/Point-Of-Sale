@@ -24,6 +24,9 @@ def merge_restaurant_orders(primary_order: str, secondary_order: str) -> dict:
 	if primary.company != secondary.company:
 		frappe.throw(_("Order harus satu perusahaan yang sama"))
 
+	if primary.name == secondary.name:
+		frappe.throw(_("Order tidak boleh digabung dengan dirinya sendiri"))
+
 	moved = 0
 	for row in secondary.items:
 		primary.append(
@@ -40,13 +43,19 @@ def merge_restaurant_orders(primary_order: str, secondary_order: str) -> dict:
 		)
 		moved += 1
 
+	primary.flags.ignore_validate_update_after_submit = True
+	primary.calculate_totals()
 	primary.save(ignore_permissions=True)
 
 	if secondary.restaurant_table:
 		release_restaurant_table(secondary)
-	secondary.db_set("status", "Cancelled")
+
 	if secondary.docstatus == 1:
 		secondary.add_comment("Comment", _("Digabung ke order {0}").format(primary.name))
+		secondary.flags.ignore_permissions = True
+		secondary.cancel()
+	else:
+		secondary.db_set("status", "Cancelled")
 
 	frappe.db.commit()
 	return {"primary": primary.name, "merged_items": moved, "secondary": secondary.name}

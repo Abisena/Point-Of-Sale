@@ -116,6 +116,11 @@ ROLE_PRIVILEGES: dict[str, frozenset[str]] = {
 
 BYPASS_ROLE_GATING_ROLES = frozenset({"Administrator", "System Manager"})
 
+# Workspace: Supervisor-gated links also visible to back-office personas.
+WORKSPACE_SUPERVISOR_ESCALATION_MATRIX_ROLES = frozenset(
+	{"Supervisor", "Manager", "Owner", "Area Manager", "Super Admin", "Finance", "Auditor"}
+)
+
 # Free-tier pages: exact matrix role only (no Owner→Manager→Kasir inheritance).
 FREE_TIER_STRICT_FEATURE_IDS = frozenset(
 	{
@@ -239,7 +244,12 @@ def is_workspace_role_allowed_for_feature(
 	if not required:
 		return True
 
-	return required in get_user_matrix_roles(user)
+	user_roles = get_user_matrix_roles(user)
+	if required in user_roles:
+		return True
+	if required == "Supervisor" and user_roles & WORKSPACE_SUPERVISOR_ESCALATION_MATRIX_ROLES:
+		return True
+	return False
 
 
 def get_role_block_reason(feature_id: str, user: str | None = None, settings=None) -> str | None:

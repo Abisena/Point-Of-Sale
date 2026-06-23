@@ -412,3 +412,11 @@ def _get_umkm_metrics(day_start, day_end, company=None, pos_profile=None):
 		"pos_invoices_today": pos_invoices_today,
 		"timestamp": frappe.utils.now(),
 	}
+
+
+@frappe.whitelist()
+def get_ui_refresh_seconds():
+	"""Ops UI refresh interval — avoids client read on IMOGI POS Settings."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Login required"), frappe.AuthenticationError)
+	return cint(get_settings().dashboard_refresh_seconds) or 30

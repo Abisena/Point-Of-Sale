@@ -75,6 +75,7 @@ CASHIER_FEATURE_IDS = (
 	"split_bill",
 	"table_management",
 	"move_table",
+	"void_order",
 )
 
 
@@ -90,6 +91,19 @@ def is_setting_enabled(settings_key: str, settings=None) -> bool:
 
 
 def require_feature_operational(feature_id: str, settings=None, user=None):
+	from imogi_pos.imogi_pos.utils.feature_registry import (
+		get_feature,
+		is_feature_temporarily_disabled,
+	)
+
+	if is_feature_temporarily_disabled(feature_id):
+		feature = get_feature(feature_id) or {}
+		frappe.throw(
+			_("Fitur <b>{0}</b> sementara dinonaktifkan di sistem POS saat ini.").format(
+				feature.get("label") or feature_id
+			),
+			title=_("Fitur Nonaktif"),
+		)
 	user = user or getattr(frappe.session, "user", None)
 	if is_feature_operational(feature_id, settings, user=user):
 		return
@@ -140,6 +154,10 @@ def get_feature_block_reason(
 	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
 
 	settings = settings or get_settings()
+	from imogi_pos.imogi_pos.utils.feature_registry import is_feature_temporarily_disabled
+
+	if is_feature_temporarily_disabled(feature_id):
+		return "disabled"
 	if is_feature_suppressed_for_business(feature_id, settings):
 		return "business"
 

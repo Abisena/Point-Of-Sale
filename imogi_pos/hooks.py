@@ -49,6 +49,7 @@ app_include_js = [
 	"/assets/imogi_pos/js/imogi_pos_feature_upgrade.js",
 	"/assets/imogi_pos/js/imogi_pos_tier_picker.js",
 	"/assets/imogi_pos/js/imogi_pos_cashier_extras.js",
+	"/assets/imogi_pos/js/imogi_pos_payment_modal.js",
 	"/assets/imogi_pos/js/imogi_pos_pwa.js",
 	"/assets/imogi_pos/js/imogi_pos_offline.js",
 	"/assets/imogi_pos/js/imogi_pos_workspace.js",

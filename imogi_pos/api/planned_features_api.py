@@ -7,6 +7,13 @@ from frappe.utils import get_datetime, now_datetime
 from imogi_pos.api.reports_api import _require_report_access
 from imogi_pos.imogi_pos.utils.feature_gating import require_feature_doctype_access, require_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
+from imogi_pos.imogi_pos.utils.table_service import (
+	cancel_table_reservation,
+	mark_table_reserved,
+	seat_table_reservation,
+	seat_waiting_guest_on_table,
+	validate_table_assignable,
+)
 from imogi_pos.imogi_pos.utils.planned_features import (
 	apply_birthday_promo,
 	apply_cashback_amount,
@@ -31,6 +38,11 @@ from imogi_pos.imogi_pos.utils.planned_features import (
 
 def _require_ops_access():
 	if frappe.session.user == "Guest":
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not (
+		frappe.has_permission("IMOGI Restaurant Table", "read")
+		or frappe.has_permission("Riwayat Order", "read")
+	):
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
@@ -64,6 +76,7 @@ def list_table_reservations(company=None, status=None):
 			"reservation_datetime",
 			"restaurant_table",
 			"status",
+			"notes",
 		],
 		order_by="reservation_datetime asc",
 		limit=100,
@@ -84,6 +97,8 @@ def create_table_reservation(
 	_require_ops_access()
 	require_feature_operational("table_reservation")
 	settings = get_settings()
+	if restaurant_table:
+		validate_table_assignable(restaurant_table, allow_reserved=True)
 	doc = frappe.get_doc(
 		{
 			"doctype": "IMOGI POS Table Reservation",
@@ -97,11 +112,34 @@ def create_table_reservation(
 			"notes": notes,
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert()
 	if restaurant_table:
-		frappe.db.set_value("IMOGI Restaurant Table", restaurant_table, "status", "Reserved")
+		mark_table_reserved(restaurant_table)
 	frappe.db.commit()
 	return {"name": doc.name}
+
+
+@frappe.whitelist()
+def cancel_table_reservation_api(name, status="Cancelled"):
+	_require_ops_access()
+	require_feature_operational("table_reservation")
+	if not frappe.db.exists("IMOGI POS Table Reservation", name):
+		frappe.throw(_("Reservasi tidak ditemukan"))
+	frappe.get_doc("IMOGI POS Table Reservation", name).check_permission("write")
+	cancel_table_reservation(name, status=status)
+	frappe.db.commit()
+	return {"name": name, "status": status}
+
+
+@frappe.whitelist()
+def seat_table_reservation_api(name):
+	_require_ops_access()
+	require_feature_operational("table_reservation")
+	doc = frappe.get_doc("IMOGI POS Table Reservation", name)
+	doc.check_permission("write")
+	seat_table_reservation(name)
+	frappe.db.commit()
+	return {"name": name, "status": "Seated"}
 
 
 @frappe.whitelist()
@@ -136,7 +174,7 @@ def add_waiting_guest(customer_name, party_size, phone=None, company=None, notes
 			"notes": notes,
 		}
 	)
-	doc.insert(ignore_permissions=True)
+	doc.insert()
 	frappe.db.commit()
 	return {"name": doc.name, "queue_position": frappe.db.count("IMOGI POS Waiting List", {"status": "Waiting"})}
 
@@ -146,9 +184,23 @@ def seat_waiting_guest(name, restaurant_table=None):
 	_require_ops_access()
 	require_feature_operational("waiting_list")
 	doc = frappe.get_doc("IMOGI POS Waiting List", name)
-	doc.db_set({"status": "Seated", "restaurant_table": restaurant_table, "seated_at": now_datetime()})
+	doc.check_permission("write")
+	seat_waiting_guest_on_table(name, restaurant_table=restaurant_table)
 	frappe.db.commit()
-	return {"name": name, "status": "Seated"}
+	return {"name": name, "status": "Seated", "restaurant_table": restaurant_table}
+
+
+@frappe.whitelist()
+def cancel_waiting_guest(name):
+	_require_ops_access()
+	require_feature_operational("waiting_list")
+	doc = frappe.get_doc("IMOGI POS Waiting List", name)
+	doc.check_permission("write")
+	if doc.status != "Waiting":
+		frappe.throw(_("Tamu sudah tidak dalam antrian"))
+	doc.db_set("status", "Cancelled")
+	frappe.db.commit()
+	return {"name": name, "status": "Cancelled"}
 
 
 @frappe.whitelist()

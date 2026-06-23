@@ -219,7 +219,7 @@ def _create_imogi_roles():
 	frappe.db.set_value("Role", "IMOGI Manager", "home_page", "imogi-pos-menu")
 	frappe.db.set_value("Role", "IMOGI Area Manager", "home_page", "imogi-pos-dashboard")
 	frappe.db.set_value("Role", "IMOGI Cashier", "home_page", "imogi-pos-cashier")
-	frappe.db.set_value("Role", "IMOGI Waiter", "home_page", "imogi-pos-cashier")
+	frappe.db.set_value("Role", "IMOGI Waiter", "home_page", "table-service")
 	frappe.db.set_value("Role", "IMOGI Supervisor", "home_page", "imogi-pos-dashboard")
 	frappe.db.set_value("Role", "IMOGI Chef", "home_page", "kitchen-display")
 	frappe.db.set_value("Role", "IMOGI Inventory", "home_page", "imogi-pos-dashboard")

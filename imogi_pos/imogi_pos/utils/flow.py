@@ -129,17 +129,40 @@ def create_pos_invoice_from_order(order):
 	invoice.calculate_taxes_and_totals()
 
 	invoice_total = flt(invoice.rounded_total) or flt(invoice.grand_total)
-	for pay in order.payments:
+	# set_missing_values() may pre-fill POS Profile payment rows — replace with order splits.
+	invoice.set("payments", [])
+
+	paid_total = 0
+	for pay in order.payments or []:
+		amount = flt(pay.amount)
+		if amount <= 0:
+			continue
 		invoice.append(
 			"payments",
 			{
 				"mode_of_payment": pay.mode_of_payment,
-				"amount": invoice_total,
+				"amount": amount,
 			},
 		)
+		paid_total += amount
 
-	invoice.paid_amount = invoice_total
-	invoice.base_paid_amount = invoice_total
+	if not invoice.payments:
+		default_mode = (order.payment_method or "Cash").split(",")[0].strip() or "Cash"
+		invoice.append(
+			"payments",
+			{"mode_of_payment": default_mode, "amount": invoice_total},
+		)
+		paid_total = invoice_total
+
+	if abs(paid_total - invoice_total) > 0.01:
+		frappe.throw(
+			_("Total pembayaran ({0}) tidak sama dengan tagihan ({1})").format(
+				paid_total, invoice_total
+			)
+		)
+
+	invoice.paid_amount = paid_total
+	invoice.base_paid_amount = paid_total
 	invoice.insert(ignore_permissions=True)
 	invoice.submit()
 

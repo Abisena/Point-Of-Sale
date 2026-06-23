@@ -170,6 +170,20 @@ def get_api_documentation():
 	example_items = [{"item_code": "ITEM-001", "qty": 1, "rate": 15000}]
 	example_payments = [{"mode_of_payment": "Cash", "amount": 15000}]
 
+	from imogi_pos.imogi_pos.utils.feature_registry import is_feature_temporarily_disabled
+
+	if is_feature_temporarily_disabled("refund"):
+		endpoints = {
+			key: value for key, value in endpoints.items() if key not in ("refund", "partial_refund")
+		}
+	webhook_events = [
+		"order.created",
+		"order.completed",
+		"order.cancelled",
+	]
+	if not is_feature_temporarily_disabled("refund"):
+		webhook_events.extend(["order.refunded", "order.partially_refunded"])
+
 	return {
 		"enabled": bool(settings.enable_order_api),
 		"has_credentials": bool(
@@ -181,13 +195,7 @@ def get_api_documentation():
 		"auth_header": "X-Imogi-Api-Key: {api_key}\nX-Imogi-Api-Secret: {api_secret}",
 		"webhook_enabled": bool(settings.enable_order_api_webhook),
 		"webhook_url": settings.order_api_webhook_url or "",
-		"webhook_events": [
-			"order.created",
-			"order.completed",
-			"order.cancelled",
-			"order.refunded",
-			"order.partially_refunded",
-		],
+		"webhook_events": webhook_events,
 		"endpoints": endpoints,
 		"example_create_body": {
 			"items": example_items,

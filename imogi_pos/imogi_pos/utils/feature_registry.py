@@ -1,5 +1,5 @@
 # Copyright (c) 2026, Imogi and contributors
-"""IMOGI POS F&B — subscription tier feature matrix (99 features).
+"""IMOGI POS F&B — subscription tier feature matrix (100 features).
 
 Source of truth for Free / Starter / Professional / Enterprise gating.
 Tier counts (cumulative): Free 6, Starter 14, Professional 77, Enterprise 99.
@@ -34,11 +34,29 @@ HIDDEN_UI_FEATURE_IDS = frozenset(
 	}
 )
 
+# Built features kept in codebase but turned off for current POS rollout.
+# Remove ids from this set (or clear it) to re-enable refund flows.
+DISABLED_OPERATIONAL_FEATURE_IDS = frozenset(
+	{
+		"refund",
+		"approval_refund",
+		"refund_report",
+	}
+)
+
+
+def is_feature_temporarily_disabled(feature_id: str | None) -> bool:
+	return bool(feature_id and feature_id in DISABLED_OPERATIONAL_FEATURE_IDS)
+
 
 def is_feature_ui_visible(feature_id: str | None) -> bool:
 	if not feature_id:
 		return True
-	return feature_id not in HIDDEN_UI_FEATURE_IDS
+	if feature_id in HIDDEN_UI_FEATURE_IDS:
+		return False
+	if is_feature_temporarily_disabled(feature_id):
+		return False
+	return True
 
 # fmt: off
 FEATURES: tuple[dict, ...] = (
@@ -209,8 +227,8 @@ FEATURES: tuple[dict, ...] = (
 		"min_tier": "Starter",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
-		"trigger_upgrade": "Cashless",
-		"notes": "Kasir saat ini satu metode bayar per transaksi.",
+	"trigger_upgrade": "Cashless",
+		"module": "imogi-pos-cashier + POS Invoice split payments",
 	},
 	{
 		"id": "split_bill",
@@ -232,13 +250,14 @@ FEATURES: tuple[dict, ...] = (
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol transaksi",
 		"module": "Riwayat Order.action_refund_order",
+		"notes": "Sementara dinonaktifkan via DISABLED_OPERATIONAL_FEATURE_IDS.",
 	},
 	{
 		"id": "void_order",
 		"label": "Void Order",
 		"category": "TRANSAKSI",
-		"role": "Supervisor",
-		"min_tier": "Professional",
+		"role": "Kasir",
+		"min_tier": "Free",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol transaksi",
@@ -246,7 +265,7 @@ FEATURES: tuple[dict, ...] = (
 	},
 	{
 		"id": "order_history",
-		"label": "Riwayat Order",
+		"label": "Riwayat Transaksi",
 		"category": "TRANSAKSI",
 		"role": "Kasir",
 		"min_tier": "Free",
@@ -254,6 +273,17 @@ FEATURES: tuple[dict, ...] = (
 		"settings_key": None,
 		"trigger_upgrade": None,
 		"module": "imogi-pos-order-history",
+	},
+	{
+		"id": "order_management",
+		"label": "Manajemen Order",
+		"category": "TRANSAKSI",
+		"role": "Supervisor",
+		"min_tier": "Professional",
+		"status": FEATURE_STATUS_BUILT,
+		"settings_key": None,
+		"trigger_upgrade": "Kontrol transaksi",
+		"module": "Riwayat Order",
 	},
 	# ── TABLE SERVICE (5) ───────────────────────────────────────────────────
 	{
@@ -265,7 +295,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Dine In",
-		"module": "IMOGI Restaurant Table + cashier table picker",
+		"module": "table-service",
 	},
 	{
 		"id": "move_table",
@@ -274,7 +304,7 @@ FEATURES: tuple[dict, ...] = (
 		"role": "Waiter",
 		"min_tier": "Starter",
 		"status": FEATURE_STATUS_BUILT,
-		"module": "table_api.move_restaurant_table",
+		"module": "table-service",
 		"settings_key": None,
 		"trigger_upgrade": "Operasional",
 	},
@@ -287,6 +317,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Group customer",
+		"module": "table-service",
 	},
 	{
 		"id": "table_reservation",
@@ -297,6 +328,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Reservasi",
+		"module": "table-service",
 	},
 	{
 		"id": "waiting_list",
@@ -307,6 +339,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Peak Hour",
+		"module": "table-service",
 	},
 	# ── KITCHEN (8) ────────────────────────────────────────────────────────
 	{
@@ -1130,9 +1163,9 @@ FEATURE_BY_ID = {row["id"]: row for row in FEATURES}
 
 
 def _validate_registry():
-	if len(FEATURES) != 99:
-		raise ValueError(f"Feature registry must contain 99 features, got {len(FEATURES)}")
-	if len(FEATURE_BY_ID) != 99:
+	if len(FEATURES) != 100:
+		raise ValueError(f"Feature registry must contain 100 features, got {len(FEATURES)}")
+	if len(FEATURE_BY_ID) != 100:
 		raise ValueError("Duplicate feature ids in registry")
 
 
@@ -1192,6 +1225,8 @@ def is_feature_operational(
 	feature_id: str, settings=None, tier: str | None = None, user: str | None = None
 ) -> bool:
 	"""Tier + role + settings allow feature AND status is not planned."""
+	if is_feature_temporarily_disabled(feature_id):
+		return False
 	from imogi_pos.imogi_pos.utils.business_profile import is_feature_suppressed_for_business
 
 	if is_feature_suppressed_for_business(feature_id, settings):

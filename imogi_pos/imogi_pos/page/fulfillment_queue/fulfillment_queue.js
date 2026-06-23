@@ -64,10 +64,13 @@ imogi_pos.FulfillmentQueue = class FulfillmentQueue {
 			},
 		});
 		if (this._timer) clearInterval(this._timer);
-		frappe.db.get_single_value("IMOGI POS Settings", "dashboard_refresh_seconds").then((v) => {
-			this.refresh_interval = v || 30;
-			this.wrapper.find(".imogi-ful-refresh-label").text(`${__("Refresh")} ${this.refresh_interval}s`);
-			this._timer = setInterval(() => this.refresh(), this.refresh_interval * 1000);
+		frappe.call({
+			method: "imogi_pos.api.dashboard.get_ui_refresh_seconds",
+			callback: (r) => {
+				this.refresh_interval = cint(r.message) || 30;
+				this.wrapper.find(".imogi-ful-refresh-label").text(`${__("Refresh")} ${this.refresh_interval}s`);
+				this._timer = setInterval(() => this.refresh(), this.refresh_interval * 1000);
+			},
 		});
 	}
 

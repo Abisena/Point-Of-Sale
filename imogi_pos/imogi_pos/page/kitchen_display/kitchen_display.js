@@ -81,9 +81,12 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 	}
 
 	load_settings() {
-		frappe.db.get_single_value("IMOGI POS Settings", "dashboard_refresh_seconds").then((v) => {
-			if (v) this.refresh_interval = cint(v) || 30;
-			this.wrapper.find(".imogi-kds-refresh-label").text(`${__("Refresh")} ${this.refresh_interval}s`);
+		frappe.call({
+			method: "imogi_pos.api.dashboard.get_ui_refresh_seconds",
+			callback: (r) => {
+				if (r.message) this.refresh_interval = cint(r.message) || 30;
+				this.wrapper.find(".imogi-kds-refresh-label").text(`${__("Refresh")} ${this.refresh_interval}s`);
+			},
 		});
 	}
 

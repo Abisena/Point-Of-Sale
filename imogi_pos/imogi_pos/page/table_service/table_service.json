@@ -1,0 +1,25 @@
+{
+ "creation": "2026-06-22 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "grid",
+ "idx": 0,
+ "modified": "2026-06-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "table-service",
+ "owner": "Administrator",
+ "page_name": "table-service",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Sales Manager"},
+  {"role": "IMOGI Waiter"},
+  {"role": "IMOGI Supervisor"},
+  {"role": "IMOGI Cashier"},
+  {"role": "IMOGI Manager"},
+  {"role": "IMOGI Owner"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Table Service"
+}

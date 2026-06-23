@@ -923,6 +923,37 @@ function inject_cashier_css() {
 		.imogi-pay-quick-change-val.is-ok { color: #047857; }
 		.imogi-pay-quick-change-val.is-short { color: #b91c1c; }
 		.imogi-pay-quick-label { color: #71717a; font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-top: 14px; text-transform: uppercase; }
+		.imogi-pay-manual-discount { border-top: 1px solid var(--imogi-pay-border, #e4e4e7); margin-top: 12px; padding-top: 12px; }
+		.imogi-pay-manual-discount-group + .imogi-pay-manual-discount-group { margin-top: 10px; }
+		.imogi-pay-manual-discount-label { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
+		.imogi-pay-manual-discount-row { display: grid; gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		.imogi-pay-manual-discount-btn { background: #fff; border: 1px solid var(--imogi-navy-800, #0f1f35); border-radius: 8px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; font-size: 13px; font-weight: 800; min-height: 40px; padding: 8px 6px; touch-action: manipulation; transition: background .12s, border-color .12s, box-shadow .12s, color .12s; }
+		.imogi-pay-manual-discount-btn:hover { background: #f8fafc; border-color: var(--imogi-navy-800, #0f1f35); color: var(--imogi-navy-800, #0f1f35); }
+		.imogi-pay-manual-discount-btn.is-selected { background: var(--imogi-navy-800, #0f1f35); border-color: var(--imogi-navy-800, #0f1f35); box-shadow: 0 0 0 2px rgba(15, 31, 53, 0.2); color: #fff; }
+		.imogi-pay-manual-discount-btn.is-disabled,
+		.imogi-pay-manual-discount-btn:disabled {
+			background: #f4f4f5 !important;
+			border-color: #d4d4d8 !important;
+			box-shadow: none !important;
+			color: #a1a1aa !important;
+			cursor: not-allowed !important;
+			opacity: 1;
+			pointer-events: none;
+		}
+		.imogi-pay-manual-discount.is-blocked .imogi-pay-manual-discount-label { color: #a1a1aa; }
+		.imogi-pay-manual-discount-note {
+			background: #fff7ed;
+			border: 1px solid #fed7aa;
+			border-radius: 8px;
+			color: #9a3412;
+			display: none;
+			font-size: 11px;
+			font-weight: 600;
+			line-height: 1.4;
+			margin-bottom: 10px;
+			padding: 8px 10px;
+		}
+		.imogi-pay-manual-discount.is-blocked .imogi-pay-manual-discount-note { display: block; }
 		.imogi-pay-discount-wrap, .imogi-pay-promo-wrap { margin-bottom: 0; }
 		.imogi-pay-discount-toggle, .imogi-pay-promo-toggle { align-items: center; background: #fff; border: 1px solid var(--imogi-pay-border, #e4e4e7); border-radius: 12px; color: var(--imogi-navy-800, #0f1f35); cursor: pointer; display: flex; font-size: 13px; font-weight: 700; gap: 10px; margin-bottom: 8px; min-height: 52px; overflow: hidden; padding: 12px 14px; text-align: left; touch-action: manipulation; width: 100%; }
 		.imogi-pay-discount-toggle.is-open, .imogi-pay-promo-toggle.is-open { background: #f8fafc; border-color: var(--imogi-navy-800, #0f1f35); }
@@ -970,9 +1001,18 @@ function inject_cashier_css() {
 		.imogi-pay-tab.is-active { background: #fff; box-shadow: 0 2px 8px rgba(7,17,31,.08); color: var(--imogi-navy-800, #0f1f35); }
 		.imogi-pay-tab-multi .imogi-pay-modes-wrap,
 		.imogi-pay-tab-multi .imogi-pay-detail-slot { display: none !important; }
-		.imogi-pay-tab-multi .imogi-pay-multi-wrap { display: block !important; margin-top: 0 !important; padding-top: 0 !important; border-top: none !important; }
-		.imogi-pay-tab-multi .imogi-pay-multi-toggle-wrap { display: none !important; }
-		.imogi-pay-tab-multi .imogi-pay-multi-panel { display: block !important; }
+		.imogi-pay-tab-multi .imogi-pay-checkout-stack,
+		.imogi-pay-tab-multi .imogi-pay-extras { display: none !important; }
+		.imogi-pay-tab-multi .imogi-pay-multi-slot { display: block !important; }
+		.imogi-pay-multi-slot { display: none; width: 100%; }
+		.imogi-pay-multi-wrap { background: var(--imogi-pay-surface); border: 1px solid var(--imogi-pay-border); border-radius: 14px; padding: 14px 16px; }
+		.imogi-pay-multi-hint { color: #64748b; font-size: 12px; line-height: 1.45; margin-bottom: 12px; }
+		.imogi-pay-multi-row { align-items: center; display: flex; gap: 8px; margin-bottom: 8px; }
+		.imogi-pay-multi-row select, .imogi-pay-multi-row input { flex: 1; min-width: 0; }
+		.imogi-pay-multi-sum { align-items: center; background: #f8fafc; border: 1px solid var(--imogi-pay-border); border-radius: 10px; display: flex; font-size: 12px; font-weight: 700; justify-content: space-between; margin-top: 10px; padding: 10px 12px; }
+		.imogi-pay-multi-sum.is-ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+		.imogi-pay-multi-sum.is-bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+		.imogi-pay-split-steps { color: #475569; font-size: 12px; line-height: 1.5; margin: 0 0 12px; padding-left: 18px; }
 		.imogi-pay-tab-split .imogi-pay-checkout-stack > .frappe-control { display: none !important; }
 		.imogi-pay-tab-split .imogi-pay-extras { display: none !important; }
 		.imogi-pay-tab-split .imogi-pay-split-panel { display: block !important; }
@@ -1005,6 +1045,14 @@ function inject_cashier_css() {
 		.imogi-pay-dialog .modal-footer { background: var(--imogi-pay-surface); border-top: 1px solid var(--imogi-pay-border); box-shadow: 0 -8px 32px rgba(7,17,31,.06); display: flex; flex-direction: column; flex-shrink: 0; gap: 10px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); }
 		.imogi-pay-dialog .modal-footer .btn-modal-secondary, .imogi-pay-dialog .modal-footer .btn-secondary { display: none !important; }
 		.imogi-pay-dialog .modal-footer .standard-actions, .imogi-pay-dialog .modal-footer .custom-actions { margin: 0 !important; width: 100%; }
+		.imogi-pay-footer-btns { align-items: stretch; display: grid; gap: 10px; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); width: 100%; }
+		.imogi-pay-void-btn {
+			align-items: center; background: #fff !important; border: 2px solid #dc2626 !important; border-radius: 12px !important;
+			color: #dc2626 !important; display: inline-flex !important; font-size: 14px !important; font-weight: 800 !important;
+			gap: 8px; height: 52px !important; justify-content: center; width: 100%;
+		}
+		.imogi-pay-void-btn:hover { background: #fef2f2 !important; border-color: #b91c1c !important; color: #b91c1c !important; }
+		.imogi-pay-title-order { color: #b45309; font-size: 12px; font-weight: 700; }
 		.imogi-pay-dialog .modal-footer .btn-primary {
 			background: var(--imogi-navy-800, #0f1f35) !important; border: none !important; border-radius: 12px !important;
 			box-shadow: 0 4px 16px rgba(15,31,53,.24) !important; font-size: 16px !important; font-weight: 800 !important;
@@ -1263,6 +1311,9 @@ function inject_cashier_css() {
 				height: 54px !important;
 				margin: 0 !important;
 				width: 100% !important;
+			}
+			.modal.imogi-pay-dialog.imogi-pay-mobile .imogi-pay-footer-btns {
+				grid-template-columns: 1fr;
 			}
 			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-modal-secondary,
 			.modal.imogi-pay-dialog.imogi-pay-mobile .modal-footer .btn-secondary {
@@ -1977,6 +2028,7 @@ imogi_pos.CashierPage = class CashierPage {
 		this.context = null;
 		this.cart = [];
 		this.marketplace_order_name = null;
+		this.pending_checkout_order_name = null;
 		this.item_group = "";
 		this.search = "";
 		this.search_timer = null;
@@ -4149,6 +4201,11 @@ imogi_pos.CashierPage = class CashierPage {
 			if (me.voucher_code) args.voucher_code = me.voucher_code;
 			if (me.loyalty_points_redeem) args.loyalty_points_redeem = me.loyalty_points_redeem;
 		}
+		args.order_type = me.order_type || "Takeaway";
+		args.order_channel = "Walk-in";
+		if (dialog._imogi_pending_order_name || me.pending_checkout_order_name) {
+			args.order_name = dialog._imogi_pending_order_name || me.pending_checkout_order_name;
+		}
 
 		frappe.call({
 			method: "imogi_pos.api.payment_gateway_api.create_qris_payment",
@@ -4190,12 +4247,14 @@ imogi_pos.CashierPage = class CashierPage {
 	finish_inline_qris_payment(dialog, subtotal, mode, row) {
 		if (dialog._imogi_qris_paid) return;
 		dialog._imogi_qris_paid = true;
+		dialog._imogi_checkout_completed = true;
 		this.stop_inline_qris_poll(dialog);
 		const me = this;
 		const total = me.get_payment_total(dialog, subtotal);
 		dialog.hide();
 		const order_name = row.order;
 		const on_order = (order) => {
+			me.pending_checkout_order_name = null;
 			me.show_success(order || {}, {
 				change: 0,
 				paid_amount: total,
@@ -4203,6 +4262,8 @@ imogi_pos.CashierPage = class CashierPage {
 				breakdown: me.get_checkout_breakdown(dialog, subtotal),
 			});
 			me.refresh_sales_target();
+			me.clear_cart_after_checkout();
+			me.refresh_marketplace_badge();
 		};
 		if (order_name) {
 			frappe.call({
@@ -4585,6 +4646,13 @@ imogi_pos.CashierPage = class CashierPage {
 					...this.branch_api_args(),
 				},
 				callback: (r) => {
+					if (!this.cart.length) {
+						this.$cart_items.siblings(".imogi-cashier-promo-hint").remove();
+						this.promo_discount = 0;
+						this.applied_promos = [];
+						this.update_cart_total_display();
+						return;
+					}
 					const msg = r.message || {};
 					this.applied_promos = msg.applied_promos || [];
 					this.promo_discount = flt(msg.promo_discount);
@@ -4622,6 +4690,22 @@ imogi_pos.CashierPage = class CashierPage {
 		return 0;
 	}
 
+	has_applied_promo_rules(dialog) {
+		if (!this.context?.enable_promo_rules) {
+			return false;
+		}
+		const preview = this.payment_preview || {};
+		if (flt(preview.promo_discount ?? this.promo_discount) > 0) {
+			return true;
+		}
+		const applied = preview.applied_promos ?? this.applied_promos ?? [];
+		if (applied.length) {
+			return true;
+		}
+		const items = preview.items || [];
+		return items.some((row) => cint(row.is_promo_reward) || row.promo_rule);
+	}
+
 	get_cart_total() {
 		const subtotal = this.get_cart_subtotal();
 		const manual = this.get_discount_amount(subtotal);
@@ -4636,6 +4720,33 @@ imogi_pos.CashierPage = class CashierPage {
 	get_order_type_label() {
 		const row = IMOGI_ORDER_TYPES.find((item) => item.value === this.order_type);
 		return row?.label || this.order_type || "";
+	}
+
+	build_manual_discount_quick_html() {
+		return `<div class="imogi-pay-manual-discount">
+			<div class="imogi-pay-manual-discount-note">
+				<i class="fa fa-gift"></i>
+				${__("Diskon tidak tersedia karena ada Promo Rule aktif pada transaksi ini.")}
+			</div>
+			<input type="hidden" class="imogi-pay-discount-type" value="" />
+			<input type="hidden" class="imogi-pay-discount-value" value="" />
+			<div class="imogi-pay-manual-discount-group">
+				<div class="imogi-pay-manual-discount-label">% ${__("Persent")}</div>
+				<div class="imogi-pay-manual-discount-row">
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Percent" data-discount-value="20">20</button>
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Percent" data-discount-value="30">30</button>
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Percent" data-discount-value="50">50</button>
+				</div>
+			</div>
+			<div class="imogi-pay-manual-discount-group">
+				<div class="imogi-pay-manual-discount-label">${__("Rupiah")}</div>
+				<div class="imogi-pay-manual-discount-row">
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Amount" data-discount-value="20000">20K</button>
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Amount" data-discount-value="30000">30K</button>
+					<button type="button" class="imogi-pay-manual-discount-btn" data-discount-type="Amount" data-discount-value="50000">50K</button>
+				</div>
+			</div>
+		</div>`;
 	}
 
 	build_pay_summary_html(subtotal) {
@@ -4692,6 +4803,7 @@ imogi_pos.CashierPage = class CashierPage {
 						<strong class="imogi-pay-tax-value">${format_currency(tax.tax_amount)}</strong>
 					</div>
 				</div>
+				${this.build_manual_discount_quick_html()}
 			</div>
 		</div>`;
 	}
@@ -4766,12 +4878,30 @@ imogi_pos.CashierPage = class CashierPage {
 			show
 				? `<div class="imogi-pay-breakdown-row ${cls || ""}"><span>${label}</span><strong>${value}</strong></div>`
 				: "";
-		const payment_mode = payment_info.mode_of_payment
-			? `<div class="imogi-pay-success-payment-meta">
+		const payment_mode = (() => {
+			if (payment_info.payments?.length) {
+				return `<div class="imogi-pay-success-payment-meta imogi-pay-success-payment-meta--multi">
+				<span>${__("Metode")}</span>
+				<div class="imogi-pay-success-payment-lines">
+					${payment_info.payments
+						.map(
+							(p) => `<div class="imogi-pay-success-payment-line">
+						<strong>${frappe.utils.escape_html(p.mode_of_payment)}</strong>
+						<span>${format_currency(flt(p.amount))}</span>
+					</div>`
+						)
+						.join("")}
+				</div>
+			</div>`;
+			}
+			if (payment_info.mode_of_payment) {
+				return `<div class="imogi-pay-success-payment-meta">
 				<span>${__("Metode")}</span>
 				<strong>${frappe.utils.escape_html(payment_info.mode_of_payment)}</strong>
-			</div>`
-			: "";
+			</div>`;
+			}
+			return "";
+		})();
 		const paid = flt(payment_info.paid_amount);
 		const change = flt(payment_info.change);
 		const is_cash =
@@ -4852,6 +4982,10 @@ imogi_pos.CashierPage = class CashierPage {
 	render_cart() {
 		this.refresh_cart_dom_refs();
 		if (!this.cart.length) {
+			clearTimeout(this._promo_preview_timer);
+			this.$cart_items.siblings(".imogi-cashier-promo-hint").remove();
+			this.promo_discount = 0;
+			this.applied_promos = [];
 			this.$cart_items.html(
 				`<div class="imogi-cashier-cart-empty">
 					<div class="imogi-cashier-cart-empty-icon"><i class="fa fa-shopping-cart"></i></div>
@@ -4938,16 +5072,11 @@ imogi_pos.CashierPage = class CashierPage {
 	setup_payment_discount_ui(dialog, subtotal) {
 		const me = this;
 		const $wrap = dialog.$wrapper;
-		const $toggle = $wrap.find(".imogi-pay-discount-toggle");
-		const $panel = $wrap.find(".imogi-pay-discount-panel");
 		const $type = $wrap.find(".imogi-pay-discount-type");
 		const $value = $wrap.find(".imogi-pay-discount-value");
-		const has_discount = !!(this.discount_type && flt(this.discount_value));
 
 		$type.val(this.discount_type || "");
 		$value.val(this.discount_value || "");
-		$panel.toggleClass("is-open", has_discount);
-		$toggle.toggleClass("is-open", has_discount);
 
 		const sync = () => {
 			if (me.needs_checkout_preview()) {
@@ -4957,17 +5086,76 @@ imogi_pos.CashierPage = class CashierPage {
 			}
 		};
 
-		$toggle.off("click.imogiPay").on("click.imogiPay", () => {
-			const open = !$panel.hasClass("is-open");
-			$panel.toggleClass("is-open", open);
-			$toggle.toggleClass("is-open", open);
-			if (open) {
-				$value.trigger("focus");
+		$wrap.off("click.imogiPayDiscount", ".imogi-pay-manual-discount-btn");
+		$wrap.on("click.imogiPayDiscount", ".imogi-pay-manual-discount-btn", function (e) {
+			e.preventDefault();
+			const $btn = $(this);
+			if ($btn.prop("disabled") || $btn.hasClass("is-disabled") || me.has_applied_promo_rules(dialog)) {
+				return;
 			}
+			const btn_type = String($btn.data("discount-type") || "");
+			const btn_value = flt($btn.data("discount-value"));
+			const current = me.get_payment_discount_state(dialog);
+			const is_active =
+				current.type === btn_type && flt(current.value) === btn_value;
+			me.apply_manual_discount_preset(
+				dialog,
+				subtotal,
+				is_active ? "" : btn_type,
+				is_active ? 0 : btn_value
+			);
 		});
+		this.sync_manual_discount_buttons(dialog, subtotal);
+	}
 
-		$type.off("change.imogiPay").on("change.imogiPay", sync);
-		$value.off("input.imogiPay change.imogiPay").on("input.imogiPay change.imogiPay", sync);
+	sync_manual_discount_buttons(dialog, subtotal) {
+		if (!dialog?.$wrapper?.length) return;
+		const blocked = this.has_applied_promo_rules(dialog);
+		const sub = subtotal != null ? subtotal : this.get_cart_subtotal();
+		const { type, value } = this.get_payment_discount_state(dialog);
+
+		dialog.$wrapper.find(".imogi-pay-manual-discount").toggleClass("is-blocked", blocked);
+
+		if (blocked && (type || flt(value))) {
+			dialog.$wrapper.find(".imogi-pay-discount-type").val("");
+			dialog.$wrapper.find(".imogi-pay-discount-value").val("");
+			this.discount_type = "";
+			this.discount_value = 0;
+		}
+
+		dialog.$wrapper.find(".imogi-pay-manual-discount-btn").each(function () {
+			const $btn = $(this);
+			if (blocked) {
+				$btn.prop("disabled", true).addClass("is-disabled").removeClass("is-selected");
+				return;
+			}
+			$btn.prop("disabled", false).removeClass("is-disabled");
+			const active =
+				String($btn.data("discount-type") || "") === type &&
+				flt($btn.data("discount-value")) === flt(value);
+			$btn.toggleClass("is-selected", active);
+		});
+	}
+
+	apply_manual_discount_preset(dialog, subtotal, type, value, options = {}) {
+		if (!dialog?.$wrapper?.length) return;
+		if (this.has_applied_promo_rules(dialog) && (type || flt(value))) {
+			type = "";
+			value = 0;
+		}
+		const $wrap = dialog.$wrapper;
+		$wrap.find(".imogi-pay-discount-type").val(type || "");
+		$wrap.find(".imogi-pay-discount-value").val(flt(value) || "");
+		this.discount_type = type || "";
+		this.discount_value = flt(value) || 0;
+		if (!options.skip_sync) {
+			this.sync_manual_discount_buttons(dialog, subtotal);
+		}
+		if (this.needs_checkout_preview()) {
+			this.refresh_payment_preview(dialog, subtotal);
+		} else {
+			this.refresh_payment_dialog(dialog, subtotal);
+		}
 	}
 
 	setup_mobile_pay_numpad(dialog, subtotal) {
@@ -5090,7 +5278,7 @@ imogi_pos.CashierPage = class CashierPage {
 		const $wrap = dialog.$wrapper;
 		const has_discount = !!(this.discount_type && flt(this.discount_value));
 		if (!has_discount) {
-			$wrap.find(".imogi-pay-discount-panel, .imogi-pay-discount-toggle").removeClass("is-open");
+			$wrap.find(".imogi-pay-manual-discount-btn").removeClass("is-selected");
 		}
 		$wrap.find(".imogi-pay-promo-panel, .imogi-pay-promo-toggle").removeClass("is-open");
 
@@ -5111,6 +5299,7 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	refresh_payment_dialog(dialog, subtotal) {
+		this.sync_manual_discount_buttons(dialog, subtotal);
 		const breakdown = this.get_checkout_breakdown(dialog, subtotal);
 		const total = breakdown.grand_total;
 		const tax_enabled = this.is_sales_tax_enabled();
@@ -5126,6 +5315,7 @@ imogi_pos.CashierPage = class CashierPage {
 		$wrap.find(".imogi-pay-promo-breakdown-row").toggle(breakdown.promo_discount > 0);
 		$wrap.find(".imogi-pay-discount-value-display").text(`-${format_currency(breakdown.manual_discount)}`);
 		$wrap.find(".imogi-pay-discount-breakdown-row").toggle(breakdown.manual_discount > 0);
+		this.sync_manual_discount_buttons(dialog, subtotal);
 		$wrap.find(".imogi-pay-voucher-discount-display").text(`-${format_currency(breakdown.voucher_discount)}`);
 		$wrap.find(".imogi-pay-voucher-breakdown-row").toggle(breakdown.voucher_discount > 0);
 		$wrap.find(".imogi-pay-loyalty-discount-display").text(`-${format_currency(breakdown.loyalty_discount)}`);
@@ -5144,6 +5334,10 @@ imogi_pos.CashierPage = class CashierPage {
 		);
 
 		this.update_payment_primary_action(dialog, subtotal);
+
+		if (dialog._imogi_pay_tab === "multi") {
+			this.render_multi_payment_panel(dialog, subtotal);
+		}
 
 		if (this.is_cash_mode(dialog.get_value("mode_of_payment"))) {
 			let paid = this.get_dialog_paid_amount(dialog);
@@ -5182,11 +5376,19 @@ imogi_pos.CashierPage = class CashierPage {
 	setup_payment_shell(dialog) {
 		const $wrap = dialog.$wrapper;
 		const $body = $wrap.find(".modal-body");
-		if ($body.find(".imogi-pay-shell").length) return;
+		const $existing = $body.find(".imogi-pay-shell");
+		if ($existing.length) {
+			const $checkout = $existing.find(".imogi-pay-col--checkout");
+			if ($checkout.length && !$checkout.find(".imogi-pay-multi-slot").length) {
+				$checkout.prepend('<div class="imogi-pay-multi-slot"></div>');
+			}
+			return;
+		}
 
 		const $shell = $(`<div class="imogi-pay-shell">
 			<div class="imogi-pay-col imogi-pay-col--summary"></div>
 			<div class="imogi-pay-col imogi-pay-col--checkout">
+				<div class="imogi-pay-multi-slot"></div>
 				<div class="imogi-pay-checkout-stack"></div>
 				<div class="imogi-pay-extras"></div>
 			</div>
@@ -5196,7 +5398,7 @@ imogi_pos.CashierPage = class CashierPage {
 		const $stack = $shell.find(".imogi-pay-checkout-stack");
 		const $extras = $shell.find(".imogi-pay-extras");
 		const checkout_fields = ["payment_modes_html", "cash_quick_html"];
-		const extra_fields = ["promo_html", "discount_html"];
+		const extra_fields = ["promo_html"];
 
 		$body.prepend($shell);
 		if ($summary?.length) {
@@ -5271,6 +5473,7 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	setup_payment_footer(dialog, subtotal) {
+		const me = this;
 		const $footer = dialog.$wrapper.find(".modal-footer");
 		if ($footer.find(".imogi-pay-footer-strip").length) return;
 		const total = this.get_payment_total(dialog, subtotal);
@@ -5278,11 +5481,34 @@ imogi_pos.CashierPage = class CashierPage {
 			<span class="imogi-pay-footer-label">${__("Total transaksi")}</span>
 			<span class="imogi-pay-footer-amount">${format_currency(total)}</span>
 		</div>`);
+		const order_name = dialog._imogi_pending_order_name || this.pending_checkout_order_name;
+		if (!order_name || $footer.find(".imogi-pay-footer-btns").length) return;
+		const $actions = $footer.find(".standard-actions").first();
+		if (!$actions.length) return;
+		const $row = $('<div class="imogi-pay-footer-btns"></div>');
+		const $voidBtn = $(
+			`<button type="button" class="btn btn-default imogi-pay-void-btn">
+				<i class="fa fa-ban" aria-hidden="true"></i>
+				<span>${__("Void Order")}</span>
+			</button>`
+		);
+		$voidBtn.on("click", (e) => {
+			e.preventDefault();
+			me.cancel_pending_payment_dialog(dialog);
+		});
+		$row.append($voidBtn, $actions.detach());
+		$footer.append($row);
 	}
 
 	setup_payment_header(dialog) {
+		const order_ref = dialog._imogi_pending_order_name
+			? `<span class="imogi-pay-title-order">${frappe.utils.escape_html(dialog._imogi_pending_order_name)} · ${__(
+					"Awaiting Payment"
+			  )}</span>`
+			: "";
 		dialog.$wrapper.find(".modal-title").html(
 			`<span class="imogi-pay-title-main">${__("Pembayaran")}</span>
+			${order_ref}
 			<span class="imogi-pay-title-sub">${__("Pilih metode pembayaran dan selesaikan transaksi")}</span>`
 		);
 	}
@@ -5337,15 +5563,10 @@ imogi_pos.CashierPage = class CashierPage {
 				$header.find('[data-pay-tab="single"]').addClass("is-active");
 				return;
 			}
-			$multiToggle.prop("checked", true);
-			$w.find(".imogi-pay-multi-panel").show();
-			if (!$w.find(".imogi-pay-multi-row").length) {
-				imogi_pos.cashier_extras.setup_multi_payment_ui(this);
-				$w.find(".imogi-pay-multi-toggle").prop("checked", true).trigger("change");
-			}
+			this.render_multi_payment_panel(dialog, subtotal);
+			dialog.get_primary_btn?.()?.html(__("Selesaikan Pembayaran"));
 		} else {
 			$multiToggle.prop("checked", false);
-			$w.find(".imogi-pay-multi-panel").hide();
 		}
 
 		if (tab === "split") {
@@ -5368,6 +5589,96 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 	}
 
+	render_multi_payment_panel(dialog, subtotal) {
+		const me = this;
+		const $slot = dialog.$wrapper.find(".imogi-pay-multi-slot");
+		if (!$slot.length) return;
+
+		const modes = (this.context?.payment_modes || []).map((m) => m.mode_of_payment);
+		let $wrap = $slot.find(".imogi-pay-multi-wrap");
+		if (!$wrap.length) {
+			$slot.html(`
+				<div class="imogi-pay-multi-wrap">
+					<div class="imogi-pay-block-title"><i class="fa fa-credit-card"></i> ${__("Alokasi Pembayaran")}</div>
+					<div class="imogi-pay-multi-hint">${__(
+						"Bagi total tagihan ke beberapa metode bayar. Jumlah semua baris harus sama dengan total."
+					)}</div>
+					<div class="imogi-pay-multi-rows"></div>
+					<div class="imogi-pay-multi-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+						<button type="button" class="btn btn-xs btn-default imogi-pay-multi-add">+ ${__("Tambah Metode")}</button>
+						<button type="button" class="btn btn-xs btn-default imogi-pay-multi-fill">${__("Isi Sisa")}</button>
+					</div>
+					<div class="imogi-pay-multi-sum"></div>
+				</div>`);
+			$wrap = $slot.find(".imogi-pay-multi-wrap");
+		}
+
+		if (!modes.length) {
+			$wrap.find(".imogi-pay-multi-rows").html(
+				`<div class="text-muted small">${__(
+					"Belum ada Mode of Payment di POS Profile. Tambahkan minimal 2 metode di pengaturan POS."
+				)}</div>`
+			);
+			return;
+		}
+
+		const buildRow = (mode, amount) => `
+			<div class="imogi-pay-multi-row">
+				<select class="form-control input-sm imogi-pay-multi-mode">${modes
+					.map(
+						(m) =>
+							`<option value="${frappe.utils.escape_html(m)}"${
+								m === mode ? " selected" : ""
+							}>${frappe.utils.escape_html(m)}</option>`
+					)
+					.join("")}</select>
+				<input type="number" min="0" step="any" class="form-control input-sm imogi-pay-multi-amount" value="${amount || ""}" placeholder="0" />
+			</div>`;
+
+		const $rows = $wrap.find(".imogi-pay-multi-rows");
+		if (!$rows.find(".imogi-pay-multi-row").length) {
+			$rows.html(buildRow(modes[0], ""));
+			$rows.append(buildRow(modes[1] || modes[0], ""));
+		}
+
+		const update_sum = () => {
+			const total = me.get_payment_total(dialog, subtotal);
+			let sum = 0;
+			$wrap.find(".imogi-pay-multi-row").each(function () {
+				sum += flt($(this).find(".imogi-pay-multi-amount").val());
+			});
+			const $sum = $wrap.find(".imogi-pay-multi-sum");
+			const ok = Math.abs(sum - flt(total)) <= 0.01 && sum > 0;
+			$sum
+				.toggleClass("is-ok", ok)
+				.toggleClass("is-bad", !ok && sum > 0)
+				.html(
+					`<span>${__("Total alokasi")}</span><span>${format_currency(sum)} / ${format_currency(total)}</span>`
+				);
+		};
+
+		update_sum();
+
+		$wrap.find(".imogi-pay-multi-add").off("click.imogiMulti").on("click.imogiMulti", () => {
+			$wrap.find(".imogi-pay-multi-rows").append(buildRow(modes[0], ""));
+			update_sum();
+		});
+
+		$wrap.find(".imogi-pay-multi-fill").off("click.imogiMulti").on("click.imogiMulti", () => {
+			const total = me.get_payment_total(dialog, subtotal);
+			const $amounts = $wrap.find(".imogi-pay-multi-amount");
+			if (!$amounts.length) return;
+			let sum = 0;
+			$amounts.each(function (idx) {
+				if (idx < $amounts.length - 1) sum += flt($(this).val());
+			});
+			$amounts.last().val(Math.max(0, flt(total) - sum));
+			update_sum();
+		});
+
+		$wrap.off("input.imogiMulti").on("input.imogiMulti", ".imogi-pay-multi-amount", update_sum);
+	}
+
 	render_payment_split_panel(dialog) {
 		const $stack = dialog.$wrapper.find(".imogi-pay-checkout-stack");
 		let $panel = $stack.find(".imogi-pay-split-panel");
@@ -5384,10 +5695,21 @@ imogi_pos.CashierPage = class CashierPage {
 			</label>`
 			)
 			.join("");
+		const single_line_hint =
+			this.cart.length < 2
+				? `<div class="alert alert-warning small" style="margin-bottom:12px">${__(
+						"Tambahkan minimal 2 jenis item di keranjang untuk mencoba split bill. Dengan 1 item saja, centang semua = bayar penuh."
+				  )}</div>`
+				: "";
 		$panel.html(`<div class="imogi-pay-block-title"><i class="fa fa-scissors"></i> ${__("Split Bill")}</div>
+			<ol class="imogi-pay-split-steps">
+				<li>${__("Centang item yang ingin dibayar sekarang")}</li>
+				<li>${__("Klik <b>Bayar Item Terpilih</b>")}</li>
+				<li>${__("Selesaikan pembayaran — item yang tidak dicentang tetap di keranjang")}</li>
+			</ol>
 			<p class="text-muted small">${__(
-				"Pilih item yang akan dibayar sekarang. Sisanya tetap di keranjang."
-			)}</p>${rows}`);
+				"Split per baris item. Untuk bayar sebagian qty, kurangi qty di keranjang dulu lalu checkout lagi."
+			)}</p>${single_line_hint}${rows}`);
 	}
 
 	apply_split_selection_from_dialog(dialog) {
@@ -5450,12 +5772,185 @@ imogi_pos.CashierPage = class CashierPage {
 			this.prompt_open_shift();
 			return;
 		}
+		if (this.pending_checkout_order_name) {
+			this._open_payment_dialog_ui(options);
+			return;
+		}
+		this.busy = true;
+		this.update_mobile_dock();
+		frappe.call({
+			method: "imogi_pos.api.cashier.submit_awaiting_order",
+			args: this.build_submit_awaiting_args(),
+			freeze: true,
+			freeze_message: __("Mencatat order..."),
+			callback: (r) => {
+				this.busy = false;
+				this.update_mobile_dock();
+				if (r.exc) {
+					const msg = (r._server_messages || "").toString();
+					if (
+						msg.includes("Perlu Approval") &&
+						imogi_pos.cashier_extras &&
+						imogi_pos.cashier_extras.prompt_supervisor_pin
+					) {
+						imogi_pos.cashier_extras.prompt_supervisor_pin(this, (code) => {
+							this._pending_approval_code = code;
+							this.open_payment_dialog(options);
+						});
+					}
+					return;
+				}
+				this._pending_approval_code = null;
+				const order = r.message || {};
+				this.pending_checkout_order_name = order.name || this.marketplace_order_name || null;
+				this._open_payment_dialog_ui(options);
+			},
+		});
+	}
+
+	build_submit_awaiting_args(extra = {}) {
+		const args = {
+			items: JSON.stringify(
+				this.cart.map((row) => ({
+					item_code: row.item_code,
+					qty: row.qty,
+					rate: row.rate,
+					uom: row.uom || undefined,
+				}))
+			),
+			...this.branch_api_args(),
+			...extra,
+		};
+		if (this.selected_customer) args.customer = this.selected_customer;
+		if (this.discount_type) {
+			args.discount_type = this.discount_type;
+			args.discount_value = this.discount_value;
+		}
+		if (this.voucher_code) args.voucher_code = this.voucher_code;
+		if (this.loyalty_points_redeem) args.loyalty_points_redeem = this.loyalty_points_redeem;
+		args.order_type = this.order_type || "Takeaway";
+		if (this.marketplace_order_name) args.marketplace_order_name = this.marketplace_order_name;
+		if (this.selected_table) args.restaurant_table = this.selected_table;
+		if (this._pending_approval_code) args.approval_code = this._pending_approval_code;
+		return args;
+	}
+
+	build_checkout_args(extra = {}) {
+		const args = this.build_submit_awaiting_args(extra);
+		return args;
+	}
+
+	void_pending_checkout_order(order_name, options = {}) {
+		const reason = options.reason || __("Dibatalkan di kasir");
+		const run = (approval_code) => {
+			frappe.call({
+				method: "imogi_pos.api.cashier.void_cashier_order",
+				args: {
+					order_name,
+					reason,
+					approval_code: approval_code || undefined,
+				},
+				freeze: true,
+				freeze_message: __("Membatalkan order..."),
+				callback: (r) => {
+					if (r.exc) {
+						const msg = (r._server_messages || "").toString();
+						if (
+							msg.includes("Perlu Approval") ||
+							msg.includes("approval") ||
+							msg.includes("Approval")
+						) {
+							this.prompt_void_supervisor_approval(order_name, reason, options.on_done);
+							return;
+						}
+						if (imogi_pos.feature_upgrade) {
+							imogi_pos.feature_upgrade.from_server_error(this, r.exc);
+						}
+						options.on_fail?.();
+						return;
+					}
+					if (this.pending_checkout_order_name === order_name) {
+						this.pending_checkout_order_name = null;
+					}
+					if (this.marketplace_order_name === order_name) {
+						this.marketplace_order_name = null;
+					}
+					this.refresh_marketplace_badge();
+					frappe.show_alert({
+						message: __("Order {0} dibatalkan", [order_name]),
+						indicator: "orange",
+					});
+					options.on_done?.(r.message || {});
+				},
+			});
+		};
+		run(options.approval_code);
+	}
+
+	prompt_void_supervisor_approval(order_name, reason, on_done) {
+		frappe.prompt(
+			[{ fieldname: "pin", fieldtype: "Password", label: __("PIN Supervisor"), reqd: 1 }],
+			(values) => {
+				frappe.call({
+					method: "imogi_pos.api.approval_api.request_approval",
+					args: {
+						approval_type: "Void",
+						reference_name: order_name,
+						reason,
+					},
+					callback: (req) => {
+						const name = (req.message || {}).name;
+						frappe.call({
+							method: "imogi_pos.api.approval_api.approve_with_pin",
+							args: { request_name: name, pin: values.pin },
+							callback: () => {
+								this.void_pending_checkout_order(order_name, {
+									reason,
+									approval_code: name,
+									on_done,
+								});
+							},
+						});
+					},
+				});
+			},
+			__("Approval Void"),
+			__("Setujui")
+		);
+	}
+
+	cancel_pending_payment_dialog(dialog) {
+		const order_name = dialog._imogi_pending_order_name || this.pending_checkout_order_name;
+		if (!order_name) {
+			dialog._imogi_void_confirmed = true;
+			dialog.hide();
+			return;
+		}
+		frappe.confirm(
+			__("Order {0} sudah tercatat menunggu pembayaran. Batalkan order ini?", [order_name]),
+			() => {
+				this.void_pending_checkout_order(order_name, {
+					on_done: () => {
+						dialog._imogi_void_confirmed = true;
+						dialog._imogi_checkout_completed = true;
+						dialog.hide();
+						this.clear_cart_after_checkout();
+					},
+					on_fail: () => {},
+				});
+			},
+			() => {}
+		);
+	}
+
+	_open_payment_dialog_ui(options = {}) {
 		const initial_tab = options.tab || "single";
 		this.payment_preview = null;
 		const subtotal = this.get_cart_subtotal();
 		const modes = (this.context.payment_modes || []).map((m) => m.mode_of_payment);
 		const default_mode = this.context.default_payment_mode || modes[0];
 		const me = this;
+		const pending_order_name = this.pending_checkout_order_name || this.marketplace_order_name || null;
 
 		const initial_total = imogi_compute_local_tax(
 			Math.max(0, subtotal),
@@ -5486,30 +5981,6 @@ imogi_pos.CashierPage = class CashierPage {
 					fieldtype: "Data",
 					hidden: 1,
 					default: default_mode,
-				},
-				{
-					fieldtype: "HTML",
-					fieldname: "discount_html",
-					options: `<div class="imogi-pay-discount-wrap">
-						<button type="button" class="imogi-pay-discount-toggle">
-							<span class="imogi-pay-section-icon"><i class="fa fa-tag"></i></span>
-							<span class="imogi-pay-section-text">
-								<strong>${__("Diskon Manual")}</strong>
-								<small>${__("Opsional — untuk kasir")}</small>
-							</span>
-							<i class="fa fa-chevron-down imogi-pay-section-chevron"></i>
-						</button>
-						<div class="imogi-pay-discount-panel">
-							<div class="imogi-pay-discount-row">
-								<select class="form-control input-sm imogi-pay-discount-type">
-									<option value="">${__("Tanpa diskon")}</option>
-									<option value="Percent">${__("Diskon %")}</option>
-									<option value="Amount">${__("Diskon Rp")}</option>
-								</select>
-								<input type="number" min="0" step="any" inputmode="decimal" class="form-control input-sm imogi-pay-discount-value" placeholder="0" />
-							</div>
-						</div>
-					</div>`,
 				},
 				...(me.context.loyalty_enabled &&
 				imogi_pos.loyalty &&
@@ -5577,6 +6048,12 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		dialog.$wrapper.addClass("imogi-pay-dialog");
+		dialog._imogi_pending_order_name = pending_order_name;
+		dialog._imogi_checkout_completed = false;
+		dialog._imogi_void_confirmed = false;
+		dialog._imogi_multi_qris_paid = false;
+		dialog._imogi_multi_qris_payment_name = null;
+		dialog._imogi_multi_qris_amount = null;
 		dialog._imogi_paid_amount = Math.round(flt(initial_total));
 		dialog._imogi_quick_denom = "pas";
 		dialog._imogi_last_checkout_total = null;
@@ -5598,7 +6075,26 @@ imogi_pos.CashierPage = class CashierPage {
 				dialog._imogi_qris_payment_name = null;
 				dialog._imogi_qris_total = null;
 				dialog._imogi_qris_paid = false;
+				dialog._imogi_multi_qris_paid = false;
+				dialog._imogi_multi_qris_payment_name = null;
+				dialog._imogi_multi_qris_amount = null;
+				dialog._imogi_pending_multi_payments = null;
 				dialog._imogi_payment_mode = null;
+			});
+			dialog.$wrapper.on("hidden.bs.modal", () => {
+				if (
+					!dialog._imogi_checkout_completed &&
+					!dialog._imogi_void_confirmed &&
+					dialog._imogi_pending_order_name
+				) {
+					frappe.show_alert({
+						message: __(
+							"Order {0} menunggu pembayaran. Tekan Bayar Sekarang untuk melanjutkan.",
+							[dialog._imogi_pending_order_name]
+						),
+						indicator: "blue",
+					});
+				}
 			});
 		}
 
@@ -5651,6 +6147,9 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		this.finalize_mobile_pay_dialog(dialog);
 		this.finalize_payment_dialog_layout(dialog);
+		if (initial_tab === "multi") {
+			this.render_multi_payment_panel(dialog, subtotal);
+		}
 		const sync_payment_ui = () => me.toggle_cash_fields(dialog, subtotal, default_mode);
 		requestAnimationFrame(sync_payment_ui);
 		setTimeout(sync_payment_ui, 0);
@@ -5748,9 +6247,12 @@ imogi_pos.CashierPage = class CashierPage {
 		}
 		if (this.selected_table) args.restaurant_table = this.selected_table;
 		if (this._pending_approval_code) args.approval_code = this._pending_approval_code;
+		if (this.pending_checkout_order_name) args.order_name = this.pending_checkout_order_name;
 
 		const checkout_breakdown = this.get_checkout_breakdown(dialog, this.get_cart_subtotal());
 		const finish = (order, change) => {
+			dialog._imogi_checkout_completed = true;
+			this.pending_checkout_order_name = null;
 			this.busy = false;
 			this.update_mobile_dock();
 			dialog.hide();
@@ -5819,6 +6321,7 @@ imogi_pos.CashierPage = class CashierPage {
 	clear_cart_after_checkout() {
 		this.cart = [];
 		this.marketplace_order_name = null;
+		this.pending_checkout_order_name = null;
 		this.voucher_code = "";
 		this.loyalty_points_redeem = 0;
 		this.payment_preview = null;

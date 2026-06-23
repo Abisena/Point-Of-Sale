@@ -253,6 +253,12 @@ def create_gateway_payment(
 	branch=None,
 	pos_profile=None,
 	mode_of_payment="QRIS",
+	order_name=None,
+	order_type="Takeaway",
+	order_channel="Walk-in",
+	charge_amount=None,
+	checkout_mode="full",
+	pending_payments=None,
 ):
 	"""Create QRIS charge and persist IMOGI POS Gateway Payment."""
 	cfg = get_gateway_settings()
@@ -269,9 +275,17 @@ def create_gateway_payment(
 		company=branch_ctx["company"],
 		branch=branch_ctx.get("branch_code"),
 	)
-	amount = flt(totals["grand_total"])
-	if amount <= 0:
+	grand_total = flt(totals["grand_total"])
+	if grand_total <= 0:
 		frappe.throw(_("Total pembayaran harus lebih dari 0"))
+
+	partial = flt(charge_amount)
+	if partial > 0:
+		if partial > grand_total + 0.01:
+			frappe.throw(_("Nominal QRIS tidak boleh melebihi total tagihan"))
+		amount = partial
+	else:
+		amount = grand_total
 
 	external_id = _unique_external_id()
 	currency = branch_ctx.get("currency") or frappe.db.get_value("Company", branch_ctx["company"], "default_currency") or "IDR"
@@ -300,10 +314,17 @@ def create_gateway_payment(
 				{
 					"items": items,
 					"mode_of_payment": mode_of_payment,
-					"order_type": "Takeaway",
-					"order_channel": "Walk-in",
+					"order_type": order_type or "Takeaway",
+					"order_channel": order_channel or "Walk-in",
 					"voucher_code": totals.get("voucher_code") or "",
 					"loyalty_points_redeem": totals.get("loyalty_points_redeemed") or 0,
+					"order_name": order_name or "",
+					"discount_type": discount_type or "",
+					"discount_value": flt(discount_value),
+					"customer": customer,
+					"checkout_mode": checkout_mode or "full",
+					"pending_payments": pending_payments or [],
+					"grand_total": grand_total,
 				}
 			),
 		}
@@ -486,26 +507,66 @@ def _ensure_gateway_order(doc):
 			return order_name
 
 		snapshot = json.loads(doc.cart_snapshot or "{}")
+		checkout_mode = snapshot.get("checkout_mode") or "full"
 		items = snapshot.get("items") or []
 		mode = snapshot.get("mode_of_payment") or "QRIS"
+		pending_order_name = (snapshot.get("order_name") or "").strip()
 
-		from imogi_pos.api.cashier import _create_cashier_order
+		if checkout_mode == "multi_pending":
+			if pending_order_name and frappe.db.exists("Riwayat Order", pending_order_name):
+				frappe.db.set_value(
+					"IMOGI POS Gateway Payment",
+					doc.name,
+					"order",
+					pending_order_name,
+					update_modified=False,
+				)
+				frappe.db.commit()
+				return pending_order_name
+			return pending_order_name or ""
 
-		order = _create_cashier_order(
-			items,
-			doc.customer,
-			snapshot.get("order_channel") or "Walk-in",
-			snapshot.get("order_type") or "Takeaway",
-			[{"mode_of_payment": mode, "amount": flt(doc.amount)}],
-			doc.discount_type,
-			doc.discount_value,
-			pos_profile=doc.pos_profile,
-			company=doc.company,
-			voucher_code=snapshot.get("voucher_code"),
-			loyalty_points_redeem=snapshot.get("loyalty_points_redeem") or 0,
-		)
-		order.action_process_payment(silent=True)
-		order.reload()
+		if pending_order_name and frappe.db.exists("Riwayat Order", pending_order_name):
+			from imogi_pos.api.cashier import (
+				_apply_payments_to_order,
+				_sync_awaiting_order_from_checkout,
+				_verify_cashier_pending_order,
+			)
+
+			order = frappe.get_doc("Riwayat Order", pending_order_name)
+			_verify_cashier_pending_order(order)
+			branch_ctx = resolve_active_branch(pos_profile=doc.pos_profile, branch_code=doc.branch_code)
+			order = _sync_awaiting_order_from_checkout(
+				order,
+				items,
+				discount_type=snapshot.get("discount_type"),
+				discount_value=snapshot.get("discount_value"),
+				voucher_code=snapshot.get("voucher_code"),
+				loyalty_points_redeem=snapshot.get("loyalty_points_redeem") or 0,
+				customer=snapshot.get("customer") or doc.customer,
+				warehouse=branch_ctx.get("warehouse"),
+				branch_code=branch_ctx.get("branch_code"),
+			)
+			_apply_payments_to_order(order, [{"mode_of_payment": mode, "amount": flt(doc.amount)}])
+			order.action_process_payment(silent=True)
+			order.reload()
+		else:
+			from imogi_pos.api.cashier import _create_cashier_order
+
+			order = _create_cashier_order(
+				items,
+				doc.customer,
+				snapshot.get("order_channel") or "Walk-in",
+				snapshot.get("order_type") or "Takeaway",
+				[{"mode_of_payment": mode, "amount": flt(doc.amount)}],
+				doc.discount_type,
+				doc.discount_value,
+				pos_profile=doc.pos_profile,
+				company=doc.company,
+				voucher_code=snapshot.get("voucher_code"),
+				loyalty_points_redeem=snapshot.get("loyalty_points_redeem") or 0,
+			)
+			order.action_process_payment(silent=True)
+			order.reload()
 		frappe.db.set_value(
 			"IMOGI POS Gateway Payment",
 			doc.name,

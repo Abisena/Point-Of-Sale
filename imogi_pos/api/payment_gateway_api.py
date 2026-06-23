@@ -45,6 +45,12 @@ def create_qris_payment(
 	mode_of_payment="QRIS",
 	branch=None,
 	pos_profile=None,
+	order_name=None,
+	order_type="Takeaway",
+	order_channel="Walk-in",
+	amount=None,
+	checkout_mode="full",
+	pending_payments=None,
 ):
 	"""Create dynamic QRIS charge for current cart."""
 	_require_cashier_access()
@@ -54,6 +60,8 @@ def create_qris_payment(
 	parsed_items = _parse_json(items, "items") or []
 	if not parsed_items:
 		frappe.throw(_("Keranjang kosong"))
+
+	parsed_pending = _parse_json(pending_payments, "pending_payments") if pending_payments else None
 
 	return create_gateway_payment(
 		parsed_items,
@@ -65,6 +73,12 @@ def create_qris_payment(
 		branch=branch,
 		pos_profile=pos_profile,
 		mode_of_payment=mode_of_payment,
+		order_name=order_name,
+		order_type=order_type,
+		order_channel=order_channel,
+		charge_amount=amount,
+		checkout_mode=checkout_mode,
+		pending_payments=parsed_pending,
 	)
 
 

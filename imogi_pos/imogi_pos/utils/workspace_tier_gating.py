@@ -27,11 +27,12 @@ WORKSPACE_LINK_FEATURES: dict[tuple[str, str], str | None] = {
 	("Page", "imogi-pos-close-shift"): "close_shift",
 	("Page", "kitchen-display"): "kitchen_display",
 	("Page", "fulfillment-queue"): "delivery_order",
+	("Page", "table-service"): "table_management",
 	("Page", "imogi-pos-add-branch"): "multi_outlet",
 	("Page", "imogi-pos-feature-matrix"): None,
 	("Page", "imogi-pos-setup"): None,
 	# Core IMOGI
-	("DocType", "Riwayat Order"): "pos_order",
+	("DocType", "Riwayat Order"): "order_management",
 	("DocType", "IMOGI POS Settings"): None,
 	("DocType", "POS Invoice"): "pos_order",
 	("DocType", "IMOGI Restaurant Table"): "table_management",
@@ -216,6 +217,18 @@ CASHIER_ESCALATION_ROLES = frozenset(
 		"IMOGI Supervisor",
 	}
 )
+WAITER_ESCALATION_ROLES = frozenset(
+	{
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
+		"IMOGI Supervisor",
+		"IMOGI Cashier",
+	}
+)
 
 
 def _user_is_dedicated_cashier(user: str | None) -> bool:
@@ -227,6 +240,19 @@ def _user_is_dedicated_cashier(user: str | None) -> bool:
 	if "IMOGI Cashier" not in roles:
 		return False
 	return not bool(roles & CASHIER_ESCALATION_ROLES)
+
+
+def _user_is_dedicated_waiter(user: str | None) -> bool:
+	"""Pure waiter — Table Service only, tanpa workspace ERPNext."""
+	user = user or getattr(frappe.session, "user", None)
+	if not user or user == "Guest":
+		return False
+	roles = set(frappe.get_roles(user))
+	if "IMOGI Waiter" not in roles:
+		return False
+	if roles & WAITER_ESCALATION_ROLES:
+		return False
+	return not _user_is_dedicated_cashier(user)
 
 
 def is_workspace_area_assignment_link(link_type: str | None, link_to: str | None) -> bool:
@@ -284,6 +310,8 @@ def is_workspace_item_allowed_for_user(
 	if is_workspace_hidden_for_umkm(link_type, link_to, settings):
 		return False
 	if _user_is_dedicated_cashier(user):
+		return False
+	if _user_is_dedicated_waiter(user):
 		return False
 	if not is_workspace_item_in_plan(
 		link_type, link_to, tier, label=label, feature_id=feature_id

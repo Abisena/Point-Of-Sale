@@ -1000,17 +1000,10 @@ imogi_pos.PaymentModal = class PaymentModal {
 		if (this.active_tab === "split" && !page.require_feature?.("split_bill")) return;
 
 		if (imogi_pos.cashier_extras?.checkout_with_payments && payments.length >= 1) {
-			page.busy = true;
-			page.update_mobile_dock?.();
-			const args = imogi_pos.cashier_extras.build_checkout_args(page, {
-				payments: JSON.stringify(payments),
-				total,
-			});
-			imogi_pos.cashier_extras.run_checkout_call(
+			imogi_pos.cashier_extras.checkout_with_payments(
 				page,
 				dialog_shim,
-				args,
-				payments[0]?.mode_of_payment,
+				payments,
 				total,
 				paid_amount
 			);
@@ -1030,45 +1023,8 @@ imogi_pos.open_payment_modal_demo = function (tab = "multi") {
 /* Cashier integration */
 imogi_pos.payment_modal = imogi_pos.payment_modal || {};
 
-imogi_pos.payment_modal.patch_cashier = function () {
-	if (!imogi_pos.CashierPage || imogi_pos.payment_modal._patched) return;
-	imogi_pos.payment_modal._patched = true;
-
-	const proto = imogi_pos.CashierPage.prototype;
-	const orig_open = proto.open_payment_dialog;
-
-	proto.open_payment_dialog = function (options = {}) {
-		if (!this.cart.length || this.busy) return;
-		this.close_mobile_cart?.();
-		if (this.enable_pos_shift && this.requires_shift_workflow && !this.pos_opening) {
-			frappe.msgprint(__("Buka shift kasir dulu sebelum checkout."));
-			this.prompt_open_shift?.();
-			return;
-		}
-		if (!this.payment_modal) this.payment_modal = new imogi_pos.PaymentModal(this);
-		this.payment_modal.open({
-			tab: options.tab || "multi",
-			order_ref: `POS-${Date.now().toString().slice(-4)}`,
-			on_cancel: () => {},
-		});
-	};
-
-	const orig_split = imogi_pos.cashier_extras?.open_split_bill;
-	if (orig_split) {
-		imogi_pos.cashier_extras.open_split_bill = function (page) {
-			if (!page.require_feature("split_bill")) return;
-			if (page.cart.length < 1) {
-				frappe.show_alert({ message: __("Keranjang kosong"), indicator: "orange" });
-				return;
-			}
-			if (!page.payment_modal) page.payment_modal = new imogi_pos.PaymentModal(page);
-			page.payment_modal.open({ tab: "split" });
-		};
-	}
-
-	// Keep original available for fallback
-	proto.open_payment_dialog_legacy = orig_open;
-};
+// Legacy cashier dialog — keep Indonesian payment UX (payment_modal patch disabled).
+imogi_pos.payment_modal.patch_cashier = function () {};
 
 $(document).on("app_ready", () => {
 	imogi_pos.payment_modal.patch_cashier();

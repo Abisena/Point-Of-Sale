@@ -2,7 +2,7 @@
 
 import frappe
 
-from imogi_pos.boot import get_cashier_home_route, should_use_cashier_home
+from imogi_pos.boot import get_dedicated_home_route, should_use_cashier_home
 
 
 def patch_login_home_page():
@@ -18,7 +18,7 @@ def patch_login_home_page():
 		if resume:
 			return
 
-		route = get_cashier_home_route(self.user)
+		route = get_dedicated_home_route(self.user)
 		if not route:
 			return
 
@@ -39,7 +39,7 @@ def patch_default_path():
 	original = apps_module.get_default_path
 
 	def get_default_path(apps=None):
-		route = get_cashier_home_route()
+		route = get_dedicated_home_route()
 		if route:
 			return route
 		return original(apps)
@@ -49,12 +49,23 @@ def patch_default_path():
 
 
 def on_login(login_manager):
-	if not should_use_cashier_home(login_manager.user):
+	from imogi_pos.boot import (
+		WAITER_HOME_PAGE,
+		get_cashier_landing,
+		set_opening_route_options,
+		should_use_cashier_home,
+		should_use_waiter_home,
+	)
+
+	if should_use_cashier_home(login_manager.user) or should_use_waiter_home(login_manager.user):
+		frappe.cache.hdel("bootinfo", login_manager.user)
+
+	if should_use_waiter_home(login_manager.user):
+		frappe.db.set_default("desktop:home_page", WAITER_HOME_PAGE, login_manager.user)
 		return
 
-	frappe.cache.hdel("bootinfo", login_manager.user)
-
-	from imogi_pos.boot import get_cashier_landing, set_opening_route_options
+	if not should_use_cashier_home(login_manager.user):
+		return
 
 	if get_cashier_landing(login_manager.user) == "opening-entry":
 		from imogi_pos.imogi_pos.utils.flow import get_settings

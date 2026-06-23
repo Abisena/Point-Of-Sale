@@ -51,7 +51,7 @@ WORKSPACE_SECTIONS = [
 		"links": [
 			{"label": "IMOGI Kasir", "link_type": "Page", "link_to": "imogi-pos-cashier", "feature_id": "pos_order", "onboard": 1},
 			{
-				"label": "Riwayat Order",
+				"label": "Riwayat Transaksi",
 				"link_type": "Page",
 				"link_to": "imogi-pos-order-history",
 				"feature_id": "order_history",
@@ -60,6 +60,24 @@ WORKSPACE_SECTIONS = [
 			{"label": "POS Invoice", "link_type": "DocType", "link_to": "POS Invoice", "feature_id": "pos_order"},
 			{"label": "Buka Shift", "link_type": "Page", "link_to": "imogi-pos-open-shift", "feature_id": "open_shift"},
 			{"label": "Tutup Shift", "link_type": "Page", "link_to": "imogi-pos-close-shift", "feature_id": "close_shift"},
+		],
+	},
+	{
+		"label": "Supervisi & Kontrol",
+		"links": [
+			{
+				"label": "Manajemen Order",
+				"link_type": "DocType",
+				"link_to": "Riwayat Order",
+				"feature_id": "order_management",
+				"onboard": 1,
+			},
+			{
+				"label": "Approval Request",
+				"link_type": "DocType",
+				"link_to": "IMOGI POS Approval Request",
+				"feature_id": "approval_void",
+			},
 		],
 	},
 	{
@@ -76,6 +94,7 @@ WORKSPACE_SECTIONS = [
 	{
 		"label": "Meja & Layanan",
 		"links": [
+			{"label": "Table Service", "link_type": "Page", "link_to": "table-service", "feature_id": "table_management", "onboard": 1},
 			{"label": "Restaurant Table", "link_type": "DocType", "link_to": "IMOGI Restaurant Table", "feature_id": "table_management"},
 			{"label": "Table Reservation", "link_type": "DocType", "link_to": "IMOGI POS Table Reservation", "feature_id": "table_reservation"},
 			{"label": "Waiting List", "link_type": "DocType", "link_to": "IMOGI POS Waiting List", "feature_id": "waiting_list"},
@@ -170,7 +189,6 @@ WORKSPACE_SECTIONS = [
 			{"label": "IMOGI POS Settings", "link_type": "DocType", "link_to": "IMOGI POS Settings"},
 			{"label": "Matrix Paket & Fitur", "link_type": "Page", "link_to": "imogi-pos-feature-matrix"},
 			{"label": "Setup Wizard", "link_type": "Page", "link_to": "imogi-pos-setup"},
-			{"label": "Approval Request", "link_type": "DocType", "link_to": "IMOGI POS Approval Request", "feature_id": "approval_void"},
 		],
 	},
 ]
@@ -185,7 +203,7 @@ WORKSPACE_SHORTCUTS = [
 	},
 	{"color": "Green", "label": "Laporan Penjualan", "link_to": "imogi-pos-sales-report", "type": "Page", "feature_id": "sales_report"},
 	{"color": "Orange", "label": "IMOGI Kasir", "link_to": "imogi-pos-cashier", "type": "Page", "feature_id": "pos_order"},
-	{"color": "Yellow", "label": "Riwayat Order", "link_to": "imogi-pos-order-history", "type": "Page", "feature_id": "order_history"},
+	{"color": "Yellow", "label": "Riwayat Transaksi", "link_to": "imogi-pos-order-history", "type": "Page", "feature_id": "order_history"},
 	{"color": "Purple", "label": "Menu Produk", "link_to": "imogi-pos-menu", "type": "Page", "feature_id": "menu"},
 	{"color": "Red", "label": "Kitchen Display", "link_to": "kitchen-display", "type": "Page", "feature_id": "kitchen_display"},
 	{"color": "Grey", "label": "IMOGI POS Settings", "link_to": "IMOGI POS Settings", "type": "DocType"},
@@ -240,7 +258,7 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 		blocks.extend(
 			[
 				{"id": "sc1", "type": "shortcut", "data": {"shortcut_name": "IMOGI Kasir", "col": 3}},
-				{"id": "sc2", "type": "shortcut", "data": {"shortcut_name": "Riwayat Order", "col": 3}},
+				{"id": "sc2", "type": "shortcut", "data": {"shortcut_name": "Riwayat Transaksi", "col": 3}},
 				{"id": "sc3", "type": "shortcut", "data": {"shortcut_name": "Dashboard & Analitik", "col": 3}},
 				{"id": "sc4", "type": "shortcut", "data": {"shortcut_name": "IMOGI POS Settings", "col": 3}},
 			]
@@ -249,7 +267,7 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 		blocks.extend(
 			[
 				{"id": "sc1", "type": "shortcut", "data": {"shortcut_name": "IMOGI Kasir", "col": 2}},
-				{"id": "sc2", "type": "shortcut", "data": {"shortcut_name": "Riwayat Order", "col": 2}},
+				{"id": "sc2", "type": "shortcut", "data": {"shortcut_name": "Riwayat Transaksi", "col": 2}},
 				{"id": "sc3", "type": "shortcut", "data": {"shortcut_name": "Kitchen Display", "col": 2}},
 				{"id": "sc4", "type": "shortcut", "data": {"shortcut_name": "Dashboard & Analitik", "col": 2}},
 				{"id": "sc5", "type": "shortcut", "data": {"shortcut_name": "Menu Produk", "col": 2}},

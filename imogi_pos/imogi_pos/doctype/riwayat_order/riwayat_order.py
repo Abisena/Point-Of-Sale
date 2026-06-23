@@ -438,11 +438,19 @@ class RiwayatOrder(Document):
 		return totals
 
 	@frappe.whitelist()
-	def action_partial_refund(self, refund_items=None, reason=None):
+	def action_partial_refund(self, refund_items=None, reason=None, approval_code=None):
 		"""Refund selected line items (partial refund)."""
+		from imogi_pos.imogi_pos.utils.approval import require_supervisor_approval
 		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
 
 		require_feature_operational("refund")
+		require_supervisor_approval(
+			"Refund",
+			reference_name=self.name,
+			reason=reason,
+			amount=flt(self.grand_total),
+			approval_code=approval_code,
+		)
 		self.check_permission("write")
 
 		if self.status in ("Cancelled", "Refunded"):

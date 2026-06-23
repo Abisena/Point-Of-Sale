@@ -1,5 +1,52 @@
 frappe.provide("imogi_pos");
 
+// Dedicated waiter: redirect before desk paints workspace (boot.js loads with frappe.boot).
+(function imogi_pos_immediate_waiter_redirect() {
+	if (typeof frappe === "undefined" || !frappe.boot) {
+		return;
+	}
+
+	const roles = frappe.boot.user?.roles || [];
+	const escalation = [
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
+		"IMOGI Supervisor",
+		"IMOGI Cashier",
+	];
+	const dedicated_waiter =
+		!!frappe.boot.imogi_pos_dedicated_waiter ||
+		!!frappe.boot.imogi_pos_waiter_home ||
+		(roles.includes("IMOGI Waiter") && !escalation.some((role) => roles.includes(role)));
+
+	if (!dedicated_waiter) {
+		return;
+	}
+
+	const path = (window.location.pathname || "").replace(/\/$/, "");
+	const home = "/app/table-service";
+	if (path === home || path.startsWith(`${home}/`) || path === "/app/table_service") {
+		return;
+	}
+
+	const must_redirect =
+		path === "/app" ||
+		path === "/app/home" ||
+		path.startsWith("/app/home/") ||
+		path === "/app/imogi-pos" ||
+		path.endsWith("/app/imogi-pos") ||
+		path === "/app/imogi-pos-dashboard" ||
+		path === "/app/workspaces" ||
+		path.startsWith("/app/workspace/");
+
+	if (must_redirect) {
+		window.location.replace(home);
+	}
+})();
+
 // Desk /app has no frappe.ready (website only). Stale cached bundles may still call it.
 if (typeof frappe !== "undefined" && typeof frappe.ready !== "function") {
 	frappe.ready = function (fn) {
@@ -34,7 +81,7 @@ imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260616-pay-init-sync-v25";
+	const CACHE_VERSION = "20260622-refund-disabled-v32";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",
@@ -46,6 +93,7 @@ imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
 		"imogi-pos-menu-category",
 		"imogi-pos-sales-report",
 		"imogi-pos-feature-matrix",
+		"table-service",
 	];
 	try {
 		if (localStorage.getItem(VERSION_KEY) !== CACHE_VERSION) {
@@ -78,12 +126,26 @@ imogi_pos.opening_entry_locked = false;
 imogi_pos.opening_entry_docname = null;
 
 const IMOGI_CASHIER_ROLE = "IMOGI Cashier";
+const IMOGI_WAITER_ROLE = "IMOGI Waiter";
+const IMOGI_WAITER_ESCALATION_ROLES = [
+	"Administrator",
+	"System Manager",
+	"Sales Manager",
+	"IMOGI Owner",
+	"IMOGI Manager",
+	"IMOGI Area Manager",
+	"IMOGI Supervisor",
+	"IMOGI Cashier",
+];
 const IMOGI_MANAGER_ROLES = ["System Manager", "Administrator"];
 const IMOGI_CASHIER_PATH = "/app/imogi-pos-cashier";
+const IMOGI_TABLE_SERVICE_PATH = "/app/table-service";
+const IMOGI_TABLE_SERVICE_PAGE = "table-service";
 const IMOGI_ORDER_HISTORY_PATH = "/app/imogi-pos-order-history";
 const IMOGI_OPEN_SHIFT_PATH = "/app/imogi-pos-open-shift";
 const IMOGI_CLOSE_SHIFT_PATH = "/app/imogi-pos-close-shift";
 const IMOGI_POS_ORDER_DOCTYPE = "Riwayat Order";
+const IMOGI_RESTAURANT_TABLE_DOCTYPE = "IMOGI Restaurant Table";
 const IMOGI_OPEN_SHIFT_PAGE = "imogi-pos-open-shift";
 const IMOGI_CLOSE_SHIFT_PAGE = "imogi-pos-close-shift";
 const IMOGI_SHIFT_OPENING_DOCTYPE = "IMOGI POS Shift Opening";
@@ -115,18 +177,43 @@ function imogi_pos_ensure_logout() {
 	};
 }
 
+function imogi_pos_boot_roles() {
+	return frappe.user_roles || frappe.boot?.user?.roles || [];
+}
+
 function imogi_pos_is_cashier_user() {
 	if (frappe.boot?.imogi_pos_cashier_home) {
 		return true;
 	}
 
-	const roles = frappe.user_roles || [];
+	const roles = imogi_pos_boot_roles();
 	if (!roles.includes(IMOGI_CASHIER_ROLE)) {
 		return false;
 	}
 
 	return !IMOGI_MANAGER_ROLES.some((role) => roles.includes(role));
 }
+
+function imogi_pos_is_waiter_user() {
+	if (frappe.boot?.imogi_pos_waiter_home || frappe.boot?.imogi_pos_dedicated_waiter) {
+		return true;
+	}
+
+	const roles = imogi_pos_boot_roles();
+	if (!roles.includes(IMOGI_WAITER_ROLE)) {
+		return false;
+	}
+
+	return !IMOGI_WAITER_ESCALATION_ROLES.some((role) => roles.includes(role));
+}
+
+function imogi_pos_is_dedicated_waiter_user() {
+	return imogi_pos_is_waiter_user();
+}
+
+imogi_pos.is_waiter_user = imogi_pos_is_waiter_user;
+imogi_pos.is_dedicated_waiter_user = imogi_pos_is_dedicated_waiter_user;
+imogi_pos.is_on_table_service_surface = imogi_pos_is_on_table_service_surface;
 
 function imogi_pos_requires_shift_workflow() {
 	if (frappe.boot?.imogi_pos_requires_shift_workflow !== undefined) {
@@ -228,9 +315,99 @@ function imogi_pos_on_order_history_page() {
 	return route[0] === "imogi-pos-order-history";
 }
 
+function imogi_pos_on_table_service_page() {
+	const path = imogi_pos_current_path();
+	if (
+		path === IMOGI_TABLE_SERVICE_PATH ||
+		path.startsWith(`${IMOGI_TABLE_SERVICE_PATH}/`) ||
+		path === "/app/table_service" ||
+		path.startsWith("/app/table_service/")
+	) {
+		return true;
+	}
+	const route = frappe.get_route?.() || [];
+	return route[0] === IMOGI_TABLE_SERVICE_PAGE || route[0] === "table_service";
+}
+
+function imogi_pos_is_on_table_service_surface() {
+	return (
+		imogi_pos_on_table_service_page() ||
+		document.body.classList.contains("imogi-table-service-active") ||
+		!!document.querySelector(".imogi-table-service-page")
+	);
+}
+
 function imogi_pos_on_pos_order_form() {
 	const route = frappe.get_route?.() || [];
 	return route[0] === "Form" && route[1] === IMOGI_POS_ORDER_DOCTYPE;
+}
+
+function imogi_pos_on_restaurant_table_desk() {
+	const route = frappe.get_route?.() || [];
+	return (
+		(route[0] === "List" || route[0] === "Form") &&
+		route[1] === IMOGI_RESTAURANT_TABLE_DOCTYPE
+	);
+}
+
+/** Waiter may open these without fullscreen guard sending them back to Table Service. */
+function imogi_pos_on_waiter_allowed_page() {
+	return (
+		imogi_pos_on_table_service_page() ||
+		imogi_pos_on_pos_order_form() ||
+		imogi_pos_on_restaurant_table_desk() ||
+		imogi_pos_on_cashier_only_page()
+	);
+}
+
+function imogi_pos_on_waiter_desk_landing() {
+	const path = imogi_pos_current_path();
+	if (imogi_pos_on_waiter_allowed_page()) {
+		return false;
+	}
+	if (path === "/app" || path === "/app/home" || path.startsWith("/app/home/")) {
+		return true;
+	}
+	if (
+		path === "/app/imogi-pos" ||
+		path.endsWith("/app/imogi-pos") ||
+		path === "/app/imogi-pos-dashboard"
+	) {
+		return true;
+	}
+	const route = frappe.get_route?.() || [];
+	return route[0] === "Workspaces";
+}
+
+function imogi_pos_guard_waiter_fullscreen() {
+	if (!imogi_pos_is_dedicated_waiter_user()) {
+		return false;
+	}
+	if (imogi_pos_on_waiter_allowed_page()) {
+		return false;
+	}
+
+	frappe.show_alert(
+		{
+			message: __(
+				"Mode waiter aktif. Gunakan Table Service untuk kelola meja dan pesanan."
+			),
+			indicator: "orange",
+		},
+		4
+	);
+	window.location.replace(IMOGI_TABLE_SERVICE_PATH);
+	return true;
+}
+
+function imogi_pos_redirect_waiter_home() {
+	if (!imogi_pos_is_dedicated_waiter_user()) {
+		return;
+	}
+	if (imogi_pos_on_table_service_page() || !imogi_pos_on_waiter_desk_landing()) {
+		return;
+	}
+	window.location.replace(IMOGI_TABLE_SERVICE_PATH);
 }
 
 /** Cashier may open these without fullscreen guard sending them back to Kasir. */
@@ -457,9 +634,11 @@ function imogi_pos_fetch_and_redirect() {
 
 function imogi_pos_schedule_redirects() {
 	imogi_pos_redirect_cashier_home();
+	imogi_pos_redirect_waiter_home();
 	imogi_pos_fetch_and_redirect();
 	[250, 750, 1500].forEach((delay) => {
 		setTimeout(imogi_pos_redirect_cashier_home, delay);
+		setTimeout(imogi_pos_redirect_waiter_home, delay);
 		setTimeout(imogi_pos_fetch_and_redirect, delay);
 	});
 }
@@ -471,6 +650,7 @@ const IMOGI_POS_THEMED_ROUTES = new Set([
 	"imogi-pos-open-shift",
 	"imogi-pos-close-shift",
 	"imogi-pos-order-history",
+	"table-service",
 ]);
 
 function imogi_pos_is_themed_route(route = frappe.get_route?.() || []) {
@@ -478,7 +658,7 @@ function imogi_pos_is_themed_route(route = frappe.get_route?.() || []) {
 		return true;
 	}
 	// Route can lag behind URL during SPA navigation — use path as fallback.
-	return imogi_pos_on_cashier_flow_page() || imogi_pos_on_order_history_page();
+	return imogi_pos_on_cashier_flow_page() || imogi_pos_on_order_history_page() || imogi_pos_on_table_service_page();
 }
 
 function imogi_pos_apply_desk_logo() {
@@ -494,11 +674,64 @@ function imogi_pos_apply_desk_logo() {
 }
 
 function imogi_pos_sync_cashier_fullscreen() {
-	const active =
+	const cashier_active =
 		imogi_pos_on_order_history_page() ||
 		(imogi_pos_requires_shift_workflow() && imogi_pos_on_cashier_flow_page());
-	document.body.classList.toggle("imogi-pos-cashier-fullscreen", active);
+	const table_service_fs =
+		document.body.classList.contains("imogi-table-service-fullscreen") ||
+		imogi_pos_is_on_table_service_surface();
+	document.body.classList.toggle(
+		"imogi-pos-cashier-fullscreen",
+		cashier_active || table_service_fs
+	);
+	document.body.classList.toggle("imogi-table-service-fullscreen", table_service_fs);
+	if (table_service_fs && imogi_pos_is_dedicated_waiter_user()) {
+		document.documentElement.classList.add("imogi-pos-waiter-dedicated");
+	} else if (!imogi_pos_is_dedicated_waiter_user() || !imogi_pos_is_on_table_service_surface()) {
+		document.documentElement.classList.remove("imogi-pos-waiter-dedicated");
+	}
+	if (table_service_fs) {
+		document.querySelectorAll(".page-head, .sticky-top").forEach((el) => {
+			el.style.setProperty("display", "none", "important");
+		});
+	}
 }
+
+function imogi_pos_paint_table_service_canvas() {
+	if (!imogi_pos_is_on_table_service_surface()) {
+		return;
+	}
+	document.body.classList.add("imogi-table-service-active");
+	const paint = (el) => {
+		if (!el) return;
+		el.style.setProperty("background", "#fff", "important");
+		el.style.setProperty("background-color", "#fff", "important");
+		el.style.setProperty("background-image", "none", "important");
+		el.style.setProperty("background-attachment", "scroll", "important");
+	};
+	paint(document.body);
+	paint(document.documentElement);
+	document
+		.querySelectorAll(
+			".layout-main, .layout-main-section-wrapper, .layout-main-section, .page-body, .page-container, .main-section, .container, .container.page-body, .page-wrapper, .page-content, .row.layout-main, .content.page-container, .imogi-table-service-page, .imogi-ts-shell"
+		)
+		.forEach(paint);
+	imogi_pos.paint_table_service_topbar?.();
+}
+
+function imogi_pos_activate_table_service_shell(wrapper) {
+	document.body.classList.add("imogi-table-service-active");
+	if (wrapper) {
+		const $wrapper = $(wrapper);
+		$wrapper.find(".page-head").hide();
+		$wrapper.find(".layout-main-section-wrapper").css("max-width", "100%");
+	}
+	imogi_pos_sync_desk_theme();
+	imogi_pos_paint_table_service_canvas();
+}
+
+imogi_pos.activate_table_service_shell = imogi_pos_activate_table_service_shell;
+imogi_pos.paint_table_service_canvas = imogi_pos_paint_table_service_canvas;
 
 function imogi_pos_paint_cashier_canvas() {
 	if (!document.body.classList.contains("imogi-cashier-active") && !document.querySelector(".imogi-cashier-page")) {
@@ -527,6 +760,7 @@ function imogi_pos_sync_desk_theme() {
 	imogi_pos_sync_cashier_fullscreen();
 	imogi_pos_apply_desk_logo();
 	imogi_pos_paint_cashier_canvas();
+	imogi_pos_paint_table_service_canvas();
 }
 
 function imogi_pos_should_redirect_to_setup(route = frappe.get_route?.() || []) {
@@ -534,6 +768,9 @@ function imogi_pos_should_redirect_to_setup(route = frappe.get_route?.() || []) 
 		return false;
 	}
 	if (imogi_pos_is_cashier_user()) {
+		return false;
+	}
+	if (imogi_pos_is_dedicated_waiter_user()) {
 		return false;
 	}
 	if (route[0] === "imogi-pos-setup" || route[0] === "setup-wizard") {
@@ -570,6 +807,9 @@ function imogi_pos_patch_settings_slug_route() {
 				const landing = imogi_pos_get_landing_target();
 				return [landing === "opening-entry" ? IMOGI_OPEN_SHIFT_PAGE : "imogi-pos-cashier"];
 			}
+			if (imogi_pos_is_dedicated_waiter_user()) {
+				return [IMOGI_TABLE_SERVICE_PAGE];
+			}
 			const docname =
 				route.length > 1 && route[1] !== "view"
 					? decodeURIComponent(route[1])
@@ -584,6 +824,10 @@ function imogi_pos_patch_settings_slug_route() {
 function imogi_pos_guard_cashier_settings_slug() {
 	if (imogi_pos_current_path() !== `/app/${IMOGI_SETTINGS_SLUG}`) {
 		return false;
+	}
+	if (imogi_pos_is_dedicated_waiter_user()) {
+		window.location.replace(IMOGI_TABLE_SERVICE_PATH);
+		return true;
 	}
 	if (!imogi_pos_is_cashier_user() || imogi_pos_has_settings_doctype_route()) {
 		return false;
@@ -634,6 +878,9 @@ $(document).on("app_ready", () => {
 				if (imogi_pos_guard_cashier_fullscreen()) {
 					return;
 				}
+				if (imogi_pos_guard_waiter_fullscreen()) {
+					return;
+				}
 				if (
 					frappe.boot?.imogi_pos_dedicated_cashier &&
 					(imogi_pos_current_path() === "/app/imogi-pos" ||
@@ -647,7 +894,20 @@ $(document).on("app_ready", () => {
 					}
 					return;
 				}
+				if (imogi_pos_is_dedicated_waiter_user() && imogi_pos_on_imogi_workspace()) {
+					window.location.replace(IMOGI_TABLE_SERVICE_PATH);
+					return;
+				}
+				if (
+					imogi_pos_is_dedicated_waiter_user() &&
+					(imogi_pos_current_path() === "/app/imogi-pos" ||
+						imogi_pos_current_path().endsWith("/app/imogi-pos"))
+				) {
+					window.location.replace(IMOGI_TABLE_SERVICE_PATH);
+					return;
+				}
 				imogi_pos_redirect_cashier_home();
+				imogi_pos_redirect_waiter_home();
 			}, 50);
 			setTimeout(imogi_pos_sync_desk_theme, 200);
 		});
@@ -666,7 +926,11 @@ $(document).on("app_ready", () => {
 			if (imogi_pos_guard_cashier_fullscreen()) {
 				return;
 			}
+			if (imogi_pos_guard_waiter_fullscreen()) {
+				return;
+			}
 			imogi_pos_redirect_cashier_home();
+			imogi_pos_redirect_waiter_home();
 		}, 50);
 	});
 

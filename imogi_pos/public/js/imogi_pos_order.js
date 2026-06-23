@@ -260,6 +260,15 @@ function set_item_defaults(frm) {
 	}
 }
 
+function is_refund_feature_enabled() {
+	const disabled = frappe.boot?.imogi_pos_disabled_features;
+	if (Array.isArray(disabled)) {
+		return !disabled.includes("refund");
+	}
+	// Boot flag missing on older sessions — keep refund off by default.
+	return false;
+}
+
 function add_void_refund_buttons(frm, status, is_umkm) {
 	if (frm.doc.docstatus !== 1) return;
 	if (["Cancelled", "Refunded"].includes(status)) return;
@@ -274,7 +283,7 @@ function add_void_refund_buttons(frm, status, is_umkm) {
 	const can_supervise = !role_gating_on || role_ctx.bypass || effective.has("Supervisor");
 
 	if (can_void && can_supervise) {
-		frm.add_custom_button(is_umkm ? __("Batalkan Order") : __("Void Order"), () => {
+		frm.add_custom_button(__("Void Order"), () => {
 			prompt_and_call(frm, "action_void_order", __("Alasan pembatalan (opsional)"), "Void");
 		}).addClass("btn-danger");
 	}
@@ -284,7 +293,7 @@ function add_void_refund_buttons(frm, status, is_umkm) {
 		flt(frm.doc.refunded_amount) < flt(frm.doc.grand_total) &&
 		["Paid", "Completed", "Partially Refunded"].includes(status);
 
-	if (can_refund && can_supervise) {
+	if (can_refund && can_supervise && is_refund_feature_enabled()) {
 		frm.add_custom_button(is_umkm ? __("Refund Penuh") : __("Refund Order"), () => {
 			prompt_and_call(frm, "action_refund_order", __("Alasan refund (opsional)"), "Refund");
 		}).addClass("btn-danger");
@@ -454,6 +463,7 @@ function prompt_and_call(frm, method, prompt_label, approval_type) {
 function add_merge_table_button(frm, status) {
 	if (!frm.doc.restaurant_table || frm.doc.docstatus !== 1) return;
 	if (["Completed", "Cancelled", "Refunded"].includes(status)) return;
+	if (!imogi_pos_feature_allowed("merge_table")) return;
 
 	frm.add_custom_button(__("Gabung Meja"), () => {
 		frappe.prompt(
@@ -488,6 +498,7 @@ function add_merge_table_button(frm, status) {
 function add_move_table_button(frm, status) {
 	if (!frm.doc.restaurant_table || frm.doc.docstatus !== 1) return;
 	if (["Completed", "Cancelled", "Refunded"].includes(status)) return;
+	if (!imogi_pos_feature_allowed("move_table")) return;
 
 	frm.add_custom_button(__("Pindah Meja"), () => {
 		frappe.prompt(
@@ -522,6 +533,17 @@ function add_move_table_button(frm, status) {
 
 function imogi_pos_is_riwayat_order_admin() {
 	return frappe.user.has_role("System Manager") || frappe.user.has_role("Administrator");
+}
+
+function imogi_pos_feature_allowed(feature_id) {
+	if (imogi_pos.is_erp_enterprise_deployment && imogi_pos.is_erp_enterprise_deployment()) {
+		return true;
+	}
+	const flags = frappe.boot?.imogi_pos_feature_flags || {};
+	if (Object.prototype.hasOwnProperty.call(flags, feature_id)) {
+		return !!flags[feature_id];
+	}
+	return true;
 }
 
 function imogi_pos_reprint_order_receipt(order_name) {

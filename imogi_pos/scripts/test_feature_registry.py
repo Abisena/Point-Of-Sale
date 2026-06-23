@@ -13,7 +13,7 @@ def run():
 	summary = summarize_tiers()
 	per_tier = summary["per_tier"]
 
-	assert len(FEATURES) == 99, f"expected 99 features, got {len(FEATURES)}"
+	assert len(FEATURES) == 100, f"expected 100 features, got {len(FEATURES)}"
 
 	for tier in SUBSCRIPTION_TIERS:
 		actual = per_tier[tier]

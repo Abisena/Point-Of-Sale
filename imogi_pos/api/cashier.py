@@ -220,6 +220,279 @@ def _create_cashier_order(
 	return order
 
 
+def _verify_cashier_pending_order(order):
+	if order.docstatus != 1 or order.status != "Awaiting Payment":
+		frappe.throw(_("Order {0} is not awaiting payment").format(order.name))
+	user = frappe.session.user
+	cashier = (order.cashier or order.owner or "").strip()
+	if cashier and cashier != user:
+		frappe.throw(_("Not permitted to access this order"), frappe.PermissionError)
+
+
+def _sync_awaiting_order_from_checkout(
+	order,
+	parsed_items,
+	*,
+	discount_type=None,
+	discount_value=None,
+	voucher_code=None,
+	loyalty_points_redeem=0,
+	customer=None,
+	warehouse=None,
+	branch_code=None,
+	settings=None,
+):
+	settings = settings or get_settings()
+	if customer and frappe.db.exists("Customer", customer):
+		order.customer = customer
+
+	from imogi_pos.imogi_pos.utils.loyalty import apply_promotions_to_order, compute_checkout_totals
+
+	totals = compute_checkout_totals(
+		parsed_items,
+		discount_type=discount_type,
+		discount_value=discount_value,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		customer=order.customer,
+		company=order.company,
+		settings=settings,
+		branch=branch_code,
+	)
+
+	order.items = []
+	for row in totals.get("items") or parsed_items:
+		if not row.get("item_code"):
+			frappe.throw(_("Each item must include item_code"))
+		order.append(
+			"items",
+			{
+				"item_code": row["item_code"],
+				"qty": flt(row.get("qty") or 1),
+				"rate": flt(row.get("rate") or 0),
+				"warehouse": row.get("warehouse") or warehouse,
+				"uom": row.get("uom"),
+			},
+		)
+
+	order.discount_type = discount_type or ""
+	order.discount_value = flt(discount_value)
+	apply_promotions_to_order(order, totals)
+	order.calculate_totals()
+	order.flags.ignore_validate_update_after_submit = True
+	order.save(ignore_permissions=True)
+	order.reload()
+	return order
+
+
+def _apply_payments_to_order(order, payments_list):
+	order.payments = []
+	for row in payments_list:
+		if not row.get("mode_of_payment"):
+			frappe.throw(_("Each payment must include mode_of_payment"))
+		order.append(
+			"payments",
+			{
+				"mode_of_payment": row["mode_of_payment"],
+				"amount": flt(row.get("amount") or 0),
+			},
+		)
+	order.calculate_totals()
+	order.flags.ignore_validate_update_after_submit = True
+	order.save(ignore_permissions=True)
+	order.db_set("paid_amount", flt(order.paid_amount), update_modified=False)
+	order.reload()
+
+
+def _validate_cashier_cart(
+	*,
+	items,
+	customer=None,
+	order_type="Takeaway",
+	voucher_code=None,
+	loyalty_points_redeem=0,
+	marketplace_order_name=None,
+	restaurant_table=None,
+	branch=None,
+	pos_profile=None,
+	discount_type=None,
+	discount_value=None,
+	approval_code=None,
+):
+	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
+	settings = get_settings()
+	default_customer = _resolve_customer(customer, branch_ctx["pos_profile"])
+	from imogi_pos.imogi_pos.utils.feature_gating import validate_checkout_features
+
+	validate_checkout_features(
+		order_type=order_type,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		marketplace_order_name=marketplace_order_name,
+		customer=customer,
+		default_customer=default_customer,
+		settings=settings,
+	)
+
+	parsed_items = _parse_json(items, "items") if isinstance(items, str) else (items or [])
+	if not parsed_items and not marketplace_order_name:
+		frappe.throw(_("At least one item is required"))
+
+	if parsed_items:
+		from imogi_pos.imogi_pos.utils.offline_stock import ensure_cart_stock_or_throw
+
+		ensure_cart_stock_or_throw(
+			parsed_items,
+			branch_ctx["warehouse"],
+			pos_profile=branch_ctx["pos_profile"],
+		)
+
+	if restaurant_table:
+		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+		require_feature_operational("table_management", settings)
+
+	from imogi_pos.imogi_pos.utils.approval import discount_requires_approval, require_supervisor_approval
+	from imogi_pos.imogi_pos.utils.loyalty import compute_checkout_totals
+
+	checkout_totals = compute_checkout_totals(
+		parsed_items,
+		discount_type=discount_type,
+		discount_value=discount_value,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		customer=customer,
+		company=branch_ctx["company"],
+		settings=settings,
+		branch=branch_ctx.get("branch_code"),
+	)
+	discount_total = flt(checkout_totals.get("discount_amount"))
+	subtotal = flt(checkout_totals.get("subtotal"))
+	if discount_requires_approval(discount_total, subtotal, settings):
+		require_supervisor_approval(
+			"Discount",
+			amount=discount_total,
+			approval_code=approval_code,
+			reason=_("Diskon kasir melebihi batas approval"),
+		)
+
+	return branch_ctx, settings, parsed_items, checkout_totals
+
+
+@frappe.whitelist()
+def submit_awaiting_order(
+	items,
+	customer=None,
+	order_channel="Walk-in",
+	order_type="Takeaway",
+	discount_type=None,
+	discount_value=None,
+	voucher_code=None,
+	loyalty_points_redeem=0,
+	pos_profile=None,
+	branch=None,
+	restaurant_table=None,
+	marketplace_order_name=None,
+	approval_code=None,
+):
+	"""Submit cart as Riwayat Order in Awaiting Payment when cashier opens payment."""
+	_require_cashier_access()
+	ensure_setup_ready()
+	_require_pos_opening()
+
+	if marketplace_order_name:
+		order = frappe.get_doc("Riwayat Order", marketplace_order_name)
+		order.check_permission("write")
+		_verify_cashier_pending_order(order)
+		return _serialize_order(order)
+
+	branch_ctx, settings, parsed_items, _checkout_totals = _validate_cashier_cart(
+		items=items,
+		customer=customer,
+		order_type=order_type,
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		restaurant_table=restaurant_table,
+		branch=branch,
+		pos_profile=pos_profile,
+		discount_type=discount_type,
+		discount_value=discount_value,
+		approval_code=approval_code,
+	)
+
+	order = _create_cashier_order(
+		items,
+		customer,
+		order_channel,
+		order_type,
+		[],
+		discount_type,
+		discount_value,
+		pos_profile=branch_ctx["pos_profile"],
+		warehouse=branch_ctx["warehouse"],
+		company=branch_ctx["company"],
+		voucher_code=voucher_code,
+		loyalty_points_redeem=loyalty_points_redeem,
+		restaurant_table=restaurant_table,
+		branch=branch_ctx.get("branch_code"),
+	)
+	frappe.db.commit()
+	result = _serialize_order(order)
+	emit_order_webhook(order.name, "order.created")
+	return result
+
+
+def _void_awaiting_cashier_order(order, reason=None, approval_code=None):
+	"""Void the cashier's own unpaid order (payment modal); skips back-office void tier gate."""
+	from imogi_pos.imogi_pos.utils.approval import require_supervisor_approval
+
+	require_supervisor_approval(
+		"Void",
+		reference_name=order.name,
+		reason=reason,
+		amount=flt(order.grand_total),
+		approval_code=approval_code,
+	)
+
+	if order.status in ("Cancelled", "Refunded"):
+		frappe.throw(_("Order is already {0}").format(order.status))
+
+	if order.pos_invoice and order.status not in ("Awaiting Payment", "Draft"):
+		frappe.throw(
+			_("Paid orders cannot be voided. Use <b>Refund Order</b> instead."),
+			title=_("Use Refund"),
+		)
+
+	if reason:
+		order.db_set("remarks", reason)
+
+	if order.docstatus == 1:
+		order.cancel()
+	else:
+		order.db_set("status", "Cancelled")
+
+	if order.order_source != "IMOGI API":
+		from imogi_pos.imogi_pos.utils.webhook import emit_order_webhook
+
+		emit_order_webhook(order.name, "order.cancelled")
+	return order.name
+
+
+@frappe.whitelist()
+def void_cashier_order(order_name, reason=None, approval_code=None):
+	"""Void an unpaid cashier order (Awaiting Payment) from payment dialog."""
+	_require_cashier_access()
+	ensure_setup_ready()
+
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("cancel")
+	_verify_cashier_pending_order(order)
+	_void_awaiting_cashier_order(order, reason=reason, approval_code=approval_code)
+	order.reload()
+	frappe.db.commit()
+	return _serialize_order(order)
+
+
 @frappe.whitelist()
 def get_cashier_context(branch=None, pos_profile=None):
 	"""Bootstrap data for IMOGI touch cashier page."""
@@ -399,30 +672,40 @@ def checkout(
 	loyalty_points_redeem=0,
 	offline_client_id=None,
 	marketplace_order_name=None,
+	order_name=None,
 	pos_profile=None,
 	branch=None,
 	restaurant_table=None,
 	approval_code=None,
 ):
-	"""Create, pay, and complete an order from the touch cashier."""
+	"""Create or complete an order from the touch cashier."""
 	_require_cashier_access()
 	ensure_setup_ready()
 	_require_pos_opening()
 
-	branch_ctx = _resolve_cashier_branch(branch=branch, pos_profile=pos_profile)
-	settings = get_settings()
-	default_customer = _resolve_customer(customer, branch_ctx["pos_profile"])
-	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational, validate_checkout_features
+	payments_list = _parse_json(payments, "payments") or []
+	if not payments_list:
+		frappe.throw(_("payments is required"))
 
-	validate_checkout_features(
+	branch_ctx, settings, parsed_items, checkout_totals = _validate_cashier_cart(
+		items=items,
+		customer=customer,
 		order_type=order_type,
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		marketplace_order_name=marketplace_order_name,
-		customer=customer,
-		default_customer=default_customer,
-		settings=settings,
+		restaurant_table=restaurant_table,
+		branch=branch,
+		pos_profile=pos_profile,
+		discount_type=discount_type,
+		discount_value=discount_value,
+		approval_code=approval_code,
 	)
+
+	if len(payments_list) > 1:
+		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+
+		require_feature_operational("multi_payment", settings)
 
 	if offline_client_id:
 		from imogi_pos.imogi_pos.utils.offline_checkout import get_existing_offline_order
@@ -431,49 +714,6 @@ def checkout(
 		if existing and existing.order:
 			order = frappe.get_doc("Riwayat Order", existing.order)
 			return _serialize_order(order)
-
-	payments_list = _parse_json(payments, "payments") or []
-	if not payments_list:
-		frappe.throw(_("payments is required"))
-	if len(payments_list) > 1:
-		require_feature_operational("multi_payment", settings)
-
-	parsed_items = _parse_json(items, "items") if isinstance(items, str) else (items or [])
-	if parsed_items:
-		from imogi_pos.imogi_pos.utils.offline_stock import ensure_cart_stock_or_throw
-
-		ensure_cart_stock_or_throw(
-			parsed_items,
-			branch_ctx["warehouse"],
-			pos_profile=branch_ctx["pos_profile"],
-		)
-
-	if restaurant_table:
-		require_feature_operational("table_management", settings)
-
-	from imogi_pos.imogi_pos.utils.approval import discount_requires_approval, require_supervisor_approval
-	from imogi_pos.imogi_pos.utils.loyalty import compute_checkout_totals
-
-	checkout_totals = compute_checkout_totals(
-		parsed_items,
-		discount_type=discount_type,
-		discount_value=discount_value,
-		voucher_code=voucher_code,
-		loyalty_points_redeem=loyalty_points_redeem,
-		customer=customer,
-		company=branch_ctx["company"],
-		settings=settings,
-		branch=branch_ctx.get("branch_code"),
-	)
-	discount_total = flt(checkout_totals.get("discount_amount"))
-	subtotal = flt(checkout_totals.get("subtotal"))
-	if discount_requires_approval(discount_total, subtotal, settings):
-		require_supervisor_approval(
-			"Discount",
-			amount=discount_total,
-			approval_code=approval_code,
-			reason=_("Diskon kasir melebihi batas approval"),
-		)
 
 	if marketplace_order_name:
 		from imogi_pos.imogi_pos.utils.marketplace import complete_marketplace_order
@@ -488,6 +728,23 @@ def checkout(
 			loyalty_points_redeem=loyalty_points_redeem,
 			items=parsed_items,
 		)
+	elif order_name:
+		order = frappe.get_doc("Riwayat Order", order_name)
+		order.check_permission("write")
+		_verify_cashier_pending_order(order)
+		order = _sync_awaiting_order_from_checkout(
+			order,
+			parsed_items,
+			discount_type=discount_type,
+			discount_value=discount_value,
+			voucher_code=voucher_code,
+			loyalty_points_redeem=loyalty_points_redeem,
+			customer=customer,
+			warehouse=branch_ctx["warehouse"],
+			branch_code=branch_ctx.get("branch_code"),
+			settings=settings,
+		)
+		_apply_payments_to_order(order, payments_list)
 	else:
 		order = _create_cashier_order(
 			items,

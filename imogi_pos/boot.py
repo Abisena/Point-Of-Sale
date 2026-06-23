@@ -9,14 +9,17 @@ from imogi_pos.imogi_pos.utils.workspace import get_workspace_route
 from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO, IMOGI_POS_LOGO_WHITE
 
 CASHIER_ROLE = "IMOGI Cashier"
+WAITER_ROLE = "IMOGI Waiter"
 OWNER_ROLE = "IMOGI Owner"
 AREA_MANAGER_ROLE = "IMOGI Area Manager"
 MANAGER_ROLE = "IMOGI Manager"
 AREA_MANAGER_HOME_PAGE = "imogi-pos-dashboard"
 CASHIER_HOME_PAGE = "imogi-pos-cashier"
+WAITER_HOME_PAGE = "table-service"
 OWNER_HOME_PAGE = "imogi-pos-dashboard"
 MANAGER_HOME_PAGE = "imogi-pos-menu"
 CASHIER_HOME_ROUTE = f"/app/{CASHIER_HOME_PAGE}"
+WAITER_HOME_ROUTE = f"/app/{WAITER_HOME_PAGE}"
 OPEN_SHIFT_PAGE = "imogi-pos-open-shift"
 OPEN_SHIFT_HOME_ROUTE = f"/app/{OPEN_SHIFT_PAGE}"
 CLOSE_SHIFT_PAGE = "imogi-pos-close-shift"
@@ -25,6 +28,18 @@ SHIFT_OPENING_DOCTYPE = "IMOGI POS Shift Opening"
 SHIFT_OPENING_HOME_ROUTE = OPEN_SHIFT_HOME_ROUTE
 OPENING_ENTRY_HOME_ROUTE = OPEN_SHIFT_HOME_ROUTE
 MANAGER_ROLES = frozenset({"System Manager", "Administrator"})
+WAITER_ESCALATION_ROLES = frozenset(
+	{
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
+		"IMOGI Supervisor",
+		"IMOGI Cashier",
+	}
+)
 
 OPENING_ROUTE_CACHE = "imogi_pos_opening_route_options"
 
@@ -56,6 +71,22 @@ def clear_opening_route_options(user=None, company=None):
 def should_use_cashier_home(user=None):
 	"""Desk users with IMOGI Cashier (without manager roles) land on Kasir."""
 	return requires_cashier_shift(user)
+
+
+def should_use_waiter_home(user=None):
+	"""Dedicated waiter — Table Service only, no ERPNext workspace."""
+	user = user or frappe.session.user
+	if not user or user == "Guest":
+		return False
+
+	roles = set(frappe.get_roles(user))
+	if WAITER_ROLE not in roles:
+		return False
+	if roles & WAITER_ESCALATION_ROLES:
+		return False
+	if should_use_cashier_home(user):
+		return False
+	return True
 
 
 def requires_cashier_shift(user=None):
@@ -112,6 +143,17 @@ def get_cashier_home_route(user=None):
 	return None
 
 
+def get_waiter_home_route(user=None):
+	if not should_use_waiter_home(user):
+		return None
+	return WAITER_HOME_ROUTE
+
+
+def get_dedicated_home_route(user=None):
+	"""Login/default path for dedicated cashier or waiter."""
+	return get_cashier_home_route(user) or get_waiter_home_route(user)
+
+
 def boot_session(bootinfo):
 	bootinfo.app_logo_url = IMOGI_POS_DESK_LOGO
 	bootinfo.imogi_pos_desk_logo_url = IMOGI_POS_DESK_LOGO
@@ -141,6 +183,13 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_role_gating_enabled = bool(getattr(settings, "enable_role_gating", 0))
 	bootinfo.imogi_pos_approval_workflow_enabled = bool(getattr(settings, "enable_approval_workflow", 0))
 	bootinfo.imogi_pos_role_context = serialize_user_role_context(frappe.session.user, settings)
+	from imogi_pos.imogi_pos.utils.feature_registry import (
+		DISABLED_OPERATIONAL_FEATURE_IDS,
+		HIDDEN_UI_FEATURE_IDS,
+	)
+
+	bootinfo.imogi_pos_hidden_features = sorted(HIDDEN_UI_FEATURE_IDS | DISABLED_OPERATIONAL_FEATURE_IDS)
+	bootinfo.imogi_pos_disabled_features = sorted(DISABLED_OPERATIONAL_FEATURE_IDS)
 	from imogi_pos.imogi_pos.utils.area_manager import get_assigned_branch_context
 
 	bootinfo.imogi_pos_area_manager_context = get_assigned_branch_context(frappe.session.user)
@@ -153,8 +202,9 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_workspace_route = get_workspace_route(settings.business_type)
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
 	bootinfo.imogi_pos_dedicated_cashier = should_use_cashier_home()
+	bootinfo.imogi_pos_dedicated_waiter = should_use_waiter_home()
 
-	if not settings.setup_complete and not should_use_cashier_home():
+	if not settings.setup_complete and not should_use_cashier_home() and not should_use_waiter_home():
 		bootinfo.home_page = "imogi-pos-setup"
 		return
 
@@ -174,6 +224,11 @@ def boot_session(bootinfo):
 		bootinfo.home_page = MANAGER_HOME_PAGE
 		return
 
+	if should_use_waiter_home():
+		bootinfo.imogi_pos_waiter_home = True
+		bootinfo.home_page = WAITER_HOME_PAGE
+		return
+
 	if not should_use_cashier_home():
 		return
 
@@ -191,9 +246,6 @@ def boot_session(bootinfo):
 	tax_cfg = get_sales_tax_config(settings)
 	bootinfo.imogi_pos_sales_tax_rate = flt(tax_cfg.get("rate")) or 11
 	bootinfo.imogi_pos_payment_gateway_enabled = is_setting_enabled("enable_payment_gateway", settings)
-	from imogi_pos.imogi_pos.utils.feature_registry import HIDDEN_UI_FEATURE_IDS
-
-	bootinfo.imogi_pos_hidden_features = sorted(HIDDEN_UI_FEATURE_IDS)
 	bootinfo.imogi_pos_loyalty_enabled = is_setting_enabled("enable_loyalty", settings)
 	bootinfo.imogi_pos_default_pos_profile = settings.default_pos_profile or ""
 	bootinfo.imogi_pos_has_open_shift = bool(_get_pos_opening()) if bootinfo.imogi_pos_enable_shift else False

@@ -220,7 +220,21 @@ function imogi_pos_refresh_workspace_tier_context() {
 imogi_pos.refresh_workspace_tier_context = imogi_pos_refresh_workspace_tier_context;
 imogi_pos.apply_workspace_tier_context = imogi_pos_apply_workspace_tier_context;
 
-function imogi_pos_redirect_dedicated_cashier_from_workspace() {
+function imogi_pos_redirect_dedicated_ops_from_workspace() {
+	if (typeof imogi_pos_is_dedicated_waiter_user === "function" && imogi_pos_is_dedicated_waiter_user()) {
+		const path = (window.location.pathname || "").replace(/\/$/, "");
+		if (
+			imogi_pos_on_imogi_workspace() ||
+			path === "/app" ||
+			path === "/app/home" ||
+			path.startsWith("/app/home/") ||
+			path === "/app/imogi-pos-settings" ||
+			path.startsWith("/app/imogi-pos-settings/")
+		) {
+			window.location.replace("/app/table-service");
+			return true;
+		}
+	}
 	if (!frappe.boot?.imogi_pos_dedicated_cashier) {
 		return false;
 	}
@@ -243,7 +257,7 @@ function imogi_pos_redirect_dedicated_cashier_from_workspace() {
 
 $(document).on("app_ready", () => {
 	imogi_pos_patch_workspace_loader();
-	if (imogi_pos_redirect_dedicated_cashier_from_workspace()) {
+	if (imogi_pos_redirect_dedicated_ops_from_workspace()) {
 		return;
 	}
 	imogi_pos_update_workspace_tier_banner(frappe.boot?.imogi_pos_subscription_tier);
