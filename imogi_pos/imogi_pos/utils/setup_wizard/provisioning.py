@@ -396,9 +396,11 @@ def apply_imogi_settings(session, company, warehouse, pos_profile):
 	settings.business_type = flow
 	settings.business_template = session.business_type
 	settings.enable_pos_shift = cint(template.get("enable_pos_shift"))
+	from imogi_pos.imogi_pos.utils.settings_flow import append_kitchen_item_groups_from_text
+
 	settings.enable_kitchen_display = cint(template.get("enable_kitchen"))
 	settings.enable_fulfillment = cint(template.get("enable_fulfillment"))
-	settings.kitchen_item_groups = template.get("kitchen_item_groups") or ""
+	append_kitchen_item_groups_from_text(settings, template.get("kitchen_item_groups") or "")
 	settings.owner_whatsapp = session.owner_whatsapp
 	settings.store_city = session.store_city
 	settings.multi_branch = cint(session.multi_branch)

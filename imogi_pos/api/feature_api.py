@@ -75,6 +75,15 @@ def get_settings_tier_locks(tier=None):
 
 
 @frappe.whitelist()
+def get_role_authorization_matrix():
+	"""Return per-role authorization catalog + current toggle state."""
+	_require_matrix_access()
+	from imogi_pos.imogi_pos.utils.role_authorization import serialize_role_authorization_matrix
+
+	return serialize_role_authorization_matrix()
+
+
+@frappe.whitelist()
 def get_workspace_tier_context():
 	"""Fresh subscription tier + workspace link access (avoids stale frappe.boot)."""
 	if frappe.session.user == "Guest":

@@ -1,10 +1,13 @@
 # Copyright (c) 2026, Imogi and contributors
 
+import base64
 import json
+import re
+from urllib.parse import quote
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, fmt_money, get_url
 
 from imogi_pos.api.auth import ensure_setup_ready
 from imogi_pos.api.order import _parse_json, _serialize_order
@@ -17,6 +20,7 @@ from imogi_pos.imogi_pos.utils.branch import (
 from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
 from imogi_pos.imogi_pos.utils.pos_profile import validate_pos_profile
+from imogi_pos.imogi_pos.utils.receipt_branding import get_receipt_logo_url, get_whatsapp_receipt_config
 from imogi_pos.imogi_pos.utils.webhook import emit_order_webhook
 
 
@@ -127,6 +131,75 @@ def _require_pos_opening():
 	return opening
 
 
+def _resolve_checkout_customer_phone(customer=None, customer_phone=None, *, pos_profile=None, order_name=None):
+	"""Best-effort phone for WA receipt — kasir input, order field, then Contact."""
+	phone = (customer_phone or "").strip()
+	if phone:
+		return phone
+	if order_name and frappe.db.exists("Riwayat Order", order_name):
+		phone = (frappe.db.get_value("Riwayat Order", order_name, "customer_phone") or "").strip()
+		if phone:
+			return phone
+	if customer:
+		return _resolve_customer_phone(customer)
+	return ""
+
+
+def _require_whatsapp_customer_phone(customer, customer_phone, pos_profile, order_name=None):
+	settings = get_settings()
+	wa_cfg = get_whatsapp_receipt_config(settings)
+	if not wa_cfg["enable_whatsapp_receipt"]:
+		return (customer_phone or "").strip()
+
+	default_customer = frappe.db.get_value("POS Profile", pos_profile, "customer")
+	effective_customer = customer
+	if order_name and frappe.db.exists("Riwayat Order", order_name):
+		if not effective_customer:
+			effective_customer = frappe.db.get_value("Riwayat Order", order_name, "customer")
+	if not effective_customer:
+		return (customer_phone or "").strip()
+	if default_customer and effective_customer == default_customer:
+		return (customer_phone or "").strip()
+
+	phone = _resolve_checkout_customer_phone(
+		customer=effective_customer,
+		customer_phone=customer_phone,
+		pos_profile=pos_profile,
+		order_name=order_name,
+	)
+	if not phone:
+		frappe.throw(
+			_(
+				"Nomor HP belum tersimpan. Isi <b>No. HP / WhatsApp</b> lalu klik <b>Simpan & Pilih</b> di dialog customer."
+			),
+			title=_("Nomor HP wajib"),
+		)
+	return phone
+
+
+def _resolve_customer_phone(customer, customer_phone=None):
+	"""Phone for WA receipt — prefer kasir input, then Customer Contact."""
+	phone = (customer_phone or "").strip()
+	if phone:
+		return phone
+	if not customer:
+		return ""
+	from imogi_pos.api.customer_api import _get_customer_contact
+
+	contact = _get_customer_contact(customer)
+	if contact:
+		from imogi_pos.api.customer_api import _contact_phone
+
+		return _contact_phone(contact)
+	return ""
+
+
+def _apply_customer_phone(order, customer, customer_phone=None):
+	phone = _resolve_customer_phone(customer, customer_phone)
+	if phone:
+		order.customer_phone = phone
+
+
 def _create_cashier_order(
 	items,
 	customer,
@@ -143,6 +216,7 @@ def _create_cashier_order(
 	offline_client_id=None,
 	restaurant_table=None,
 	branch=None,
+	customer_phone=None,
 ):
 	"""Build and submit order without importing order._build_order (avoids stale worker signatures)."""
 	settings = get_settings()
@@ -164,6 +238,7 @@ def _create_cashier_order(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=customer,
+		customer_phone=customer_phone,
 		company=company,
 		settings=settings,
 		branch=branch_ctx.get("branch_code"),
@@ -177,6 +252,7 @@ def _create_cashier_order(
 	order.order_type = order_type or "Takeaway"
 	order.order_source = "IMOGI POS"
 	order.customer = _resolve_customer(customer, pos_profile)
+	_apply_customer_phone(order, order.customer, customer_phone)
 	order.discount_type = discount_type or ""
 	order.discount_value = flt(discount_value)
 	apply_promotions_to_order(order, totals)
@@ -238,6 +314,7 @@ def _sync_awaiting_order_from_checkout(
 	voucher_code=None,
 	loyalty_points_redeem=0,
 	customer=None,
+	customer_phone=None,
 	warehouse=None,
 	branch_code=None,
 	settings=None,
@@ -245,6 +322,7 @@ def _sync_awaiting_order_from_checkout(
 	settings = settings or get_settings()
 	if customer and frappe.db.exists("Customer", customer):
 		order.customer = customer
+	_apply_customer_phone(order, order.customer, customer_phone)
 
 	from imogi_pos.imogi_pos.utils.loyalty import apply_promotions_to_order, compute_checkout_totals
 
@@ -255,6 +333,7 @@ def _sync_awaiting_order_from_checkout(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=order.customer,
+		customer_phone=customer_phone,
 		company=order.company,
 		settings=settings,
 		branch=branch_code,
@@ -308,6 +387,7 @@ def _validate_cashier_cart(
 	*,
 	items,
 	customer=None,
+	customer_phone=None,
 	order_type="Takeaway",
 	voucher_code=None,
 	loyalty_points_redeem=0,
@@ -362,6 +442,7 @@ def _validate_cashier_cart(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=customer,
+		customer_phone=customer_phone,
 		company=branch_ctx["company"],
 		settings=settings,
 		branch=branch_ctx.get("branch_code"),
@@ -383,6 +464,7 @@ def _validate_cashier_cart(
 def submit_awaiting_order(
 	items,
 	customer=None,
+	customer_phone=None,
 	order_channel="Walk-in",
 	order_type="Takeaway",
 	discount_type=None,
@@ -409,6 +491,7 @@ def submit_awaiting_order(
 	branch_ctx, settings, parsed_items, _checkout_totals = _validate_cashier_cart(
 		items=items,
 		customer=customer,
+		customer_phone=customer_phone,
 		order_type=order_type,
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
@@ -435,6 +518,7 @@ def submit_awaiting_order(
 		loyalty_points_redeem=loyalty_points_redeem,
 		restaurant_table=restaurant_table,
 		branch=branch_ctx.get("branch_code"),
+		customer_phone=customer_phone,
 	)
 	frappe.db.commit()
 	result = _serialize_order(order)
@@ -572,6 +656,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 
 	branches = get_accessible_branches(company=branch_ctx["company"])
 	held = list_holds(pos_profile=pos_profile).get("holds") or []
+	wa_cfg = get_whatsapp_receipt_config(settings)
 
 	return {
 		"company": branch_ctx["company"],
@@ -585,7 +670,10 @@ def get_cashier_context(branch=None, pos_profile=None):
 		"thermal_printer_width": settings.thermal_printer_width or "58mm",
 		"receipt_header": settings.receipt_header or "",
 		"receipt_footer": settings.receipt_footer or "",
+		"receipt_logo_url": get_receipt_logo_url(settings),
 		"receipt_store_name": settings.default_company or branch_ctx["company"],
+		"auto_print_receipt_on_success": wa_cfg["auto_print_receipt_on_success"],
+		"enable_whatsapp_receipt": wa_cfg["enable_whatsapp_receipt"],
 		"payment_gateway_enabled": is_gateway_enabled(),
 		"payment_gateway_provider": settings.payment_gateway_provider or settings.payment_gateway or "",
 		"transfer_payment": get_transfer_payment_config(settings),
@@ -664,6 +752,7 @@ def checkout(
 	items,
 	payments,
 	customer=None,
+	customer_phone=None,
 	order_channel="Walk-in",
 	order_type="Takeaway",
 	discount_type=None,
@@ -690,6 +779,7 @@ def checkout(
 	branch_ctx, settings, parsed_items, checkout_totals = _validate_cashier_cart(
 		items=items,
 		customer=customer,
+		customer_phone=customer_phone,
 		order_type=order_type,
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
@@ -700,6 +790,13 @@ def checkout(
 		discount_type=discount_type,
 		discount_value=discount_value,
 		approval_code=approval_code,
+	)
+
+	customer_phone = _require_whatsapp_customer_phone(
+		customer,
+		customer_phone,
+		branch_ctx["pos_profile"],
+		order_name=order_name,
 	)
 
 	if len(payments_list) > 1:
@@ -740,6 +837,7 @@ def checkout(
 			voucher_code=voucher_code,
 			loyalty_points_redeem=loyalty_points_redeem,
 			customer=customer,
+			customer_phone=customer_phone,
 			warehouse=branch_ctx["warehouse"],
 			branch_code=branch_ctx.get("branch_code"),
 			settings=settings,
@@ -762,6 +860,7 @@ def checkout(
 			offline_client_id=offline_client_id,
 			restaurant_table=restaurant_table,
 			branch=branch_ctx.get("branch_code"),
+			customer_phone=customer_phone,
 		)
 	order.action_process_payment(silent=True)
 	order.reload()
@@ -1079,6 +1178,26 @@ def create_customer(customer_name, customer_type="Individual", mobile_no=None, e
 
 
 @frappe.whitelist()
+def update_customer_phone(customer, mobile_no):
+	"""Add or update customer mobile number from IMOGI Kasir."""
+	_require_cashier_access()
+	ensure_setup_ready()
+	if not customer or not frappe.db.exists("Customer", customer):
+		frappe.throw(_("Customer {0} not found").format(customer))
+
+	mobile_no = (mobile_no or "").strip()
+	if not mobile_no:
+		frappe.throw(_("Nomor HP wajib diisi"))
+
+	from imogi_pos.api.customer_api import _serialize_customer, _upsert_customer_contact
+
+	doc = frappe.get_doc("Customer", customer)
+	_upsert_customer_contact(doc, doc.customer_name, mobile_no=mobile_no)
+	frappe.db.commit()
+	return _serialize_customer(doc, mobile_no=mobile_no)
+
+
+@frappe.whitelist()
 def scan_barcode(barcode, pos_profile=None, branch=None):
 	"""Resolve barcode / item code for cashier scanner (auto-add to cart)."""
 	_require_cashier_access()
@@ -1158,6 +1277,239 @@ def get_receipt_url(order_name):
 		"url": f"/printview?doctype=Riwayat Order&name={order_name}&format={print_format}&trigger_print=1",
 		"print_format": print_format,
 	}
+
+
+def _normalize_whatsapp_phone(phone):
+	if not phone:
+		return ""
+	digits = re.sub(r"\D", "", str(phone).strip())
+	if not digits:
+		return ""
+	if digits.startswith("0"):
+		digits = "62" + digits[1:]
+	elif not digits.startswith("62"):
+		digits = "62" + digits
+	return digits
+
+
+def _get_order_whatsapp_phone(order, settings, customer_phone=None):
+	phone = (customer_phone or "").strip()
+	customer = None
+	if not phone:
+		if isinstance(order, dict):
+			phone = (order.get("customer_phone") or "").strip()
+			customer = order.get("customer")
+		else:
+			phone = (getattr(order, "customer_phone", None) or "").strip()
+			customer = getattr(order, "customer", None)
+	if not phone and customer:
+		phone = _resolve_customer_phone(customer)
+	if not phone:
+		wa_cfg = get_whatsapp_receipt_config(settings)
+		phone = wa_cfg["whatsapp_receipt_default_phone"]
+	return _normalize_whatsapp_phone(phone)
+
+
+def _build_receipt_pdf_path(order_name, print_format):
+	query = (
+		f"doctype={quote('Riwayat Order')}"
+		f"&name={quote(order_name)}"
+		f"&format={quote(print_format)}"
+		"&no_letterhead=1"
+	)
+	return f"/api/method/frappe.utils.print_format.download_pdf?{query}"
+
+
+def _build_receipt_pdf_url(order_name, print_format):
+	return get_url(_build_receipt_pdf_path(order_name, print_format))
+
+
+def _generate_receipt_pdf_bytes(order_name, print_format):
+	"""Render receipt print format to PDF bytes for WhatsApp attachment."""
+	from imogi_pos.imogi_pos.utils.receipt_branding import generate_receipt_pdf_bytes
+
+	return generate_receipt_pdf_bytes(order_name, print_format)
+
+
+def _format_whatsapp_message(template, *, order_name, total, customer, pdf_url=""):
+	message = (template or "").format(
+		order_name=order_name,
+		total=total,
+		pdf_url=pdf_url or "",
+		customer=customer or "",
+	)
+	# Drop empty "unduh pdf" lines when sending file attachment instead of link.
+	lines = []
+	for line in message.splitlines():
+		stripped = line.strip()
+		if not stripped:
+			lines.append("")
+			continue
+		if pdf_url and pdf_url in stripped:
+			continue
+		if stripped.lower().startswith("unduh struk pdf"):
+			continue
+		lines.append(line)
+	text = "\n".join(lines)
+	while "\n\n\n" in text:
+		text = text.replace("\n\n\n", "\n\n")
+	return text.strip()
+
+
+@frappe.whitelist()
+def get_receipt_whatsapp_share(order_name, customer_phone=None):
+	"""WhatsApp share payload for receipt PDF (manual / browser fallback)."""
+	_require_cashier_access()
+	payload = _prepare_whatsapp_receipt(order_name, customer_phone)
+	payload["pdf_base64"] = base64.b64encode(payload.pop("_pdf_bytes")).decode("ascii")
+	payload["sent"] = False
+	return payload
+
+
+@frappe.whitelist()
+def send_whatsapp_receipt(order_name, customer_phone=None):
+	"""Send receipt PDF via WhatsApp — Fonnte server or browser fallback payload."""
+	_require_cashier_access()
+	payload = _prepare_whatsapp_receipt(order_name, customer_phone)
+	pdf_bytes = payload.pop("_pdf_bytes")
+	settings = get_settings()
+	wa_cfg = get_whatsapp_receipt_config(settings)
+
+	if (wa_cfg.get("whatsapp_api_provider") or "").strip() == "Fonnte":
+		from imogi_pos.imogi_pos.utils.whatsapp_send import send_fonnte_document
+
+		result = send_fonnte_document(
+			wa_cfg["fonnte_api_token"],
+			payload["phone"],
+			payload["message"],
+			pdf_bytes,
+			payload["filename"],
+		)
+		return {
+			"sent": True,
+			"method": "fonnte",
+			"phone": result.get("phone") or payload["phone"],
+			"message": payload["message"],
+		}
+
+	payload["pdf_base64"] = base64.b64encode(pdf_bytes).decode("ascii")
+	payload["sent"] = False
+	return payload
+
+
+def _prepare_whatsapp_receipt(order_name, customer_phone=None):
+	"""Build WhatsApp receipt payload + PDF bytes."""
+	if not frappe.db.exists("Riwayat Order", order_name):
+		frappe.throw(_("Order {0} not found").format(order_name))
+
+	settings = get_settings()
+	wa_cfg = get_whatsapp_receipt_config(settings)
+	if not wa_cfg["enable_whatsapp_receipt"]:
+		frappe.throw(_("Fitur kirim struk WhatsApp tidak aktif di Settings."))
+
+	order = frappe.get_doc("Riwayat Order", order_name)
+	print_format = settings.receipt_print_format or "IMOGI POS Receipt"
+	pdf_path = _build_receipt_pdf_path(order_name, print_format)
+	phone = _get_order_whatsapp_phone(order, settings, customer_phone=customer_phone)
+
+	if not phone:
+		frappe.throw(
+			_("Nomor HP customer tidak ditemukan. Isi <b>No. HP / WhatsApp</b> saat membuat customer di kasir.")
+		)
+
+	template = wa_cfg["whatsapp_receipt_message"]
+	total = fmt_money(order.grand_total, currency=order.currency)
+	customer_label = order.customer_name or order.customer or ""
+	message = _format_whatsapp_message(
+		template,
+		order_name=order.name,
+		total=total,
+		customer=customer_label,
+		pdf_url="",
+	)
+	wa_url = f"https://wa.me/{phone}?text={quote(message)}" if phone else ""
+	pdf_bytes = _generate_receipt_pdf_bytes(order_name, print_format)
+
+	return {
+		"phone": phone,
+		"message": message,
+		"pdf_path": pdf_path,
+		"pdf_url": get_url(pdf_path),
+		"wa_url": wa_url,
+		"filename": f"{order.name}.pdf",
+		"server_send_enabled": (wa_cfg.get("whatsapp_api_provider") or "").strip() == "Fonnte"
+		and bool((wa_cfg.get("fonnte_api_token") or "").strip()),
+		"_pdf_bytes": pdf_bytes,
+	}
+
+
+@frappe.whitelist()
+def update_awaiting_order_customer(order_name, customer=None, customer_phone=None):
+	"""Sync customer + phone on unpaid cashier order."""
+	_require_cashier_access()
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("write")
+	_verify_cashier_pending_order(order)
+
+	resolved_customer = customer if customer and frappe.db.exists("Customer", customer) else order.customer
+	phone = (customer_phone or "").strip() or _resolve_checkout_customer_phone(
+		customer=resolved_customer,
+		order_name=order.name,
+	)
+
+	updates = {}
+	if customer and frappe.db.exists("Customer", customer):
+		updates["customer"] = customer
+	if phone:
+		updates["customer_phone"] = phone
+
+	if updates:
+		for field, value in updates.items():
+			frappe.db.set_value("Riwayat Order", order.name, field, value, update_modified=True)
+
+	frappe.db.commit()
+	return {
+		"customer": updates.get("customer") or order.customer,
+		"customer_phone": updates.get("customer_phone") or order.customer_phone or "",
+	}
+
+
+@frappe.whitelist()
+def get_customer_contact(customer):
+	"""Mobile/email for customer picker in IMOGI Kasir."""
+	_require_cashier_access()
+	if not customer or not frappe.db.exists("Customer", customer):
+		return {"mobile_no": "", "email_id": ""}
+	from imogi_pos.api.customer_api import _get_customer_contact
+
+	contact = _get_customer_contact(customer) or {}
+	from imogi_pos.api.customer_api import _contact_phone
+
+	return {
+		"mobile_no": _contact_phone(contact),
+		"email_id": (contact.get("email_id") or "").strip(),
+	}
+
+
+@frappe.whitelist()
+def resolve_checkout_customer_phone(customer=None, customer_phone=None, order_name=None):
+	"""Resolve customer phone for cashier checkout validation."""
+	_require_cashier_access()
+	pos_profile = _resolve_cashier_branch().get("pos_profile")
+	phone = _resolve_checkout_customer_phone(
+		customer=customer,
+		customer_phone=customer_phone,
+		pos_profile=pos_profile,
+		order_name=order_name,
+	)
+	return {"phone": phone, "ok": bool(phone)}
+
+
+@frappe.whitelist()
+def get_receipt_delivery_flags():
+	"""Latest receipt auto-print / WhatsApp flags for cashier UI."""
+	_require_cashier_access()
+	return get_whatsapp_receipt_config(get_settings())
 
 
 @frappe.whitelist()

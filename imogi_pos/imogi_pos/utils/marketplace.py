@@ -141,6 +141,7 @@ def complete_marketplace_order(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=order.customer,
+		customer_phone=getattr(order, "customer_phone", None),
 		company=order.company,
 		settings=settings,
 	)

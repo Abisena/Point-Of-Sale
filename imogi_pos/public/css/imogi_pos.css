@@ -2730,12 +2730,15 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 .imogi-settings-page .form-section[data-fieldname="general_section"] .frappe-control[data-fieldname="enable_pos_shift"],
 .imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="enable_kitchen_display"],
 .imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="enable_fulfillment"],
-.imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="kitchen_item_groups"],
-.imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="fulfillment_for_order_types"],
+.imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="kitchen_item_group_rows"],
+.imogi-settings-page .form-section[data-fieldname="flow_section"] .frappe-control[data-fieldname="fulfillment_order_type_rows"],
 .imogi-settings-page .form-section[data-fieldname="inventory_section"] .frappe-control[data-fieldname="low_stock_alert_roles"],
 .imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="enable_receipt_print"],
 .imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="receipt_header"],
 .imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="receipt_footer"],
+.imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="auto_print_receipt_on_success"],
+.imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="enable_whatsapp_receipt"],
+.imogi-settings-page .form-section[data-fieldname="receipt_section"] .frappe-control[data-fieldname="whatsapp_receipt_message"],
 .imogi-settings-page .form-section[data-fieldname="analytics_section"] .frappe-control[data-fieldname="enable_realtime_notifications"] {
 	grid-column: 1 / -1;
 }
@@ -4672,15 +4675,195 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 	background: linear-gradient(160deg, #f5f3ff 0%, #ede9fe 55%, #ddd6fe 100%);
 }
 
-.imogi-store-identity-layout {
+.imogi-settings-page .imogi-store-identity-section > .section-head {
+	display: none !important;
+}
+
+.imogi-store-identity-section > .imogi-settings-flat-hint {
+	display: none !important;
+}
+
+.imogi-settings-dock-grid {
 	display: grid;
-	gap: 24px;
-	grid-template-columns: minmax(0, 1.15fr) minmax(280px, 360px);
-	margin-top: 4px;
+	gap: 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-top: 16px;
+	width: 100%;
+}
+
+.imogi-shift-settings-dock,
+.imogi-kitchen-settings-dock,
+.imogi-receipt-settings-dock {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	height: 100%;
+	margin: 0;
+	min-width: 0;
+	padding: 0;
+	width: 100%;
+}
+
+.imogi-receipt-settings-dock {
+	border-top: 1px solid #e4e4e7;
+	margin-top: 16px;
+	padding-top: 16px;
+}
+
+.imogi-receipt-dock-head {
+	color: #0f1f35;
+	font-size: 13px;
+	font-weight: 700;
+	margin: 0 0 10px;
+}
+
+.imogi-receipt-form-grid--horizontal {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+	.imogi-receipt-form-grid--horizontal {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-dock-card-head {
+	color: #0f1f35;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0 0 10px;
+}
+
+.imogi-store-identity-section .section-body > .row {
+	display: none !important;
+}
+
+@media (max-width: 1024px) {
+	.imogi-settings-dock-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.imogi-store-identity-card {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-sizing: border-box;
+	margin-bottom: 24px;
+	padding: 0 0 24px;
+	width: 100%;
+}
+
+.imogi-settings-tab-panel--general .imogi-store-identity-card {
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.imogi-store-identity-card-head {
+	display: none !important;
+}
+
+.imogi-store-identity-main {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-width: 0;
+	width: 100%;
+}
+
+.imogi-store-info-banner {
+	align-items: flex-start;
+	background: #f7f7f7;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	color: #374151;
+	display: flex;
+	font-size: 12px;
+	gap: 10px;
+	line-height: 1.5;
+	padding: 12px 14px;
+}
+
+.imogi-store-info-banner i {
+	color: #111827;
+	flex-shrink: 0;
+	font-size: 14px;
+	margin-top: 1px;
+}
+
+.imogi-store-trust-row {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.imogi-store-trust-card {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	padding: 14px 12px;
+}
+
+.imogi-store-trust-icon {
+	align-items: center;
+	background: #f3f4f6;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	color: #111827;
+	display: inline-flex;
+	font-size: 15px;
+	height: 34px;
+	justify-content: center;
+	margin-bottom: 10px;
+	width: 34px;
+}
+
+.imogi-store-trust-title {
+	color: #111827;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.35;
+	margin-bottom: 4px;
+}
+
+.imogi-store-trust-desc {
+	color: #6b7280;
+	font-size: 11px;
+	line-height: 1.45;
+}
+
+.imogi-store-identity-layout {
+	align-items: start;
+	display: grid;
+	gap: 20px 24px;
+	grid-template-columns: minmax(0, 1fr) 248px;
+	margin-top: 0;
+	width: 100%;
+}
+
+.imogi-store-identity-layout .imogi-receipt-preview-wrap {
+	justify-self: end;
+	max-width: 100%;
+	width: 248px;
 }
 
 @media (max-width: 1024px) {
 	.imogi-store-identity-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.imogi-store-identity-layout .imogi-receipt-preview-wrap {
+		justify-self: center;
+		width: min(100%, 248px);
+	}
+
+	.imogi-store-trust-row {
 		grid-template-columns: 1fr;
 	}
 }
@@ -4706,7 +4889,10 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 	}
 
 	.imogi-store-form-grid--horizontal .imogi-store-field .control-label {
+		color: #374151;
 		float: none !important;
+		font-size: 13px;
+		font-weight: 600;
 		margin: 0 !important;
 		text-align: left;
 		width: auto !important;
@@ -4729,17 +4915,19 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 }
 
 .imogi-receipt-preview-wrap {
-	background: #fafafa;
-	border: 1px solid #e5e7eb;
+	background: transparent;
+	border: none;
 	border-radius: 0;
-	padding: 12px;
+	box-sizing: border-box;
+	padding: 0;
+	width: 100%;
 }
 
 .imogi-receipt-preview-head {
-	color: #64748b;
-	font-size: 11px;
+	color: #6b7280;
+	font-size: 10px;
 	font-weight: 800;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.08em;
 	margin-bottom: 10px;
 	text-transform: uppercase;
 }
@@ -4747,12 +4935,20 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 .imogi-receipt-preview-paper {
 	background: #fff;
 	border: 1px solid #e5e7eb;
-	border-radius: 0;
+	border-radius: 8px;
 	box-shadow: none;
+	box-sizing: border-box;
 	font-family: "Courier New", Courier, monospace;
 	font-size: 11px;
 	line-height: 1.45;
 	padding: 14px 12px;
+	width: 100%;
+}
+
+.imogi-receipt-preview-body {
+	margin: 0 auto;
+	max-width: 100%;
+	width: 100%;
 }
 
 .imogi-rcpt-store {
@@ -4763,17 +4959,18 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 }
 
 .imogi-rcpt-line {
-	color: #475569;
+	color: #4b5563;
 	text-align: center;
 }
 
 .imogi-rcpt-msg {
+	color: #111827;
 	margin: 8px 0 4px;
 	text-align: center;
 }
 
 .imogi-rcpt-divider {
-	color: #94a3b8;
+	color: #9ca3af;
 	margin: 6px 0;
 	text-align: center;
 }
@@ -4781,7 +4978,23 @@ body.imogi-table-service-active.imogi-pos-cashier-fullscreen .imogi-ts-layout {
 .imogi-rcpt-item,
 .imogi-rcpt-total {
 	display: flex;
+	gap: 8px;
 	justify-content: space-between;
+}
+
+.imogi-rcpt-item span:first-child,
+.imogi-rcpt-total span:first-child {
+	min-width: 0;
+	overflow: hidden;
+	padding-right: 4px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.imogi-rcpt-item span:last-child,
+.imogi-rcpt-total span:last-child {
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
 }
 
 .imogi-rcpt-total {

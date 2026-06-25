@@ -135,6 +135,8 @@ imogi_pos.loyalty.refresh_preview = function (page, dialog, subtotal) {
 		...page.branch_api_args(),
 	};
 	if (page.selected_customer) args.customer = page.selected_customer;
+	const phone = page.get_customer_phone_draft?.();
+	if (phone) args.customer_phone = phone;
 
 	frappe.call({
 		method: "imogi_pos.api.loyalty_api.preview_promotions",

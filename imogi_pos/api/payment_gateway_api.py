@@ -38,6 +38,7 @@ def get_payment_gateway_status():
 def create_qris_payment(
 	items,
 	customer=None,
+	customer_phone=None,
 	discount_type=None,
 	discount_value=None,
 	voucher_code=None,
@@ -66,6 +67,7 @@ def create_qris_payment(
 	return create_gateway_payment(
 		parsed_items,
 		customer=customer,
+		customer_phone=customer_phone,
 		discount_type=discount_type,
 		discount_value=discount_value,
 		voucher_code=voucher_code,

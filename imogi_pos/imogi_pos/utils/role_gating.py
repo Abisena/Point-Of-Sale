@@ -205,6 +205,16 @@ def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settin
 	if not is_role_gating_enabled(settings):
 		return True
 
+	from imogi_pos.imogi_pos.utils.role_authorization import (
+		is_role_authorization_enabled,
+		user_has_grant_for_feature,
+	)
+
+	if is_role_authorization_enabled(settings) and user_has_grant_for_feature(
+		feature_id, user=user, settings=settings
+	):
+		return True
+
 	if _cashier_checkout_feature_enabled(feature_id, user, settings):
 		return True
 
@@ -249,6 +259,17 @@ def is_workspace_role_allowed_for_feature(
 		return True
 	if required == "Supervisor" and user_roles & WORKSPACE_SUPERVISOR_ESCALATION_MATRIX_ROLES:
 		return True
+
+	from imogi_pos.imogi_pos.utils.role_authorization import (
+		is_role_authorization_enabled,
+		user_has_grant_for_feature,
+	)
+
+	if is_role_authorization_enabled(settings) and user_has_grant_for_feature(
+		feature_id, user=user, settings=settings
+	):
+		return True
+
 	return False
 
 

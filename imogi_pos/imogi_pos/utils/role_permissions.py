@@ -184,7 +184,6 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("IMOGI POS Loyalty Member", {"read": 1, "write": 1, "create": 1}),
 		("IMOGI POS Voucher", {"read": 1}),
 		("IMOGI POS Loyalty Transaction", {"read": 1}),
-		("IMOGI POS Promo Rule", {"read": 1}),
 		("IMOGI POS Loyalty Tier", {"read": 1}),
 		("IMOGI POS Offline Checkout", {"read": 1, "write": 1, "create": 1}),
 	],

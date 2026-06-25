@@ -16,10 +16,12 @@ def ensure_receipt_print_format():
 	_ensure_receipt_print_format()
 
 
-def _receipt_print_html(header, footer):
+def _receipt_print_html(header, footer, logo_html="", tax_rate=11):
 	return """<style>
 .imogi-receipt { color: #111; font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; margin: 0 auto; max-width: 72mm; padding: 8px 4px 16px; }
 .imogi-receipt-head { border-bottom: 2px solid #111; margin-bottom: 10px; padding-bottom: 10px; text-align: center; }
+.imogi-receipt-logo-wrap { margin-bottom: 8px; text-align: center; }
+.imogi-receipt-logo { display: block; height: auto; margin: 0 auto; max-height: 56px; max-width: 100%; object-fit: contain; width: auto; }
 .imogi-receipt-store { font-size: 17px; font-weight: 800; letter-spacing: 0.03em; line-height: 1.2; margin: 0; text-transform: uppercase; }
 .imogi-receipt-sub { color: #666; font-size: 10px; margin-top: 4px; }
 .imogi-receipt-meta { border-bottom: 1px dashed #bbb; margin-bottom: 10px; padding-bottom: 8px; }
@@ -45,6 +47,7 @@ def _receipt_print_html(header, footer):
 </style>
 <div class="imogi-receipt">
   <div class="imogi-receipt-head">
+    __LOGO_HTML__
     <div class="imogi-receipt-store">__HEADER__</div>
     <div class="imogi-receipt-sub">{{ doc.company or "" }}</div>
   </div>
@@ -96,9 +99,8 @@ def _receipt_print_html(header, footer):
     <div class="imogi-receipt-total-row is-discount"><span>Diskon</span><strong>-{{ frappe.utils.fmt_money(doc.discount_amount, currency=doc.currency) }}</strong></div>
     {% endif %}
     {% if doc.tax_amount %}
-    {% set tax_rate = frappe.db.get_single_value("IMOGI POS Settings", "sales_tax_rate") or 11 %}
     <div class="imogi-receipt-total-row"><span>DPP</span><strong>{{ frappe.utils.fmt_money(doc.taxable_amount, currency=doc.currency) }}</strong></div>
-    <div class="imogi-receipt-total-row"><span>PPN {{ tax_rate }}%</span><strong>{{ frappe.utils.fmt_money(doc.tax_amount, currency=doc.currency) }}</strong></div>
+    <div class="imogi-receipt-total-row"><span>PPN __TAX_RATE__%</span><strong>{{ frappe.utils.fmt_money(doc.tax_amount, currency=doc.currency) }}</strong></div>
     {% endif %}
     <div class="imogi-receipt-total-row is-grand"><span>Total Bayar</span><strong>{{ frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) }}</strong></div>
   </div>
@@ -113,18 +115,33 @@ def _receipt_print_html(header, footer):
   </div>
   {% endif %}
   <div class="imogi-receipt-foot">__FOOTER__</div>
-</div>""".replace("__HEADER__", header).replace("__FOOTER__", footer)
+</div>""".replace("__HEADER__", header).replace("__FOOTER__", footer).replace(
+		"__LOGO_HTML__", logo_html or ""
+	).replace("__TAX_RATE__", str(tax_rate))
 
 
 def _ensure_receipt_print_format():
 	name = "IMOGI POS Receipt"
 	try:
-		settings = frappe.get_single("IMOGI POS Settings")
+		from imogi_pos.imogi_pos.utils.flow import get_settings
+		from imogi_pos.imogi_pos.utils.receipt_branding import get_receipt_logo_url
+
+		settings = get_settings()
+		header = (settings.receipt_header if settings else None) or "IMOGI POS"
+		footer = (settings.receipt_footer if settings else None) or "Terima kasih"
+		logo_url = get_receipt_logo_url(settings)
+		logo_html = ""
+		if logo_url:
+			safe_url = frappe.utils.escape_html(logo_url)
+			logo_html = (
+				f'<div class="imogi-receipt-logo-wrap">'
+				f'<img src="{safe_url}" alt="Logo" class="imogi-receipt-logo">'
+				f"</div>"
+			)
+		tax_rate = frappe.utils.cint(getattr(settings, "sales_tax_rate", None) or 11)
+		html = _receipt_print_html(header, footer, logo_html=logo_html, tax_rate=tax_rate)
 	except Exception:
-		settings = None
-	header = (settings.receipt_header if settings else None) or "IMOGI POS"
-	footer = (settings.receipt_footer if settings else None) or "Terima kasih"
-	html = _receipt_print_html(header, footer)
+		html = _receipt_print_html("IMOGI POS", "Terima kasih")
 
 	if frappe.db.exists("Print Format", name):
 		frappe.db.set_value("Print Format", name, "html", html, update_modified=False)

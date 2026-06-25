@@ -30,6 +30,8 @@ def _serialize_order(order):
 		"docstatus": order.docstatus,
 		"company": order.company,
 		"customer": order.customer,
+		"customer_name": order.customer_name,
+		"customer_phone": order.customer_phone or "",
 		"order_channel": order.order_channel,
 		"order_type": order.order_type,
 		"order_source": order.order_source,

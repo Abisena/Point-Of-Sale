@@ -39,12 +39,15 @@ def settings_for_company(company=None, settings=None):
 	return frappe._dict(data)
 
 
+from imogi_pos.imogi_pos.utils.settings_flow import get_kitchen_item_groups, get_fulfillment_order_types
+
+
 def is_kitchen_item(item_code: str) -> bool:
 	if frappe.db.get_value("Item", item_code, "imogi_is_kitchen_item"):
 		return True
 
 	settings = get_settings()
-	groups = [g.strip() for g in (settings.kitchen_item_groups or "").split(",") if g.strip()]
+	groups = get_kitchen_item_groups(settings)
 	if not groups:
 		return False
 
@@ -56,7 +59,7 @@ def set_order_flags(order):
 	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 
 	settings = get_settings()
-	kitchen_types = [t.strip() for t in (settings.fulfillment_for_order_types or "").split("\n") if t.strip()]
+	kitchen_types = get_fulfillment_order_types(settings)
 
 	order.requires_kitchen = 0
 	if is_setting_enabled("enable_kitchen_display", settings):

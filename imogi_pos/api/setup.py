@@ -176,7 +176,9 @@ def complete_setup(
 
 	settings = frappe.get_single("IMOGI POS Settings")
 	if business_type == BUSINESS_RESTAURANT and kitchen_item_groups:
-		settings.kitchen_item_groups = kitchen_item_groups
+		from imogi_pos.imogi_pos.utils.settings_flow import append_kitchen_item_groups_from_text
+
+		append_kitchen_item_groups_from_text(settings, kitchen_item_groups)
 
 	settings.setup_complete = 1
 	settings.save(ignore_permissions=True)

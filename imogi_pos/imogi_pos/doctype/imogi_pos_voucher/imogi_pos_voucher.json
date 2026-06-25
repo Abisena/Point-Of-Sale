@@ -14,6 +14,9 @@
   "min_order_amount",
   "max_redemptions",
   "redemption_count",
+  "owner_section",
+  "customer",
+  "customer_mobile",
   "validity_section",
   "valid_from",
   "valid_upto",
@@ -79,6 +82,27 @@
    "fieldtype": "Int",
    "label": "Sudah Dipakai",
    "read_only": 1
+  },
+  {
+   "fieldname": "owner_section",
+   "fieldtype": "Section Break",
+   "label": "Pemilik Voucher (Opsional)"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Pemilik (Customer)",
+   "options": "Customer",
+   "description": "Opsional. Jika diisi, voucher hanya bisa dipakai oleh customer ini."
+  },
+  {
+   "fieldname": "customer_mobile",
+   "fieldtype": "Data",
+   "options": "Phone",
+   "label": "No. HP Pemilik",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "No. HP unik pemilik voucher. Jika diisi, voucher hanya berlaku untuk No. HP ini."
   },
   {
    "fieldname": "validity_section",

@@ -44,8 +44,8 @@
   "flow_section",
   "enable_kitchen_display",
   "enable_fulfillment",
-  "kitchen_item_groups",
-  "fulfillment_for_order_types",
+  "kitchen_item_group_rows",
+  "fulfillment_order_type_rows",
   "inventory_section",
   "low_stock_check_interval",
   "low_stock_alert_roles",
@@ -59,8 +59,15 @@
   "thermal_print_mode",
   "thermal_printer_width",
   "receipt_print_format",
+  "receipt_logo",
   "receipt_header",
   "receipt_footer",
+  "auto_print_receipt_on_success",
+  "enable_whatsapp_receipt",
+  "whatsapp_api_provider",
+  "fonnte_api_token",
+  "whatsapp_receipt_default_phone",
+  "whatsapp_receipt_message",
   "import_section",
   "import_menu",
   "import_stock",
@@ -105,6 +112,9 @@
   "enable_marketplace_orders",
   "marketplace_webhook_secret",
   "operations_section",
+  "enable_role_authorization",
+  "role_authorization_matrix",
+  "role_authorizations",
   "enable_role_gating",
   "enable_approval_workflow",
   "approval_discount_threshold_percent",
@@ -267,7 +277,6 @@
    "reqd": 1
   },
   {
-   "description": "Profil kasir yang dipakai saat proses pembayaran.",
    "fieldname": "default_pos_profile",
    "fieldtype": "Link",
    "label": "POS Profile",
@@ -275,7 +284,6 @@
    "reqd": 1
   },
   {
-   "description": "Gudang default untuk pengurangan stok otomatis.",
    "fieldname": "default_warehouse",
    "fieldtype": "Link",
    "label": "Gudang Default",
@@ -283,15 +291,13 @@
   },
   {
    "default": "1",
-   "description": "Jika aktif, kasir wajib <b>Buka Shift</b> (POS Opening Entry) sebelum checkout dan bisa tutup shift di akhir hari. Nonaktifkan untuk UMKM yang tidak pakai buka/tutup kas.",
    "fieldname": "enable_pos_shift",
    "fieldtype": "Check",
-   "label": "Wajib Shift Kasir (Buka/Tutup)"
+   "label": "Session Kasir"
   },
   {
    "default": "0",
    "depends_on": "eval:doc.enable_pos_shift",
-   "description": "Jika aktif, hitung uang per lembar (Rp 100 … Rp 100.000) dengan input detail. Jika nonaktif, mode cepat dengan tombol 10rb, 50rb, 100rb, 500rb, dan 1 juta.",
    "fieldname": "enable_shift_cash_detail",
    "fieldtype": "Check",
    "label": "Detail Denominasi Uang Tunai"
@@ -391,20 +397,18 @@
    "label": "Fulfillment"
   },
   {
-   "default": "Consumable",
    "depends_on": "eval:doc.enable_kitchen_display",
-   "description": "Nama Item Group, pisahkan dengan koma. Contoh: Consumable, Food",
-   "fieldname": "kitchen_item_groups",
-   "fieldtype": "Small Text",
-   "label": "Item Group Dapur"
+   "fieldname": "kitchen_item_group_rows",
+   "fieldtype": "Table",
+   "label": "Item Group Dapur",
+   "options": "IMOGI POS Settings Kitchen Item Group"
   },
   {
-   "default": "Takeaway\nDelivery",
    "depends_on": "eval:doc.enable_fulfillment",
-   "description": "Satu tipe order per baris.",
-   "fieldname": "fulfillment_for_order_types",
-   "fieldtype": "Small Text",
-   "label": "Tipe Order Fulfillment"
+   "fieldname": "fulfillment_order_type_rows",
+   "fieldtype": "Table",
+   "label": "Tipe Order Fulfillment",
+   "options": "IMOGI POS Settings Fulfillment Order Type"
   },
   {
    "collapsible": 1,
@@ -496,6 +500,13 @@
    "options": "Print Format"
   },
   {
+   "depends_on": "eval:doc.enable_receipt_print",
+   "description": "Logo toko yang ditampilkan di bagian atas struk (PNG/JPG, disarankan latar transparan).",
+   "fieldname": "receipt_logo",
+   "fieldtype": "Attach Image",
+   "label": "Logo Struk"
+  },
+  {
    "default": "IMOGI POS",
    "depends_on": "eval:doc.enable_receipt_print",
    "fieldname": "receipt_header",
@@ -508,6 +519,53 @@
    "fieldname": "receipt_footer",
    "fieldtype": "Data",
    "label": "Footer Struk"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "description": "Cetak struk otomatis setelah transaksi berhasil. Mode ESC/POS Serial mencetak langsung tanpa dialog browser.",
+   "fieldname": "auto_print_receipt_on_success",
+   "fieldtype": "Check",
+   "label": "Cetak Struk Otomatis"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_receipt_print",
+   "description": "Tampilkan tombol WhatsApp di modal Transaksi Berhasil. Struk dikirim ke nomor HP customer yang diisi di kasir.",
+   "fieldname": "enable_whatsapp_receipt",
+   "fieldtype": "Check",
+   "label": "Aktifkan Kirim Struk WA"
+  },
+  {
+   "default": "Manual",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "Manual = unduh/lampirkan di browser. Fonnte = kirim PDF otomatis dari server (butuh akun fonnte.com + paket yang support file).",
+   "fieldname": "whatsapp_api_provider",
+   "fieldtype": "Select",
+   "label": "Cara Kirim WA",
+   "options": "Manual\nFonnte"
+  },
+  {
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.whatsapp_api_provider=='Fonnte'",
+   "description": "API token dari dashboard Fonnte (device yang sudah scan QR WhatsApp).",
+   "fieldname": "fonnte_api_token",
+   "fieldtype": "Password",
+   "label": "Fonnte API Token"
+  },
+  {
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "Opsional — hanya dipakai jika customer tidak punya nomor HP di kasir.",
+   "fieldname": "whatsapp_receipt_default_phone",
+   "fieldtype": "Data",
+   "label": "Nomor WA Fallback (opsional)"
+  },
+  {
+   "default": "Terima kasih atas kunjungan Anda!\n\nStruk pesanan *{order_name}*\nTotal: {total}\n\nUnduh struk PDF:\n{pdf_url}",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "Variabel: {order_name}, {total}, {pdf_url}, {customer}",
+   "fieldname": "whatsapp_receipt_message",
+   "fieldtype": "Small Text",
+   "label": "Template Pesan WA"
   },
   {
    "collapsible": 1,
@@ -806,6 +864,26 @@
    "fieldname": "operations_section",
    "fieldtype": "Section Break",
    "label": "Operasional Lanjutan"
+  },
+  {
+   "default": "1",
+   "description": "Centang per role untuk menu/doctype opsional (mis. Kasir boleh buka Promo Rule).",
+   "fieldname": "enable_role_authorization",
+   "fieldtype": "Check",
+   "label": "Aktifkan Otorisasi per Role"
+  },
+  {
+   "depends_on": "eval:doc.enable_role_authorization",
+   "fieldname": "role_authorization_matrix",
+   "fieldtype": "HTML",
+   "label": "Matriks Otorisasi Role"
+  },
+  {
+   "fieldname": "role_authorizations",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Role Authorizations",
+   "options": "IMOGI POS Role Authorization"
   },
   {
    "default": "0",

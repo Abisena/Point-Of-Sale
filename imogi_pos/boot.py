@@ -241,6 +241,14 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_thermal_mode = settings.thermal_print_mode or "Browser"
 	bootinfo.imogi_pos_receipt_header = settings.receipt_header or ""
 	bootinfo.imogi_pos_receipt_footer = settings.receipt_footer or __("Terima kasih")
+	from imogi_pos.imogi_pos.utils.receipt_branding import get_receipt_logo_url
+
+	bootinfo.imogi_pos_receipt_logo_url = get_receipt_logo_url(settings)
+	from imogi_pos.imogi_pos.utils.receipt_branding import get_whatsapp_receipt_config
+
+	wa_cfg = get_whatsapp_receipt_config(settings)
+	bootinfo.imogi_pos_enable_whatsapp_receipt = wa_cfg["enable_whatsapp_receipt"]
+	bootinfo.imogi_pos_auto_print_receipt_on_success = wa_cfg["auto_print_receipt_on_success"]
 	from imogi_pos.imogi_pos.utils.sales_tax import get_sales_tax_config
 
 	tax_cfg = get_sales_tax_config(settings)

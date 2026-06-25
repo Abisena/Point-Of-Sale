@@ -1,11 +1,32 @@
 # Copyright (c) 2026, Imogi and contributors
 """Loyalty points and voucher promotions for IMOGI POS."""
 
+import re
+
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, getdate, now_datetime, today
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
+
+
+def normalize_phone(phone):
+	"""Normalisasi No. HP untuk pencocokan (hilangkan format, 62/+62 -> 0)."""
+	digits = re.sub(r"\D", "", phone or "")
+	if not digits:
+		return ""
+	if digits.startswith("62"):
+		digits = "0" + digits[2:]
+	return digits
+
+
+def _resolve_customer_phone_for_voucher(customer):
+	if not customer:
+		return ""
+	from imogi_pos.api.customer_api import _contact_phone, _get_customer_contact
+
+	contact = _get_customer_contact(customer)
+	return _contact_phone(contact) if contact else ""
 
 
 def get_loyalty_config(settings=None):
@@ -103,7 +124,45 @@ def _manual_discount(subtotal, discount_type=None, discount_value=None):
 	return 0
 
 
-def validate_voucher(voucher_code, company=None, subtotal=0):
+def _resolve_checkout_phone(customer=None, customer_phone=None):
+	"""No. HP saat checkout: input kasir dulu, lalu Contact customer."""
+	phone = normalize_phone(customer_phone)
+	if phone:
+		return phone
+	if customer:
+		return normalize_phone(_resolve_customer_phone_for_voucher(customer))
+	return ""
+
+
+def _validate_voucher_owner(voucher, customer=None, customer_phone=None):
+	"""Voucher tanpa pemilik = bisa dipakai siapa saja."""
+	owner_customer = (voucher.customer or "").strip()
+	owner_mobile = normalize_phone(voucher.customer_mobile)
+	if not owner_customer and not owner_mobile:
+		return
+
+	checkout_customer = (customer or "").strip()
+	checkout_phone = _resolve_checkout_phone(customer, customer_phone)
+	code = voucher.voucher_code
+
+	if owner_mobile:
+		if not checkout_phone:
+			frappe.throw(
+				_("Voucher {0} khusus untuk pemilik. Isi No. HP customer terlebih dahulu.").format(code)
+			)
+		if checkout_phone != owner_mobile:
+			frappe.throw(_("Voucher {0} tidak berlaku untuk No. HP ini").format(code))
+
+	if owner_customer:
+		if not checkout_customer:
+			frappe.throw(
+				_("Voucher {0} khusus untuk customer tertentu. Pilih customer pemilik voucher.").format(code)
+			)
+		if checkout_customer != owner_customer:
+			frappe.throw(_("Voucher {0} hanya bisa dipakai oleh pemiliknya").format(code))
+
+
+def validate_voucher(voucher_code, company=None, subtotal=0, customer=None, customer_phone=None):
 	code = (voucher_code or "").strip().upper()
 	if not code:
 		frappe.throw(_("Kode voucher wajib diisi"))
@@ -138,6 +197,8 @@ def validate_voucher(voucher_code, company=None, subtotal=0):
 			)
 		)
 
+	_validate_voucher_owner(voucher, customer=customer, customer_phone=customer_phone)
+
 	discount_amount = 0
 	if voucher.discount_type == "Percent":
 		discount_amount = subtotal * flt(voucher.discount_value) / 100
@@ -150,6 +211,8 @@ def validate_voucher(voucher_code, company=None, subtotal=0):
 		"discount_type": voucher.discount_type,
 		"discount_value": flt(voucher.discount_value),
 		"discount_amount": flt(discount_amount),
+		"customer": voucher.customer or "",
+		"customer_mobile": voucher.customer_mobile or "",
 	}
 
 
@@ -179,6 +242,7 @@ def compute_checkout_totals(
 	voucher_code=None,
 	loyalty_points_redeem=0,
 	customer=None,
+	customer_phone=None,
 	company=None,
 	settings=None,
 	branch=None,
@@ -204,7 +268,13 @@ def compute_checkout_totals(
 	voucher_discount = 0
 	voucher_meta = None
 	if voucher_code:
-		voucher_meta = validate_voucher(voucher_code, company=company, subtotal=after_manual)
+		voucher_meta = validate_voucher(
+			voucher_code,
+			company=company,
+			subtotal=after_manual,
+			customer=customer,
+			customer_phone=customer_phone,
+		)
 		voucher_discount = flt(voucher_meta["discount_amount"])
 
 	after_voucher = max(0, after_manual - voucher_discount)

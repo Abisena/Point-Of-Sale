@@ -1,10 +1,20 @@
 frappe.provide("imogi_pos");
 
+const _imogi_receipt_print_guard = { key: "", at: 0 };
+
 function imogi_pos_clear_cashier_overlays() {
 	try {
 		frappe.dom.unfreeze();
 	} catch (e) {
 		/* ignore */
+	}
+	document.body.classList.remove("modal-open");
+	document.querySelectorAll(".freeze").forEach((el) => el.remove());
+	const backdrops = document.querySelectorAll(".modal-backdrop");
+	if (backdrops.length > 1) {
+		backdrops.forEach((el, idx) => {
+			if (idx < backdrops.length - 1) el.remove();
+		});
 	}
 	document.body.classList.remove("imogi-variant-open");
 	document.querySelectorAll(".imogi-variant-overlay").forEach((el) => el.remove());
@@ -42,8 +52,9 @@ frappe.pages["imogi-pos-cashier"].on_page_load = function (wrapper) {
 	imogi_pos.cashier_extras?.patch?.();
 	if (!imogi_pos._cashier_settings_listener) {
 		imogi_pos._cashier_settings_listener = true;
-		frappe.realtime.on("imogi_pos_settings_updated", () => {
+		frappe.realtime.on("imogi_pos_settings_updated", (data) => {
 			imogi_pos.active_cashier?.sync_shift_settings?.();
+			imogi_pos.active_cashier?.sync_receipt_delivery_flags?.(data);
 			imogi_pos.active_cashier?.refresh_sales_target?.();
 		});
 		frappe.realtime.on("imogi_pos_order_completed", () => {
@@ -861,15 +872,13 @@ function inject_cashier_css() {
 		.imogi-cashier-cart-empty { align-items: center; color: #94a3b8; display: flex; flex: 1; flex-direction: column; font-size: 13px; justify-content: center; min-height: 220px; padding: 32px 20px; text-align: center; }
 		.imogi-cashier-cart-empty-icon { align-items: center; background: #f1f5f9; border-radius: 999px; color: #cbd5e1; display: inline-flex; font-size: 24px; height: 68px; justify-content: center; margin-bottom: 14px; width: 68px; }
 		.imogi-cashier-cart-empty p { margin: 0; max-width: 220px; }
-		.imogi-cart-row { border-bottom: 1px solid #f1f5f9; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 14px; width: 100%; }
-		.imogi-cart-row-line { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; min-width: 0; width: 100%; }
-		.imogi-cart-row-name { color: #0f172a; flex: 1; font-size: 14px; font-weight: 700; line-height: 1.35; min-width: 0; text-align: left; word-break: break-word; }
-		.imogi-cart-row-amount { color: #0f1f35; flex-shrink: 0; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.35; text-align: right; white-space: nowrap; }
-		.imogi-cart-row-actions { align-items: center; display: flex; gap: 10px; justify-content: space-between; min-width: 0; width: 100%; }
-		.imogi-cart-row-meta { color: #94a3b8; flex: 1; font-size: 12px; line-height: 1.2; min-width: 0; text-align: right; }
-		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; box-sizing: border-box; display: inline-flex; flex-shrink: 0; gap: 0; justify-content: space-between; padding: 2px; width: 112px; }
-		.imogi-qty-btn { align-items: center; background: transparent; border: none; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; flex-shrink: 0; font-size: 18px; font-weight: 700; height: 36px; justify-content: center; line-height: 1; padding: 0; width: 36px; }
-		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; flex: 1; font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 0; text-align: center; }
+		.imogi-cart-row { border-bottom: 1px solid #f1f5f9; box-sizing: border-box; padding: 10px 14px; width: 100%; }
+		.imogi-cart-row-line { align-items: center; column-gap: 8px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; min-width: 0; width: 100%; }
+		.imogi-cart-qty-group { align-items: center; background: #f8fafc; border: 1px solid #e4e4e7; border-radius: 10px; box-sizing: border-box; display: inline-flex; flex-shrink: 0; gap: 0; justify-content: space-between; padding: 2px; width: 88px; }
+		.imogi-qty-btn { align-items: center; background: transparent; border: none; border-radius: 8px; color: #0f1f35; cursor: pointer; display: inline-flex; flex-shrink: 0; font-size: 15px; font-weight: 700; height: 30px; justify-content: center; line-height: 1; padding: 0; width: 28px; }
+		.imogi-cart-qty { align-items: center; color: #0f172a; display: inline-flex; flex: 1; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 800; justify-content: center; line-height: 1; min-width: 0; text-align: center; }
+		.imogi-cart-row-name { align-self: center; color: #0f172a; font-size: 12px; font-weight: 600; line-height: 1.3; min-width: 0; overflow-wrap: anywhere; text-align: left; word-break: break-word; }
+		.imogi-cart-row-amount { align-self: center; color: #0f1f35; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1.3; text-align: right; white-space: nowrap; }
 		.imogi-cashier-cart-foot { background: #fff; border-top: 1px solid #e8edf2; flex-shrink: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
 		.imogi-cashier-order-type-row { margin-bottom: 8px; }
 		.imogi-cashier-order-type-label { color: #52525b; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; text-transform: uppercase; }
@@ -978,8 +987,8 @@ function inject_cashier_css() {
 		.imogi-cashier-promo-hint--pending { background: #fffbeb; border-color: #fde68a; color: #b45309; }
 		@media (pointer: coarse) {
 			.imogi-cashier-group-btn, .imogi-pay-quick-btn, .imogi-cashier-order-type-btn { min-height: 44px; }
-			.imogi-cart-qty-group { min-height: 44px; padding: 3px; width: 120px; }
-			.imogi-qty-btn { height: 38px; width: 38px; }
+			.imogi-cart-qty-group { min-height: 38px; width: 96px; }
+			.imogi-qty-btn { height: 32px; width: 30px; }
 		}
 		.imogi-pay-dialog {
 			--imogi-pay-border: #e4e4e7;
@@ -1390,6 +1399,9 @@ function inject_cashier_css() {
 		.imogi-success-action-btn.is-primary .imogi-success-action-icon { background: rgba(255,255,255,.12); color: #fff; font-size: 16px; height: auto; width: auto; }
 		.imogi-success-action-label { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; }
 		.imogi-success-action-btn.is-primary .imogi-success-action-label { font-size: 14px; }
+		.imogi-success-action-btn[data-action="whatsapp"] .imogi-success-action-icon { background: #dcf8c6; color: #25d366; }
+		.modal.imogi-wa-receipt-dialog { z-index: 2001 !important; }
+		.modal.imogi-wa-receipt-dialog + .modal-backdrop { z-index: 2000 !important; }
 		body.imogi-cashier-active #alert-container {
 			align-items: stretch !important;
 			bottom: auto !important;
@@ -2034,6 +2046,9 @@ imogi_pos.CashierPage = class CashierPage {
 		this.search_timer = null;
 		this.busy = false;
 		this.selected_customer = null;
+		this.selected_customer_mobile = null;
+		this.cashier_customer_phone = null;
+		this._pending_customer_create = null;
 		this.customer_loyalty = null;
 		this.voucher_code = "";
 		this.loyalty_points_redeem = 0;
@@ -2321,6 +2336,9 @@ imogi_pos.CashierPage = class CashierPage {
 			const term = e.target.value.trim();
 			if (!term) {
 				this.selected_customer = null;
+				this.selected_customer_mobile = null;
+				this.cashier_customer_phone = null;
+				this._pending_customer_create = null;
 				this.customer_loyalty = null;
 				this.render_customer_label();
 				return;
@@ -2534,6 +2552,7 @@ imogi_pos.CashierPage = class CashierPage {
 
 	apply_cashier_context(ctx) {
 		this.context = ctx || {};
+		this.apply_receipt_delivery_flags(ctx);
 		this.selected_customer = this.context.default_customer || null;
 		this.enable_pos_shift = cint(this.context.enable_pos_shift);
 		this.requires_shift_workflow = cint(this.context.requires_shift_workflow);
@@ -4193,6 +4212,8 @@ imogi_pos.CashierPage = class CashierPage {
 			...me.branch_api_args(),
 		};
 		if (me.selected_customer) args.customer = me.selected_customer;
+		const qris_phone = me.get_customer_phone_draft?.();
+		if (qris_phone) args.customer_phone = qris_phone;
 		if (me.context.loyalty_enabled && imogi_pos.loyalty) {
 			const promo = imogi_pos.loyalty.get_promo_state(dialog);
 			if (promo.voucher_code) args.voucher_code = promo.voucher_code;
@@ -4484,11 +4505,19 @@ imogi_pos.CashierPage = class CashierPage {
 			callback: (r) => {
 				const customers = (r.message || {}).customers || [];
 				if (!customers.length) {
+					this.selected_customer = null;
+					this.selected_customer_mobile = null;
+					this._pending_customer_create = term;
+					this.render_customer_label();
 					this.prompt_create_customer(term);
 					return;
 				}
 				if (customers.length === 1) {
-					this.select_customer(customers[0].name, customers[0].customer_name);
+					const c = customers[0];
+					this.select_customer(c.name, c.customer_name, c.mobile_no);
+					if (this.is_whatsapp_receipt_enabled() && !(c.mobile_no || "").trim()) {
+						this.prompt_add_customer_phone(c.name, c.customer_name);
+					}
 					return;
 				}
 				const d = new frappe.ui.Dialog({
@@ -4501,7 +4530,9 @@ imogi_pos.CashierPage = class CashierPage {
 									(c) =>
 										`<li class="mb-2"><button type="button" class="btn btn-default btn-sm btn-block imogi-pick-customer" data-name="${frappe.utils.escape_html(
 											c.name
-										)}" data-label="${frappe.utils.escape_html(c.customer_name)}">${frappe.utils.escape_html(
+										)}" data-label="${frappe.utils.escape_html(c.customer_name)}" data-mobile="${frappe.utils.escape_html(
+											c.mobile_no || ""
+										)}">${frappe.utils.escape_html(
 											c.customer_name
 										)}${
 											c.loyalty_points
@@ -4524,7 +4555,7 @@ imogi_pos.CashierPage = class CashierPage {
 				});
 				d.$wrapper.on("click", ".imogi-pick-customer", (e) => {
 					const $btn = $(e.currentTarget);
-					this.select_customer($btn.data("name"), $btn.data("label"));
+					this.select_customer($btn.data("name"), $btn.data("label"), $btn.data("mobile"));
 					d.hide();
 				});
 				d.$wrapper.on("click", ".imogi-pick-customer-new", () => {
@@ -4536,11 +4567,268 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 	}
 
-	select_customer(name, label) {
+	select_customer(name, label, mobile_no = null) {
+		this._pending_customer_create = null;
 		this.selected_customer = name;
+		const incoming_mobile = (mobile_no || "").trim();
+		if (incoming_mobile) {
+			this.set_customer_phone(incoming_mobile);
+		} else if (name) {
+			const kept = (this.cashier_customer_phone || this.selected_customer_mobile || "").trim();
+			this.selected_customer_mobile = kept || null;
+		} else {
+			this.selected_customer_mobile = null;
+		}
 		this.wrapper.find(".imogi-cashier-customer-search").val(label || name);
 		imogi_pos.loyalty.load_customer(this, name);
 		this.render_customer_label();
+		const me = this;
+		const after_phone = () => me.sync_pending_order_customer();
+		if (!this.selected_customer_mobile && name) {
+			frappe.call({
+				method: "imogi_pos.api.cashier.get_customer_contact",
+				args: { customer: name },
+				callback: (r) => {
+					const mobile = (r.message && r.message.mobile_no) || "";
+					if (mobile) me.selected_customer_mobile = mobile;
+					after_phone();
+				},
+			});
+			return;
+		}
+		after_phone();
+	}
+
+	sync_pending_order_customer(callback) {
+		if (!this.pending_checkout_order_name) {
+			callback && callback();
+			return;
+		}
+		const phone = this.get_customer_phone_draft();
+		if (!this.selected_customer && !phone) {
+			callback && callback();
+			return;
+		}
+		frappe.call({
+			method: "imogi_pos.api.cashier.update_awaiting_order_customer",
+			args: {
+				order_name: this.pending_checkout_order_name,
+				customer: this.selected_customer || undefined,
+				customer_phone: phone || undefined,
+			},
+			callback: () => callback && callback(),
+		});
+	}
+
+	set_customer_phone(phone) {
+		const normalized = (phone || "").trim();
+		if (!normalized) return;
+		this.cashier_customer_phone = normalized;
+		this.selected_customer_mobile = normalized;
+	}
+
+	get_customer_phone_draft() {
+		return (this.cashier_customer_phone || this.selected_customer_mobile || "").trim();
+	}
+
+	require_customer_phone_for_whatsapp(callback) {
+		if (!this.is_whatsapp_receipt_enabled()) {
+			callback(true);
+			return;
+		}
+		const default_customer = this.context?.default_customer;
+		const draft = this.get_customer_phone_draft();
+
+		if (this._pending_customer_create && !draft) {
+			frappe.msgprint({
+				title: __("Nomor HP wajib"),
+				indicator: "orange",
+				message: __(
+					"Klik <b>Simpan & Pilih</b> di dialog Customer Baru (lengkapi No. HP) sebelum bayar."
+				),
+			});
+			callback(false);
+			return;
+		}
+
+		if (!this.selected_customer || this.selected_customer === default_customer) {
+			callback(true);
+			return;
+		}
+
+		if (draft) {
+			this.set_customer_phone(draft);
+			callback(true);
+			return;
+		}
+
+		frappe.call({
+			method: "imogi_pos.api.cashier.resolve_checkout_customer_phone",
+			args: {
+				customer: this.selected_customer,
+				order_name: this.pending_checkout_order_name || undefined,
+			},
+			callback: (r) => {
+				const phone = ((r.message && r.message.phone) || "").trim();
+				if (phone) {
+					this.set_customer_phone(phone);
+					callback(true);
+					return;
+				}
+				frappe.msgprint({
+					title: __("Nomor HP wajib"),
+					indicator: "orange",
+					message: __(
+						"Isi <b>No. HP / WhatsApp</b> lalu klik <b>Simpan & Pilih</b> di dialog customer sebelum bayar."
+					),
+				});
+				callback(false);
+			},
+		});
+	}
+
+	prompt_add_customer_phone(customer, label) {
+		if (!customer) return;
+		const d = new frappe.ui.Dialog({
+			title: __("Tambah Nomor HP"),
+			fields: [
+				{
+					fieldname: "mobile_no",
+					fieldtype: "Data",
+					label: __("No. HP / WhatsApp"),
+					reqd: 1,
+					description: __("Wajib untuk kirim struk via WhatsApp."),
+				},
+			],
+			primary_action_label: __("Simpan"),
+			primary_action: (values) => {
+				const mobile = (values.mobile_no || "").trim();
+				if (!mobile) return;
+				this.set_customer_phone(mobile);
+				d.get_primary_btn().prop("disabled", true);
+				frappe.call({
+					method: "imogi_pos.api.cashier.update_customer_phone",
+					args: { customer, mobile_no: values.mobile_no },
+					callback: (r) => {
+						d.get_primary_btn().prop("disabled", false);
+						if (r.exc) return;
+						const row = r.message || {};
+						this.select_customer(customer, label || row.customer_name, row.mobile_no || values.mobile_no);
+						d.hide();
+						this.sync_pending_order_customer();
+						frappe.show_alert({ message: __("Nomor HP disimpan"), indicator: "green" }, 3);
+					},
+				});
+			},
+		});
+		d.show();
+	}
+
+	is_whatsapp_receipt_enabled() {
+		if (this.context && this.context.enable_whatsapp_receipt != null) {
+			return cint(this.context.enable_whatsapp_receipt);
+		}
+		return cint(frappe.boot?.imogi_pos_enable_whatsapp_receipt);
+	}
+
+	apply_receipt_delivery_flags(flags = {}) {
+		if (!flags || typeof flags !== "object") return;
+		if (!this.context) this.context = {};
+		if (flags.enable_whatsapp_receipt != null) {
+			this.context.enable_whatsapp_receipt = cint(flags.enable_whatsapp_receipt);
+			frappe.boot.imogi_pos_enable_whatsapp_receipt = this.context.enable_whatsapp_receipt;
+		}
+		if (flags.auto_print_receipt_on_success != null) {
+			this.context.auto_print_receipt_on_success = cint(flags.auto_print_receipt_on_success);
+			frappe.boot.imogi_pos_auto_print_receipt_on_success = this.context.auto_print_receipt_on_success;
+		}
+	}
+
+	sync_receipt_delivery_flags(data) {
+		if (data && (data.enable_whatsapp_receipt != null || data.auto_print_receipt_on_success != null)) {
+			this.apply_receipt_delivery_flags(data);
+			return;
+		}
+		frappe.call({
+			method: "imogi_pos.api.cashier.get_receipt_delivery_flags",
+			callback: (r) => this.apply_receipt_delivery_flags(r.message),
+		});
+	}
+
+	open_create_customer_dialog(prefill_name = "", wa_required = 0) {
+		if ((prefill_name || "").trim()) {
+			this._pending_customer_create = prefill_name.trim();
+		}
+		const d = new frappe.ui.Dialog({
+			title: __("Customer Baru"),
+			fields: [
+				{
+					fieldname: "customer_name",
+					fieldtype: "Data",
+					label: __("Nama Customer"),
+					reqd: 1,
+					default: prefill_name || "",
+				},
+				{
+					fieldname: "mobile_no",
+					fieldtype: "Data",
+					label: wa_required ? __("No. HP / WhatsApp") : __("No. HP (opsional)"),
+					reqd: wa_required ? 1 : 0,
+					description: wa_required
+						? __("Wajib diisi — struk PDF akan dikirim ke nomor ini via WhatsApp.")
+						: "",
+				},
+				{
+					fieldname: "customer_type",
+					fieldtype: "Select",
+					label: __("Tipe"),
+					options: "Individual\nCompany",
+					default: "Individual",
+				},
+			],
+			primary_action_label: __("Simpan & Pilih"),
+			primary_action: (values) => {
+				const mobile = (values.mobile_no || "").trim();
+				if (wa_required && !mobile) {
+					frappe.msgprint({
+						title: __("Nomor HP wajib"),
+						indicator: "orange",
+						message: __("Isi nomor HP customer untuk kirim struk via WhatsApp."),
+					});
+					return;
+				}
+				if (mobile) this.set_customer_phone(mobile);
+				d.get_primary_btn().prop("disabled", true);
+				frappe.call({
+					method: "imogi_pos.api.cashier.create_customer",
+					args: values,
+					callback: (r) => {
+						d.get_primary_btn().prop("disabled", false);
+						if (r.exc) return;
+						const customer = r.message || {};
+						const saved_mobile = (customer.mobile_no || mobile || "").trim();
+						if (saved_mobile) this.set_customer_phone(saved_mobile);
+						this.select_customer(customer.name, customer.customer_name, saved_mobile);
+						d.hide();
+						this.sync_pending_order_customer();
+						frappe.show_alert({ message: __("Customer dibuat"), indicator: "green" }, 3);
+					},
+				});
+			},
+		});
+		d.show();
+		setTimeout(() => d.fields_dict.customer_name?.$input?.focus()?.select(), 200);
+	}
+
+	prompt_create_customer(prefill_name = "") {
+		if (!this.require_feature("customer")) return;
+		frappe.call({
+			method: "imogi_pos.api.cashier.get_receipt_delivery_flags",
+			callback: (r) => {
+				this.apply_receipt_delivery_flags(r.message);
+				this.open_create_customer_dialog(prefill_name, this.is_whatsapp_receipt_enabled());
+			},
+		});
 	}
 
 	refresh_payment_preview(dialog, subtotal) {
@@ -4560,52 +4848,6 @@ imogi_pos.CashierPage = class CashierPage {
 			imogi_pos.loyalty &&
 			(this.feature_allowed("point_reward") || this.feature_allowed("voucher"))
 		);
-	}
-
-	prompt_create_customer(prefill_name = "") {
-		if (!this.require_feature("customer")) return;
-		const d = new frappe.ui.Dialog({
-			title: __("Customer Baru"),
-			fields: [
-				{
-					fieldname: "customer_name",
-					fieldtype: "Data",
-					label: __("Nama Customer"),
-					reqd: 1,
-					default: prefill_name || "",
-				},
-				{
-					fieldname: "mobile_no",
-					fieldtype: "Data",
-					label: __("No. HP (opsional)"),
-				},
-				{
-					fieldname: "customer_type",
-					fieldtype: "Select",
-					label: __("Tipe"),
-					options: "Individual\nCompany",
-					default: "Individual",
-				},
-			],
-			primary_action_label: __("Simpan & Pilih"),
-			primary_action: (values) => {
-				d.get_primary_btn().prop("disabled", true);
-				frappe.call({
-					method: "imogi_pos.api.cashier.create_customer",
-					args: values,
-					callback: (r) => {
-						d.get_primary_btn().prop("disabled", false);
-						if (r.exc) return;
-						const customer = r.message || {};
-						this.select_customer(customer.name, customer.customer_name);
-						d.hide();
-						frappe.show_alert({ message: __("Customer dibuat"), indicator: "green" }, 3);
-					},
-				});
-			},
-		});
-		d.show();
-		setTimeout(() => d.fields_dict.customer_name?.$input?.focus()?.select(), 200);
 	}
 
 	render_customer_label() {
@@ -5069,20 +5311,16 @@ imogi_pos.CashierPage = class CashierPage {
 			this.cart
 				.map((row) => {
 					const amount = flt(row.rate) * flt(row.qty);
-					const unit_label = row.uom ? ` / ${frappe.utils.escape_html(row.uom)}` : "";
 					return `
 						<div class="imogi-cart-row" data-code="${frappe.utils.escape_html(row.item_code)}">
 							<div class="imogi-cart-row-line">
 								<div class="imogi-cart-row-name">${frappe.utils.escape_html(row.item_name)}</div>
-								<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
-							</div>
-							<div class="imogi-cart-row-actions">
 								<div class="imogi-cart-qty-group">
 									<button type="button" class="imogi-qty-btn" data-delta="-1" aria-label="${__("Kurangi")}">−</button>
 									<span class="imogi-cart-qty">${row.qty}</span>
 									<button type="button" class="imogi-qty-btn" data-delta="1" aria-label="${__("Tambah")}">+</button>
 								</div>
-								<div class="imogi-cart-row-meta">${format_currency(row.rate)}${unit_label}</div>
+								<div class="imogi-cart-row-amount">${format_currency(amount)}</div>
 							</div>
 						</div>`;
 				})
@@ -6019,40 +6257,43 @@ imogi_pos.CashierPage = class CashierPage {
 			this.prompt_open_shift();
 			return;
 		}
-		if (this.pending_checkout_order_name) {
-			this._open_payment_dialog_ui(options);
-			return;
-		}
-		this.busy = true;
-		this.update_mobile_dock();
-		frappe.call({
-			method: "imogi_pos.api.cashier.submit_awaiting_order",
-			args: this.build_submit_awaiting_args(),
-			freeze: true,
-			freeze_message: __("Mencatat order..."),
-			callback: (r) => {
-				this.busy = false;
-				this.update_mobile_dock();
-				if (r.exc) {
-					const msg = (r._server_messages || "").toString();
-					if (
-						msg.includes("Perlu Approval") &&
-						imogi_pos.cashier_extras &&
-						imogi_pos.cashier_extras.prompt_supervisor_pin
-					) {
-						imogi_pos.cashier_extras.prompt_supervisor_pin(this, (code) => {
-							this._pending_approval_code = code;
-							this.open_payment_dialog(options);
-						});
+		const open_payment = () => {
+			if (this.pending_checkout_order_name) {
+				this.sync_pending_order_customer(() => this._open_payment_dialog_ui(options));
+				return;
+			}
+			this.busy = true;
+			this.update_mobile_dock();
+			frappe.call({
+				method: "imogi_pos.api.cashier.submit_awaiting_order",
+				args: this.build_submit_awaiting_args(),
+				freeze: true,
+				freeze_message: __("Mencatat order..."),
+				callback: (r) => {
+					this.busy = false;
+					this.update_mobile_dock();
+					if (r.exc) {
+						const msg = (r._server_messages || "").toString();
+						if (
+							msg.includes("Perlu Approval") &&
+							imogi_pos.cashier_extras &&
+							imogi_pos.cashier_extras.prompt_supervisor_pin
+						) {
+							imogi_pos.cashier_extras.prompt_supervisor_pin(this, (code) => {
+								this._pending_approval_code = code;
+								this.open_payment_dialog(options);
+							});
+						}
+						return;
 					}
-					return;
-				}
-				this._pending_approval_code = null;
-				const order = r.message || {};
-				this.pending_checkout_order_name = order.name || this.marketplace_order_name || null;
-				this._open_payment_dialog_ui(options);
-			},
-		});
+					this._pending_approval_code = null;
+					const order = r.message || {};
+					this.pending_checkout_order_name = order.name || this.marketplace_order_name || null;
+					this.sync_pending_order_customer(() => this._open_payment_dialog_ui(options));
+				},
+			});
+		};
+		this.sync_pending_order_customer(open_payment);
 	}
 
 	build_submit_awaiting_args(extra = {}) {
@@ -6069,6 +6310,8 @@ imogi_pos.CashierPage = class CashierPage {
 			...extra,
 		};
 		if (this.selected_customer) args.customer = this.selected_customer;
+		const phone = this.get_customer_phone_draft();
+		if (phone) args.customer_phone = phone;
 		if (this.discount_type) {
 			args.discount_type = this.discount_type;
 			args.discount_value = this.discount_value;
@@ -6463,6 +6706,18 @@ imogi_pos.CashierPage = class CashierPage {
 	}
 
 	checkout(dialog, mode_of_payment, total, paid_amount) {
+		this.sync_pending_order_customer(() => {
+			this.require_customer_phone_for_whatsapp((ok) => {
+				if (!ok) {
+					dialog.get_primary_btn().prop("disabled", false);
+					return;
+				}
+				this._run_checkout(dialog, mode_of_payment, total, paid_amount);
+			});
+		});
+	}
+
+	_run_checkout(dialog, mode_of_payment, total, paid_amount) {
 		this.busy = true;
 		this.update_mobile_dock();
 		dialog.get_primary_btn().prop("disabled", true);
@@ -6578,42 +6833,182 @@ imogi_pos.CashierPage = class CashierPage {
 						store_name: this.context?.receipt_store_name || this.context?.company,
 						header: this.context?.receipt_header || "",
 						footer: this.context?.receipt_footer || __("Terima kasih"),
+						logo_url: this.context?.receipt_logo_url || "",
 						change: flt(payment_info.change),
 						tax_rate: flt(this.context?.sales_tax?.rate) || 11,
 				  };
+		const mode =
+			typeof imogi_pos.thermal.resolve_mode === "function"
+				? imogi_pos.thermal.resolve_mode(options.mode)
+				: "browser";
+		if (mode === "serial") {
+			options.skip_browser_fallback = true;
+		}
 		return imogi_pos.thermal.print_order(order, options);
 	}
 
-	open_receipt_print(order) {
+	print_receipt_once(order, payment_info = {}) {
+		const key = order?.name || "";
+		const now = Date.now();
+		if (key && key === _imogi_receipt_print_guard.key && now - _imogi_receipt_print_guard.at < 4000) {
+			return false;
+		}
+		_imogi_receipt_print_guard.key = key;
+		_imogi_receipt_print_guard.at = now;
+		return this.print_receipt(order, payment_info);
+	}
+
+	open_receipt_print(order, payment_info = {}) {
 		if (!order || !order.name) return;
+		this.print_receipt_once(order, payment_info);
+	}
+
+	send_whatsapp_receipt(order) {
+		if (!order || !order.name) return;
+		imogi_pos_clear_cashier_overlays();
+		const customer_phone = (order.customer_phone || this.get_customer_phone_draft() || "").trim();
+		frappe.show_alert({ message: __("Menyiapkan struk PDF..."), indicator: "blue" }, 3);
 		frappe.call({
-			method: "imogi_pos.api.cashier.get_receipt_url",
-			args: { order_name: order.name },
-			callback: (r) => {
-				const url = r.message && r.message.url;
-				if (!url) {
-					frappe.msgprint(__("URL struk tidak tersedia."));
+			method: "imogi_pos.api.cashier.send_whatsapp_receipt",
+			args: { order_name: order.name, customer_phone: customer_phone || undefined },
+			callback: async (r) => {
+				imogi_pos_clear_cashier_overlays();
+				if (r.exc) return;
+				const data = r.message;
+				if (!data) return;
+
+				if (data.sent) {
+					frappe.show_alert({
+						message: __("Struk PDF terkirim ke WhatsApp {0}", [data.phone || ""]),
+						indicator: "green",
+					}, 5);
 					return;
 				}
-				const win = window.open(url, "_blank");
-				if (!win) {
-					frappe.msgprint({
-						title: __("Pop-up diblokir"),
-						indicator: "orange",
-						message: __("Izinkan pop-up untuk situs ini, lalu klik Cetak Struk lagi."),
-					});
+
+				const pdf_file = this._build_receipt_pdf_file(data);
+				if (!pdf_file) {
+					frappe.msgprint(__("Gagal membuat file struk PDF."));
+					return;
 				}
+
+				const shared = await this._try_share_receipt_pdf(pdf_file, data.message);
+				if (shared) return;
+
+				this._show_whatsapp_receipt_dialog(data, pdf_file);
 			},
 		});
 	}
 
+	_build_receipt_pdf_file(data) {
+		if (data.pdf_base64) {
+			try {
+				const binary = atob(data.pdf_base64);
+				const bytes = new Uint8Array(binary.length);
+				for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+				const filename = data.filename || "struk.pdf";
+				return new File([bytes], filename, { type: "application/pdf" });
+			} catch (err) {
+				console.warn("PDF base64 decode failed", err);
+			}
+		}
+		return null;
+	}
+
+	async _try_share_receipt_pdf(pdf_file, message) {
+		if (!navigator.share) return false;
+
+		const can_files =
+			!navigator.canShare || navigator.canShare({ files: [pdf_file] });
+		if (!can_files) return false;
+
+		try {
+			if (message && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(message);
+			}
+			// WhatsApp mobile: share file only — text+files together often drops the attachment.
+			await navigator.share({ files: [pdf_file], title: pdf_file.name });
+			frappe.show_alert({
+				message: message
+					? __("PDF dibagikan — tempel pesan di WhatsApp (teks sudah disalin)")
+					: __("PDF dibagikan — pilih WhatsApp"),
+				indicator: "green",
+			});
+			return true;
+		} catch (err) {
+			if (err?.name === "AbortError") return true;
+			console.warn("WhatsApp PDF share failed", err);
+			return false;
+		}
+	}
+
+	_download_receipt_pdf_file(pdf_file) {
+		const blob_url = URL.createObjectURL(pdf_file);
+		const a = document.createElement("a");
+		a.href = blob_url;
+		a.download = pdf_file.name;
+		a.click();
+		setTimeout(() => URL.revokeObjectURL(blob_url), 1000);
+	}
+
+	_show_whatsapp_receipt_dialog(data, pdf_file) {
+		imogi_pos_clear_cashier_overlays();
+		const me = this;
+		const safe_message = frappe.utils.escape_html(data.message || "").replace(/\n/g, "<br>");
+		const d = new frappe.ui.Dialog({
+			title: __("Kirim Struk WhatsApp"),
+			size: "large",
+			fields: [
+				{
+					fieldtype: "HTML",
+					options: `
+						<div class="imogi-wa-receipt-help">
+							<p class="text-muted mb-2">${__(
+								"PDF sudah diunduh otomatis. Buka WhatsApp lalu lampirkan file PDF ke chat customer."
+							)}</p>
+							<ol class="small text-muted pl-3 mb-3">
+								<li>${__("Klik <b>Buka WhatsApp</b>")}</li>
+								<li>${__("Di chat, klik 📎 lalu pilih file PDF yang diunduh")}</li>
+								<li>${__("Kirim pesan (teks sudah disalin ke clipboard)")}</li>
+							</ol>
+							<div class="well well-sm small" style="white-space:pre-wrap">${safe_message}</div>
+						</div>`,
+				},
+			],
+			primary_action_label: __("Buka WhatsApp"),
+			primary_action() {
+				if (data.message && navigator.clipboard?.writeText) {
+					navigator.clipboard.writeText(data.message);
+				}
+				if (data.wa_url) {
+					window.open(data.wa_url, "_blank");
+				}
+				frappe.show_alert({
+					message: __("WhatsApp dibuka — lampirkan PDF yang sudah diunduh"),
+					indicator: "blue",
+				}, 5);
+				d.hide();
+			},
+		});
+		d.set_secondary_action_label(__("Unduh PDF lagi"));
+		d.set_secondary_action(() => {
+			me._download_receipt_pdf_file(pdf_file);
+			frappe.show_alert({ message: __("PDF diunduh"), indicator: "green" }, 3);
+		});
+		d.$wrapper.addClass("imogi-wa-receipt-dialog");
+		d.onhide = () => imogi_pos_clear_cashier_overlays();
+		d.show();
+		me._download_receipt_pdf_file(pdf_file);
+	}
+
 	handle_success_action(dialog, order, payment_info, action) {
-		if (action === "print") {
-			this.open_receipt_print(order);
+		if (action === "print" || action === "thermal") {
+			this.open_receipt_print(order, payment_info);
 			return;
 		}
-		if (action === "thermal") {
-			this.print_receipt(order, payment_info);
+		if (action === "whatsapp") {
+			dialog.hide();
+			imogi_pos_clear_cashier_overlays();
+			this.send_whatsapp_receipt(order);
 			return;
 		}
 		if (action === "invoice" && order.pos_invoice) {
@@ -6652,12 +7047,13 @@ imogi_pos.CashierPage = class CashierPage {
 			: "";
 
 		const show_receipt = this.context && cint(this.context.enable_receipt_print) && order.name;
+		const show_whatsapp = this.context && this.is_whatsapp_receipt_enabled() && order.name;
 		const actions = [];
 		if (show_receipt) {
 			actions.push({ id: "print", label: __("Cetak Struk"), icon: "fa-print" });
-			if (typeof imogi_pos !== "undefined" && imogi_pos.thermal) {
-				actions.push({ id: "thermal", label: __("Cetak Thermal"), icon: "fa-fire" });
-			}
+		}
+		if (show_whatsapp) {
+			actions.push({ id: "whatsapp", label: __("Kirim WA"), icon: "fa-whatsapp" });
 		}
 		if (order.pos_invoice) {
 			actions.push({ id: "invoice", label: __("Lihat Invoice"), icon: "fa-file-text-o" });
@@ -6722,14 +7118,14 @@ imogi_pos.CashierPage = class CashierPage {
 				typeof imogi_pos.thermal.resolve_mode === "function"
 					? imogi_pos.thermal.resolve_mode(me.context.thermal_print_mode)
 					: "browser";
-			if (mode === "browser") {
-				setTimeout(() => {
-					try {
-						me.print_receipt(order, payment_info);
-					} catch (err) {
-						console.error(err);
-					}
-				}, 600);
+			const autoPrint = cint(me.context.auto_print_receipt_on_success);
+			if (autoPrint || mode === "serial") {
+				const runPrint = () => me.print_receipt_once(order, payment_info);
+				if (mode === "serial") {
+					runPrint();
+				} else {
+					setTimeout(runPrint, 600);
+				}
 			}
 		}
 	}

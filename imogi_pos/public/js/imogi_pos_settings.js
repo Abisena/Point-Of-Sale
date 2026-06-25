@@ -9,7 +9,21 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		ensure_imogi_styles(() => {
 			init_settings_page(frm);
 			add_page_toolbar_buttons(frm);
+			if (normalize_settings_tab_id(__imogi_settings_active_tab) === "general") {
+				layout_store_identity(frm);
+				layout_shift_settings(frm);
+				layout_kitchen_settings(frm);
+				layout_general_dock_grid(frm);
+				render_receipt_preview(frm);
+			}
+			if (normalize_settings_tab_id(__imogi_settings_active_tab) === "receipt") {
+				layout_receipt_settings_dock(frm);
+			}
 		});
+	},
+
+	before_save(frm) {
+		sync_dock_fields_to_doc(frm);
 	},
 
 	generate_order_api_key(frm) {
@@ -76,6 +90,14 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_integrations_dock_summary(frm);
 	},
 
+	enable_role_authorization(frm) {
+		render_role_authorization_matrix(frm);
+	},
+
+	enable_role_gating(frm) {
+		render_role_authorization_matrix(frm);
+	},
+
 	royalty_expense_account(frm) {
 		render_franchise_dock_summary(frm);
 	},
@@ -140,8 +162,24 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_receipt_preview(frm);
 	},
 
+	receipt_logo(frm) {
+		render_receipt_preview(frm);
+	},
+
 	receipt_footer(frm) {
 		render_receipt_preview(frm);
+	},
+
+	enable_whatsapp_receipt(frm) {
+		layout_receipt_settings_dock(frm);
+	},
+
+	auto_print_receipt_on_success(frm) {
+		layout_receipt_settings_dock(frm);
+	},
+
+	enable_receipt_print(frm) {
+		layout_receipt_settings_dock(frm);
 	},
 
 	default_company(frm) {
@@ -150,6 +188,14 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_pos_shift(frm) {
 		render_shift_dock_summary(frm);
+		if (cint(frm.doc.enable_pos_shift)) {
+			ensure_dock_field_rendered(frm, "enable_shift_cash_detail");
+		}
+		frappe.after_ajax(() => layout_shift_settings(frm));
+	},
+
+	enable_shift_cash_detail(frm) {
+		frappe.after_ajax(() => layout_shift_settings(frm));
 	},
 
 	default_pos_profile(frm) {
@@ -206,15 +252,21 @@ frappe.ui.form.on("IMOGI POS Settings", {
 	},
 
 	enable_kitchen_display(frm) {
-		toggle_settings_by_business_type(frm);
 		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
+		if (cint(frm.doc.enable_kitchen_display)) {
+			ensure_dock_field_rendered(frm, "kitchen_item_group_rows");
+		}
+		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
 	enable_fulfillment(frm) {
-		toggle_settings_by_business_type(frm);
 		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
+		if (cint(frm.doc.enable_fulfillment)) {
+			ensure_dock_field_rendered(frm, "fulfillment_order_type_rows");
+		}
+		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
 	import_products(frm) {
@@ -464,6 +516,7 @@ const SETTINGS_FORM_LAYOUT = [
 	"default_pos_profile",
 	"default_warehouse",
 	"enable_pos_shift",
+	"enable_shift_cash_detail",
 	{ section: "billing_section" },
 	"enable_saas_billing_sync",
 	"billing_provider",
@@ -478,8 +531,8 @@ const SETTINGS_FORM_LAYOUT = [
 	{ section: "flow_section" },
 	"enable_kitchen_display",
 	"enable_fulfillment",
-	"kitchen_item_groups",
-	"fulfillment_for_order_types",
+	"kitchen_item_group_rows",
+	"fulfillment_order_type_rows",
 	{ section: "inventory_section" },
 	"low_stock_check_interval",
 	"low_stock_alert_roles",
@@ -490,8 +543,13 @@ const SETTINGS_FORM_LAYOUT = [
 	"thermal_print_mode",
 	"thermal_printer_width",
 	"receipt_print_format",
+	"receipt_logo",
 	"receipt_header",
 	"receipt_footer",
+	"auto_print_receipt_on_success",
+	"enable_whatsapp_receipt",
+	"whatsapp_receipt_default_phone",
+	"whatsapp_receipt_message",
 	{ section: "import_section" },
 	"import_menu",
 	"import_stock",
@@ -536,6 +594,9 @@ const SETTINGS_FORM_LAYOUT = [
 	"enable_marketplace_orders",
 	"marketplace_webhook_secret",
 	{ section: "operations_section" },
+	"enable_role_authorization",
+	"role_authorization_matrix",
+	"role_authorizations",
 	"enable_role_gating",
 	"enable_approval_workflow",
 	"approval_discount_threshold_percent",
@@ -661,7 +722,7 @@ const ENDPOINT_GROUPS = {
 
 function ensure_imogi_styles(callback) {
 	const run = () => callback && callback();
-	if (document.getElementById("imogi-settings-inline-css-v27")) {
+	if (document.getElementById("imogi-settings-inline-css-v80")) {
 		run();
 		return;
 	}
@@ -674,8 +735,18 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v27")) return;
-	document.getElementById("imogi-settings-inline-css-v26")?.remove();
+	if (document.getElementById("imogi-settings-inline-css-v80")) return;
+	document.getElementById("imogi-settings-inline-css-v79")?.remove();
+	document.getElementById("imogi-settings-inline-css-v78")?.remove();
+	document.getElementById("imogi-settings-inline-css-v77")?.remove();
+	document.getElementById("imogi-settings-inline-css-v76")?.remove();
+	document.getElementById("imogi-settings-inline-css-v75")?.remove();
+	document.getElementById("imogi-settings-inline-css-v53")?.remove();
+	document.getElementById("imogi-settings-inline-css-v52")?.remove();
+	document.getElementById("imogi-settings-inline-css-v51")?.remove();
+	document.getElementById("imogi-settings-inline-css-v50")?.remove();
+	document.getElementById("imogi-settings-inline-css-v49")?.remove();
+	document.getElementById("imogi-settings-inline-css-v48")?.remove();
 	document.getElementById("imogi-settings-inline-css")?.remove();
 	document.getElementById("imogi-settings-inline-css-v2")?.remove();
 	document.getElementById("imogi-settings-inline-css-v3")?.remove();
@@ -692,6 +763,12 @@ function inject_imogi_settings_css() {
 	frappe.dom.set_style(`
 		.imogi-settings-page .layout-side-section,
 		.imogi-settings-page .form-sidebar { display: none !important; }
+		.imogi-settings-page .form-footer,
+		.imogi-settings-page .form-tabs-list .form-tab[data-fieldname="connections"],
+		.imogi-settings-page .comment-box,
+		.imogi-settings-page .timeline,
+		.imogi-settings-page .new-timeline,
+		.imogi-settings-page .form-comments { display: none !important; }
 		.imogi-settings-page .layout-main-section-wrapper,
 		.imogi-settings-page .layout-main-section,
 		.imogi-settings-page .form-page { background: #fff !important; }
@@ -788,8 +865,16 @@ function inject_imogi_settings_css() {
 		.imogi-settings-tab-icon,
 		.imogi-settings-card-head,
 		.imogi-settings-card-icon,
-		.imogi-settings-help-card,
-		.imogi-settings-trust-row { display: none !important; }
+		.imogi-settings-help-card { display: none !important; }
+		.imogi-settings-page .imogi-store-identity-section > .section-head {
+			display: none !important;
+		}
+		.imogi-shift-settings-dock .help-box,
+		.imogi-shift-settings-dock .small.text-muted,
+		.imogi-shift-settings-dock .imogi-shift-status,
+		.imogi-kitchen-settings-dock .imogi-kitchen-status {
+			display: none !important;
+		}
 		.imogi-settings-body { display: block; margin-bottom: 0; overflow: visible; }
 		.imogi-settings-main {
 			display: flex;
@@ -891,6 +976,114 @@ function inject_imogi_settings_css() {
 			border-radius: 0 !important;
 			margin-bottom: 0 !important;
 			padding: 0 !important;
+			width: 100%;
+		}
+		.imogi-store-identity-card {
+			background: transparent;
+			border: none;
+			border-radius: 0;
+			box-sizing: border-box;
+			margin-bottom: 24px;
+			padding: 0 0 24px;
+			width: 100%;
+		}
+		.imogi-settings-tab-panel--general .imogi-store-identity-card {
+			border-bottom: 1px solid #e5e7eb;
+		}
+		.imogi-store-identity-card-head {
+			display: none !important;
+		}
+		.imogi-store-identity-main {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			min-width: 0;
+			width: 100%;
+		}
+		.imogi-store-info-banner {
+			align-items: flex-start;
+			background: #f7f7f7;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			color: #374151;
+			display: flex;
+			font-size: 12px;
+			gap: 10px;
+			line-height: 1.5;
+			padding: 12px 14px;
+		}
+		.imogi-store-info-banner i {
+			color: #111827;
+			flex-shrink: 0;
+			font-size: 14px;
+			margin-top: 1px;
+		}
+		.imogi-store-trust-row {
+			display: grid;
+			gap: 12px;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+		.imogi-store-trust-card {
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			border-radius: 10px;
+			padding: 14px 12px;
+		}
+		.imogi-store-trust-icon {
+			align-items: center;
+			background: #f3f4f6;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			color: #111827;
+			display: inline-flex;
+			font-size: 15px;
+			height: 34px;
+			justify-content: center;
+			margin-bottom: 10px;
+			width: 34px;
+		}
+		.imogi-store-trust-title {
+			color: #111827;
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1.35;
+			margin-bottom: 4px;
+		}
+		.imogi-store-trust-desc {
+			color: #6b7280;
+			font-size: 11px;
+			line-height: 1.45;
+		}
+		.imogi-shift-settings-dock,
+		.imogi-kitchen-settings-dock {
+			background: transparent;
+			border: none;
+			border-radius: 0;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			height: 100%;
+			margin: 0;
+			min-width: 0;
+			padding: 0;
+			width: 100%;
+		}
+		.imogi-dock-card-head {
+			color: #0f1f35;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.25;
+			margin: 0 0 10px;
+		}
+		.imogi-dock-card-hint {
+			color: #6b7280;
+			font-size: 11px;
+			line-height: 1.45;
+			margin-top: -6px;
+		}
+		.imogi-store-identity-section .section-body > .row {
+			display: none !important;
 		}
 		/* ── Field grid: label atas, 2 kolom ── */
 		.imogi-settings-page .imogi-settings-field-grid .form-column.col-sm-12 > form {
@@ -950,10 +1143,10 @@ function inject_imogi_settings_css() {
 			margin: 0;
 			padding: 0;
 		}
-		.imogi-store-form-grid--horizontal .imogi-store-field .control-label {
+		.imogi-settings-page .imogi-store-form-grid--horizontal .imogi-store-field .control-label {
 			color: #374151;
 			float: none !important;
-			font-size: 12px;
+			font-size: 13px !important;
 			font-weight: 600;
 			line-height: 1.35;
 			margin: 0 !important;
@@ -1080,14 +1273,200 @@ function inject_imogi_settings_css() {
 		}
 		.imogi-settings-tab-panel--general .imogi-store-identity-layout {
 			align-items: start;
-			gap: 24px;
-			grid-template-columns: minmax(0, 1.15fr) minmax(280px, 360px);
+			display: grid;
+			gap: 20px 24px;
+			grid-template-columns: minmax(0, 1fr) 248px;
+			width: 100%;
+		}
+		.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-sizing: border-box;
+			justify-self: end;
+			max-width: 100%;
+			padding: 0 !important;
+			position: sticky;
+			top: 8px;
+			width: 248px;
+		}
+		.imogi-receipt-preview-head {
+			color: #6b7280 !important;
+			font-size: 10px !important;
+			font-weight: 800 !important;
+			letter-spacing: 0.08em !important;
+			margin-bottom: 10px !important;
+			text-transform: uppercase !important;
 		}
 		.imogi-settings-dock-grid {
+			display: grid;
+			gap: 16px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			margin-top: 16px;
+			width: 100%;
+		}
+		.imogi-shift-form-grid--horizontal,
+		.imogi-kitchen-form-grid--horizontal {
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
-			margin-top: 12px;
+			width: 100%;
+		}
+		.imogi-shift-form-grid--horizontal .imogi-shift-field .form-group,
+		.imogi-kitchen-form-grid--horizontal .imogi-kitchen-field .form-group {
+			align-items: center;
+			display: grid;
+			gap: 8px 16px;
+			grid-template-columns: minmax(140px, 34%) minmax(0, 1fr);
+			margin-bottom: 0;
+		}
+		.imogi-shift-form-grid--horizontal .imogi-shift-field[data-fieldtype="Check"] .form-group,
+		.imogi-kitchen-form-grid--horizontal .imogi-kitchen-field[data-fieldtype="Check"] .form-group {
+			align-items: start;
+		}
+		.imogi-settings-page .imogi-shift-form-grid--horizontal .frappe-control .control-label,
+		.imogi-settings-page .imogi-kitchen-form-grid--horizontal .frappe-control .control-label {
+			color: #374151;
+			float: none !important;
+			font-size: 13px !important;
+			font-weight: 600;
+			margin: 0 !important;
+			padding: 0 !important;
+			text-align: left;
+			width: auto !important;
+		}
+		.imogi-shift-form-grid--horizontal .frappe-control .help-box,
+		.imogi-kitchen-form-grid--horizontal .frappe-control .help-box,
+		.imogi-shift-form-grid--horizontal .frappe-control .small.text-muted,
+		.imogi-kitchen-form-grid--horizontal .frappe-control .small.text-muted {
+			grid-column: 2;
+			margin: 4px 0 0 !important;
+		}
+		.imogi-kitchen-list-cards-wrap {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			grid-column: 1 / -1;
+			margin-top: 4px;
+			width: 100%;
+		}
+		.imogi-kitchen-list-section-label {
+			color: #374151;
+			font-size: 12px;
+			font-weight: 700;
+			margin-bottom: 8px;
+		}
+		.imogi-kitchen-list-cards {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			margin-bottom: 6px;
+		}
+		.imogi-kitchen-list-card {
+			align-items: end;
+			background: #f9fafb;
+			border: 1px solid #e5e7eb;
+			border-radius: 4px;
+			display: grid;
+			gap: 8px;
+			grid-template-columns: minmax(0, 1fr) 32px;
+			padding: 8px 10px;
+		}
+		.imogi-kitchen-list-card-col label {
+			color: #6b7280;
+			display: block;
+			font-size: 10px;
+			font-weight: 600;
+			line-height: 1.2;
+			margin-bottom: 4px;
+		}
+		.imogi-kitchen-list-card-input-host .frappe-control,
+		.imogi-kitchen-list-card-input-host .form-group {
+			margin-bottom: 0 !important;
+		}
+		.imogi-kitchen-list-card-input-host .control-label {
+			display: none !important;
+		}
+		.imogi-kitchen-list-card-input-host input.form-control,
+		.imogi-kitchen-list-card-input-host select.form-control {
+			min-height: 32px;
+		}
+		.imogi-kitchen-list-card-remove {
+			align-items: center;
+			align-self: end;
+			background: #fff;
+			border: 1px solid #d1d5db;
+			border-radius: 4px;
+			color: #6b7280;
+			cursor: pointer;
+			display: inline-flex;
+			height: 32px;
+			justify-content: center;
+			width: 32px;
+		}
+		.imogi-kitchen-list-card-remove:hover {
+			border-color: #dc2626;
+			color: #dc2626;
+		}
+		.imogi-kitchen-list-add {
+			align-items: center;
+			background: #fff;
+			border: 1px dashed #cbd5e1;
+			border-radius: 4px;
+			color: #0f1f35;
+			cursor: pointer;
+			display: inline-flex;
+			font-size: 11px;
+			font-weight: 600;
+			gap: 5px;
+			padding: 6px 10px;
+		}
+		.imogi-kitchen-list-add:hover {
+			background: #f9fafb;
+			border-color: #0f1f35;
+		}
+		.imogi-kitchen-list-empty {
+			color: #6b7280;
+			font-size: 11px;
+			line-height: 1.4;
+			padding: 2px 0;
+		}
+		.imogi-dock-check-row {
+			align-items: center;
+			display: flex !important;
+			flex-wrap: wrap;
+			gap: 10px 28px;
+			grid-column: 1 / -1;
+			width: 100%;
+		}
+		.imogi-dock-check-row > .frappe-control {
+			flex: 0 0 auto;
+			grid-column: auto !important;
+			margin-bottom: 0 !important;
+			max-width: none !important;
+			min-width: 0;
+			width: auto !important;
+		}
+		.imogi-dock-check-row .frappe-control[data-fieldtype="Check"] .form-group {
+			align-items: center;
+			display: inline-flex;
+			flex-wrap: nowrap;
+			gap: 8px;
+			margin-bottom: 0;
+			width: auto;
+		}
+		.imogi-dock-check-row .frappe-control[data-fieldtype="Check"] .clearfix {
+			flex: 0 0 auto;
+		}
+		.imogi-dock-check-row .frappe-control[data-fieldtype="Check"] .control-input-wrapper,
+		.imogi-dock-check-row .frappe-control[data-fieldtype="Check"] .checkbox {
+			flex: 0 0 auto;
+			margin: 0;
+		}
+		.imogi-settings-field-grid .imogi-dock-check-row > .frappe-control[data-fieldtype="Check"] {
+			grid-column: auto !important;
+			max-width: none !important;
+			width: auto !important;
 		}
 		.imogi-settings-help-link {
 			align-items: center;
@@ -1115,7 +1494,6 @@ function inject_imogi_settings_css() {
 			justify-content: flex-end;
 		}
 		.imogi-settings-flow-actions .btn { font-size: 11px; padding: 4px 10px; }
-		.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap { position: sticky; top: 8px; }
 		.imogi-settings-tab-panel--more .imogi-settings-target-host { margin-bottom: 12px; }
 		.imogi-settings-tab-panel--inventory .imogi-import-dock {
 			gap: 10px;
@@ -1170,16 +1548,51 @@ function inject_imogi_settings_css() {
 			border-color: #111827 !important;
 		}
 		.imogi-receipt-preview-wrap {
-			background: #fafafa !important;
-			border: 1px solid #eceef2 !important;
-			border-radius: 8px !important;
-			padding: 14px !important;
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-sizing: border-box;
+			padding: 0 !important;
+			width: 100%;
 		}
 		.imogi-receipt-preview-paper {
 			background: #fff !important;
 			border: 1px solid #e5e7eb !important;
 			border-radius: 6px !important;
 			box-shadow: none !important;
+			box-sizing: border-box;
+			width: 100%;
+		}
+		.imogi-receipt-preview-body {
+			margin: 0 auto;
+			max-width: 100%;
+			width: 100%;
+		}
+		.imogi-rcpt-logo-wrap {
+			margin-bottom: 8px;
+			text-align: center;
+		}
+		.imogi-rcpt-logo {
+			display: block;
+			height: auto;
+			margin: 0 auto;
+			max-height: 52px;
+			max-width: 100%;
+			object-fit: contain;
+			width: auto;
+		}
+		.imogi-rcpt-item span:first-child,
+		.imogi-rcpt-total span:first-child {
+			min-width: 0;
+			overflow: hidden;
+			padding-right: 8px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.imogi-rcpt-item span:last-child,
+		.imogi-rcpt-total span:last-child {
+			flex-shrink: 0;
+			font-variant-numeric: tabular-nums;
 		}
 		.imogi-settings-page .imogi-mode-summary-host .control-label,
 		.imogi-settings-page .form-section[data-fieldname="setup_section"] .section-head,
@@ -1210,7 +1623,8 @@ function inject_imogi_settings_css() {
 			content: " 🔒"; font-size: 11px; opacity: 0.75;
 		}
 		.imogi-settings-page .imogi-pill.is-green,
-		.imogi-settings-page .imogi-pill.is-orange {
+		.imogi-settings-page .imogi-pill.is-orange,
+		.imogi-settings-page .imogi-pill.is-blue {
 			background: #fff !important;
 			border: 1px solid #d1d5db !important;
 			border-radius: 999px !important;
@@ -1221,6 +1635,70 @@ function inject_imogi_settings_css() {
 		}
 		.imogi-loyalty-dock {
 			margin-bottom: 12px;
+		}
+		.imogi-role-auth-matrix {
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			border-radius: 6px;
+			margin: 8px 0 14px;
+			padding: 10px 12px;
+		}
+		.imogi-role-auth-hint {
+			color: #6b7280;
+			font-size: 12px;
+			margin-bottom: 10px;
+		}
+		.imogi-role-auth-scroll {
+			overflow-x: auto;
+		}
+		.imogi-role-auth-table {
+			border-collapse: collapse;
+			min-width: 100%;
+			width: max-content;
+		}
+		.imogi-role-auth-table th,
+		.imogi-role-auth-table td {
+			border-bottom: 1px solid #f3f4f6;
+			padding: 8px 10px;
+			vertical-align: middle;
+		}
+		.imogi-role-auth-table thead th {
+			background: #f9fafb;
+			color: #374151;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+		}
+		.imogi-role-auth-label {
+			min-width: 220px;
+		}
+		.imogi-role-auth-title {
+			color: #111827;
+			font-size: 13px;
+			font-weight: 700;
+		}
+		.imogi-role-auth-desc {
+			color: #6b7280;
+			font-size: 11px;
+			margin-top: 2px;
+		}
+		.imogi-role-auth-cell {
+			text-align: center;
+			width: 88px;
+		}
+		.imogi-role-auth-cell.is-na {
+			color: #d1d5db;
+		}
+		.imogi-role-auth-check {
+			align-items: center;
+			cursor: pointer;
+			display: inline-flex;
+			justify-content: center;
+			margin: 0;
+		}
+		.imogi-role-auth-check input {
+			height: 16px;
+			width: 16px;
 		}
 		.imogi-loyalty-panel {
 			background: #fff;
@@ -1266,57 +1744,42 @@ function inject_imogi_settings_css() {
 		}
 		.imogi-shift-settings-dock,
 		.imogi-kitchen-settings-dock {
-			background: transparent;
-			border: none;
-			border-top: 1px solid #f3f4f6;
-			border-radius: 0;
-			margin-top: 18px;
-			padding: 18px 0 0;
-		}
-		.imogi-shift-form-grid,
-		.imogi-kitchen-form-grid { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 10px; }
-		.imogi-kitchen-form-grid .frappe-control[data-fieldname="kitchen_item_groups"],
-		.imogi-kitchen-form-grid .frappe-control[data-fieldname="fulfillment_for_order_types"] { grid-column: 1 / -1; }
-		.imogi-shift-quick-links,
-		.imogi-kitchen-quick-links {
-			align-items: center;
-			border-top: 1px solid #f3f4f6;
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8px;
-			margin-top: 12px;
-			padding-top: 12px;
-		}
-		.imogi-shift-quick-links a,
-		.imogi-kitchen-quick-links a {
-			align-items: center;
 			background: #fff;
 			border: 1px solid #e5e7eb;
-			border-radius: 0;
-			color: #374151;
-			display: inline-flex;
-			font-size: 11px;
-			font-weight: 600;
-			gap: 5px;
-			padding: 6px 10px;
-			text-decoration: none !important;
+			border-radius: 10px;
+			margin: 0;
+			padding: 18px 20px 20px;
 		}
-		.imogi-shift-quick-links a:hover,
-		.imogi-kitchen-quick-links a:hover { background: #f9fafb; border-color: #111827; color: #111827; }
+		.imogi-shift-form-grid,
+		.imogi-kitchen-form-grid {
+			display: grid;
+			gap: 12px;
+			grid-template-columns: 1fr;
+			margin-top: 0;
+			width: 100%;
+		}
+		.imogi-shift-quick-links,
+		.imogi-kitchen-quick-links {
+			display: none !important;
+		}
 		.imogi-shift-status,
 		.imogi-kitchen-status {
 			align-items: center;
-			background: #fafafa;
+			background: #f7f7f7;
 			border: 1px solid #e5e7eb;
-			border-radius: 0;
+			border-radius: 8px;
 			color: #374151;
 			display: flex;
 			font-size: 12px;
-			font-weight: 600;
+			font-weight: 500;
 			gap: 8px;
-			margin-top: 10px;
-			padding: 8px 12px;
+			line-height: 1.5;
+			margin-bottom: 14px;
+			margin-top: 0;
+			padding: 10px 12px;
 		}
+		.imogi-shift-status i,
+		.imogi-kitchen-status i { color: #111827; }
 		.imogi-shift-status.is-off,
 		.imogi-kitchen-status.is-off { color: #6b7280; }
 		@media (max-width: 860px) {
@@ -1326,11 +1789,26 @@ function inject_imogi_settings_css() {
 			.imogi-settings-page .imogi-kitchen-form-grid {
 				grid-template-columns: 1fr;
 			}
+			.imogi-dock-check-row {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 10px;
+			}
+			.imogi-settings-dock-grid {
+				grid-template-columns: 1fr;
+			}
+			.imogi-store-trust-row {
+				grid-template-columns: 1fr;
+			}
 			.imogi-settings-tab-panel--general .imogi-store-identity-layout,
 			.imogi-settings-tab-panel--inventory .imogi-import-dock {
 				grid-template-columns: 1fr;
 			}
-			.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap { position: static; }
+			.imogi-settings-tab-panel--general .imogi-receipt-preview-wrap {
+				justify-self: center;
+				position: static;
+				width: min(100%, 248px);
+			}
 			.imogi-settings-tab-panel--general .imogi-settings-flow-strip { grid-template-columns: 1fr; }
 			.imogi-settings-flow-actions { justify-content: flex-start; }
 		}
@@ -1345,10 +1823,206 @@ function inject_imogi_settings_css() {
 		.imogi-settings-page .imogi-settings-target-host {
 			display: none !important;
 		}
-		.imogi-settings-page[data-active-tab="general"] .imogi-settings-tab-intro {
+		.imogi-settings-page[data-active-tab="general"] .imogi-settings-tab-intro,
+		.imogi-settings-page[data-active-tab="transactions"] .imogi-settings-tab-intro {
 			display: none !important;
 		}
-	`, "imogi-settings-inline-css-v27");
+		/* Identitas Toko + Session Kasir: label & isian field 13px */
+		.imogi-settings-page .imogi-store-identity-card .control-label,
+		.imogi-settings-page .imogi-shift-settings-dock .control-label,
+		.imogi-settings-page .imogi-kitchen-settings-dock .control-label,
+		.imogi-settings-page .imogi-store-identity-card .checkbox label,
+		.imogi-settings-page .imogi-shift-settings-dock .checkbox label,
+		.imogi-settings-page .imogi-kitchen-settings-dock .checkbox label {
+			color: #374151 !important;
+			font-size: 13px !important;
+			font-weight: 600 !important;
+		}
+		.imogi-settings-page .imogi-store-identity-card .form-control,
+		.imogi-settings-page .imogi-store-identity-card .control-value,
+		.imogi-settings-page .imogi-shift-settings-dock .form-control,
+		.imogi-settings-page .imogi-shift-settings-dock .control-value,
+		.imogi-settings-page .imogi-kitchen-settings-dock .form-control,
+		.imogi-settings-page .imogi-kitchen-settings-dock .control-value {
+			font-size: 13px !important;
+		}
+		/* Tab Transaksi & Pembayaran: field compact, label kiri & input kanan (mirip tab Dasar) */
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]):not([data-fieldtype="Section Break"]):not([data-fieldtype="Column Break"]):not([data-fieldtype="HTML"]) .form-group {
+			align-items: center;
+			display: grid;
+			gap: 6px 16px;
+			grid-template-columns: 170px minmax(0, 1fr);
+			margin-bottom: 0;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]) .form-group > .clearfix {
+			margin: 0 !important;
+			padding: 0 !important;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]) .control-label {
+			color: #374151;
+			float: none !important;
+			font-size: 13px !important;
+			font-weight: 600;
+			line-height: 1.3;
+			margin: 0 !important;
+			padding: 0 !important;
+			text-align: left;
+			width: auto !important;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]) .control-input-wrapper {
+			min-width: 0;
+			width: 100%;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]) .form-control,
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:not([data-fieldtype="Check"]) .control-value {
+			font-size: 13px !important;
+			min-height: 32px;
+			padding: 4px 10px;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control .help-box,
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control .small.text-muted {
+			font-size: 11px;
+			margin: 3px 0 0 !important;
+		}
+		/* Tab Printer & Struk: dock WhatsApp jadi 1 kolom, label kiri seperti tab lain */
+		.imogi-settings-tab-panel--receipt .imogi-receipt-form-grid--horizontal {
+			display: block !important;
+			grid-template-columns: none !important;
+		}
+		.imogi-settings-tab-panel--receipt .imogi-receipt-dock-head {
+			font-size: 13px !important;
+		}
+		/* Tab Integrasi: sembunyikan intro dock (header redundan dgn judul section) */
+		.imogi-settings-tab-panel--integrations .imogi-api-dock-intro {
+			display: none !important;
+		}
+		.imogi-settings-tab-panel--integrations :is(.imogi-api-dock, .imogi-integrations-dock, .imogi-billing-dock) {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+		}
+		/* Tab Lainnya: ratakan intro dock & card-in-card */
+		.imogi-settings-tab-panel--more .imogi-api-dock-intro {
+			display: none !important;
+		}
+		.imogi-settings-tab-panel--more .imogi-status-card {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+		}
+		.imogi-settings-tab-panel--more .imogi-status-card-body {
+			padding: 0 !important;
+		}
+		.imogi-settings-tab-panel--more .imogi-franchise-panel {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			padding: 0 !important;
+		}
+		/* Role Notifikasi Stok: list kartu gaya Kitchen, 1 kolom (di kanan Interval) */
+		.imogi-settings-tab-panel--inventory .imogi-role-list-control {
+			grid-column: auto !important;
+		}
+		.imogi-role-list-control .form-group {
+			display: block !important;
+		}
+		.imogi-role-list-control .imogi-kitchen-list-cards-wrap {
+			grid-column: auto !important;
+		}
+		.imogi-role-list-control .control-label {
+			display: block !important;
+			margin-bottom: 6px !important;
+			padding-top: 0 !important;
+			width: auto !important;
+		}
+		.imogi-role-list-control .control-input-wrapper {
+			width: 100% !important;
+		}
+		.imogi-role-list-host {
+			margin-top: 0 !important;
+		}
+		/* Sembunyikan textarea native (tetap ada untuk simpan nilai), hanya list kartu yang tampil */
+		.imogi-role-list-control .control-input-wrapper > .control-input {
+			display: none !important;
+		}
+		/* Field textarea (Small Text/Text): compact 2 baris, label rata atas */
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:is([data-fieldtype="Small Text"], [data-fieldtype="Text"], [data-fieldtype="Code"], [data-fieldtype="Long Text"]) .form-group {
+			align-items: start;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control:is([data-fieldtype="Small Text"], [data-fieldtype="Text"], [data-fieldtype="Code"], [data-fieldtype="Long Text"]) .control-label {
+			padding-top: 7px !important;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control textarea.form-control {
+			height: 56px !important;
+			line-height: 1.4;
+			min-height: 56px !important;
+			padding: 6px 10px !important;
+			resize: vertical;
+		}
+		/* Tab Transaksi & Pembayaran: hilangkan card luar (section-body) agar tidak card-dalam-card */
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .imogi-settings-flat-section .section-body {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			margin-bottom: 0 !important;
+			padding: 0 !important;
+		}
+		/* Ringkasan status: badge 1 baris tanpa card */
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) :is(.imogi-loyalty-dock, .imogi-payment-dock, .imogi-transfer-dock) {
+			margin-bottom: 8px;
+		}
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) :is(.imogi-loyalty-panel, .imogi-payment-panel, .imogi-transfer-panel) {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			padding: 0 !important;
+		}
+		/* Sembunyikan header intro card (ikon + judul + sub) di dock pembayaran/transfer */
+		.imogi-settings-tab-panel--payment :is(.imogi-payment-dock, .imogi-transfer-dock) .imogi-api-dock-intro {
+			display: none !important;
+		}
+		/* Status-card di dalam panel pembayaran/transfer dibuat flat */
+		.imogi-settings-tab-panel--payment :is(.imogi-payment-panel, .imogi-transfer-panel) .imogi-status-card {
+			background: transparent !important;
+			border: none !important;
+			border-radius: 0 !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+		}
+		.imogi-settings-tab-panel--payment :is(.imogi-payment-panel, .imogi-transfer-panel) .imogi-status-card-body {
+			padding: 0 !important;
+		}
+		:is(.imogi-loyalty-panel, .imogi-payment-panel, .imogi-transfer-panel) .imogi-mini-stats--row,
+		.imogi-mini-stats--row {
+			align-items: center !important;
+			display: flex !important;
+			flex-wrap: nowrap !important;
+			gap: 6px 8px !important;
+			max-width: 100%;
+			overflow-x: auto;
+			white-space: nowrap !important;
+		}
+		:is(.imogi-loyalty-panel, .imogi-payment-panel, .imogi-transfer-panel) .imogi-mini-stats--row .imogi-pill,
+		.imogi-mini-stats--row .imogi-pill {
+			flex: 0 0 auto !important;
+			white-space: nowrap !important;
+		}
+		/* Spacing lebih rapat antar field */
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .section-body > .row { row-gap: 4px; }
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control { margin-bottom: 4px !important; }
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control[data-fieldtype="Check"] { margin: 2px 0 !important; }
+		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .imogi-settings-flat-section { margin-bottom: 12px; }
+		body.imogi-pos-settings-active .form-footer,
+		body.imogi-pos-settings-active .after-save,
+		body.imogi-pos-settings-active .comment-box,
+		body.imogi-pos-settings-active .form-timeline,
+		body.imogi-pos-settings-active .new-timeline,
+		body.imogi-pos-settings-active .timeline { display: none !important; }
+	`, "imogi-settings-inline-css-v80");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -1376,9 +2050,118 @@ function can_manage_api(frm) {
 	return !!(frm.perm && frm.perm[0] && frm.perm[0].write);
 }
 
+function role_auth_row_key(role, grant_id) {
+	return `${role}::${grant_id}`;
+}
+
+function upsert_role_auth_row(frm, role, grant_id, enabled) {
+	const rows = frm.doc.role_authorizations || [];
+	let row = rows.find((r) => r.frappe_role === role && r.grant_id === grant_id);
+	if (!row) {
+		row = frm.add_child("role_authorizations");
+		row.frappe_role = role;
+		row.grant_id = grant_id;
+	}
+	row.enabled = enabled ? 1 : 0;
+}
+
+function render_role_authorization_matrix(frm) {
+	const field = frm.fields_dict?.role_authorization_matrix;
+	if (!field) return;
+
+	frm.toggle_display("role_authorizations", false);
+	const enabled = cint(frm.doc.enable_role_authorization);
+	frm.toggle_display("role_authorization_matrix", enabled);
+	if (!enabled) {
+		field.$wrapper.empty();
+		return;
+	}
+
+	const $host = field.$wrapper;
+	$host.html(`<div class="imogi-role-auth-matrix is-loading"><i class="fa fa-spinner fa-spin"></i> ${__("Memuat otorisasi...")}</div>`);
+
+	frappe.call({
+		method: "imogi_pos.api.feature_api.get_role_authorization_matrix",
+		callback(r) {
+			const data = r.message || {};
+			const grants = data.grants || [];
+			if (!grants.length) {
+				$host.html(`<div class="text-muted">${__("Belum ada otorisasi yang bisa dikonfigurasi.")}</div>`);
+				return;
+			}
+
+			const role_set = new Set();
+			grants.forEach((grant) => {
+				(grant.roles || []).forEach((entry) => role_set.add(entry.role));
+			});
+			const roles = Array.from(role_set);
+
+			const state = {};
+			(frm.doc.role_authorizations || []).forEach((row) => {
+				state[role_auth_row_key(row.frappe_role, row.grant_id)] = cint(row.enabled);
+			});
+			grants.forEach((grant) => {
+				(grant.roles || []).forEach((entry) => {
+					const key = role_auth_row_key(entry.role, grant.id);
+					if (state[key] === undefined) {
+						state[key] = entry.enabled ? 1 : 0;
+					}
+				});
+			});
+
+			const role_headers = roles
+				.map((role) => `<th class="imogi-role-auth-role" title="${frappe.utils.escape_html(role)}">${frappe.utils.escape_html(role.replace(/^IMOGI /, ""))}</th>`)
+				.join("");
+
+			const body_rows = grants
+				.map((grant) => {
+					const cells = roles
+						.map((role) => {
+							const eligible = (grant.roles || []).some((entry) => entry.role === role);
+							if (!eligible) {
+								return `<td class="imogi-role-auth-cell is-na">—</td>`;
+							}
+							const key = role_auth_row_key(role, grant.id);
+							const checked = state[key] ? "checked" : "";
+							return `<td class="imogi-role-auth-cell"><label class="imogi-role-auth-check"><input type="checkbox" data-role="${frappe.utils.escape_html(role)}" data-grant="${frappe.utils.escape_html(grant.id)}" ${checked}><span></span></label></td>`;
+						})
+						.join("");
+					return `<tr>
+						<td class="imogi-role-auth-label">
+							<div class="imogi-role-auth-title">${frappe.utils.escape_html(grant.label)}</div>
+							<div class="imogi-role-auth-desc">${frappe.utils.escape_html(grant.description || "")}</div>
+						</td>
+						${cells}
+					</tr>`;
+				})
+				.join("");
+
+			$host.html(`
+				<div class="imogi-role-auth-matrix">
+					<div class="imogi-role-auth-hint">${__("Centang untuk mengizinkan role membuka menu / DocType terkait. Simpan pengaturan agar permission diterapkan.")}</div>
+					<div class="imogi-role-auth-scroll">
+						<table class="imogi-role-auth-table">
+							<thead><tr><th>${__("Menu / Fitur")}</th>${role_headers}</tr></thead>
+							<tbody>${body_rows}</tbody>
+						</table>
+					</div>
+				</div>
+			`);
+
+			$host.find("input[type=checkbox]").on("change", function on_role_auth_toggle() {
+				const role = this.getAttribute("data-role");
+				const grant_id = this.getAttribute("data-grant");
+				upsert_role_auth_row(frm, role, grant_id, this.checked);
+				frm.dirty();
+			});
+		},
+	});
+}
+
 function init_settings_page(frm) {
 	frm.$wrapper.addClass("imogi-settings-page");
 	hide_settings_form_sidebar(frm);
+	hide_settings_form_footer(frm);
 	["generate_order_api_key", "order_api_key", "order_api_secret", "order_api_info", "business_type", "business_template"].forEach(
 		(f) => frm.toggle_display(f, false)
 	);
@@ -1394,6 +2177,7 @@ function init_settings_page(frm) {
 	build_integrations_dock(frm);
 	build_franchise_dock(frm);
 	build_import_dock(frm);
+	apply_inventory_placeholders(frm);
 	build_subscription_tier_dock(frm);
 	if (is_erp_enterprise_deployment()) {
 		hide_enterprise_subscription_ui(frm);
@@ -1406,6 +2190,10 @@ function init_settings_page(frm) {
 	style_setting_cards(frm);
 	build_sidebar_help(frm);
 	ensure_settings_content_inner(frm);
+	render_role_authorization_matrix(frm);
+	bind_dock_checkbox_handlers_once(frm);
+	hook_settings_form_save(frm);
+	frappe.after_ajax(() => layout_receipt_settings_dock(frm));
 	activate_settings_tab(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
 }
 
@@ -1565,6 +2353,11 @@ function fetch_settings_tier_locks(frm) {
 			if (r.message) {
 				frm._imogi_tier_locks = r.message;
 				apply_settings_tier_locks(frm, r.message);
+				if (normalize_settings_tab_id(__imogi_settings_active_tab) === "general") {
+					layout_shift_settings(frm);
+					layout_kitchen_settings(frm);
+					layout_general_dock_grid(frm);
+				}
 			}
 		},
 	});
@@ -1719,6 +2512,30 @@ function hide_settings_form_sidebar(frm) {
 	if ($col.length) {
 		$col.removeClass("col-lg-10 col-md-9").addClass("col-lg-12 col-md-12");
 	}
+}
+
+function hide_settings_form_footer(frm) {
+	// Footer (Comments + Activity timeline) is appended as a sibling of frm.$wrapper,
+	// so CSS scoped to .imogi-settings-page can't reach it. Mark <body> + hide directly.
+	if (!window.__imogi_settings_footer_hook) {
+		window.__imogi_settings_footer_hook = true;
+		const sync = () => {
+			const route = (frappe.get_route && frappe.get_route()) || [];
+			const on_settings = route[0] === "Form" && route[1] === "IMOGI POS Settings";
+			document.body.classList.toggle("imogi-pos-settings-active", on_settings);
+			if (on_settings) $(".form-footer").hide();
+		};
+		frappe.router.on("change", sync);
+	}
+	document.body.classList.add("imogi-pos-settings-active");
+	const hide = () => {
+		frm.footer?.wrapper?.hide();
+		$(frm.page?.main).parent().find(".form-footer").hide();
+		$(".form-footer").hide();
+	};
+	hide();
+	setTimeout(hide, 300);
+	setTimeout(hide, 800);
 }
 
 function layout_settings_shell(frm) {
@@ -1910,7 +2727,16 @@ function hide_settings_general_extras(frm) {
 }
 
 function render_settings_tab_intro(frm, tab) {
-	if (!tab || tab.id === "general") {
+	if (
+		!tab ||
+		tab.id === "general" ||
+		tab.id === "transactions" ||
+		tab.id === "payment" ||
+		tab.id === "inventory" ||
+		tab.id === "more" ||
+		tab.id === "receipt" ||
+		tab.id === "integrations"
+	) {
 		frm.$wrapper.find(".imogi-settings-tab-intro").empty().hide();
 		return;
 	}
@@ -1946,8 +2772,10 @@ function layout_general_dock_grid(frm) {
 		$grid = $('<div class="imogi-settings-dock-grid"></div>');
 		$body.append($grid);
 	}
+	$grid.empty();
 	if ($shift.length) $grid.append($shift);
 	if ($kitchen.length) $grid.append($kitchen);
+	cleanup_store_identity_section_form(frm);
 }
 
 function activate_settings_tab(frm, tabId) {
@@ -1991,6 +2819,7 @@ function activate_settings_tab(frm, tabId) {
 		if (ops_ctx && ops_ctx.$wrapper) {
 			ops_ctx.$wrapper.addClass("imogi-section-operations");
 		}
+		render_role_authorization_matrix(frm);
 		render_franchise_dock_summary(frm);
 	}
 	if (tabId === "general") {
@@ -2000,7 +2829,6 @@ function activate_settings_tab(frm, tabId) {
 		build_import_dock(frm);
 	}
 	frm.$wrapper.find(".imogi-settings-target-host").hide();
-	frm.$wrapper.find(".imogi-settings-trust-row").remove();
 	frm.$wrapper.find(".imogi-settings-placeholder").remove();
 	toggle_general_tab_sections(frm, tabId);
 	if (tabId === "general") {
@@ -2011,6 +2839,9 @@ function activate_settings_tab(frm, tabId) {
 		render_receipt_preview(frm);
 		hide_settings_general_extras(frm);
 		render_settings_tab_intro(frm, SETTINGS_TABS.find((t) => t.id === "general"));
+	}
+	if (tabId === "receipt") {
+		layout_receipt_settings_dock(frm);
 	}
 }
 
@@ -2049,6 +2880,13 @@ function style_setting_cards(frm) {
 		if (!ctx || !ctx.$wrapper) return;
 		ctx.$wrapper.addClass("imogi-settings-card-section imogi-settings-flat-section");
 
+		if (fieldname === "store_identity_section") {
+			ctx.$wrapper.find("> .imogi-settings-flat-head, > .imogi-settings-flat-hint").remove();
+			const head_html = settings_flat_head_html(meta.title, "");
+			ctx.$wrapper.prepend(head_html);
+			return;
+		}
+
 		const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 		$body
 			.find(".imogi-settings-card-head, .imogi-settings-flat-head, .imogi-settings-flat-hint")
@@ -2069,21 +2907,21 @@ function get_section_subtitle(fieldname) {
 		store_identity_section: "",
 		branch_pricing_section: __("Price list master, sinkron harga ke cabang, dan push menu dari HQ."),
 		general_section: __("Perusahaan, profil kasir, gudang, dan shift kasir."),
-		inventory_section: __("Interval cek stok, role notifikasi, dan batas stok."),
-		receipt_section: __("Format cetak struk di layar kasir."),
-		import_section: __("Upload Excel/CSV: menu lengkap (Product+BOM) atau import terpisah."),
-		analytics_section: __("Notifikasi realtime dan interval refresh dashboard."),
+		inventory_section: "",
+		receipt_section: "",
+		import_section: "",
+		analytics_section: "",
 		flow_section: __("Kitchen display, fulfillment, dan item group dapur."),
-		loyalty_section: __("Poin per belanja, nilai poin, dan minimal redeem di kasir."),
-		stamp_section: __("Kumpulkan stamp per transaksi — reward voucher otomatis."),
-		promo_section: __("Rule Buy X Get Y diterapkan otomatis saat checkout."),
-		payment_gateway_section: __("QRIS via Midtrans atau Xendit di kasir."),
-		transfer_payment_section: __("Rekening bank yang ditampilkan saat pelanggan bayar transfer."),
-		integrations_section: __("Kasir offline (IndexedDB) dan order Grab/GoFood/ShopeeFood."),
-		operations_section: __("Role gating, approval workflow & central kitchen."),
-		franchise_section: __("Generate accrual royalty & posting ke Journal Entry."),
-		billing_section: __("Webhook billing eksternal untuk sinkron paket langganan otomatis."),
-		api_section: __("REST API untuk order online, katalog produk, dan customer."),
+		loyalty_section: "",
+		stamp_section: "",
+		promo_section: "",
+		payment_gateway_section: "",
+		transfer_payment_section: "",
+		integrations_section: "",
+		operations_section: "",
+		franchise_section: "",
+		billing_section: "",
+		api_section: "",
 	};
 	return map[fieldname] || "";
 }
@@ -2323,6 +3161,19 @@ function build_loyalty_dock(frm) {
 	if (!ctx || !ctx.$wrapper) return;
 	ctx.$wrapper.addClass("imogi-section-loyalty");
 
+	frm.set_df_property("enable_loyalty", "description", "");
+	frm.set_df_property("enable_stamp_card", "description", "");
+
+	const placeholders = {
+		loyalty_points_per_amount: __("Contoh: 10000 = 1 poin / Rp 10.000"),
+		loyalty_point_value: __("Contoh: 100 = Rp 100 / poin"),
+	};
+	Object.entries(placeholders).forEach(([fieldname, hint]) => {
+		frm.set_df_property(fieldname, "description", "");
+		const field = frm.fields_dict[fieldname];
+		if (field && field.$input) field.$input.attr("placeholder", hint);
+	});
+
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	if ($body.find(".imogi-loyalty-dock").length) return;
 
@@ -2339,42 +3190,140 @@ function render_loyalty_dock_summary(frm) {
 	const promo_on = cint(frm.doc.enable_promo_rules);
 
 	$panel.html(`
-		<div class="imogi-mini-stats imogi-mini-stats--grid">
-			<div class="imogi-mini-stat">
-				<span class="imogi-mini-stat-label">${__("Loyalty")}</span>
-				<span class="imogi-pill ${loyalty_on ? "is-green" : "is-orange"}">${loyalty_on ? __("Aktif") : __("Nonaktif")}</span>
-			</div>
-			<div class="imogi-mini-stat">
-				<span class="imogi-mini-stat-label">${__("Stamp Card")}</span>
-				<span class="imogi-pill ${stamp_on ? "is-green" : "is-orange"}">${stamp_on ? __("Aktif") : __("Nonaktif")}</span>
-			</div>
-			<div class="imogi-mini-stat">
-				<span class="imogi-mini-stat-label">${__("Promo Rules")}</span>
-				<span class="imogi-pill ${promo_on ? "is-green" : "is-orange"}">${promo_on ? __("Aktif") : __("Nonaktif")}</span>
-			</div>
-			${
-				loyalty_on
-					? `<div class="imogi-mini-stat">
-				<span class="imogi-mini-stat-label">${__("Konversi poin")}</span>
-				<span class="imogi-mini-stat-val">${format_currency(frm.doc.loyalty_points_per_amount || 0)} → 1 poin</span>
-			</div>`
-					: ""
-			}
-			${
-				stamp_on
-					? `<div class="imogi-mini-stat">
-				<span class="imogi-mini-stat-label">${__("Target stamp")}</span>
-				<span class="imogi-mini-stat-val">${cint(frm.doc.stamp_target) || 0} ${__("transaksi")}</span>
-			</div>`
-					: ""
-			}
+		<div class="imogi-mini-stats imogi-mini-stats--row">
+			<span class="imogi-pill ${loyalty_on ? "is-green" : "is-orange"}">${__("Loyalty")}: ${loyalty_on ? __("Aktif") : __("Nonaktif")}</span>
+			<span class="imogi-pill ${stamp_on ? "is-green" : "is-orange"}">${__("Stamp Card")}: ${stamp_on ? __("Aktif") : __("Nonaktif")}</span>
+			<span class="imogi-pill ${promo_on ? "is-green" : "is-orange"}">${__("Promo Rules")}: ${promo_on ? __("Aktif") : __("Nonaktif")}</span>
 		</div>`);
+}
+
+function apply_inventory_placeholders(frm) {
+	move_desc_to_placeholder(frm, {
+		low_stock_check_interval: __("Default: 180 detik (3 menit)"),
+	});
+	render_low_stock_roles_list(frm);
+}
+
+function render_low_stock_roles_list(frm) {
+	const field = frm.fields_dict.low_stock_alert_roles;
+	if (!field || !field.$wrapper) return;
+
+	frm.set_df_property("low_stock_alert_roles", "description", "");
+
+	const $control = field.$wrapper.closest(".frappe-control");
+	$control.addClass("imogi-role-list-control");
+
+	const $wrapper = field.$wrapper.find(".control-input-wrapper").first();
+	if (!$wrapper.length) return;
+
+	$wrapper.children(".control-input").hide();
+
+	if (frm._imogi_role_list_controls) {
+		frm._imogi_role_list_controls.forEach((c) => c?.destroy?.());
+	}
+	frm._imogi_role_list_controls = [];
+
+	let $host = $wrapper.children(".imogi-role-list-host");
+	if (!$host.length) {
+		$host = $('<div class="imogi-kitchen-list-cards-wrap imogi-role-list-host"></div>').appendTo(
+			$wrapper
+		);
+	}
+	$host.empty();
+
+	if (!frm._imogi_role_rows) {
+		frm._imogi_role_rows = (frm.doc.low_stock_alert_roles || "")
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean);
+	}
+	const roles = frm._imogi_role_rows;
+
+	const write = () => {
+		frm.doc.low_stock_alert_roles = roles.filter(Boolean).join(", ");
+		frm.dirty();
+	};
+
+	const $section = $(`
+		<div class="imogi-kitchen-list-section" data-fieldname="low_stock_alert_roles">
+			<div class="imogi-kitchen-list-cards"></div>
+		</div>`);
+	const $cards = $section.find(".imogi-kitchen-list-cards");
+
+	if (!roles.length) {
+		$cards.append(
+			`<div class="imogi-kitchen-list-empty">${__("Belum ada role. Klik tambah di bawah.")}</div>`
+		);
+	} else {
+		roles.forEach((role, idx) => {
+			const $card = $(`
+				<div class="imogi-kitchen-list-card" data-idx="${idx}">
+					<div class="imogi-kitchen-list-card-col">
+						<label>${__("Role")}</label>
+						<div class="imogi-kitchen-list-card-input-host"></div>
+					</div>
+					<button type="button" class="imogi-kitchen-list-card-remove" title="${__("Hapus")}"><i class="fa fa-trash-o"></i></button>
+				</div>`);
+			$cards.append($card);
+
+			const control = frappe.ui.form.make_control({
+				df: {
+					fieldtype: "Link",
+					options: "Role",
+					fieldname: `low_stock_role_${idx}`,
+					label: __("Role"),
+				},
+				parent: $card.find(".imogi-kitchen-list-card-input-host")[0],
+				render_input: true,
+				only_input: true,
+			});
+			control.make();
+			control.set_value(role || "");
+			control.$input?.on("change awesomplete-selectcomplete", () => {
+				roles[idx] = control.get_value();
+				write();
+			});
+			frm._imogi_role_list_controls.push(control);
+
+			$card.find(".imogi-kitchen-list-card-remove").on("click", () => {
+				roles.splice(idx, 1);
+				write();
+				render_low_stock_roles_list(frm);
+			});
+		});
+	}
+
+	const $add = $(
+		`<button type="button" class="imogi-kitchen-list-add"><i class="fa fa-plus"></i> ${__("Tambah role")}</button>`
+	);
+	$add.on("click", () => {
+		roles.push("");
+		render_low_stock_roles_list(frm);
+	});
+	$section.append($add);
+	$host.append($section);
+}
+
+function move_desc_to_placeholder(frm, placeholders) {
+	Object.entries(placeholders).forEach(([fieldname, hint]) => {
+		frm.set_df_property(fieldname, "description", "");
+		const field = frm.fields_dict[fieldname];
+		if (field && field.$input) {
+			field.$input.attr("placeholder", hint);
+			if (field.$input.is("textarea")) field.$input.attr("rows", 2);
+		}
+	});
 }
 
 function build_payment_dock(frm) {
 	const ctx = get_settings_section(frm, "payment_gateway_section");
 	if (!ctx || !ctx.$wrapper) return;
 	ctx.$wrapper.addClass("imogi-section-payment");
+
+	move_desc_to_placeholder(frm, {
+		payment_gateway_key: __("Midtrans Server Key / Xendit Secret API Key"),
+		payment_gateway_client_key: __("Opsional: Midtrans Client Key untuk Snap"),
+	});
 
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	if ($body.find(".imogi-payment-dock").length) return;
@@ -2402,36 +3351,22 @@ function render_payment_dock_summary(frm) {
 	const on = cint(frm.doc.enable_payment_gateway);
 	if (!on) {
 		$panel.html(`
-			<div class="imogi-status-card is-warning">
-				<div class="imogi-status-card-body">
-					<p class="imogi-muted mb-0">${__(
-						"Payment gateway belum aktif. Aktifkan toggle di bawah untuk QRIS di kasir."
-					)}</p>
-				</div>
+			<div class="imogi-mini-stats imogi-mini-stats--row">
+				<span class="imogi-pill is-orange">${__("Payment Gateway")}: ${__("Nonaktif")}</span>
 			</div>`);
 		return;
 	}
 
 	$panel.html(`
-		<div class="imogi-status-card is-success">
-			<div class="imogi-status-card-body">
-				<div class="imogi-mini-stats">
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Provider")}</span>
-						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(frm.doc.payment_gateway_provider || "-")}</span>
-					</div>
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Mode")}</span>
-						<span class="imogi-pill ${frm.doc.payment_gateway_sandbox ? "is-orange" : "is-green"}">${
-							frm.doc.payment_gateway_sandbox ? __("Sandbox") : __("Live")
-						}</span>
-					</div>
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Server Key")}</span>
-						<span class="imogi-mini-stat-val">${frm.doc.payment_gateway_key ? __("Tersimpan") : __("Belum diisi")}</span>
-					</div>
-				</div>
-			</div>
+		<div class="imogi-mini-stats imogi-mini-stats--row">
+			<span class="imogi-pill is-green">${__("Payment Gateway")}: ${__("Aktif")}</span>
+			<span class="imogi-pill is-blue">${__("Provider")}: ${frappe.utils.escape_html(frm.doc.payment_gateway_provider || "-")}</span>
+			<span class="imogi-pill ${frm.doc.payment_gateway_sandbox ? "is-orange" : "is-green"}">${__("Mode")}: ${
+				frm.doc.payment_gateway_sandbox ? __("Sandbox") : __("Live")
+			}</span>
+			<span class="imogi-pill ${frm.doc.payment_gateway_key ? "is-green" : "is-orange"}">${__("Server Key")}: ${
+				frm.doc.payment_gateway_key ? __("Tersimpan") : __("Belum diisi")
+			}</span>
 		</div>`);
 }
 
@@ -2439,6 +3374,10 @@ function build_transfer_dock(frm) {
 	const ctx = get_settings_section(frm, "transfer_payment_section");
 	if (!ctx || !ctx.$wrapper) return;
 	ctx.$wrapper.addClass("imogi-section-transfer");
+
+	move_desc_to_placeholder(frm, {
+		transfer_instructions: __("Catatan opsional untuk kasir / pelanggan (mis. konfirmasi via WhatsApp)"),
+	});
 
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	if ($body.find(".imogi-transfer-dock").length) return;
@@ -2471,53 +3410,26 @@ function render_transfer_dock_summary(frm) {
 
 	if (!on) {
 		$panel.html(`
-			<div class="imogi-status-card is-warning">
-				<div class="imogi-status-card-body">
-					<p class="imogi-muted mb-0">${__(
-						"Info rekening transfer belum aktif. Aktifkan toggle di bawah lalu isi data bank."
-					)}</p>
-				</div>
+			<div class="imogi-mini-stats imogi-mini-stats--row">
+				<span class="imogi-pill is-orange">${__("Info Rekening")}: ${__("Nonaktif")}</span>
 			</div>`);
 		return;
 	}
 
 	if (!bank || !account || !holder) {
 		$panel.html(`
-			<div class="imogi-status-card is-warning">
-				<div class="imogi-status-card-body">
-					<p class="imogi-muted mb-0">${__(
-						"Lengkapi nama bank, nomor rekening, dan atas nama agar tampil di kasir."
-					)}</p>
-				</div>
+			<div class="imogi-mini-stats imogi-mini-stats--row">
+				<span class="imogi-pill is-orange">${__("Info Rekening")}: ${__("Lengkapi data bank")}</span>
 			</div>`);
 		return;
 	}
 
 	$panel.html(`
-		<div class="imogi-status-card is-success">
-			<div class="imogi-status-card-body">
-				<div class="imogi-mini-stats">
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Bank")}</span>
-						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(bank)}</span>
-					</div>
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Rekening")}</span>
-						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(account)}</span>
-					</div>
-					<div class="imogi-mini-stat">
-						<span class="imogi-mini-stat-label">${__("Atas Nama")}</span>
-						<span class="imogi-mini-stat-val">${frappe.utils.escape_html(holder)}</span>
-					</div>
-				</div>
-				${
-					instructions
-						? `<p class="imogi-muted mb-0 mt-2"><i class="fa fa-info-circle"></i> ${frappe.utils.escape_html(
-								instructions
-						  )}</p>`
-						: ""
-				}
-			</div>
+		<div class="imogi-mini-stats imogi-mini-stats--row">
+			<span class="imogi-pill is-green">${__("Info Rekening")}: ${__("Aktif")}</span>
+			<span class="imogi-pill is-blue">${__("Bank")}: ${frappe.utils.escape_html(bank)}</span>
+			<span class="imogi-pill is-blue">${__("Rekening")}: ${frappe.utils.escape_html(account)}</span>
+			<span class="imogi-pill is-blue">${__("Atas Nama")}: ${frappe.utils.escape_html(holder)}</span>
 		</div>`);
 }
 
@@ -2915,7 +3827,7 @@ function layout_store_identity_target_combo($grid, frm) {
 	return $combo;
 }
 
-function normalize_store_identity_field_layout($ctrl) {
+function normalize_horizontal_settings_field($ctrl) {
 	if (!$ctrl || !$ctrl.length) return;
 	const $group = $ctrl.find("> .form-group").first();
 	if (!$group.length) return;
@@ -2949,7 +3861,22 @@ function normalize_store_identity_field_layout($ctrl) {
 			}
 		}
 		$group.data("imogi-horizontal-check", 1);
+		return;
 	}
+
+	if ($group.data("imogi-horizontal-field")) return;
+	$group.data("imogi-horizontal-field", 1);
+}
+
+function normalize_store_identity_field_layout($ctrl) {
+	normalize_horizontal_settings_field($ctrl);
+}
+
+function cleanup_store_identity_section_form(frm) {
+	const ctx = get_settings_section(frm, "store_identity_section");
+	if (!ctx || !ctx.$wrapper) return;
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	$body.children(".row").hide();
 }
 
 const SHIFT_SETTINGS_FIELDS = [
@@ -2961,12 +3888,84 @@ const SHIFT_SETTINGS_FIELDS = [
 	"default_closing_time",
 ];
 
-const KITCHEN_SETTINGS_FIELDS = [
+const KITCHEN_SETTINGS_FIELDS = ["enable_kitchen_display", "enable_fulfillment"];
+
+const KITCHEN_DOCK_LIST_CONFIGS = [
+	{
+		fieldname: "kitchen_item_group_rows",
+		value_field: "item_group",
+		label: __("Item Group Dapur"),
+		fieldtype: "Link",
+		options: "Item Group",
+		add_label: __("Tambah item group dapur"),
+		empty_label: __("Belum ada item group. Klik tambah di bawah."),
+		is_enabled: (frm) => cint(frm.doc.enable_kitchen_display),
+	},
+	{
+		fieldname: "fulfillment_order_type_rows",
+		value_field: "order_type",
+		label: __("Tipe Order"),
+		fieldtype: "Select",
+		options: "Dine-in\nTakeaway\nDelivery",
+		add_label: __("Tambah tipe order"),
+		empty_label: __("Belum ada tipe order. Klik tambah di bawah."),
+		is_enabled: (frm) => cint(frm.doc.enable_fulfillment),
+	},
+];
+
+const DOCK_TABLE_FIELDS = ["kitchen_item_group_rows", "fulfillment_order_type_rows"];
+
+const KITCHEN_DOCK_ALL_FIELDS = [...KITCHEN_SETTINGS_FIELDS, ...DOCK_TABLE_FIELDS];
+
+const _kitchen_dock_list_controls = new Map();
+
+const GENERAL_TAB_DOCK_FIELDS = [...SHIFT_SETTINGS_FIELDS, ...KITCHEN_DOCK_ALL_FIELDS];
+
+const RECEIPT_DOCK_FIELDS = [
+	"auto_print_receipt_on_success",
+	"enable_whatsapp_receipt",
+	"whatsapp_api_provider",
+	"fonnte_api_token",
+	"whatsapp_receipt_default_phone",
+	"whatsapp_receipt_message",
+];
+
+const DOCK_CHECKBOX_FIELDS = [
+	"enable_pos_shift",
+	"enable_shift_cash_detail",
 	"enable_kitchen_display",
 	"enable_fulfillment",
-	"kitchen_item_groups",
-	"fulfillment_for_order_types",
+	"auto_print_receipt_on_success",
+	"enable_whatsapp_receipt",
 ];
+
+const STORE_IDENTITY_LAYOUT_VERSION = "4";
+
+function teardown_store_identity_layout($body) {
+	const $controls = $body.find(
+		".imogi-store-form-grid .frappe-control, .imogi-store-target-combo, .imogi-store-email-field"
+	);
+	$controls.detach();
+	$body.find(".imogi-store-identity-card, .imogi-store-identity-layout").remove();
+	$controls.appendTo($body);
+}
+
+function build_store_identity_shell($body) {
+	$body.prepend(`
+		<div class="imogi-store-identity-card" data-layout-version="${STORE_IDENTITY_LAYOUT_VERSION}">
+			<div class="imogi-store-identity-layout">
+				<div class="imogi-store-identity-main">
+					<div class="imogi-store-form-grid"></div>
+				</div>
+				<div class="imogi-receipt-preview-wrap">
+					<div class="imogi-receipt-preview-head">${__("Preview Struk")}</div>
+					<div class="imogi-receipt-preview-paper">
+						<div class="imogi-receipt-preview-body"></div>
+					</div>
+				</div>
+			</div>
+		</div>`);
+}
 
 function layout_store_identity(frm) {
 	const ctx = get_settings_section(frm, "store_identity_section");
@@ -2974,22 +3973,21 @@ function layout_store_identity(frm) {
 
 	ctx.$wrapper.addClass("imogi-store-identity-section imogi-settings-card-section");
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	if (!$body.length) return;
 
 	frm.set_df_property("default_company", "label", __("Nama Toko"));
 	frm.set_df_property("target_monthly_sales", "description", "");
 
-	if (!$body.find(".imogi-store-identity-layout").length) {
+	const $card = $body.find(".imogi-store-identity-card");
+	const needs_rebuild =
+		!$card.length ||
+		$card.attr("data-layout-version") !== STORE_IDENTITY_LAYOUT_VERSION ||
+		$body.find(".imogi-store-info-banner, .imogi-store-trust-row").length > 0;
+
+	if (needs_rebuild) {
+		teardown_store_identity_layout($body);
 		$body.find(".imogi-settings-card-head").remove();
-		$body.prepend(`
-			<div class="imogi-store-identity-layout">
-				<div class="imogi-store-form-grid"></div>
-				<div class="imogi-receipt-preview-wrap">
-					<div class="imogi-receipt-preview-head">${__("Preview Struk")}</div>
-					<div class="imogi-receipt-preview-paper">
-						<div class="imogi-receipt-preview-body"></div>
-					</div>
-				</div>
-			</div>`);
+		build_store_identity_shell($body);
 	}
 
 	const $grid = $body.find(".imogi-store-form-grid");
@@ -3037,12 +4035,392 @@ function layout_store_identity(frm) {
 		}
 	});
 	hide_settings_general_extras(frm);
+	cleanup_store_identity_section_form(frm);
 }
 
 function ensure_dock_section_head($dock, title, hint) {
 	if (!$dock || !$dock.length) return;
-	$dock.children(".imogi-settings-flat-head, .imogi-settings-flat-hint").remove();
+	$dock.children(".imogi-settings-flat-head, .imogi-settings-flat-hint, .imogi-dock-card-head").remove();
 	$dock.prepend(settings_flat_head_html(title, hint));
+}
+
+function configure_shift_dock_fields(frm) {
+	frm.set_df_property("enable_pos_shift", "label", __("Session Kasir"));
+	["enable_pos_shift", "enable_shift_cash_detail", "default_pos_profile", "default_warehouse"].forEach(
+		(fieldname) => frm.set_df_property(fieldname, "description", "")
+	);
+}
+
+function dock_field_depends_visible(frm, fieldname) {
+	const depends_map = {
+		kitchen_item_group_rows: () => cint(frm.doc.enable_kitchen_display),
+		fulfillment_order_type_rows: () => cint(frm.doc.enable_fulfillment),
+		enable_shift_cash_detail: () => cint(frm.doc.enable_pos_shift),
+		auto_print_receipt_on_success: () => cint(frm.doc.enable_receipt_print),
+		enable_whatsapp_receipt: () => cint(frm.doc.enable_receipt_print),
+		whatsapp_api_provider: () =>
+			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
+		fonnte_api_token: () =>
+			cint(frm.doc.enable_receipt_print) &&
+			cint(frm.doc.enable_whatsapp_receipt) &&
+			(frm.doc.whatsapp_api_provider || "") === "Fonnte",
+		whatsapp_receipt_default_phone: () =>
+			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
+		whatsapp_receipt_message: () =>
+			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
+	};
+	if (depends_map[fieldname]) {
+		return depends_map[fieldname]();
+	}
+	const df = frappe.meta.get_docfield(frm.doctype, fieldname, frm.doc.name);
+	if (!df || cint(df.hidden)) return false;
+	if (!df.depends_on) return true;
+	if (frm.layout && typeof frm.layout.evaluate_depends_on_value === "function") {
+		return !!frm.layout.evaluate_depends_on_value(df.depends_on);
+	}
+	if (typeof df.depends_on === "string" && df.depends_on.startsWith("eval:")) {
+		try {
+			return !!frappe.utils.eval(df.depends_on.substr(5), { doc: frm.doc, parent: frm.doc });
+		} catch (e) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function dock_field_should_show(frm, fieldname) {
+	return dock_field_depends_visible(frm, fieldname);
+}
+
+function hide_settings_section_shell(frm, section_name) {
+	const ctx = get_settings_section(frm, section_name);
+	if (!ctx || !ctx.$wrapper) return;
+	ctx.$wrapper.hide();
+}
+
+const DOCK_FIELD_HOME_SECTION = {
+	enable_pos_shift: "general_section",
+	enable_shift_cash_detail: "general_section",
+	default_pos_profile: "general_section",
+	default_warehouse: "general_section",
+	enable_kitchen_display: "flow_section",
+	enable_fulfillment: "flow_section",
+	kitchen_item_group_rows: "flow_section",
+	fulfillment_order_type_rows: "flow_section",
+	auto_print_receipt_on_success: "receipt_section",
+	enable_whatsapp_receipt: "receipt_section",
+	whatsapp_receipt_default_phone: "receipt_section",
+	whatsapp_receipt_message: "receipt_section",
+};
+
+function ensure_dock_field_rendered(frm, fieldname) {
+	const section_name = DOCK_FIELD_HOME_SECTION[fieldname];
+	let $section = null;
+	let was_hidden = false;
+	if (section_name) {
+		const ctx = get_settings_section(frm, section_name);
+		$section = ctx?.$wrapper;
+		if ($section?.length && !$section.is(":visible")) {
+			was_hidden = true;
+			$section.show().removeClass("hide-control");
+			const $body = ctx.section.body || $section.find(".section-body");
+			$body?.show();
+		}
+	}
+	const field = frm.fields_dict[fieldname];
+	if (!field) {
+		if (was_hidden && $section) $section.hide();
+		return false;
+	}
+	if (field.df) {
+		field.df.hidden = 0;
+		field.df.hidden_due_to_dependency = 0;
+	}
+	frm.toggle_display(fieldname, true);
+	if ((!field.$wrapper || !field.$wrapper.length) && typeof field.make === "function") {
+		field.make();
+	}
+	const ok = !!(field.$wrapper && field.$wrapper.length);
+	if (was_hidden && $section) {
+		$section.hide();
+	}
+	return ok;
+}
+
+function get_dock_field_control(frm, fieldname) {
+	if (!frm.fields_dict[fieldname]) return null;
+	const $mounted = frm.$wrapper.find(
+		`.imogi-shift-settings-dock .frappe-control[data-fieldname="${fieldname}"], ` +
+			`.imogi-kitchen-settings-dock .frappe-control[data-fieldname="${fieldname}"], ` +
+			`.imogi-receipt-settings-dock .frappe-control[data-fieldname="${fieldname}"]`
+	);
+	if ($mounted.length) {
+		return $mounted.first();
+	}
+	if (!ensure_dock_field_rendered(frm, fieldname)) return null;
+	const field = frm.fields_dict[fieldname];
+	if (!field.$wrapper || !field.$wrapper.length) return null;
+	return field.$wrapper.closest(".frappe-control");
+}
+
+function get_dock_checkbox_inputs(frm, fieldname) {
+	return frm.$wrapper.find(
+		`.imogi-shift-settings-dock .frappe-control[data-fieldname="${fieldname}"] input[type="checkbox"], ` +
+			`.imogi-kitchen-settings-dock .frappe-control[data-fieldname="${fieldname}"] input[type="checkbox"], ` +
+			`.imogi-receipt-settings-dock .frappe-control[data-fieldname="${fieldname}"] input[type="checkbox"]`
+	);
+}
+
+function bind_dock_checkbox_handlers_once(frm) {
+	if (frm._imogi_dock_checkbox_bound) return;
+	frm._imogi_dock_checkbox_bound = true;
+
+	frm.$wrapper.on(
+		"click.imogi_dock_check",
+		'.imogi-shift-settings-dock input[type="checkbox"], .imogi-kitchen-settings-dock input[type="checkbox"], .imogi-receipt-settings-dock input[type="checkbox"]',
+		function () {
+			const $input = $(this);
+			const fieldname = $input.closest(".frappe-control").attr("data-fieldname");
+			if (!fieldname || !DOCK_CHECKBOX_FIELDS.includes(fieldname)) return;
+
+			setTimeout(() => {
+				const value = $input.prop("checked") ? 1 : 0;
+				if (cint(frm.doc[fieldname]) !== value) {
+					frm.doc[fieldname] = value;
+					frm.dirty();
+				}
+				if (fieldname === "enable_pos_shift" || fieldname === "enable_shift_cash_detail") {
+					frappe.after_ajax(() => layout_shift_settings(frm));
+					return;
+				}
+				frappe.after_ajax(() => layout_kitchen_settings(frm));
+			}, 0);
+		}
+	);
+}
+
+function hook_settings_form_save(frm) {
+	if (frm._imogi_save_hooked) return;
+	frm._imogi_save_hooked = true;
+	const original_save = frm.save.bind(frm);
+	frm.save = function (...args) {
+		apply_dock_fields_before_save(frm);
+		return original_save(...args);
+	};
+}
+
+function apply_dock_fields_before_save(frm) {
+	sync_dock_fields_to_doc(frm);
+	if (frm.is_dirty()) return;
+	const saved = frappe.model.get_doc(frm.doctype, frm.doc.name);
+	if (!saved) return;
+	for (const fieldname of DOCK_CHECKBOX_FIELDS) {
+		const current = DOCK_CHECKBOX_FIELDS.includes(fieldname)
+			? cint(frm.doc[fieldname])
+			: String(frm.doc[fieldname] ?? "");
+		const original = DOCK_CHECKBOX_FIELDS.includes(fieldname)
+			? cint(saved[fieldname])
+			: String(saved[fieldname] ?? "");
+		if (current !== original) {
+			frm.dirty();
+			break;
+		}
+	}
+}
+
+function read_dock_checkbox_value(frm, fieldname) {
+	const $inputs = get_dock_checkbox_inputs(frm, fieldname);
+	if ($inputs.length) {
+		const $target = $inputs.filter(":visible").first().length ? $inputs.filter(":visible").first() : $inputs.first();
+		return $target.prop("checked") ? 1 : 0;
+	}
+	return cint(frm.doc[fieldname]);
+}
+
+function write_dock_checkbox_value(frm, fieldname, value) {
+	const checked = !!cint(value);
+	get_dock_checkbox_inputs(frm, fieldname).prop("checked", checked);
+	const field = frm.get_field(fieldname);
+	if (field?.$wrapper?.length) {
+		field.$wrapper.find('input[type="checkbox"]').prop("checked", checked);
+	}
+}
+
+function sync_dock_checkbox_from_doc(frm, fieldnames) {
+	fieldnames.forEach((fieldname) => {
+		write_dock_checkbox_value(frm, fieldname, frm.doc[fieldname]);
+	});
+}
+
+function sync_dock_fields_to_doc(frm) {
+	let changed = false;
+	DOCK_CHECKBOX_FIELDS.forEach((fieldname) => {
+		const value = read_dock_checkbox_value(frm, fieldname);
+		if (cint(frm.doc[fieldname]) !== value) {
+			frm.doc[fieldname] = value;
+			changed = true;
+		}
+	});
+	if (changed) frm.dirty();
+}
+
+function destroy_kitchen_dock_list_controls() {
+	_kitchen_dock_list_controls.forEach((ctrl) => ctrl?.destroy?.());
+	_kitchen_dock_list_controls.clear();
+}
+
+function hide_kitchen_native_table_fields(frm) {
+	DOCK_TABLE_FIELDS.forEach((fieldname) => {
+		frm.toggle_display(fieldname, false);
+		frm.$wrapper.find(`.frappe-control[data-fieldname="${fieldname}"]`).hide();
+	});
+}
+
+function render_kitchen_dock_list_cards(frm, $dock) {
+	destroy_kitchen_dock_list_controls();
+	hide_kitchen_native_table_fields(frm);
+
+	let $lists = $dock.find(".imogi-kitchen-list-cards-wrap");
+	if (!$lists.length) {
+		$lists = $('<div class="imogi-kitchen-list-cards-wrap"></div>');
+		$dock.find(".imogi-kitchen-form-grid").after($lists);
+	}
+	$lists.empty();
+
+	KITCHEN_DOCK_LIST_CONFIGS.forEach((config) => {
+		if (!config.is_enabled(frm)) return;
+
+		const rows = frm.doc[config.fieldname] || [];
+		const $section = $(`
+			<div class="imogi-kitchen-list-section" data-fieldname="${config.fieldname}">
+				<div class="imogi-kitchen-list-section-label">${frappe.utils.escape_html(config.label)}</div>
+				<div class="imogi-kitchen-list-cards"></div>
+			</div>
+		`);
+		const $cards = $section.find(".imogi-kitchen-list-cards");
+
+		if (!rows.length) {
+			$cards.append(`<div class="imogi-kitchen-list-empty">${config.empty_label}</div>`);
+		} else {
+			rows.forEach((row, idx) => {
+				const $card = $(`
+					<div class="imogi-kitchen-list-card" data-idx="${idx}">
+						<div class="imogi-kitchen-list-card-col">
+							<label>${frappe.utils.escape_html(config.label)}</label>
+							<div class="imogi-kitchen-list-card-input-host"></div>
+						</div>
+						<button type="button" class="imogi-kitchen-list-card-remove" title="${__("Hapus")}"><i class="fa fa-trash-o"></i></button>
+					</div>
+				`);
+				$cards.append($card);
+
+				const controlKey = `${config.fieldname}-${idx}`;
+				const control = frappe.ui.form.make_control({
+					df: {
+						fieldtype: config.fieldtype,
+						options: config.options,
+						fieldname: `${config.fieldname}_${idx}`,
+						label: config.label,
+					},
+					parent: $card.find(".imogi-kitchen-list-card-input-host")[0],
+					render_input: true,
+					only_input: true,
+				});
+				control.make();
+				control.set_value(row[config.value_field] || "");
+				control.$input?.on("change awesomplete-selectcomplete", () => {
+					frm.doc[config.fieldname][idx][config.value_field] = control.get_value();
+					frm.dirty();
+				});
+				_kitchen_dock_list_controls.set(controlKey, control);
+
+				$card.find(".imogi-kitchen-list-card-remove").on("click", () => {
+					frm.doc[config.fieldname].splice(idx, 1);
+					frm.dirty();
+					layout_kitchen_settings(frm);
+				});
+			});
+		}
+
+		const $add = $(`<button type="button" class="imogi-kitchen-list-add"><i class="fa fa-plus"></i> ${config.add_label}</button>`);
+		$add.on("click", () => {
+			frm.add_child(config.fieldname, {});
+			frm.dirty();
+			layout_kitchen_settings(frm);
+		});
+		$section.append($add);
+		$lists.append($section);
+	});
+}
+
+function bind_dock_table_field_sync(frm) {
+	if (frm._imogi_dock_table_bound) return;
+	frm._imogi_dock_table_bound = true;
+	frm.$wrapper.on(
+		"grid-row-added.imogi_dock_table grid-row-removed.imogi_dock_table",
+		".imogi-kitchen-settings-dock .form-grid",
+		() => frm.dirty()
+	);
+}
+
+function configure_kitchen_dock_tables(frm) {
+	hide_kitchen_native_table_fields(frm);
+}
+
+function hide_duplicate_dock_fields(frm, fieldnames) {
+	fieldnames.forEach((fieldname) => {
+		frm.$wrapper
+			.find(`.frappe-control[data-fieldname="${fieldname}"]`)
+			.not(
+				".imogi-shift-settings-dock .frappe-control, .imogi-kitchen-settings-dock .frappe-control, .imogi-receipt-settings-dock .frappe-control"
+			)
+			.hide();
+	});
+}
+
+function mount_settings_dock_fields(frm, $grid, fieldnames, field_class) {
+	$grid.find("> .imogi-dock-check-row .frappe-control").detach();
+	$grid.find("> .imogi-dock-check-row").remove();
+
+	fieldnames.forEach((fieldname) => {
+		const should_show = dock_field_should_show(frm, fieldname);
+		if (!should_show) {
+			const $hidden = get_dock_field_control(frm, fieldname);
+			if ($hidden?.length) {
+				$hidden.detach().addClass("hide-control").hide();
+			}
+			frm.toggle_display(fieldname, false);
+			return;
+		}
+		const $ctrl = get_dock_field_control(frm, fieldname);
+		if (!$ctrl || !$ctrl.length) return;
+		$ctrl.detach().removeClass("hide-control").addClass(field_class).show();
+		const fieldtype = $ctrl.attr("data-fieldtype");
+		if (fieldtype !== "Small Text" && fieldtype !== "Text" && fieldtype !== "Table") {
+			normalize_horizontal_settings_field($ctrl);
+		}
+		$ctrl.find(".help-box, .small.text-muted").remove();
+		$grid.append($ctrl);
+	});
+}
+
+function group_dock_checkbox_row($grid, frm, fieldnames) {
+	if (!$grid || !$grid.length || !frm || !fieldnames || fieldnames.length < 2) return;
+	const $controls = fieldnames
+		.map((fieldname) => {
+			const field = frm.get_field(fieldname);
+			if (!field || !field.$wrapper) return null;
+			const $ctrl = field.$wrapper.closest(".frappe-control");
+			if (!$ctrl.length || !$.contains($grid[0], $ctrl[0])) return null;
+			return $ctrl;
+		})
+		.filter(Boolean);
+	if ($controls.length < 2) return;
+
+	$grid.find("> .imogi-dock-check-row").remove();
+	const $row = $('<div class="imogi-dock-check-row"></div>');
+	$controls[0].before($row);
+	$controls.forEach(($ctrl) => $row.append($ctrl));
 }
 
 function layout_shift_settings(frm) {
@@ -3054,30 +4432,20 @@ function layout_shift_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-shift-settings-dock">
-				<div class="imogi-shift-status"></div>
 				<div class="imogi-shift-form-grid"></div>
-				<div class="imogi-shift-quick-links">
-					<a href="/app/imogi-pos-open-shift"><i class="fa fa-sign-in"></i> ${__("Buka Shift")}</a>
-					<a href="/app/imogi-pos-close-shift"><i class="fa fa-sign-out"></i> ${__("Tutup Shift")}</a>
-					<a href="/app/pos-opening-entry"><i class="fa fa-list"></i> ${__("POS Opening Entry")}</a>
-					<a href="/app/pos-closing-entry"><i class="fa fa-list-alt"></i> ${__("POS Closing Entry")}</a>
-				</div>
 			</div>`);
 		$body.append($dock);
 	}
 	ensure_dock_section_head($dock, __("Session Kasir & Opening/Closing Entry"), "");
+	configure_shift_dock_fields(frm);
 
 	const $grid = $dock.find(".imogi-shift-form-grid");
-	SHIFT_SETTINGS_FIELDS.forEach((fieldname) => {
-		frm.toggle_display(fieldname, true);
-		const field = frm.get_field(fieldname);
-		if (!field || !field.$wrapper) return;
-		const $ctrl = field.$wrapper.closest(".frappe-control");
-		$ctrl.addClass("imogi-shift-field");
-		$grid.append($ctrl);
-	});
-
-	render_shift_dock_summary(frm);
+	$grid.addClass("imogi-shift-form-grid--horizontal");
+	mount_settings_dock_fields(frm, $grid, SHIFT_SETTINGS_FIELDS, "imogi-shift-field");
+	group_dock_checkbox_row($grid, frm, ["enable_pos_shift", "enable_shift_cash_detail"]);
+	sync_dock_checkbox_from_doc(frm, ["enable_pos_shift", "enable_shift_cash_detail"]);
+	hide_duplicate_dock_fields(frm, SHIFT_SETTINGS_FIELDS);
+	$dock.find(".imogi-shift-status, .imogi-shift-quick-links").remove();
 }
 
 function layout_kitchen_settings(frm) {
@@ -3089,32 +4457,88 @@ function layout_kitchen_settings(frm) {
 	if (!$dock.length) {
 		$dock = $(`
 			<div class="imogi-kitchen-settings-dock">
-				<div class="imogi-kitchen-status"></div>
 				<div class="imogi-kitchen-form-grid"></div>
-				<div class="imogi-kitchen-quick-links">
-					<a href="/app/kitchen-display"><i class="fa fa-desktop"></i> ${__("Kitchen Display")}</a>
-				</div>
 			</div>`);
 		$body.append($dock);
 	}
 	ensure_dock_section_head($dock, __("Kitchen & Fulfillment"), "");
 
 	const $grid = $dock.find(".imogi-kitchen-form-grid");
-	KITCHEN_SETTINGS_FIELDS.forEach((fieldname) => {
-		frm.toggle_display(fieldname, true);
-		const field = frm.get_field(fieldname);
-		if (!field || !field.$wrapper) return;
-		const $ctrl = field.$wrapper.closest(".frappe-control");
-		$ctrl.addClass("imogi-kitchen-field");
-		$grid.append($ctrl);
-	});
+	$grid.addClass("imogi-kitchen-form-grid--horizontal");
+	mount_settings_dock_fields(frm, $grid, KITCHEN_SETTINGS_FIELDS, "imogi-kitchen-field");
+	group_dock_checkbox_row($grid, frm, ["enable_kitchen_display", "enable_fulfillment"]);
+	configure_kitchen_dock_tables(frm);
+	render_kitchen_dock_list_cards(frm, $dock);
+	sync_dock_checkbox_from_doc(frm, ["enable_kitchen_display", "enable_fulfillment"]);
+	hide_duplicate_dock_fields(frm, KITCHEN_DOCK_ALL_FIELDS);
+	$dock.find(".imogi-kitchen-status, .imogi-kitchen-quick-links").remove();
 
 	const flow_ctx = get_settings_section(frm, "flow_section");
 	if (flow_ctx && flow_ctx.$wrapper) {
 		flow_ctx.$wrapper.hide();
 	}
+}
 
-	render_kitchen_dock_summary(frm);
+function layout_receipt_settings_dock(frm) {
+	const ctx = get_settings_section(frm, "receipt_section");
+	if (!ctx || !ctx.$wrapper) return;
+
+	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
+	let $dock = $body.find(".imogi-receipt-settings-dock");
+	if (!$dock.length) {
+		$dock = $(`
+			<div class="imogi-receipt-settings-dock">
+				<div class="imogi-receipt-dock-head">${__("WhatsApp & Cetak Otomatis")}</div>
+				<div class="imogi-receipt-form-grid"></div>
+			</div>`);
+		const $footer = frm.$wrapper.find('.frappe-control[data-fieldname="receipt_footer"]');
+		if ($footer.length) {
+			$footer.after($dock);
+		} else {
+			$body.append($dock);
+		}
+	}
+
+	const $grid = $dock.find(".imogi-receipt-form-grid");
+	$grid.empty();
+	$dock.find(".imogi-receipt-migrate-hint").remove();
+
+	const missing_fields = RECEIPT_DOCK_FIELDS.filter((fieldname) => !frm.fields_dict[fieldname]);
+	if (missing_fields.length) {
+		$dock.append(`
+			<div class="imogi-receipt-migrate-hint alert alert-warning" style="margin-top:8px;">
+				${__(
+					"Field WhatsApp belum tersedia di database. Jalankan <code>bench migrate</code> lalu muat ulang halaman ini."
+				)}
+			</div>`);
+		RECEIPT_DOCK_FIELDS.forEach((fieldname) => {
+			if (frm.fields_dict[fieldname]) frm.toggle_display(fieldname, true);
+		});
+		return;
+	}
+
+	$grid.addClass("imogi-receipt-form-grid--horizontal");
+	mount_settings_dock_fields(frm, $grid, RECEIPT_DOCK_FIELDS, "imogi-receipt-field");
+	group_dock_checkbox_row($grid, frm, ["auto_print_receipt_on_success", "enable_whatsapp_receipt"]);
+	sync_dock_checkbox_from_doc(frm, ["auto_print_receipt_on_success", "enable_whatsapp_receipt"]);
+
+	const mounted = $grid.find("> .frappe-control, > .imogi-dock-check-row .frappe-control").length;
+	if (mounted > 0) {
+		hide_duplicate_dock_fields(frm, RECEIPT_DOCK_FIELDS);
+	} else {
+		RECEIPT_DOCK_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
+	}
+
+	const wa_on = cint(frm.doc.enable_whatsapp_receipt);
+	["whatsapp_api_provider", "fonnte_api_token", "whatsapp_receipt_default_phone", "whatsapp_receipt_message"].forEach((fieldname) => {
+		const $ctrl = $grid.find(`.frappe-control[data-fieldname="${fieldname}"]`);
+		if (!$ctrl.length) return;
+		if (fieldname === "fonnte_api_token") {
+			$ctrl.toggle(!!wa_on && (frm.doc.whatsapp_api_provider || "") === "Fonnte");
+			return;
+		}
+		$ctrl.toggle(!!wa_on);
+	});
 }
 
 function render_kitchen_dock_summary(frm) {
@@ -3164,6 +4588,13 @@ function render_shift_dock_summary(frm) {
 		);
 }
 
+function get_receipt_logo_preview_url(frm) {
+	const path = (frm.doc.receipt_logo || "").trim();
+	if (!path) return "";
+	if (/^https?:\/\//i.test(path)) return path;
+	return frappe.urllib.get_full_url(path);
+}
+
 function render_receipt_preview(frm) {
 	const $paper = frm.$wrapper.find(".imogi-receipt-preview-body");
 	const $email = frm.$wrapper.find(".imogi-store-email-value");
@@ -3175,12 +4606,19 @@ function render_receipt_preview(frm) {
 	const header = (frm.doc.receipt_header || "").trim();
 	const footer = (frm.doc.receipt_footer || __("Terima kasih!")).trim();
 	const store_name = String(company).toUpperCase();
+	const logo_url = get_receipt_logo_preview_url(frm);
+	const logo_html = logo_url
+		? `<div class="imogi-rcpt-logo-wrap"><img class="imogi-rcpt-logo" src="${frappe.utils.escape_html(
+				logo_url
+		  )}" alt="Logo"></div>`
+		: "";
 
 	const paint = (email) => {
 		if ($email.length) {
 			$email.text(email || "—");
 		}
 		$paper.html(`
+			${logo_html}
 			<div class="imogi-rcpt-store">${frappe.utils.escape_html(store_name)}</div>
 			${city ? `<div class="imogi-rcpt-line">${frappe.utils.escape_html(city)}</div>` : ""}
 			${phone ? `<div class="imogi-rcpt-line">${frappe.utils.escape_html(phone)}</div>` : ""}
@@ -3230,8 +4668,8 @@ function show_settings_placeholder(frm, tabId) {
 
 function toggle_general_tab_sections(frm, tabId) {
 	if (tabId !== "general") return;
-	["branch_pricing_section", "general_section"].forEach((section) => {
-		set_settings_section_visible(frm, section, false);
+	["branch_pricing_section", "general_section", "flow_section"].forEach((section) => {
+		hide_settings_section_shell(frm, section);
 	});
 	[
 		"master_selling_price_list",
@@ -3239,11 +4677,6 @@ function toggle_general_tab_sections(frm, tabId) {
 		"sync_branch_prices",
 		"hq_push_menu_from_branch",
 		"hq_ensure_branch_price_lists",
-		"default_opening_time",
-		"default_closing_time",
-		"default_pos_profile",
-		"default_warehouse",
-		"enable_pos_shift",
 	].forEach((fieldname) => frm.toggle_display(fieldname, false));
 	[...STORE_IDENTITY_GRID_ORDER, "target_monthly_sales", "multi_branch"].forEach((fieldname) =>
 		frm.toggle_display(fieldname, true)

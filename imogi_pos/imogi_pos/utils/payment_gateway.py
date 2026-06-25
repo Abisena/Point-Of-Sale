@@ -246,6 +246,7 @@ def get_webhook_url(provider=None):
 def create_gateway_payment(
 	items,
 	customer=None,
+	customer_phone=None,
 	discount_type=None,
 	discount_value=None,
 	voucher_code=None,
@@ -272,6 +273,7 @@ def create_gateway_payment(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=loyalty_points_redeem,
 		customer=customer,
+		customer_phone=customer_phone,
 		company=branch_ctx["company"],
 		branch=branch_ctx.get("branch_code"),
 	)

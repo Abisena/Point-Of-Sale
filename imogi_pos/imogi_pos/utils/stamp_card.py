@@ -60,11 +60,17 @@ def _create_stamp_reward_voucher(order, member, config):
 	while frappe.db.exists("IMOGI POS Voucher", code):
 		code = f"STAMP-{frappe.generate_hash(length=8).upper()}"
 
+	from imogi_pos.imogi_pos.utils.loyalty import _resolve_customer_phone_for_voucher, normalize_phone
+
+	owner_phone = normalize_phone(_resolve_customer_phone_for_voucher(member.customer))
+
 	voucher = frappe.get_doc(
 		{
 			"doctype": "IMOGI POS Voucher",
 			"voucher_code": code,
 			"company": company,
+			"customer": member.customer,
+			"customer_mobile": owner_phone,
 			"discount_type": config["reward_discount_type"],
 			"discount_value": config["reward_discount_value"],
 			"min_order_amount": config["reward_min_order"],

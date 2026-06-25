@@ -190,6 +190,11 @@ imogi_pos.thermal.build_receipt_html = function (order, options = {}) {
 	const footer = options.footer
 		? `<div class="foot">${frappe.utils.escape_html(options.footer)}</div>`
 		: "";
+	const logo = options.logo_url
+		? `<div class="logo-wrap"><img class="logo" src="${frappe.utils.escape_html(
+				options.logo_url
+		  )}" alt="Logo"></div>`
+		: "";
 
 	return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${frappe.utils.escape_html(
 		order.name || "Receipt"
@@ -199,6 +204,8 @@ imogi_pos.thermal.build_receipt_html = function (order, options = {}) {
 body { margin: 0; padding: 12px; font-family: "Segoe UI", Arial, sans-serif; background: #f1f5f9; }
 .receipt { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; color: #111; font-size: 12px; margin: 0 auto; max-width: 280px; padding: 14px 12px 18px; }
 .head { border-bottom: 2px solid #111; margin-bottom: 10px; padding-bottom: 10px; text-align: center; }
+.logo-wrap { margin-bottom: 8px; text-align: center; }
+.logo { display: block; height: auto; margin: 0 auto; max-height: 56px; max-width: 100%; object-fit: contain; width: auto; }
 .store { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .sub { color: #666; font-size: 10px; margin-top: 4px; }
 .meta { border-bottom: 1px dashed #ccc; margin-bottom: 10px; padding-bottom: 8px; }
@@ -222,7 +229,7 @@ tbody td { border-bottom: 1px dotted #eee; padding: 6px 0; vertical-align: top; 
 @media print { body { background: #fff; padding: 0; } .receipt { border: none; border-radius: 0; max-width: 72mm; } }
 </style></head><body>
 <div class="receipt">
-  <div class="head"><div class="store">${store}</div>${branch}${header}</div>
+  <div class="head">${logo}<div class="store">${store}</div>${branch}${header}</div>
   <div class="meta">
     <div class="meta-row"><span>${__("No. Order")}</span><span>${frappe.utils.escape_html(
 		order.name || ""
@@ -286,6 +293,26 @@ function _resolve_thermal_mode(mode) {
 
 imogi_pos.thermal.resolve_mode = _resolve_thermal_mode;
 
+let _cachedSerialPort = null;
+
+async function _get_serial_port(options = {}) {
+	const baud = cint(options.baud_rate) || 9600;
+	if (_cachedSerialPort) {
+		try {
+			if (!_cachedSerialPort.readable) {
+				await _cachedSerialPort.open({ baudRate: baud });
+			}
+			return _cachedSerialPort;
+		} catch (e) {
+			_cachedSerialPort = null;
+		}
+	}
+	const port = await navigator.serial.requestPort();
+	await port.open({ baudRate: baud });
+	_cachedSerialPort = port;
+	return port;
+}
+
 function _escpos_to_bytes(data) {
 	const bytes = new Uint8Array(data.length);
 	for (let i = 0; i < data.length; i++) {
@@ -317,10 +344,12 @@ imogi_pos.thermal._print_browser = function (order, options = {}) {
 		try {
 			win.focus();
 			win.print();
-			frappe.show_alert({
-				message: __("Dialog cetak dibuka — pilih printer Epson Anda"),
-				indicator: "blue",
-			});
+			if (options.show_print_alert !== false) {
+				frappe.show_alert({
+					message: __("Dialog cetak dibuka — pilih printer Epson Anda"),
+					indicator: "blue",
+				});
+			}
 		} catch (e) {
 			frappe.msgprint({
 				title: __("Gagal membuka dialog cetak"),
@@ -345,16 +374,15 @@ imogi_pos.thermal.print_order = async function (order, options = {}) {
 					"Printer USB Epson TM-T82X sebaiknya pakai mode <b>Browser</b>. Beralih ke cetak browser sekarang."
 				),
 			});
+			if (options.skip_browser_fallback) return false;
 			return imogi_pos.thermal._print_browser(order, options);
 		}
 		const data = imogi_pos.thermal.build_receipt(order, options);
 		try {
-			const port = await navigator.serial.requestPort();
-			await port.open({ baudRate: cint(options.baud_rate) || 9600 });
+			const port = await _get_serial_port(options);
 			const writer = port.writable.getWriter();
 			await writer.write(_escpos_to_bytes(data));
 			writer.releaseLock();
-			await port.close();
 			frappe.show_alert({ message: __("Struk thermal terkirim"), indicator: "green" });
 			return true;
 		} catch (e) {
@@ -369,6 +397,7 @@ imogi_pos.thermal.print_order = async function (order, options = {}) {
 					),
 				});
 			}
+			if (options.skip_browser_fallback) return false;
 			return imogi_pos.thermal._print_browser(order, options);
 		}
 	}
@@ -402,7 +431,9 @@ imogi_pos.thermal.get_print_options = function (context, payment_info = {}) {
 		branch_name: ctx.active_branch?.branch_name,
 		header: ctx.receipt_header || frappe.boot.imogi_pos_receipt_header || "",
 		footer: ctx.receipt_footer || frappe.boot.imogi_pos_receipt_footer || __("Terima kasih"),
+		logo_url: ctx.receipt_logo_url || frappe.boot.imogi_pos_receipt_logo_url || "",
 		change: flt(payment_info.change),
 		tax_rate: flt(ctx.sales_tax?.rate) || 11,
+		skip_browser_fallback: _resolve_thermal_mode(ctx.thermal_print_mode) === "serial",
 	};
 };

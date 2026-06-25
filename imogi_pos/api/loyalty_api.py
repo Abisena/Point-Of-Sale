@@ -28,6 +28,7 @@ def get_loyalty_status(customer=None, company=None):
 def preview_promotions(
 	items,
 	customer=None,
+	customer_phone=None,
 	discount_type=None,
 	discount_value=None,
 	voucher_code=None,
@@ -46,17 +47,24 @@ def preview_promotions(
 		voucher_code=voucher_code,
 		loyalty_points_redeem=cint(loyalty_points_redeem),
 		customer=customer,
+		customer_phone=customer_phone,
 		company=company,
 		branch=branch,
 	)
 
 
 @frappe.whitelist()
-def check_voucher(voucher_code, subtotal=0, company=None):
+def check_voucher(voucher_code, subtotal=0, company=None, customer=None, customer_phone=None):
 	"""Validate voucher code for cashier."""
 	_require_cashier_access()
 	ensure_setup_ready(company)
-	return validate_voucher(voucher_code, company=company, subtotal=subtotal)
+	return validate_voucher(
+		voucher_code,
+		company=company,
+		subtotal=subtotal,
+		customer=customer,
+		customer_phone=customer_phone,
+	)
 
 
 @frappe.whitelist()

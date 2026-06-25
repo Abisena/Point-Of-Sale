@@ -8,10 +8,16 @@ from imogi_pos.api.auth import ensure_setup_ready, validate_order_api_access
 from imogi_pos.imogi_pos.utils.flow import get_settings, resolve_company
 
 
+def _contact_phone(contact):
+	if not contact:
+		return ""
+	return (contact.get("mobile_no") or contact.get("phone") or "").strip()
+
+
 def _get_customer_contact(customer_name):
 	contact = frappe.db.sql(
 		"""
-		SELECT ct.mobile_no, ct.email_id
+		SELECT ct.name, ct.mobile_no, ct.phone, ct.email_id
 		FROM `tabContact` ct
 		INNER JOIN `tabDynamic Link` dl
 			ON dl.parent = ct.name AND dl.parenttype = 'Contact'
@@ -25,15 +31,72 @@ def _get_customer_contact(customer_name):
 	return contact[0] if contact else None
 
 
-def _serialize_customer(customer):
+def _serialize_customer(customer, mobile_no=None):
 	contact = _get_customer_contact(customer.name)
+	phone = _contact_phone(contact) or (mobile_no or "").strip()
 	return {
 		"name": customer.name,
 		"customer_name": customer.customer_name,
 		"customer_type": customer.customer_type,
-		"mobile_no": contact.mobile_no if contact and contact.mobile_no else None,
-		"email_id": contact.email_id if contact and contact.email_id else None,
+		"mobile_no": phone or None,
+		"email_id": (contact.get("email_id") if contact else None) or None,
 	}
+
+
+def _set_contact_mobile(contact, mobile_no):
+	"""Simpan No. HP lewat child table phone_nos (Frappe Contact requirement)."""
+	mobile_no = (mobile_no or "").strip()
+	if not mobile_no:
+		return
+
+	found = False
+	for row in contact.get("phone_nos") or []:
+		if (row.phone or "").strip() == mobile_no:
+			row.is_primary_mobile_no = 1
+			row.is_primary_phone = 1
+			found = True
+		else:
+			row.is_primary_mobile_no = 0
+			row.is_primary_phone = 0
+
+	if not found:
+		contact.append(
+			"phone_nos",
+			{
+				"phone": mobile_no,
+				"is_primary_phone": 1,
+				"is_primary_mobile_no": 1,
+			},
+		)
+
+
+def _upsert_customer_contact(customer, customer_name, mobile_no=None, email_id=None):
+	mobile_no = (mobile_no or "").strip()
+	email_id = (email_id or "").strip()
+	if not mobile_no and not email_id:
+		return
+
+	contact_row = _get_customer_contact(customer.name)
+	if contact_row and contact_row.get("name"):
+		contact = frappe.get_doc("Contact", contact_row.name)
+		if mobile_no:
+			_set_contact_mobile(contact, mobile_no)
+		if email_id:
+			contact.email_id = email_id
+			contact.add_email(email_id, is_primary=1)
+		contact.save(ignore_permissions=True)
+		return
+
+	contact = frappe.new_doc("Contact")
+	contact.first_name = customer_name or customer.customer_name
+	if mobile_no:
+		_set_contact_mobile(contact, mobile_no)
+	if email_id:
+		contact.email_id = email_id
+		contact.add_email(email_id, is_primary=1)
+	contact.append("links", {"link_doctype": "Customer", "link_name": customer.name})
+	contact.is_primary_contact = 1
+	contact.insert(ignore_permissions=True)
 
 
 def create_customer_record(customer_name, customer_type="Individual", mobile_no=None, email_id=None, company=None):
@@ -46,26 +109,31 @@ def create_customer_record(customer_name, customer_type="Individual", mobile_no=
 		frappe.throw(_("customer_type must be Individual or Company"))
 
 	settings = get_settings()
+	from imogi_pos.imogi_pos.utils.receipt_branding import get_whatsapp_receipt_config
+
+	if get_whatsapp_receipt_config(settings)["enable_whatsapp_receipt"] and not (mobile_no or "").strip():
+		frappe.throw(_("Nomor HP wajib diisi untuk kirim struk WhatsApp"))
+
 	company = resolve_company(company, settings)
+	existing_name = frappe.db.get_value(
+		"Customer", {"customer_name": customer_name, "disabled": 0}, "name", order_by="modified desc"
+	)
+	if existing_name:
+		customer = frappe.get_doc("Customer", existing_name)
+		_upsert_customer_contact(customer, customer_name, mobile_no=mobile_no, email_id=email_id)
+		frappe.db.commit()
+		return _serialize_customer(customer, mobile_no=mobile_no)
+
 	customer = frappe.new_doc("Customer")
 	customer.customer_name = customer_name
 	customer.customer_type = customer_type
 	customer.default_currency = frappe.get_cached_value("Company", company, "default_currency")
 	customer.insert(ignore_permissions=True)
 
-	if mobile_no or email_id:
-		contact = frappe.new_doc("Contact")
-		contact.first_name = customer_name
-		if mobile_no:
-			contact.mobile_no = mobile_no.strip()
-		if email_id:
-			contact.email_id = email_id.strip()
-		contact.append("links", {"link_doctype": "Customer", "link_name": customer.name})
-		contact.is_primary_contact = 1
-		contact.insert(ignore_permissions=True)
+	_upsert_customer_contact(customer, customer_name, mobile_no=mobile_no, email_id=email_id)
 
 	frappe.db.commit()
-	return _serialize_customer(customer)
+	return _serialize_customer(customer, mobile_no=mobile_no)
 
 
 def _find_customers(search, limit):
