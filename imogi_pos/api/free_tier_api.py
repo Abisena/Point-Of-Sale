@@ -25,6 +25,15 @@ def _require_login():
 		frappe.throw(_("Login required"), frappe.AuthenticationError)
 
 
+def _require_order_surface_access(surface="history"):
+	"""Gate order list/detail APIs for Riwayat (read) or Manajemen (write) pages."""
+	_require_login()
+	if (surface or "history") == "management":
+		require_feature_doctype_access("order_management")
+		return
+	require_feature_doctype_access("order_history")
+
+
 def _branch_scope(branch=None, pos_profile=None):
 	ctx = resolve_active_branch(branch_code=branch, pos_profile=pos_profile)
 	return {
@@ -215,6 +224,7 @@ def _fetch_order_history_rows(filters, access, limit=50, offset=0):
 			ro.payment_method,
 			ro.promo_discount_amount,
 			ro.applied_promo,
+			ro.refunded_amount,
 			COALESCE(NULLIF(ro.cashier, ''), ro.owner) as cashier,
 			COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) as cashier_name
 		from `tabRiwayat Order` ro
@@ -275,10 +285,10 @@ def list_order_history(
 	page=1,
 	page_size=10,
 	limit=50,
+	surface="history",
 ):
 	"""Cashier order history for imogi-pos-order-history page."""
-	_require_login()
-	require_feature_doctype_access("order_history")
+	_require_order_surface_access(surface)
 
 	access = _order_history_access(branch, pos_profile)
 	scope = access["scope"]
@@ -349,10 +359,10 @@ def get_order_history_promo_summary(
 	from_date=None,
 	to_date=None,
 	search=None,
+	surface="history",
 ):
 	"""Aggregate promo usage for Riwayat Order summary tab."""
-	_require_login()
-	require_feature_doctype_access("order_history")
+	_require_order_surface_access(surface)
 
 	access = _order_history_access(branch, pos_profile)
 	filters = {}
@@ -433,10 +443,10 @@ def get_order_history_product_sales(
 	to_date=None,
 	search=None,
 	limit=20,
+	surface="history",
 ):
 	"""Top-selling products for Riwayat Order summary tab."""
-	_require_login()
-	require_feature_doctype_access("order_history")
+	_require_order_surface_access(surface)
 
 	access = _order_history_access(branch, pos_profile)
 	filters = {}
@@ -485,10 +495,9 @@ def get_order_history_product_sales(
 
 
 @frappe.whitelist()
-def get_order_history_detail(order_name, branch=None, pos_profile=None):
+def get_order_history_detail(order_name, branch=None, pos_profile=None, surface="history"):
 	"""Full order payload for Riwayat Order detail modal."""
-	_require_login()
-	require_feature_doctype_access("order_history")
+	_require_order_surface_access(surface)
 
 	if not order_name:
 		frappe.throw(_("order_name is required"))
@@ -540,10 +549,9 @@ def get_order_history_detail(order_name, branch=None, pos_profile=None):
 
 
 @frappe.whitelist()
-def get_order_receipt_url(order_name, branch=None, pos_profile=None):
+def get_order_receipt_url(order_name, branch=None, pos_profile=None, surface="history"):
 	"""Receipt print URL for order history reprint."""
-	_require_login()
-	require_feature_doctype_access("order_history")
+	_require_order_surface_access(surface)
 
 	if not order_name:
 		frappe.throw(_("order_name is required"))
@@ -561,6 +569,143 @@ def get_order_receipt_url(order_name, branch=None, pos_profile=None):
 		"url": f"/printview?doctype=Riwayat Order&name={order_name}&format={print_format}&trigger_print=1",
 		"print_format": print_format,
 	}
+
+
+# Export column catalog for Manajemen Order. Order here = column order in file.
+# key -> (label, Riwayat Order field, kind) where kind is "text" | "datetime" | "currency".
+ORDER_EXPORT_COLUMNS: list[tuple[str, str, str, str]] = [
+	("name", "No. Order", "name", "text"),
+	("datetime", "Tanggal & Waktu", "creation", "datetime"),
+	("cashier", "Kasir", "cashier_name", "text"),
+	("customer", "Customer", "customer_name", "text"),
+	("outlet", "Outlet", "pos_profile", "text"),
+	("order_type", "Tipe Order", "order_type", "text"),
+	("channel", "Channel", "order_channel", "text"),
+	("status", "Status", "status", "text"),
+	("payment_method", "Metode Bayar", "payment_method", "text"),
+	("subtotal", "Subtotal", "subtotal", "currency"),
+	("discount", "Diskon", "discount_amount", "currency"),
+	("promo", "Diskon Promo", "promo_discount_amount", "currency"),
+	("taxable", "DPP", "taxable_amount", "currency"),
+	("tax", "PPN", "tax_amount", "currency"),
+	("grand_total", "Total", "grand_total", "currency"),
+	("paid", "Dibayar", "paid_amount", "currency"),
+	("refunded", "Refunded", "refunded_amount", "currency"),
+	("pos_invoice", "POS Invoice", "pos_invoice", "text"),
+]
+
+_EXPORT_COLUMN_MAP = {col[0]: col for col in ORDER_EXPORT_COLUMNS}
+
+
+@frappe.whitelist()
+def get_order_export_columns():
+	"""Column catalog for the Manajemen Order export dialog."""
+	_require_order_surface_access("management")
+	return [{"key": key, "label": _(label)} for key, label, _field, _kind in ORDER_EXPORT_COLUMNS]
+
+
+@frappe.whitelist()
+def export_order_management(
+	columns=None,
+	file_format="csv",
+	branch=None,
+	pos_profile=None,
+	from_date=None,
+	to_date=None,
+	status=None,
+	search=None,
+):
+	"""Stream selected order columns as CSV/XLSX for supervisors (Manajemen Order)."""
+	_require_order_surface_access("management")
+
+	selected = columns
+	if isinstance(selected, str):
+		try:
+			selected = json.loads(selected)
+		except (TypeError, ValueError):
+			selected = [c.strip() for c in selected.split(",") if c.strip()]
+	selected = [key for key in (selected or []) if key in _EXPORT_COLUMN_MAP]
+	if not selected:
+		selected = [col[0] for col in ORDER_EXPORT_COLUMNS]
+
+	access = _order_history_access(branch, pos_profile)
+	filters = {}
+	if from_date:
+		filters["from_date"] = getdate(from_date)
+	if to_date:
+		filters["to_date"] = add_days(getdate(to_date), 1)
+	if status:
+		filters["status"] = status
+	search_term = (search or "").strip()
+	if search_term:
+		filters["search"] = f"%{search_term}%"
+
+	where, values = _order_history_where(filters, access)
+	rows = frappe.db.sql(
+		f"""
+		select
+			ro.name,
+			ro.creation,
+			ro.order_channel,
+			ro.order_type,
+			ro.status,
+			ro.customer_name,
+			ro.subtotal,
+			ro.discount_amount,
+			ro.promo_discount_amount,
+			ro.taxable_amount,
+			ro.tax_amount,
+			ro.grand_total,
+			ro.paid_amount,
+			ro.refunded_amount,
+			ro.pos_invoice,
+			ro.pos_profile,
+			ro.payment_method,
+			COALESCE(NULLIF(ro.cashier_name, ''), u.full_name, ro.owner) as cashier_name
+		from `tabRiwayat Order` ro
+		left join `tabUser` u on u.name = COALESCE(NULLIF(ro.cashier, ''), ro.owner)
+		where {where}
+		order by ro.creation desc
+		""",
+		values,
+		as_dict=True,
+	)
+	rows = _attach_payment_methods(rows)
+
+	headers = [_(_EXPORT_COLUMN_MAP[key][1]) for key in selected]
+
+	def _format(value, kind):
+		if kind == "currency":
+			return flt(value)
+		if kind == "datetime":
+			return frappe.utils.format_datetime(value, "yyyy-MM-dd HH:mm") if value else ""
+		return value if value not in (None, "") else ""
+
+	data_rows = []
+	for row in rows:
+		line = []
+		for key in selected:
+			_k, _label, field, kind = _EXPORT_COLUMN_MAP[key]
+			line.append(_format(row.get(field), kind))
+		data_rows.append(line)
+
+	filename = f"manajemen-order-{today()}"
+	fmt = (file_format or "csv").lower()
+
+	if fmt == "xlsx":
+		from frappe.utils.xlsxutils import make_xlsx
+
+		xlsx_file = make_xlsx([headers, *data_rows], "Manajemen Order")
+		frappe.response["filename"] = f"{filename}.xlsx"
+		frappe.response["filecontent"] = xlsx_file.getvalue()
+		frappe.response["type"] = "binary"
+		return
+
+	from frappe.utils.csvutils import to_csv
+
+	frappe.response["result"] = to_csv([headers, *data_rows])
+	frappe.response["doctype"] = filename
+	frappe.response["type"] = "csv"
 
 
 @frappe.whitelist()

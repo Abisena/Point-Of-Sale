@@ -22,6 +22,7 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		this.wrapper = $(page.body);
 		this.refresh_interval = 30;
 		this.orders = [];
+		this.activate_fullscreen();
 		this.make();
 		this.load_settings();
 		this.refresh();
@@ -30,24 +31,176 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		this.page.on_page_hide?.(() => {
 			clearInterval(this._timer);
 			clearInterval(this._clock_timer);
+			this.deactivate_fullscreen();
+		});
+	}
+
+	logo_url() {
+		return (
+			frappe.boot?.imogi_pos_logo_white_url ||
+			"/assets/imogi_pos/images/imogi-pos-logo-white.png"
+		);
+	}
+
+	activate_fullscreen() {
+		this.inject_css();
+		document.body.classList.add("imogi-kds-fullscreen", "imogi-pos-themed");
+		document.querySelectorAll(".page-head, .sticky-top").forEach((el) => {
+			el.style.setProperty("display", "none", "important");
+		});
+	}
+
+	inject_css() {
+		// Inject critical navy/fullscreen styles inline so the theme always tracks
+		// this page JS (avoids stale /assets/imogi_pos/css/imogi_pos.css cache).
+		const ID = "imogi-kds-inline-css-v3";
+		if (document.getElementById(ID)) return;
+		[
+			"imogi-kds-inline-css",
+			"imogi-kds-inline-css-v1",
+			"imogi-kds-inline-css-v2",
+		].forEach((id) => document.getElementById(id)?.remove());
+		const style = document.createElement("style");
+		style.id = ID;
+		style.textContent = `
+			body.imogi-kds-fullscreen .page-head,
+			body.imogi-kds-fullscreen .navbar,
+			body.imogi-kds-fullscreen .desk-sidebar,
+			body.imogi-kds-fullscreen .body-sidebar,
+			body.imogi-kds-fullscreen .layout-side-section { display: none !important; }
+
+			body.imogi-kds-fullscreen,
+			body.imogi-kds-fullscreen .main-section,
+			body.imogi-kds-fullscreen .page-container,
+			body.imogi-kds-fullscreen .container,
+			body.imogi-kds-fullscreen .layout-main,
+			body.imogi-kds-fullscreen .layout-main-section-wrapper,
+			body.imogi-kds-fullscreen .layout-main-section,
+			body.imogi-kds-fullscreen .page-body {
+				background: #0f1f35 !important;
+				background-image: none !important;
+				margin: 0 !important;
+				max-width: 100% !important;
+				padding: 0 !important;
+				width: 100% !important;
+			}
+
+			body.imogi-kds-fullscreen .imogi-kds-page.layout-main-section,
+			body.imogi-kds-fullscreen .imogi-kds-page {
+				box-sizing: border-box;
+				display: flex !important;
+				flex-direction: column;
+				height: 100dvh !important;
+				max-height: 100dvh !important;
+				min-height: 0;
+				overflow: hidden !important;
+				padding: 0 !important;
+			}
+
+			body.imogi-kds-fullscreen .imogi-kds-page .layout-main-section-wrapper,
+			body.imogi-kds-fullscreen .imogi-kds-page .page-body {
+				display: flex !important;
+				flex: 1;
+				flex-direction: column;
+				min-height: 0;
+				overflow: hidden;
+			}
+
+			body.imogi-kds-fullscreen .imogi-kds-shell {
+				color: #e2e8f0 !important;
+				display: flex !important;
+				flex: 1;
+				flex-direction: column;
+				max-width: 100% !important;
+				min-height: 0 !important;
+				padding: 0 !important;
+			}
+
+			body.imogi-kds-fullscreen .imogi-kds-board {
+				flex: 1;
+				min-height: 0;
+				overflow-y: auto;
+				padding: 16px 18px 18px !important;
+			}
+
+			.imogi-kds-appbar {
+				align-items: center;
+				background: #0b1726;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+				box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+				display: flex;
+				flex-shrink: 0;
+				flex-wrap: wrap;
+				gap: 12px 18px;
+				justify-content: space-between;
+				min-height: 58px;
+				padding: 10px 18px;
+			}
+			.imogi-kds-appbar-brand { align-items: center; display: flex; gap: 12px; min-width: 0; }
+			.imogi-kds-logo {
+				filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+				flex-shrink: 0;
+				height: 32px !important;
+				max-height: 32px !important;
+				object-fit: contain;
+				width: auto !important;
+			}
+			.imogi-kds-appbar-titles { min-width: 0; }
+			.imogi-kds-appbar .imogi-kds-brand-title { color: #fff !important; font-size: 17px; font-weight: 800; line-height: 1.1; }
+			.imogi-kds-appbar .imogi-kds-brand-sub { color: rgba(226,232,240,0.6) !important; font-size: 11px; font-weight: 600; margin-top: 2px; }
+			.imogi-kds-appbar .imogi-kds-live { color: #4ade80 !important; }
+			.imogi-kds-appbar-right { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
+			.imogi-kds-appbar .imogi-kds-stat-pill {
+				background: rgba(255,255,255,0.06) !important;
+				border-color: rgba(255,255,255,0.14) !important;
+				color: rgba(226,232,240,0.85) !important;
+			}
+			.imogi-kds-appbar .imogi-kds-stat-pill .imogi-kds-stat-num { color: #fff !important; }
+			.imogi-kds-appbar .imogi-kds-clock { color: rgba(226,232,240,0.75) !important; }
+			.imogi-kds-appbar .imogi-kds-refresh {
+				background: rgba(255,255,255,0.08) !important;
+				border-color: rgba(255,255,255,0.16) !important;
+				color: #e2e8f0 !important;
+			}
+			.imogi-kds-appbar .imogi-kds-refresh:hover { background: rgba(255,255,255,0.16) !important; color: #fff !important; }
+			.imogi-kds-logout {
+				align-items: center;
+				background: rgba(239,68,68,0.16);
+				border: 1px solid rgba(239,68,68,0.4);
+				border-radius: 8px;
+				color: #fca5a5;
+				cursor: pointer;
+				display: inline-flex;
+				font-size: 11px;
+				font-weight: 700;
+				gap: 6px;
+				padding: 7px 12px;
+			}
+			.imogi-kds-logout:hover { background: rgba(239,68,68,0.28); color: #fff; }
+		`;
+		document.head.appendChild(style);
+	}
+
+	deactivate_fullscreen() {
+		document.body.classList.remove("imogi-kds-fullscreen", "imogi-pos-themed");
+		document.querySelectorAll(".page-head, .sticky-top").forEach((el) => {
+			el.style.removeProperty("display");
 		});
 	}
 
 	make() {
 		this.wrapper.html(`
 			<div class="imogi-kds-shell">
-				<div class="imogi-kds-topbar">
-					<div class="imogi-kds-topbar-left">
-						<div class="imogi-kds-brand">
-							<div class="imogi-kds-brand-icon"><i class="fa fa-fire"></i></div>
-							<div>
-								<div class="imogi-kds-brand-title">${__("Kitchen Display")}</div>
-								<div class="imogi-kds-brand-sub">${__("Antrian pesanan dapur realtime")}</div>
-							</div>
+				<header class="imogi-kds-appbar">
+					<div class="imogi-kds-appbar-brand">
+						<img class="imogi-kds-logo" src="${this.logo_url()}" alt="IMOGI POS" />
+						<div class="imogi-kds-appbar-titles">
+							<div class="imogi-kds-brand-title">${__("Kitchen Display")}</div>
+							<div class="imogi-kds-brand-sub">${__("Antrian pesanan dapur realtime")}</div>
 						</div>
 						<div class="imogi-kds-live"><span class="imogi-kds-live-dot"></span>${__("Live")}</div>
 					</div>
-					<div class="imogi-kds-topbar-right">
+					<div class="imogi-kds-appbar-right">
 						<span class="imogi-kds-stat-pill imogi-kds-stat-total">${__("Aktif")} <span class="imogi-kds-stat-num">0</span></span>
 						<span class="imogi-kds-stat-pill imogi-kds-stat-pill--pending imogi-kds-stat-pending">${__("Menunggu")} <span class="imogi-kds-stat-num">0</span></span>
 						<span class="imogi-kds-stat-pill imogi-kds-stat-pill--preparing imogi-kds-stat-preparing">${__("Dimasak")} <span class="imogi-kds-stat-num">0</span></span>
@@ -56,8 +209,12 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 							<i class="fa fa-refresh"></i>
 							<span class="imogi-kds-refresh-label">${__("Refresh")} 30s</span>
 						</button>
+						<button type="button" class="imogi-kds-logout" title="${__("Logout")}">
+							<i class="fa fa-sign-out"></i>
+							<span>${__("Logout")}</span>
+						</button>
 					</div>
-				</div>
+				</header>
 				<div class="imogi-kds-board">
 					<div class="imogi-kds-column imogi-kds-column--pending" data-status="Pending">
 						<div class="imogi-kds-column-head">
@@ -78,6 +235,18 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		`);
 
 		this.wrapper.find(".imogi-kds-refresh").on("click", () => this.refresh());
+		this.wrapper.find(".imogi-kds-logout").on("click", () => this.logout());
+	}
+
+	logout() {
+		frappe.confirm(__("Logout dari Kitchen Display?"), () => {
+			frappe.call({
+				method: "logout",
+				callback() {
+					window.location.href = "/login";
+				},
+			});
+		});
 	}
 
 	load_settings() {

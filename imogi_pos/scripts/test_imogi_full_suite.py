@@ -31,8 +31,13 @@ IMOGI_DOCTYPES = sorted(
 		"IMOGI POS Order Item",
 		"IMOGI POS Order Payment",
 		"IMOGI POS Promo Rule",
+		"IMOGI POS Promo Rule Outlet",
+		"IMOGI POS Promo Rule Reward",
+		"IMOGI POS Role Authorization",
 		"IMOGI POS Royalty Accrual",
 		"IMOGI POS Settings",
+		"IMOGI POS Settings Fulfillment Order Type",
+		"IMOGI POS Settings Kitchen Item Group",
 		"IMOGI POS Setup Cashier Line",
 		"IMOGI POS Setup Payment Line",
 		"IMOGI POS Setup Product Line",
@@ -117,6 +122,8 @@ def run(include_e2e=1):
 
 	print("\n--- cashier_smoke ---")
 	try:
+		# Prior audits may leave session as a non-cashier user; reset first.
+		frappe.set_user("Administrator")
 		from imogi_pos.api.cashier import get_cashier_context
 
 		ctx = get_cashier_context()
@@ -251,6 +258,8 @@ def _run_feature_gating_smoke():
 	from imogi_pos.imogi_pos.utils.feature_registry import is_feature_in_plan, is_tier_at_least
 	from imogi_pos.imogi_pos.utils.workspace_tier_gating import is_workspace_item_in_plan
 
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
 	assert is_tier_at_least("Enterprise", "Free"), "Enterprise should include Free tier"
 	assert is_feature_in_plan("pos_order", "Free"), "pos_order should be in Free plan"
 	assert is_workspace_item_in_plan("Page", "imogi-pos-cashier", "Free"), "cashier page in Free plan"
@@ -270,9 +279,14 @@ def _run_feature_gating_smoke():
 
 	free_doc = _FakeSettings()
 	block = get_feature_block_reason("hold_order", free_doc, "Free")
-	assert block == "tier", f"hold_order block reason={block!r}"
 	meta = serialize_cashier_feature_meta(free_doc)
-	assert meta["hold_order"]["blocked_reason"] == "tier", meta["hold_order"]
+	if is_subscription_tier_disabled():
+		# Gating off: tier never blocks; hold_order has no settings_key so usable.
+		assert block is None, f"tier-disabled hold_order block reason={block!r}"
+		assert meta["hold_order"]["allowed"], "tier-disabled hold_order should be allowed"
+	else:
+		assert block == "tier", f"hold_order block reason={block!r}"
+		assert meta["hold_order"]["blocked_reason"] == "tier", meta["hold_order"]
 
 
 def _pick_cashier_users():
@@ -435,6 +449,11 @@ def _audit_child_table_parents(errors: list[str]) -> dict:
 		"IMOGI POS Combo Package Item": "IMOGI POS Combo Package",
 		"IMOGI POS Order Item": "Riwayat Order",
 		"IMOGI POS Order Payment": "Riwayat Order",
+		"IMOGI POS Promo Rule Outlet": "IMOGI POS Promo Rule",
+		"IMOGI POS Promo Rule Reward": "IMOGI POS Promo Rule",
+		"IMOGI POS Role Authorization": "IMOGI POS Settings",
+		"IMOGI POS Settings Fulfillment Order Type": "IMOGI POS Settings",
+		"IMOGI POS Settings Kitchen Item Group": "IMOGI POS Settings",
 		"IMOGI POS Setup Cashier Line": "IMOGI POS Setup Session",
 		"IMOGI POS Setup Payment Line": "IMOGI POS Setup Session",
 		"IMOGI POS Setup Product Line": "IMOGI POS Setup Session",

@@ -1,0 +1,25 @@
+{
+ "creation": "2026-06-30 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "list",
+ "idx": 0,
+ "modified": "2026-06-30 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "kitchen-order",
+ "owner": "Administrator",
+ "page_name": "kitchen-order",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Sales Manager"},
+  {"role": "IMOGI Manager"},
+  {"role": "IMOGI Area Manager"},
+  {"role": "IMOGI Supervisor"},
+  {"role": "IMOGI Kitchen Staff"},
+  {"role": "IMOGI Chef"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Kitchen Order"
+}

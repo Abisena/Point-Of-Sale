@@ -42,6 +42,8 @@
   "billing_webhook_secret",
   "sync_subscription_tier",
   "flow_section",
+  "enable_table_service",
+  "table_floor_background",
   "enable_kitchen_display",
   "enable_fulfillment",
   "kitchen_item_group_rows",
@@ -101,6 +103,7 @@
   "transfer_bank_name",
   "transfer_bank_account",
   "transfer_account_holder",
+  "transfer_qr_image",
   "transfer_instructions",
   "api_section",
   "enable_order_api",
@@ -115,6 +118,9 @@
   "enable_role_authorization",
   "role_authorization_matrix",
   "role_authorizations",
+  "enable_page_authorization",
+  "page_authorization_matrix",
+  "page_authorizations",
   "enable_role_gating",
   "enable_approval_workflow",
   "approval_discount_threshold_percent",
@@ -381,6 +387,20 @@
    "fieldname": "flow_section",
    "fieldtype": "Section Break",
    "label": "Kitchen & Fulfillment"
+  },
+  {
+   "default": "1",
+   "description": "Aktifkan layanan meja (dine-in): denah meja, pindah/gabung meja, reservasi, dan antrian tamu.",
+   "fieldname": "enable_table_service",
+   "fieldtype": "Check",
+   "label": "Table Service"
+  },
+  {
+   "depends_on": "eval:doc.enable_table_service",
+   "description": "Gambar denah/blueprint lantai sebagai latar belakang halaman Table Service (opsional).",
+   "fieldname": "table_floor_background",
+   "fieldtype": "Attach Image",
+   "label": "Background Denah Meja"
   },
   {
    "default": "0",
@@ -737,6 +757,13 @@
   },
   {
    "depends_on": "eval:doc.enable_transfer_payment_info",
+   "description": "Gambar QR Code bank (QRIS/m-banking) untuk ditampilkan di kasir saat metode Transfer dipilih.",
+   "fieldname": "transfer_qr_image",
+   "fieldtype": "Attach Image",
+   "label": "QR Code Bank"
+  },
+  {
+   "depends_on": "eval:doc.enable_transfer_payment_info",
    "description": "Catatan opsional untuk kasir / pelanggan (mis. konfirmasi via WhatsApp).",
    "fieldname": "transfer_instructions",
    "fieldtype": "Small Text",
@@ -884,6 +911,26 @@
    "hidden": 1,
    "label": "Role Authorizations",
    "options": "IMOGI POS Role Authorization"
+  },
+  {
+   "default": "0",
+   "description": "Atur halaman/menu IMOGI POS apa saja yang boleh dibuka tiap role. User single-purpose (mis. Kitchen) terkunci ke halamannya, kecuali diberi akses di sini.",
+   "fieldname": "enable_page_authorization",
+   "fieldtype": "Check",
+   "label": "Aktifkan Otorisasi Halaman per Role"
+  },
+  {
+   "depends_on": "eval:doc.enable_page_authorization",
+   "fieldname": "page_authorization_matrix",
+   "fieldtype": "HTML",
+   "label": "Matriks Otorisasi Halaman"
+  },
+  {
+   "fieldname": "page_authorizations",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Page Authorizations",
+   "options": "IMOGI POS Page Authorization"
   },
   {
    "default": "0",

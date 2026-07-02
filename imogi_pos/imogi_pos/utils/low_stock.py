@@ -137,6 +137,46 @@ def get_low_stock_items(limit=20, warehouse=None):
 	return low_items[: max(int(limit or 20), 1)]
 
 
+def get_overstock_items(limit=20, warehouse=None):
+	"""Return items whose actual stock exceeds their IMOGI max stock (per product)."""
+	settings = get_settings()
+	warehouse = warehouse or settings.default_warehouse
+	if not warehouse:
+		return []
+
+	items = frappe.get_all(
+		"Item",
+		filters={"is_stock_item": 1, "disabled": 0, "imogi_max_stock": [">", 0]},
+		fields=["name", "item_name", "imogi_max_stock"],
+		limit=500,
+	)
+
+	over_items = []
+	for item in items:
+		max_stock = flt(item.imogi_max_stock)
+		if max_stock <= 0:
+			continue
+		actual_qty = flt(
+			frappe.db.get_value(
+				"Bin", {"item_code": item.name, "warehouse": warehouse}, "actual_qty"
+			)
+		)
+		if actual_qty > max_stock:
+			over_items.append(
+				{
+					"item_code": item.name,
+					"item_name": item.item_name,
+					"actual_qty": actual_qty,
+					"max_stock": max_stock,
+					"excess_qty": flt(actual_qty - max_stock),
+					"warehouse": warehouse,
+				}
+			)
+
+	over_items.sort(key=lambda row: (-row["excess_qty"], row["item_code"]))
+	return over_items[: max(int(limit or 20), 1)]
+
+
 def has_open_purchase_request(item_code, warehouse):
 	"""True when an open Purchase Material Request already exists for item + warehouse."""
 	if not item_code or not warehouse:

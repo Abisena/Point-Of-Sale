@@ -247,11 +247,11 @@ def get_order_status(order_name):
 
 
 @frappe.whitelist(allow_guest=True)
-def void_order(order_name, reason=None):
+def void_order(order_name, reason=None, approval_code=None):
 	validate_order_api_access()
 	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
-	order.action_void_order(reason=reason)
+	order.action_void_order(reason=reason, approval_code=approval_code)
 	order.reload()
 	frappe.db.commit()
 	result = _serialize_order(order)
@@ -260,11 +260,11 @@ def void_order(order_name, reason=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def refund_order(order_name, reason=None):
+def refund_order(order_name, reason=None, approval_code=None):
 	validate_order_api_access()
 	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
-	order.action_refund_order(reason=reason)
+	order.action_refund_order(reason=reason, approval_code=approval_code)
 	order.reload()
 	frappe.db.commit()
 	result = _serialize_order(order)

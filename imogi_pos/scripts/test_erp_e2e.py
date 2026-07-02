@@ -459,6 +459,38 @@ def _verify_demo_role_workspace(errors: list[str]):
 			errors.append(f"{email} workspace {label}: got {status}, expect {expect}")
 
 
+def _cancel_open_auto_mrs(item_code, warehouse):
+	"""Cancel leftover open Purchase MRs for the test item so the run is idempotent.
+
+	create_auto_purchase_requests correctly skips items that already have an
+	open Purchase MR (see has_open_purchase_request), so without cleanup a re-run
+	would never create a fresh one. Mirrors that query (no remarks filter — the
+	column is absent on this ERPNext version).
+	"""
+	open_mrs = frappe.db.sql(
+		"""
+		select distinct mr.name
+		from `tabMaterial Request` mr
+		inner join `tabMaterial Request Item` mri on mri.parent = mr.name
+		where mri.item_code = %(item_code)s
+		  and mri.warehouse = %(warehouse)s
+		  and mr.material_request_type = 'Purchase'
+		  and mr.docstatus = 1
+		  and mr.status not in ('Stopped', 'Received', 'Cancelled')
+		  and ifnull(mr.per_ordered, 0) < 100
+		""",
+		{"item_code": item_code, "warehouse": warehouse},
+		as_dict=True,
+	)
+	for row in open_mrs:
+		try:
+			frappe.get_doc("Material Request", row.name).cancel()
+		except Exception:
+			frappe.db.set_value("Material Request", row.name, "status", "Stopped")
+	if open_mrs:
+		frappe.db.commit()
+
+
 def _verify_low_stock_auto_mr(ctx, errors: list[str]) -> str | None:
 	from imogi_pos.imogi_pos.utils.low_stock import (
 		create_auto_purchase_requests,
@@ -476,6 +508,9 @@ def _verify_low_stock_auto_mr(ctx, errors: list[str]) -> str | None:
 	set_item_reorder_level(item_doc, warehouse, reorder_level=99999, reorder_qty=5)
 	item_doc.save(ignore_permissions=True)
 	frappe.db.commit()
+
+	# Idempotency: clear open auto-MRs from earlier runs for this test item.
+	_cancel_open_auto_mrs(item_code, warehouse)
 
 	low_items = [r for r in get_low_stock_items(limit=50, warehouse=warehouse) if r["item_code"] == item_code]
 	if not low_items:

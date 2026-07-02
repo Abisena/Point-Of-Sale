@@ -1,5 +1,160 @@
 frappe.provide("imogi_pos");
 
+const IMOGI_TABLE_SERVICE_CANONICAL_PATH = "/app/table-service";
+
+/** Page slug is table-service; title-based URLs (e.g. /app/table service) must not fall back to workspace. */
+function imogi_pos_normalize_table_service_path(path) {
+	const normalized = (path || "").replace(/\/$/, "");
+	if (normalized === IMOGI_TABLE_SERVICE_CANONICAL_PATH) {
+		return normalized;
+	}
+	const match = normalized.match(/^\/app\/table[\s_-]+service$/i);
+	return match ? IMOGI_TABLE_SERVICE_CANONICAL_PATH : normalized;
+}
+
+function imogi_pos_is_table_service_path(path) {
+	const normalized = imogi_pos_normalize_table_service_path((path || "").replace(/\/$/, ""));
+	return (
+		normalized === IMOGI_TABLE_SERVICE_CANONICAL_PATH ||
+		normalized.startsWith(`${IMOGI_TABLE_SERVICE_CANONICAL_PATH}/`)
+	);
+}
+
+function imogi_pos_go_to_table_service() {
+	window.location.assign(IMOGI_TABLE_SERVICE_CANONICAL_PATH);
+}
+
+imogi_pos.go_to_table_service = imogi_pos_go_to_table_service;
+
+/** SPA route to table-service often leaves workspace visible; full navigation matches refresh behaviour. */
+function imogi_pos_bind_table_service_link_navigation() {
+	if (window.__imogi_ts_nav_bound) {
+		return;
+	}
+	document.addEventListener(
+		"click",
+		(e) => {
+			const anchor = e.target.closest?.("a[href]");
+			if (!anchor || anchor.getAttribute("target") === "_blank") {
+				return;
+			}
+			let pathname;
+			try {
+				pathname = new URL(anchor.href, window.location.origin).pathname;
+			} catch (err) {
+				return;
+			}
+			if (!imogi_pos_is_table_service_path(pathname)) {
+				return;
+			}
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			const current = (window.location.pathname || "").replace(/\/$/, "");
+			if (current === IMOGI_TABLE_SERVICE_CANONICAL_PATH) {
+				if (!document.querySelector(".imogi-table-service-page")) {
+					imogi_pos_guard_table_service_surface();
+				}
+				return;
+			}
+			imogi_pos_go_to_table_service();
+		},
+		true
+	);
+	window.__imogi_ts_nav_bound = true;
+}
+
+function imogi_pos_schedule_table_service_guard_retry() {
+	if (window.__imogi_ts_guard_retry_timer) {
+		return;
+	}
+	window.__imogi_ts_guard_retry_timer = setTimeout(() => {
+		window.__imogi_ts_guard_retry_timer = null;
+		imogi_pos_guard_table_service_surface();
+	}, 600);
+}
+
+function imogi_pos_guard_table_service_surface() {
+	const path = imogi_pos_current_path();
+	if (!/^\/app\/table[\s_-]+service/i.test(path) && !imogi_pos_is_table_service_path(path)) {
+		return false;
+	}
+	const canonical = imogi_pos_normalize_table_service_path(path);
+	if (path !== canonical) {
+		window.location.replace(canonical);
+		return true;
+	}
+	if (document.querySelector(".imogi-table-service-page")) {
+		window.__imogi_ts_guard_state = { last: 0, attempts: 0 };
+		return false;
+	}
+
+	const state = window.__imogi_ts_guard_state || { last: 0, attempts: 0 };
+	const now = Date.now();
+	if (state.attempts >= 12) {
+		return false;
+	}
+	if (now - state.last < 350) {
+		imogi_pos_schedule_table_service_guard_retry();
+		return false;
+	}
+	state.last = now;
+	state.attempts += 1;
+	window.__imogi_ts_guard_state = state;
+
+	if (frappe.pages?.[IMOGI_TABLE_SERVICE_PAGE]) {
+		frappe.container.change_to(IMOGI_TABLE_SERVICE_PAGE);
+		$(frappe.pages[IMOGI_TABLE_SERVICE_PAGE]).trigger("show");
+		imogi_pos_schedule_table_service_guard_retry();
+		return false;
+	}
+
+	const route = frappe.get_route?.() || [];
+	if (route[0] !== IMOGI_TABLE_SERVICE_PAGE && typeof frappe.set_route === "function") {
+		frappe.set_route(IMOGI_TABLE_SERVICE_PAGE);
+	}
+	imogi_pos_schedule_table_service_guard_retry();
+	return false;
+}
+
+function imogi_pos_patch_table_service_push_state() {
+	if (!frappe.router || frappe.router._imogi_pos_ts_push_state_patched) {
+		return;
+	}
+	const original = frappe.router.push_state.bind(frappe.router);
+	frappe.router.push_state = function (url) {
+		if (typeof url === "string") {
+			const fixed = url.replace(
+				/^\/app\/table[\s_-]+service(?=\/|$)/i,
+				"/app/table-service"
+			);
+			if (fixed !== url) {
+				url = fixed;
+			}
+		}
+		return original(url);
+	};
+	frappe.router._imogi_pos_ts_push_state_patched = true;
+}
+
+(function imogi_pos_bind_table_service_nav_early() {
+	if (document.body) {
+		imogi_pos_bind_table_service_link_navigation();
+	} else {
+		document.addEventListener("DOMContentLoaded", imogi_pos_bind_table_service_link_navigation);
+	}
+})();
+
+(function imogi_pos_immediate_table_service_route_fix() {
+	if (typeof window === "undefined") {
+		return;
+	}
+	const path = (window.location.pathname || "").replace(/\/$/, "");
+	const canonical = imogi_pos_normalize_table_service_path(path);
+	if (canonical !== path) {
+		window.location.replace(canonical);
+	}
+})();
+
 // Dedicated waiter: redirect before desk paints workspace (boot.js loads with frappe.boot).
 (function imogi_pos_immediate_waiter_redirect() {
 	if (typeof frappe === "undefined" || !frappe.boot) {
@@ -27,8 +182,8 @@ frappe.provide("imogi_pos");
 	}
 
 	const path = (window.location.pathname || "").replace(/\/$/, "");
-	const home = "/app/table-service";
-	if (path === home || path.startsWith(`${home}/`) || path === "/app/table_service") {
+	const home = IMOGI_TABLE_SERVICE_CANONICAL_PATH;
+	if (imogi_pos_is_table_service_path(path)) {
 		return;
 	}
 
@@ -45,6 +200,45 @@ frappe.provide("imogi_pos");
 	if (must_redirect) {
 		window.location.replace(home);
 	}
+})();
+
+// Dedicated kitchen: lock to Kitchen Display before desk paints workspace.
+(function imogi_pos_immediate_kitchen_redirect() {
+	if (typeof frappe === "undefined" || !frappe.boot) {
+		return;
+	}
+
+	const roles = frappe.boot.user?.roles || [];
+	const escalation = [
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
+		"IMOGI Supervisor",
+		"IMOGI Cashier",
+		"IMOGI Waiter",
+	];
+	const dedicated_kitchen =
+		!!frappe.boot.imogi_pos_dedicated_kitchen ||
+		!!frappe.boot.imogi_pos_kitchen_home ||
+		(roles.includes("IMOGI Kitchen Staff") && !escalation.some((role) => roles.includes(role)));
+
+	if (!dedicated_kitchen) {
+		return;
+	}
+
+	const allowed = new Set(frappe.boot.imogi_pos_allowed_pages || []);
+	allowed.add("kitchen-display");
+	const path = (window.location.pathname || "").replace(/\/$/, "");
+	const match = path.match(/^\/app\/([^/]+)/);
+	const slug = match ? match[1] : null;
+	if (slug && allowed.has(slug)) {
+		return;
+	}
+
+	window.location.replace("/app/kitchen-display");
 })();
 
 // Desk /app has no frappe.ready (website only). Stale cached bundles may still call it.
@@ -81,7 +275,7 @@ imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260622-refund-disabled-v32";
+	const CACHE_VERSION = "20260702-table-service-spa-v50";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",
@@ -89,15 +283,22 @@ imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
 		"imogi-pos-close-shift",
 		"imogi-pos-dashboard",
 		"imogi-pos-order-history",
+		"imogi-pos-order-management",
 		"imogi-pos-menu",
 		"imogi-pos-menu-category",
 		"imogi-pos-sales-report",
 		"imogi-pos-feature-matrix",
 		"table-service",
+		"kitchen-display",
+		"kitchen-order",
+		"kitchen-station",
 	];
 	try {
 		if (localStorage.getItem(VERSION_KEY) !== CACHE_VERSION) {
 			PAGES.forEach((name) => localStorage.removeItem("_page:" + name));
+			["table_service", "table service", "Table Service"].forEach((alias) =>
+				localStorage.removeItem("_page:" + alias)
+			);
 			localStorage.setItem(VERSION_KEY, CACHE_VERSION);
 		}
 	} catch (e) {
@@ -137,9 +338,23 @@ const IMOGI_WAITER_ESCALATION_ROLES = [
 	"IMOGI Supervisor",
 	"IMOGI Cashier",
 ];
+const IMOGI_KITCHEN_ROLE = "IMOGI Kitchen Staff";
+const IMOGI_KITCHEN_ESCALATION_ROLES = [
+	"Administrator",
+	"System Manager",
+	"Sales Manager",
+	"IMOGI Owner",
+	"IMOGI Manager",
+	"IMOGI Area Manager",
+	"IMOGI Supervisor",
+	"IMOGI Cashier",
+	"IMOGI Waiter",
+];
+const IMOGI_KITCHEN_PAGE = "kitchen-display";
+const IMOGI_KITCHEN_PATH = "/app/kitchen-display";
 const IMOGI_MANAGER_ROLES = ["System Manager", "Administrator"];
 const IMOGI_CASHIER_PATH = "/app/imogi-pos-cashier";
-const IMOGI_TABLE_SERVICE_PATH = "/app/table-service";
+const IMOGI_TABLE_SERVICE_PATH = IMOGI_TABLE_SERVICE_CANONICAL_PATH;
 const IMOGI_TABLE_SERVICE_PAGE = "table-service";
 const IMOGI_ORDER_HISTORY_PATH = "/app/imogi-pos-order-history";
 const IMOGI_OPEN_SHIFT_PATH = "/app/imogi-pos-open-shift";
@@ -316,17 +531,12 @@ function imogi_pos_on_order_history_page() {
 }
 
 function imogi_pos_on_table_service_page() {
-	const path = imogi_pos_current_path();
-	if (
-		path === IMOGI_TABLE_SERVICE_PATH ||
-		path.startsWith(`${IMOGI_TABLE_SERVICE_PATH}/`) ||
-		path === "/app/table_service" ||
-		path.startsWith("/app/table_service/")
-	) {
+	if (imogi_pos_is_table_service_path(imogi_pos_current_path())) {
 		return true;
 	}
 	const route = frappe.get_route?.() || [];
-	return route[0] === IMOGI_TABLE_SERVICE_PAGE || route[0] === "table_service";
+	const slug = (route[0] || "").toLowerCase().replace(/_/g, "-").replace(/\s+/g, "-");
+	return slug === IMOGI_TABLE_SERVICE_PAGE;
 }
 
 function imogi_pos_is_on_table_service_surface() {
@@ -408,6 +618,61 @@ function imogi_pos_redirect_waiter_home() {
 		return;
 	}
 	window.location.replace(IMOGI_TABLE_SERVICE_PATH);
+}
+
+function imogi_pos_is_dedicated_kitchen_user() {
+	if (frappe.boot?.imogi_pos_kitchen_home || frappe.boot?.imogi_pos_dedicated_kitchen) {
+		return true;
+	}
+	const roles = imogi_pos_boot_roles();
+	if (!roles.includes(IMOGI_KITCHEN_ROLE)) {
+		return false;
+	}
+	return !IMOGI_KITCHEN_ESCALATION_ROLES.some((role) => roles.includes(role));
+}
+
+imogi_pos.is_dedicated_kitchen_user = imogi_pos_is_dedicated_kitchen_user;
+
+/** Pages a dedicated kitchen user may open (from Settings page-authorization matrix). */
+function imogi_pos_kitchen_allowed_pages() {
+	const pages = frappe.boot?.imogi_pos_allowed_pages || [];
+	const set = new Set(pages);
+	set.add(IMOGI_KITCHEN_PAGE);
+	return set;
+}
+
+/** Desk page slug from the URL (segment after /app/). */
+function imogi_pos_current_page_slug() {
+	const path = imogi_pos_current_path();
+	const match = path.match(/^\/app\/([^/]+)/);
+	return match ? match[1] : null;
+}
+
+function imogi_pos_on_kitchen_allowed_page() {
+	const slug = imogi_pos_current_page_slug();
+	if (!slug) {
+		return false;
+	}
+	return imogi_pos_kitchen_allowed_pages().has(slug);
+}
+
+function imogi_pos_guard_kitchen_fullscreen() {
+	if (!imogi_pos_is_dedicated_kitchen_user()) {
+		return false;
+	}
+	if (imogi_pos_on_kitchen_allowed_page()) {
+		return false;
+	}
+
+	frappe.show_alert(
+		{
+			message: __("Mode dapur aktif. Gunakan Kitchen Display untuk memproses pesanan."),
+			indicator: "orange",
+		},
+		4
+	);
+	window.location.replace(IMOGI_KITCHEN_PATH);
+	return true;
 }
 
 /** Cashier may open these without fullscreen guard sending them back to Kasir. */
@@ -633,10 +898,12 @@ function imogi_pos_fetch_and_redirect() {
 }
 
 function imogi_pos_schedule_redirects() {
+	imogi_pos_guard_kitchen_fullscreen();
 	imogi_pos_redirect_cashier_home();
 	imogi_pos_redirect_waiter_home();
 	imogi_pos_fetch_and_redirect();
 	[250, 750, 1500].forEach((delay) => {
+		setTimeout(imogi_pos_guard_kitchen_fullscreen, delay);
 		setTimeout(imogi_pos_redirect_cashier_home, delay);
 		setTimeout(imogi_pos_redirect_waiter_home, delay);
 		setTimeout(imogi_pos_fetch_and_redirect, delay);
@@ -773,6 +1040,9 @@ function imogi_pos_should_redirect_to_setup(route = frappe.get_route?.() || []) 
 	if (imogi_pos_is_dedicated_waiter_user()) {
 		return false;
 	}
+	if (imogi_pos_is_dedicated_kitchen_user()) {
+		return false;
+	}
 	if (route[0] === "imogi-pos-setup" || route[0] === "setup-wizard") {
 		return false;
 	}
@@ -801,6 +1071,12 @@ function imogi_pos_patch_settings_slug_route() {
 
 	const original = frappe.router.convert_to_standard_route.bind(frappe.router);
 	frappe.router.convert_to_standard_route = async function (route) {
+		if (route?.[0]) {
+			const normalized = String(route[0]).toLowerCase().replace(/_/g, "-").replace(/\s+/g, "-");
+			if (normalized === IMOGI_TABLE_SERVICE_PAGE) {
+				route[0] = IMOGI_TABLE_SERVICE_PAGE;
+			}
+		}
 		const slug = route && route[0];
 		if (slug === IMOGI_SETTINGS_SLUG && !this.routes?.[IMOGI_SETTINGS_SLUG]) {
 			if (imogi_pos_is_cashier_user()) {
@@ -849,9 +1125,15 @@ imogi_pos.paint_cashier_canvas = imogi_pos_paint_cashier_canvas;
 $(document).on("app_ready", () => {
 	imogi_pos_ensure_logout();
 	imogi_pos_patch_settings_slug_route();
+	imogi_pos_patch_table_service_push_state();
+	imogi_pos_bind_table_service_link_navigation();
 	imogi_pos_sync_desk_theme();
 
 	if (imogi_pos_guard_cashier_settings_slug()) {
+		return;
+	}
+
+	if (imogi_pos_guard_kitchen_fullscreen()) {
 		return;
 	}
 
@@ -865,6 +1147,9 @@ $(document).on("app_ready", () => {
 		frappe.router.on("change", () => {
 			imogi_pos_sync_desk_theme();
 			setTimeout(() => {
+				if (imogi_pos_guard_table_service_surface()) {
+					return;
+				}
 				imogi_pos_sync_desk_theme();
 				if (imogi_pos_guard_cashier_settings_slug()) {
 					return;
@@ -879,6 +1164,9 @@ $(document).on("app_ready", () => {
 					return;
 				}
 				if (imogi_pos_guard_waiter_fullscreen()) {
+					return;
+				}
+				if (imogi_pos_guard_kitchen_fullscreen()) {
 					return;
 				}
 				if (
@@ -917,6 +1205,9 @@ $(document).on("app_ready", () => {
 		imogi_pos_sync_desk_theme();
 		setTimeout(imogi_pos_sync_desk_theme, 50);
 		setTimeout(() => {
+			if (imogi_pos_guard_table_service_surface()) {
+				return;
+			}
 			if (imogi_pos_guard_cashier_settings_slug()) {
 				return;
 			}
@@ -927,6 +1218,9 @@ $(document).on("app_ready", () => {
 				return;
 			}
 			if (imogi_pos_guard_waiter_fullscreen()) {
+				return;
+			}
+			if (imogi_pos_guard_kitchen_fullscreen()) {
 				return;
 			}
 			imogi_pos_redirect_cashier_home();

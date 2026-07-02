@@ -17,10 +17,27 @@ from imogi_pos.imogi_pos.utils.feature_registry import (
 )
 
 
-def run():
+def _run_tier_independent_checks():
+	"""Assertions valid in both SaaS-gating and tier-disabled deployments."""
+	# Tier ordering is pure rank math (does not consult deployment flag).
+	assert TIER_RANK["Free"] < TIER_RANK["Starter"] < TIER_RANK["Professional"] < TIER_RANK["Enterprise"]
+
+	# Role inheritance privileges.
+	assert "Supervisor" in ROLE_PRIVILEGES["Manager"]
+	assert "Kasir" in ROLE_PRIVILEGES["Supervisor"]
+	assert "Waiter" in ROLE_PRIVILEGES["Waiter"]
+
+	# Settings field lock map must cover every mapped feature field.
+	locks = get_settings_field_locks()
+	for fieldname in SETTINGS_FEATURE_MAP:
+		assert fieldname in locks["locks"], f"missing lock for {fieldname}"
+
+
+def _run_saas_gating_checks():
+	"""Strict tier assertions — only meaningful when gating is active."""
 	summary = summarize_tiers()
-	assert summary["per_tier"]["Free"] == 6
-	assert summary["per_tier"]["Starter"] == 14
+	assert summary["per_tier"]["Free"] == 7
+	assert summary["per_tier"]["Starter"] == 15
 	assert is_tier_at_least("Enterprise", "Free")
 	assert not is_tier_at_least("Free", "Starter")
 	assert is_feature_in_plan("hold_order", "Starter")
@@ -36,8 +53,6 @@ def run():
 	locks_starter = get_settings_field_locks("Starter")
 	assert locks_starter["locks"]["enable_payment_gateway"]["allowed"]
 	assert not locks_starter["locks"]["enable_pos_shift"]["allowed"]
-	for fieldname in SETTINGS_FEATURE_MAP:
-		assert fieldname in locks_free["locks"]
 
 	class _FakeSettings:
 		subscription_tier = "Free"
@@ -60,10 +75,6 @@ def run():
 	assert meta["hold_order"]["blocked_reason"] == "tier"
 	assert not meta["hold_order"]["allowed"]
 
-	assert "Supervisor" in ROLE_PRIVILEGES["Manager"]
-	assert "Kasir" in ROLE_PRIVILEGES["Supervisor"]
-	assert "Waiter" in ROLE_PRIVILEGES["Waiter"]
-
 	assert is_workspace_item_in_plan("Page", "imogi-pos-cashier", "Free")
 	assert not is_workspace_item_in_plan("Page", "kitchen-display", "Free")
 	assert is_workspace_item_in_plan("Page", "kitchen-display", "Professional")
@@ -71,8 +82,36 @@ def run():
 	assert not is_workspace_item_in_plan("Page", "imogi-pos-add-branch", "Professional")
 	assert is_workspace_item_in_plan("Page", "imogi-pos-add-branch", "Enterprise")
 
-	print("Feature gating smoke OK:", summary["per_tier"], "tiers:", list(TIER_RANK))
-	return summary
+
+def _run_tier_disabled_checks():
+	"""When gating is off, everything must be unlocked (the correct behavior)."""
+	summary = summarize_tiers()
+	for tier in ("Free", "Starter", "Professional", "Enterprise"):
+		assert summary["per_tier"][tier] == 100, f"{tier} should open all 100"
+	assert is_tier_at_least("Free", "Enterprise"), "tier-disabled: any tier passes"
+	assert is_feature_in_plan("multi_outlet", "Free"), "tier-disabled: feature always in plan"
+	assert is_workspace_item_in_plan("Page", "kitchen-display", "Free")
+
+	locks = get_settings_field_locks()
+	assert locks.get("tier_disabled") is True
+	assert all(lock["allowed"] for lock in locks["locks"].values()), "all fields unlocked"
+
+
+def run():
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+	_run_tier_independent_checks()
+
+	tier_disabled = is_subscription_tier_disabled()
+	if tier_disabled:
+		_run_tier_disabled_checks()
+		mode = "tier-disabled"
+	else:
+		_run_saas_gating_checks()
+		mode = "saas-gating"
+
+	print(f"Feature gating smoke OK ({mode}); tiers:", list(TIER_RANK))
+	return {"ok": True, "mode": mode}
 
 
 if __name__ == "__main__":

@@ -147,6 +147,7 @@ def import_products_from_csv(csv_text=None, file_url=None, update_existing=0):
 	- add_on / add_ons (comma-separated)
 	- item_code (optional, auto from produk)
 	- standard_rate, stock_uom, reorder_level, reorder_qty, item_group
+	- max_stock / maks_stok (batas maksimal stok per produk, 0 = tanpa batas)
 	"""
 	_require_import_access()
 	settings = ensure_import_settings()

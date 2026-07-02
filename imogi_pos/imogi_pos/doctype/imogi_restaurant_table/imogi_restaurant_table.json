@@ -8,10 +8,15 @@
  "field_order": [
   "table_number",
   "company",
+  "restaurant_floor",
+  "restaurant_area",
   "capacity",
   "status",
   "current_order",
-  "location"
+  "location",
+  "shape",
+  "pos_x",
+  "pos_y"
  ],
  "fields": [
   {
@@ -27,6 +32,23 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fetch_from": "restaurant_area.restaurant_floor",
+   "fieldname": "restaurant_floor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lantai",
+   "options": "IMOGI Restaurant Floor"
+  },
+  {
+   "fieldname": "restaurant_area",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Ruangan / Area",
+   "options": "IMOGI Restaurant Area"
   },
   {
    "default": "4",
@@ -50,9 +72,33 @@
    "read_only": 1
   },
   {
+   "fetch_from": "restaurant_area.area_name",
    "fieldname": "location",
    "fieldtype": "Data",
-   "label": "Location / Zone"
+   "label": "Location / Zone",
+   "read_only": 1
+  },
+  {
+   "default": "Square",
+   "description": "Floor plan table shape.",
+   "fieldname": "shape",
+   "fieldtype": "Select",
+   "label": "Shape",
+   "options": "Square\nRound\nBar"
+  },
+  {
+   "description": "Floor plan X position (percent 0-100).",
+   "fieldname": "pos_x",
+   "fieldtype": "Float",
+   "label": "Floor X",
+   "precision": "2"
+  },
+  {
+   "description": "Floor plan Y position (percent 0-100).",
+   "fieldname": "pos_y",
+   "fieldtype": "Float",
+   "label": "Floor Y",
+   "precision": "2"
   }
  ],
  "links": [],

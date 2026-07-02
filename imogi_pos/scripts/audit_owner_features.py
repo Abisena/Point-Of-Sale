@@ -101,21 +101,28 @@ def run():
 
 	# 3) DocTypes
 	print("\n=== OWNER DOCTYPES ===")
-	doctypes = {
-		"IMOGI POS Settings": ("read", True),
-		"IMOGI POS Settings": ("write", True),
-		"Riwayat Order": ("read", True),
-		"POS Invoice": ("read", True),
-		"Sales Invoice": ("read", True),
-		"IMOGI Branch": ("read", True),
-		"IMOGI Area Manager Assignment": ("read", True),
-		"IMOGI Area Manager Assignment": ("write", True),
-		"Item": ("read", False),
-		"Material Request": ("read", True),
-		"Purchase Order": ("read", True),
-	}
+	# (doctype, permtype, expected) — list (not dict) so a doctype can appear
+	# with multiple permission types (e.g. Item read allowed but write denied).
+	doctypes = [
+		("IMOGI POS Settings", "read", True),
+		("IMOGI POS Settings", "write", True),
+		("Riwayat Order", "read", True),
+		("POS Invoice", "read", True),
+		("Sales Invoice", "read", True),
+		("IMOGI Branch", "read", True),
+		("IMOGI Area Manager Assignment", "read", True),
+		("IMOGI Area Manager Assignment", "write", True),
+		# IMOGI Owner is the business super-user: ROLE_PRIVILEGES["Owner"] inherits
+		# Manager/Inventory/Purchasing personas, and the Item DocType grants the
+		# IMOGI Owner role explicit read so the owner can review the product/menu
+		# master. Read is expected; write/create stay restricted.
+		("Item", "read", True),
+		("Item", "write", False),
+		("Material Request", "read", True),
+		("Purchase Order", "read", True),
+	]
 	checked = set()
-	for dt, (ptype, should) in doctypes.items():
+	for dt, ptype, should in doctypes:
 		key = (dt, ptype)
 		if key in checked:
 			continue
@@ -149,17 +156,20 @@ def run():
 		("imogi_pos.api.free_tier_api.list_menu_items", []),
 		("imogi_pos.api.cashier.get_cashier_context", []),
 	]
+	# Owner inherits Manager/Kasir personas (ROLE_PRIVILEGES["Owner"]), so menu
+	# management APIs are reachable by design. Only get_cashier_context is
+	# expected to be blocked because the owner has no active cashier shift.
+	expected_blocked = {"imogi_pos.api.cashier.get_cashier_context"}
 	for method, args in api_checks:
 		try:
 			frappe.get_attr(method)(*args)
 			result = "OK"
-			if "list_menu_items" in method:
-				issues.append("api list_menu_items: Owner should not access menu API")
+			if method in expected_blocked:
+				issues.append(f"api {method}: expected blocked for Owner but succeeded")
 				result = "LEAK"
 		except Exception as exc:
 			result = f"BLOCKED {type(exc).__name__}"
-			expect_ok = "get_cashier_context" not in method
-			if expect_ok and "list_menu_items" not in method:
+			if method not in expected_blocked:
 				issues.append(f"api {method}: {exc}")
 		print(f"  [{result}] {method}")
 

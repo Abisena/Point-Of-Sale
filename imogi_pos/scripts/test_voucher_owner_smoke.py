@@ -7,7 +7,7 @@ from frappe.utils import flt
 
 from imogi_pos.api.customer_api import _upsert_customer_contact
 from imogi_pos.imogi_pos.utils.flow import get_settings
-from imogi_pos.imogi_pos.utils.loyalty import compute_checkout_totals, validate_voucher
+from imogi_pos.imogi_pos.utils.loyalty import validate_voucher
 
 
 def run():
@@ -38,9 +38,15 @@ def _test_open_voucher(company, items):
 		customer=None,
 		customer_mobile=None,
 	)
-	totals = compute_checkout_totals(items, voucher_code=code, company=company)
-	if flt(totals["voucher_discount"]) <= 0:
+	# Validate directly on a clean subtotal: an open voucher (no owner) must
+	# apply a discount even when no customer/phone is supplied. Using
+	# validate_voucher avoids interference from unrelated active promo rules
+	# that compute_checkout_totals would also apply to the picked item.
+	meta = validate_voucher(code, company=company, subtotal=50000)
+	if flt(meta["discount_amount"]) <= 0:
 		raise AssertionError("open voucher should apply discount")
+	if meta.get("customer") or meta.get("customer_mobile"):
+		raise AssertionError("open voucher should have no owner binding")
 	print("[ok] open voucher applies without owner")
 
 

@@ -32,7 +32,7 @@ def _require_matrix_access():
 
 @frappe.whitelist()
 def get_feature_matrix(tier=None):
-	"""Return full 99-feature matrix for admin UI / debugging."""
+	"""Return full 101-feature matrix for admin UI / debugging."""
 	_require_matrix_access()
 	preview_tier = (tier or "").strip() or None
 	return serialize_feature_matrix(preview_tier or get_subscription_tier())
@@ -40,7 +40,7 @@ def get_feature_matrix(tier=None):
 
 @frappe.whitelist()
 def get_tier_summary():
-	"""Return tier counts (Free=6, Starter=14, Pro=77, Enterprise=99)."""
+	"""Return tier counts (Free=7, Starter=15, Pro=79, Enterprise=101)."""
 	_require_matrix_access()
 	return {
 		"tiers": list(SUBSCRIPTION_TIERS),
@@ -81,6 +81,15 @@ def get_role_authorization_matrix():
 	from imogi_pos.imogi_pos.utils.role_authorization import serialize_role_authorization_matrix
 
 	return serialize_role_authorization_matrix()
+
+
+@frappe.whitelist()
+def get_page_authorization_matrix():
+	"""Return per-role page (menu) access catalog + current toggle state."""
+	_require_matrix_access()
+	from imogi_pos.imogi_pos.utils.page_authorization import serialize_page_authorization_matrix
+
+	return serialize_page_authorization_matrix()
 
 
 @frappe.whitelist()

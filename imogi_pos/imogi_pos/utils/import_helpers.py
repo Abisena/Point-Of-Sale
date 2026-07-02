@@ -151,6 +151,10 @@ def upsert_item_from_import(row, settings, update_existing=0):
 	if add_ons:
 		item.imogi_pos_add_ons = add_ons
 
+	max_stock = row.get("max_stock") or row.get("maks_stok") or row.get("maksimal_stok")
+	if max_stock not in (None, ""):
+		item.imogi_max_stock = flt(max_stock)
+
 	if not item.variant_of:
 		item.has_variants = 0
 

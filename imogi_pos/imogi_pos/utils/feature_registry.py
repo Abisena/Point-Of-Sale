@@ -1,8 +1,8 @@
 # Copyright (c) 2026, Imogi and contributors
-"""IMOGI POS F&B — subscription tier feature matrix (100 features).
+"""IMOGI POS F&B — subscription tier feature matrix (101 features).
 
 Source of truth for Free / Starter / Professional / Enterprise gating.
-Tier counts (cumulative): Free 6, Starter 14, Professional 77, Enterprise 99.
+Tier counts (cumulative): Free 7, Starter 15, Professional 79, Enterprise 101.
 
 Status: built = available via IMOGI UI/API or workspace bridge to ERPNext;
 partial = reserved (legacy); planned = not implemented yet.
@@ -285,7 +285,7 @@ FEATURES: tuple[dict, ...] = (
 		"trigger_upgrade": "Kontrol transaksi",
 		"module": "Riwayat Order",
 	},
-	# ── TABLE SERVICE (5) ───────────────────────────────────────────────────
+	# ── TABLE SERVICE (6) ───────────────────────────────────────────────────
 	{
 		"id": "table_management",
 		"label": "Table Management",
@@ -340,6 +340,18 @@ FEATURES: tuple[dict, ...] = (
 		"settings_key": None,
 		"trigger_upgrade": "Peak Hour",
 		"module": "table-service",
+	},
+	{
+		"id": "qr_self_service",
+		"label": "QR Self-Service Order",
+		"category": "TABLE SERVICE",
+		"role": "Waiter",
+		"min_tier": "Professional",
+		"status": FEATURE_STATUS_PLANNED,
+		"settings_key": None,
+		"trigger_upgrade": "Pesan mandiri via QR",
+		"module": "(planned) qr-self-service",
+		"notes": "Pelanggan scan QR di meja, buka menu digital, dan pesan sendiri. Order masuk ke Table Management + KDS. Belum diimplementasikan.",
 	},
 	# ── KITCHEN (8) ────────────────────────────────────────────────────────
 	{
@@ -1163,9 +1175,9 @@ FEATURE_BY_ID = {row["id"]: row for row in FEATURES}
 
 
 def _validate_registry():
-	if len(FEATURES) != 100:
-		raise ValueError(f"Feature registry must contain 100 features, got {len(FEATURES)}")
-	if len(FEATURE_BY_ID) != 100:
+	if len(FEATURES) != 101:
+		raise ValueError(f"Feature registry must contain 101 features, got {len(FEATURES)}")
+	if len(FEATURE_BY_ID) != 101:
 		raise ValueError("Duplicate feature ids in registry")
 
 

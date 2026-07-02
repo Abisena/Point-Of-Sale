@@ -32,6 +32,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_order_api(frm) {
 		render_api_dock_summary(frm);
+		apply_settings_field_states(frm);
 	},
 
 	enable_order_api_webhook(frm) {
@@ -92,6 +93,10 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_role_authorization(frm) {
 		render_role_authorization_matrix(frm);
+	},
+
+	enable_page_authorization(frm) {
+		render_page_authorization_matrix(frm);
 	},
 
 	enable_role_gating(frm) {
@@ -174,12 +179,21 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		layout_receipt_settings_dock(frm);
 	},
 
+	whatsapp_api_provider(frm) {
+		layout_receipt_settings_dock(frm);
+	},
+
 	auto_print_receipt_on_success(frm) {
 		layout_receipt_settings_dock(frm);
 	},
 
 	enable_receipt_print(frm) {
 		layout_receipt_settings_dock(frm);
+		apply_settings_field_states(frm);
+	},
+
+	enable_sales_tax(frm) {
+		apply_settings_field_states(frm);
 	},
 
 	default_company(frm) {
@@ -221,6 +235,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_saas_billing_sync(frm) {
 		apply_billing_ui_state(frm);
+		apply_settings_field_states(frm);
 	},
 
 	billing_auto_apply_tier(frm) {
@@ -249,6 +264,12 @@ frappe.ui.form.on("IMOGI POS Settings", {
 				frm.reload_doc();
 			},
 		});
+	},
+
+	enable_table_service(frm) {
+		render_mode_summary(frm);
+		render_kitchen_dock_summary(frm);
+		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
 	enable_kitchen_display(frm) {
@@ -429,7 +450,7 @@ const SETTINGS_TABS = [
 	},
 	{
 		id: "transactions",
-		label: __("Transaksi"),
+		label: __("Program & Promo"),
 		icon: "fa-exchange",
 		desc: __("Loyalty, stamp card, dan promo otomatis"),
 		sections: ["loyalty_section", "stamp_section", "promo_section"],
@@ -445,15 +466,8 @@ const SETTINGS_TABS = [
 		id: "inventory",
 		label: __("Produk & Stok"),
 		icon: "fa-cubes",
-		desc: __("Stok otomatis, import menu, produk & BOM"),
-		sections: ["inventory_section", "import_section"],
-	},
-	{
-		id: "tax",
-		label: __("Pajak & Service"),
-		icon: "fa-percent",
-		desc: __("Franchise royalty dan akun pajak"),
-		sections: ["franchise_section"],
+		desc: __("Import menu, produk & BOM"),
+		sections: ["import_section"],
 	},
 	{
 		id: "receipt",
@@ -473,8 +487,8 @@ const SETTINGS_TABS = [
 		id: "more",
 		label: __("Lainnya"),
 		icon: "fa-ellipsis-h",
-		desc: __("Role & akses, notifikasi, pajak, dan pengaturan lanjutan"),
-		sections: ["operations_section", "analytics_section", "franchise_section"],
+		desc: __("Role & akses, pajak, dan pengaturan lanjutan"),
+		sections: ["operations_section", "franchise_section"],
 	},
 ];
 
@@ -597,6 +611,9 @@ const SETTINGS_FORM_LAYOUT = [
 	"enable_role_authorization",
 	"role_authorization_matrix",
 	"role_authorizations",
+	"enable_page_authorization",
+	"page_authorization_matrix",
+	"page_authorizations",
 	"enable_role_gating",
 	"enable_approval_workflow",
 	"approval_discount_threshold_percent",
@@ -618,6 +635,17 @@ const SETTINGS_FORM_LAYOUT = [
 	"order_api_key",
 	"order_api_secret",
 	"order_api_info",
+];
+
+// Rollout tertunda: field & backend tetap ada; sembunyikan dari UI Settings sampai dibutuhkan.
+const SETTINGS_DEFERRED_OPERATIONAL_FIELDS = [
+	"enable_role_gating",
+	"enable_central_kitchen",
+	"central_kitchen_station",
+	"enable_cashback",
+	"cashback_percent",
+	"enable_birthday_promo",
+	"birthday_discount_percent",
 ];
 
 const SETTINGS_BILLING_FIELD_NAMES = [
@@ -654,6 +682,16 @@ const SETTINGS_ALWAYS_HIDDEN_FIELDS = new Set([
 	"order_api_key",
 	"order_api_secret",
 	"order_api_info",
+	// Section "Pengaturan Dashboard" dihapus dari UI Settings — backend tetap pakai
+	// default (realtime aktif, refresh dashboard 30 detik).
+	"enable_realtime_notifications",
+	"dashboard_refresh_seconds",
+	// Section "Stok Otomatis" disembunyikan dari UI — fungsi tetap jalan dengan default
+	// (cek stok 180 detik, threshold reorder_level, auto Purchase Request aktif).
+	"low_stock_check_interval",
+	"low_stock_alert_roles",
+	"reorder_level_field",
+	"enable_auto_purchase_request",
 ]);
 
 let __imogi_settings_active_tab = "general";
@@ -722,7 +760,7 @@ const ENDPOINT_GROUPS = {
 
 function ensure_imogi_styles(callback) {
 	const run = () => callback && callback();
-	if (document.getElementById("imogi-settings-inline-css-v80")) {
+	if (document.getElementById("imogi-settings-inline-css-v81")) {
 		run();
 		return;
 	}
@@ -735,7 +773,8 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v80")) return;
+	if (document.getElementById("imogi-settings-inline-css-v81")) return;
+	document.getElementById("imogi-settings-inline-css-v80")?.remove();
 	document.getElementById("imogi-settings-inline-css-v79")?.remove();
 	document.getElementById("imogi-settings-inline-css-v78")?.remove();
 	document.getElementById("imogi-settings-inline-css-v77")?.remove();
@@ -2016,13 +2055,20 @@ function inject_imogi_settings_css() {
 		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control { margin-bottom: 4px !important; }
 		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .frappe-control[data-fieldtype="Check"] { margin: 2px 0 !important; }
 		:is(.imogi-settings-tab-panel--transactions, .imogi-settings-tab-panel--payment, .imogi-settings-tab-panel--inventory, .imogi-settings-tab-panel--more, .imogi-settings-tab-panel--receipt, .imogi-settings-tab-panel--integrations) .imogi-settings-flat-section { margin-bottom: 12px; }
+		.imogi-settings-page .frappe-control.imogi-field-disabled {
+			opacity: 0.55;
+			pointer-events: none;
+		}
+		.imogi-settings-page .frappe-control.imogi-field-disabled .control-label {
+			color: #9ca3af !important;
+		}
 		body.imogi-pos-settings-active .form-footer,
 		body.imogi-pos-settings-active .after-save,
 		body.imogi-pos-settings-active .comment-box,
 		body.imogi-pos-settings-active .form-timeline,
 		body.imogi-pos-settings-active .new-timeline,
 		body.imogi-pos-settings-active .timeline { display: none !important; }
-	`, "imogi-settings-inline-css-v80");
+	`, "imogi-settings-inline-css-v81");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -2037,6 +2083,14 @@ function hide_marketplace_integration_ui(frm) {
 			.find(".imogi-integrations-dock .imogi-api-dock-sub")
 			.text(__("Kasir tetap jalan tanpa internet."));
 	}
+}
+
+function hide_deferred_operational_settings(frm) {
+	SETTINGS_DEFERRED_OPERATIONAL_FIELDS.forEach((fieldname) => {
+		if (frm.fields_dict[fieldname]) {
+			frm.toggle_display(fieldname, false);
+		}
+	});
 }
 
 function can_manage_api(frm) {
@@ -2158,6 +2212,111 @@ function render_role_authorization_matrix(frm) {
 	});
 }
 
+function page_auth_row_key(role, page_id) {
+	return `${role}::${page_id}`;
+}
+
+function upsert_page_auth_row(frm, role, page_id, enabled) {
+	const rows = frm.doc.page_authorizations || [];
+	let row = rows.find((r) => r.frappe_role === role && r.page_id === page_id);
+	if (!row) {
+		row = frm.add_child("page_authorizations");
+		row.frappe_role = role;
+		row.page_id = page_id;
+	}
+	row.enabled = enabled ? 1 : 0;
+}
+
+function render_page_authorization_matrix(frm) {
+	const field = frm.fields_dict?.page_authorization_matrix;
+	if (!field) return;
+
+	frm.toggle_display("page_authorizations", false);
+	const enabled = cint(frm.doc.enable_page_authorization);
+	frm.toggle_display("page_authorization_matrix", enabled);
+	if (!enabled) {
+		field.$wrapper.empty();
+		return;
+	}
+
+	const $host = field.$wrapper;
+	$host.html(`<div class="imogi-role-auth-matrix is-loading"><i class="fa fa-spinner fa-spin"></i> ${__("Memuat otorisasi halaman...")}</div>`);
+
+	frappe.call({
+		method: "imogi_pos.api.feature_api.get_page_authorization_matrix",
+		callback(r) {
+			const data = r.message || {};
+			const pages = data.pages || [];
+			if (!pages.length) {
+				$host.html(`<div class="text-muted">${__("Belum ada halaman yang bisa dikonfigurasi.")}</div>`);
+				return;
+			}
+
+			const role_set = new Set();
+			pages.forEach((page) => {
+				(page.roles || []).forEach((entry) => role_set.add(entry.role));
+			});
+			const roles = Array.from(role_set);
+
+			const state = {};
+			pages.forEach((page) => {
+				(page.roles || []).forEach((entry) => {
+					state[page_auth_row_key(entry.role, page.id)] = entry.enabled ? 1 : 0;
+				});
+			});
+			(frm.doc.page_authorizations || []).forEach((row) => {
+				state[page_auth_row_key(row.frappe_role, row.page_id)] = cint(row.enabled);
+			});
+
+			const role_headers = roles
+				.map((role) => `<th class="imogi-role-auth-role" title="${frappe.utils.escape_html(role)}">${frappe.utils.escape_html(role.replace(/^IMOGI /, ""))}</th>`)
+				.join("");
+
+			const body_rows = pages
+				.map((page) => {
+					const cells = roles
+						.map((role) => {
+							const eligible = (page.roles || []).some((entry) => entry.role === role);
+							if (!eligible) {
+								return `<td class="imogi-role-auth-cell is-na">—</td>`;
+							}
+							const key = page_auth_row_key(role, page.id);
+							const checked = state[key] ? "checked" : "";
+							return `<td class="imogi-role-auth-cell"><label class="imogi-role-auth-check"><input type="checkbox" data-role="${frappe.utils.escape_html(role)}" data-page="${frappe.utils.escape_html(page.id)}" ${checked}><span></span></label></td>`;
+						})
+						.join("");
+					return `<tr>
+						<td class="imogi-role-auth-label">
+							<div class="imogi-role-auth-title">${frappe.utils.escape_html(page.label)}</div>
+							<div class="imogi-role-auth-desc">${frappe.utils.escape_html(page.description || "")}</div>
+						</td>
+						${cells}
+					</tr>`;
+				})
+				.join("");
+
+			$host.html(`
+				<div class="imogi-role-auth-matrix">
+					<div class="imogi-role-auth-hint">${__("Centang untuk mengizinkan role membuka halaman terkait. User single-purpose (mis. Kitchen) hanya bisa membuka halaman yang dicentang. Simpan pengaturan agar berlaku.")}</div>
+					<div class="imogi-role-auth-scroll">
+						<table class="imogi-role-auth-table">
+							<thead><tr><th>${__("Halaman / Menu")}</th>${role_headers}</tr></thead>
+							<tbody>${body_rows}</tbody>
+						</table>
+					</div>
+				</div>
+			`);
+
+			$host.find("input[type=checkbox]").on("change", function on_page_auth_toggle() {
+				const role = this.getAttribute("data-role");
+				const page_id = this.getAttribute("data-page");
+				upsert_page_auth_row(frm, role, page_id, this.checked);
+				frm.dirty();
+			});
+		},
+	});
+}
+
 function init_settings_page(frm) {
 	frm.$wrapper.addClass("imogi-settings-page");
 	hide_settings_form_sidebar(frm);
@@ -2166,6 +2325,7 @@ function init_settings_page(frm) {
 		(f) => frm.toggle_display(f, false)
 	);
 	hide_marketplace_integration_ui(frm);
+	hide_deferred_operational_settings(frm);
 	hide_settings_general_extras(frm);
 	render_mode_summary(frm);
 	toggle_settings_by_business_type(frm);
@@ -2191,6 +2351,7 @@ function init_settings_page(frm) {
 	build_sidebar_help(frm);
 	ensure_settings_content_inner(frm);
 	render_role_authorization_matrix(frm);
+	render_page_authorization_matrix(frm);
 	bind_dock_checkbox_handlers_once(frm);
 	hook_settings_form_save(frm);
 	frappe.after_ajax(() => layout_receipt_settings_dock(frm));
@@ -2820,6 +2981,7 @@ function activate_settings_tab(frm, tabId) {
 			ops_ctx.$wrapper.addClass("imogi-section-operations");
 		}
 		render_role_authorization_matrix(frm);
+		render_page_authorization_matrix(frm);
 		render_franchise_dock_summary(frm);
 	}
 	if (tabId === "general") {
@@ -2843,6 +3005,9 @@ function activate_settings_tab(frm, tabId) {
 	if (tabId === "receipt") {
 		layout_receipt_settings_dock(frm);
 	}
+	// Pastikan semua field yang dependen ke checkbox tetap tampil (disabled),
+	// tidak hilang, di tab mana pun.
+	schedule_settings_field_state(frm, apply_settings_field_states);
 }
 
 function position_target_dock(frm) {
@@ -3039,9 +3204,14 @@ function build_import_dock(frm) {
 					<div class="imogi-import-card-desc">${__(
 						"Excel 2 sheet: Menu (Product+BOM) + Stok Awal. Service dilewati."
 					)}</div>
-					<button type="button" class="btn btn-primary btn-sm imogi-import-card-btn">${__(
-						"Upload Excel / CSV"
-					)}</button>
+					<div class="imogi-import-card-actions">
+						<button type="button" class="btn btn-primary btn-sm imogi-import-card-btn">${__(
+							"Upload Excel / CSV"
+						)}</button>
+						<a href="#" class="imogi-import-template-link" data-template="menu"><i class="fa fa-download"></i> ${__(
+							"Unduh template"
+						)}</a>
+					</div>
 				</div>
 				<div class="imogi-import-card" data-action="stock">
 					<div class="imogi-import-card-icon"><i class="fa fa-cubes"></i></div>
@@ -3049,9 +3219,14 @@ function build_import_dock(frm) {
 					<div class="imogi-import-card-desc">${__(
 						"Stok awal bahan ke gudang default. Kolom: Komponen, Qty, UOM, Harga (valuation + harga beli)."
 					)}</div>
-					<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__(
-						"Import Stok"
-					)}</button>
+					<div class="imogi-import-card-actions">
+						<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__(
+							"Import Stok"
+						)}</button>
+						<a href="#" class="imogi-import-template-link" data-template="stock"><i class="fa fa-download"></i> ${__(
+							"Unduh template"
+						)}</a>
+					</div>
 				</div>
 				<div class="imogi-import-card" data-action="product">
 					<div class="imogi-import-card-icon"><i class="fa fa-shopping-basket"></i></div>
@@ -3059,9 +3234,14 @@ function build_import_dock(frm) {
 					<div class="imogi-import-card-desc">${__(
 						"Kolom: no, produk, kategori, add_on, standard_rate, stock_uom."
 					)}</div>
-					<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__(
-						"Import Produk"
-					)}</button>
+					<div class="imogi-import-card-actions">
+						<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__(
+							"Import Produk"
+						)}</button>
+						<a href="#" class="imogi-import-template-link" data-template="product"><i class="fa fa-download"></i> ${__(
+							"Unduh template"
+						)}</a>
+					</div>
 				</div>
 				<div class="imogi-import-card" data-action="bom">
 					<div class="imogi-import-card-icon"><i class="fa fa-sitemap"></i></div>
@@ -3069,7 +3249,12 @@ function build_import_dock(frm) {
 					<div class="imogi-import-card-desc">${__(
 						"Kolom: product, bom_product, qty, uom, double. Produk harus sudah ada."
 					)}</div>
-					<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__("Import BOM")}</button>
+					<div class="imogi-import-card-actions">
+						<button type="button" class="btn btn-default btn-sm imogi-import-card-btn">${__("Import BOM")}</button>
+						<a href="#" class="imogi-import-template-link" data-template="bom"><i class="fa fa-download"></i> ${__(
+							"Unduh template"
+						)}</a>
+					</div>
 				</div>
 			</div>`);
 		$body.prepend($dock);
@@ -3081,6 +3266,11 @@ function build_import_dock(frm) {
 			else if (action === "product") open_product_import_dialog(frm);
 			else if (action === "bom") open_bom_import_dialog(frm);
 		});
+
+		$dock.on("click", ".imogi-import-template-link", function (e) {
+			e.preventDefault();
+			download_import_template($(this).data("template"));
+		});
 	}
 
 	["import_menu", "import_stock", "import_products", "import_bom"].forEach((fieldname) => {
@@ -3089,6 +3279,79 @@ function build_import_dock(frm) {
 			field.$wrapper.hide();
 		}
 	});
+}
+
+// Template contoh untuk tiap jenis import. Baris pertama = header kolom,
+// sisanya = contoh isian agar user paham kolom apa saja yang harus diisi.
+const IMPORT_TEMPLATE_DATA = {
+	menu: {
+		filename: "template_import_menu.csv",
+		rows: [
+			["Produk", "Komponen", "Qty", "UOM", "Harga", "Kategori", "Harga Jual"],
+			["NEW MILO SAURUS (Reguler)", "", "", "", "", "Beverage", "28000"],
+			["", "POWDER MILO OMURA", "33", "GRAM", "49.09", "", ""],
+			["", "SUSU DIAMOND FULLCREAM", "88", "ML", "15.29", "", ""],
+			["", "ICE CUBE", "300", "GRAM", "1.31", "", ""],
+			["AGL-MILK TEA (R)", "", "", "", "", "Beverage", "22000"],
+			["", "SUSU UHT", "150", "ML", "2250", "", ""],
+			["", "BUBUK MILK TEA", "30", "GRAM", "4500", "", ""],
+			["", "GULA CAIR", "20", "ML", "800", "", ""],
+			["Birthday Decoration", "", "", "", "", "Service", "150000"],
+			["", "Balloon Package", "1", "Set", "50000", "", ""],
+		],
+	},
+	stock: {
+		filename: "template_import_stok.csv",
+		rows: [
+			["Komponen", "Qty", "UOM", "Harga"],
+			["SUSU UHT", "1000", "ML", "25"],
+			["POWDER MILO OMURA", "500", "GRAM", "49.09"],
+			["GULA CAIR", "2000", "ML", "40"],
+		],
+	},
+	product: {
+		filename: "template_import_produk.csv",
+		rows: [
+			["no", "produk", "kategori", "add_on", "standard_rate", "stock_uom"],
+			["1", "Chicken Sandwich", "Food", "Extra Chicken, Cheese, Fried Egg", "25000", "Nos"],
+			["2", "Es Teh Manis", "Beverage", "", "8000", "Nos"],
+			["3", "Pudding Coklat", "Dessert", "", "12000", "Nos"],
+		],
+	},
+	bom: {
+		filename: "template_import_bom.csv",
+		rows: [
+			["product", "bom_product", "qty", "uom", "double"],
+			["Sirup Ice", "ABC SIRUP SQUASH DELIGHT GRAPE", "14", "ML", "tidak"],
+			["Sirup Ice", "GULA CAIR", "20", "ML", "tidak"],
+			["Es Teh Manis", "TEH CELUP", "1", "Pcs", "tidak"],
+		],
+	},
+};
+
+function _to_csv_cell(value) {
+	const text = value == null ? "" : String(value);
+	if (/[",\n\r]/.test(text)) {
+		return `"${text.replace(/"/g, '""')}"`;
+	}
+	return text;
+}
+
+function download_import_template(type) {
+	const tpl = IMPORT_TEMPLATE_DATA[type];
+	if (!tpl) return;
+	const csv = tpl.rows.map((row) => row.map(_to_csv_cell).join(",")).join("\r\n");
+	// BOM agar Excel membaca UTF-8 dengan benar.
+	const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = tpl.filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	setTimeout(() => URL.revokeObjectURL(url), 1000);
+	frappe.show_alert({ message: __("Template diunduh: {0}", [tpl.filename]), indicator: "green" });
 }
 
 function style_form_sections(frm) {
@@ -3130,6 +3393,7 @@ function build_api_dock(frm) {
 
 	relocate_api_fields(frm, $dock);
 	render_api_dock_summary(frm);
+	schedule_settings_field_state(frm, apply_settings_field_states);
 }
 
 function relocate_api_fields(frm, $dock) {
@@ -3153,7 +3417,10 @@ function relocate_api_fields(frm, $dock) {
 function toggle_webhook_url_visibility(frm) {
 	const field = frm.get_field("order_api_webhook_url");
 	if (!field || !field.$wrapper) return;
-	field.$wrapper.closest(".frappe-control").toggle(!!frm.doc.enable_order_api_webhook);
+	// Tetap tampil; nonaktif bila webhook (atau Order API) belum diaktifkan.
+	field.$wrapper.closest(".frappe-control").show();
+	const enabled = cint(frm.doc.enable_order_api) && cint(frm.doc.enable_order_api_webhook);
+	set_settings_field_disabled(frm, "order_api_webhook_url", !enabled);
 }
 
 function build_loyalty_dock(frm) {
@@ -3174,27 +3441,146 @@ function build_loyalty_dock(frm) {
 		if (field && field.$input) field.$input.attr("placeholder", hint);
 	});
 
-	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-	if ($body.find(".imogi-loyalty-dock").length) return;
-
-	$body.prepend(`<div class="imogi-loyalty-dock"><div class="imogi-loyalty-panel"></div></div>`);
-	render_loyalty_dock_summary(frm);
+	// Badge ringkasan (Loyalty/Stamp Card/Promo Rules) dihilangkan sesuai permintaan.
+	schedule_settings_field_state(frm, apply_program_promo_field_state);
 }
 
 function render_loyalty_dock_summary(frm) {
-	const $panel = frm.$wrapper.find(".imogi-loyalty-panel");
-	if (!$panel.length) return;
+	// Badge dihilangkan — cukup pastikan state enable/disable field tetap sinkron.
+	frm.$wrapper.find(".imogi-loyalty-dock").remove();
+	schedule_settings_field_state(frm, apply_program_promo_field_state);
+}
 
-	const loyalty_on = cint(frm.doc.enable_loyalty);
-	const stamp_on = cint(frm.doc.enable_stamp_card);
-	const promo_on = cint(frm.doc.enable_promo_rules);
+// Field di tab "Program & Promo" tetap tampil walau checkbox induk tidak dicentang,
+// hanya saja input-nya dinonaktifkan (read-only) sampai checkbox diaktifkan.
+function force_show_settings_field(frm, fieldname) {
+	const field = frm.fields_dict[fieldname];
+	if (!field) return;
+	if (field.df) {
+		field.df.depends_on = "";
+		field.df.hidden = 0;
+		field.df.hidden_due_to_dependency = 0;
+	}
+	frm.set_df_property(fieldname, "depends_on", "");
+	frm.toggle_display(fieldname, true);
+	const $wrap = field.$wrapper?.closest(".frappe-control, .form-section");
+	if ($wrap?.length) {
+		$wrap.removeClass("hide-control").show();
+	}
+	frm.$wrapper
+		.find(`.form-section[data-fieldname="${fieldname}"]`)
+		.removeClass("hide-control")
+		.show();
+}
 
-	$panel.html(`
-		<div class="imogi-mini-stats imogi-mini-stats--row">
-			<span class="imogi-pill ${loyalty_on ? "is-green" : "is-orange"}">${__("Loyalty")}: ${loyalty_on ? __("Aktif") : __("Nonaktif")}</span>
-			<span class="imogi-pill ${stamp_on ? "is-green" : "is-orange"}">${__("Stamp Card")}: ${stamp_on ? __("Aktif") : __("Nonaktif")}</span>
-			<span class="imogi-pill ${promo_on ? "is-green" : "is-orange"}">${__("Promo Rules")}: ${promo_on ? __("Aktif") : __("Nonaktif")}</span>
-		</div>`);
+function set_settings_field_disabled(frm, fieldname, disabled) {
+	const field = frm.fields_dict[fieldname];
+	if (!field) return;
+	frm.set_df_property(fieldname, "read_only", disabled ? 1 : 0);
+	const $ctrl = field.$wrapper?.closest(".frappe-control");
+	if ($ctrl?.length) {
+		$ctrl.toggleClass("imogi-field-disabled", !!disabled);
+	}
+	if (field.df?.fieldtype === "Check") {
+		field.$wrapper?.find('input[type="checkbox"]').prop("disabled", !!disabled);
+	} else if (field.$input) {
+		field.$input.prop("disabled", !!disabled);
+	}
+	if (typeof field.disable === "function" && disabled) field.disable();
+	else if (typeof field.enable === "function" && !disabled) field.enable();
+}
+
+// Peta field yang dependen ke checkbox induk (semua tab). Saat kondisi false,
+// field TIDAK disembunyikan — hanya dinonaktifkan (disabled), sesuai permintaan.
+// Catatan: field berbasis "dock" (shift/kitchen/receipt) ditangani terpisah di
+// mount_settings_dock_fields agar tidak merusak layout dock.
+const SETTINGS_DEPENDENT_FIELD_CONDITIONS = {
+	// Tab Program & Promo
+	loyalty_points_per_amount: (d) => cint(d.enable_loyalty),
+	loyalty_point_value: (d) => cint(d.enable_loyalty),
+	loyalty_min_redeem_points: (d) => cint(d.enable_loyalty),
+	enable_stamp_card: (d) => cint(d.enable_loyalty),
+	stamp_target: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
+	stamp_reward_discount_type: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
+	stamp_reward_discount_value: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
+	stamp_reward_min_order: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
+	// Tab Printer & Struk (PPN + Cetak Struk)
+	sales_tax_rate: (d) => cint(d.enable_sales_tax),
+	prices_include_tax: (d) => cint(d.enable_sales_tax),
+	thermal_print_mode: (d) => cint(d.enable_receipt_print),
+	thermal_printer_width: (d) => cint(d.enable_receipt_print),
+	receipt_print_format: (d) => cint(d.enable_receipt_print),
+	receipt_logo: (d) => cint(d.enable_receipt_print),
+	receipt_header: (d) => cint(d.enable_receipt_print),
+	receipt_footer: (d) => cint(d.enable_receipt_print),
+	// Tab Pembayaran
+	payment_gateway_provider: (d) => cint(d.enable_payment_gateway),
+	payment_gateway_sandbox: (d) => cint(d.enable_payment_gateway),
+	payment_gateway: (d) => cint(d.enable_payment_gateway),
+	payment_gateway_key: (d) => cint(d.enable_payment_gateway),
+	payment_gateway_client_key: (d) => cint(d.enable_payment_gateway),
+	transfer_bank_name: (d) => cint(d.enable_transfer_payment_info),
+	transfer_bank_account: (d) => cint(d.enable_transfer_payment_info),
+	transfer_account_holder: (d) => cint(d.enable_transfer_payment_info),
+	transfer_qr_image: (d) => cint(d.enable_transfer_payment_info),
+	transfer_instructions: (d) => cint(d.enable_transfer_payment_info),
+	// Tab Integrasi (Order API)
+	order_api_user: (d) => cint(d.enable_order_api),
+	enable_order_api_webhook: (d) => cint(d.enable_order_api),
+	order_api_webhook_url: (d) => cint(d.enable_order_api) && cint(d.enable_order_api_webhook),
+	// Tab Integrasi (SaaS Billing Sync) — hanya berlaku di deployment SaaS;
+	// di deployment enterprise section ini disembunyikan & guard akan melewatinya.
+	billing_provider: (d) => cint(d.enable_saas_billing_sync),
+	billing_external_id: (d) => cint(d.enable_saas_billing_sync),
+	billing_plan_code: (d) => cint(d.enable_saas_billing_sync),
+	billing_status: (d) => cint(d.enable_saas_billing_sync),
+	billing_period_end: (d) => cint(d.enable_saas_billing_sync),
+	billing_last_synced: (d) => cint(d.enable_saas_billing_sync),
+	billing_auto_apply_tier: (d) => cint(d.enable_saas_billing_sync),
+	billing_webhook_secret: (d) => cint(d.enable_saas_billing_sync),
+	sync_subscription_tier: (d) => cint(d.enable_saas_billing_sync),
+};
+
+// Field hanya boleh "dipaksa tampil" jika section-nya memang berada di tab aktif.
+// Tanpa ini, field seperti loyalty/stamp bisa bocor ke tab lain.
+function settings_field_section_active(frm, fieldname) {
+	const field = frm.fields_dict[fieldname];
+	if (!field || !field.$wrapper) return false;
+	const $section = field.$wrapper.closest(".form-section");
+	if (!$section.length) return true;
+	return $section.is(":visible");
+}
+
+function apply_settings_field_states(frm) {
+	const doc = frm.doc || {};
+	Object.entries(SETTINGS_DEPENDENT_FIELD_CONDITIONS).forEach(([fieldname, cond]) => {
+		if (!frm.fields_dict[fieldname]) return;
+		if (!settings_field_section_active(frm, fieldname)) return;
+		force_show_settings_field(frm, fieldname);
+		let enabled;
+		try {
+			enabled = !!cond(doc);
+		} catch (e) {
+			enabled = true;
+		}
+		set_settings_field_disabled(frm, fieldname, !enabled);
+	});
+	hide_deferred_operational_settings(frm);
+}
+
+// Wrapper agar pemanggil lama tetap berfungsi — keduanya kini memakai logika generik.
+function apply_program_promo_field_state(frm) {
+	apply_settings_field_states(frm);
+}
+
+function apply_payment_field_state(frm) {
+	apply_settings_field_states(frm);
+}
+
+function schedule_settings_field_state(frm, apply_fn) {
+	apply_fn(frm);
+	clearTimeout(frm._imogi_field_state_timer);
+	frm._imogi_field_state_timer = setTimeout(() => apply_fn(frm), 200);
 }
 
 function apply_inventory_placeholders(frm) {
@@ -3325,49 +3711,15 @@ function build_payment_dock(frm) {
 		payment_gateway_client_key: __("Opsional: Midtrans Client Key untuk Snap"),
 	});
 
-	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-	if ($body.find(".imogi-payment-dock").length) return;
-
-	$body.prepend(`
-		<div class="imogi-payment-dock mb-3">
-			<div class="imogi-api-dock-intro">
-				<div class="imogi-api-dock-icon"><i class="fa fa-qrcode fa-lg"></i></div>
-				<div>
-					<div class="imogi-api-dock-title">${__("Pembayaran QRIS")}</div>
-					<div class="imogi-api-dock-sub">${__(
-						"Midtrans atau Xendit — tampilkan QR di kasir saat checkout."
-					)}</div>
-				</div>
-			</div>
-			<div class="imogi-payment-panel"></div>
-		</div>`);
+	// Badge & intro dock dihilangkan agar konsisten dengan tab Program & Promo.
+	frm.$wrapper.find(".imogi-payment-dock").remove();
 	render_payment_dock_summary(frm);
 }
 
 function render_payment_dock_summary(frm) {
-	const $panel = frm.$wrapper.find(".imogi-payment-panel");
-	if (!$panel.length) return;
-
-	const on = cint(frm.doc.enable_payment_gateway);
-	if (!on) {
-		$panel.html(`
-			<div class="imogi-mini-stats imogi-mini-stats--row">
-				<span class="imogi-pill is-orange">${__("Payment Gateway")}: ${__("Nonaktif")}</span>
-			</div>`);
-		return;
-	}
-
-	$panel.html(`
-		<div class="imogi-mini-stats imogi-mini-stats--row">
-			<span class="imogi-pill is-green">${__("Payment Gateway")}: ${__("Aktif")}</span>
-			<span class="imogi-pill is-blue">${__("Provider")}: ${frappe.utils.escape_html(frm.doc.payment_gateway_provider || "-")}</span>
-			<span class="imogi-pill ${frm.doc.payment_gateway_sandbox ? "is-orange" : "is-green"}">${__("Mode")}: ${
-				frm.doc.payment_gateway_sandbox ? __("Sandbox") : __("Live")
-			}</span>
-			<span class="imogi-pill ${frm.doc.payment_gateway_key ? "is-green" : "is-orange"}">${__("Server Key")}: ${
-				frm.doc.payment_gateway_key ? __("Tersimpan") : __("Belum diisi")
-			}</span>
-		</div>`);
+	// Badge dihilangkan — cukup sinkronkan state enable/disable field.
+	frm.$wrapper.find(".imogi-payment-dock").remove();
+	schedule_settings_field_state(frm, apply_payment_field_state);
 }
 
 function build_transfer_dock(frm) {
@@ -3379,60 +3731,19 @@ function build_transfer_dock(frm) {
 		transfer_instructions: __("Catatan opsional untuk kasir / pelanggan (mis. konfirmasi via WhatsApp)"),
 	});
 
-	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-	if ($body.find(".imogi-transfer-dock").length) return;
-
-	$body.prepend(`
-		<div class="imogi-transfer-dock mb-3">
-			<div class="imogi-api-dock-intro">
-				<div class="imogi-api-dock-icon"><i class="fa fa-university fa-lg"></i></div>
-				<div>
-					<div class="imogi-api-dock-title">${__("Rekening Transfer")}</div>
-					<div class="imogi-api-dock-sub">${__(
-						"Ditampilkan di kasir saat metode Transfer dipilih."
-					)}</div>
-				</div>
-			</div>
-			<div class="imogi-transfer-panel"></div>
-		</div>`);
+	// Badge & intro dock dihilangkan agar konsisten dengan tab Program & Promo.
+	frm.$wrapper.find(".imogi-transfer-dock").remove();
 	render_transfer_dock_summary(frm);
 }
 
 function render_transfer_dock_summary(frm) {
-	const $panel = frm.$wrapper.find(".imogi-transfer-panel");
-	if (!$panel.length) return;
-
-	const on = cint(frm.doc.enable_transfer_payment_info);
-	const bank = (frm.doc.transfer_bank_name || "").trim();
-	const account = (frm.doc.transfer_bank_account || "").trim();
-	const holder = (frm.doc.transfer_account_holder || "").trim();
-	const instructions = (frm.doc.transfer_instructions || "").trim();
-
-	if (!on) {
-		$panel.html(`
-			<div class="imogi-mini-stats imogi-mini-stats--row">
-				<span class="imogi-pill is-orange">${__("Info Rekening")}: ${__("Nonaktif")}</span>
-			</div>`);
-		return;
-	}
-
-	if (!bank || !account || !holder) {
-		$panel.html(`
-			<div class="imogi-mini-stats imogi-mini-stats--row">
-				<span class="imogi-pill is-orange">${__("Info Rekening")}: ${__("Lengkapi data bank")}</span>
-			</div>`);
-		return;
-	}
-
-	$panel.html(`
-		<div class="imogi-mini-stats imogi-mini-stats--row">
-			<span class="imogi-pill is-green">${__("Info Rekening")}: ${__("Aktif")}</span>
-			<span class="imogi-pill is-blue">${__("Bank")}: ${frappe.utils.escape_html(bank)}</span>
-			<span class="imogi-pill is-blue">${__("Rekening")}: ${frappe.utils.escape_html(account)}</span>
-			<span class="imogi-pill is-blue">${__("Atas Nama")}: ${frappe.utils.escape_html(holder)}</span>
-		</div>`);
+	// Badge dihilangkan — cukup sinkronkan state enable/disable field.
+	frm.$wrapper.find(".imogi-transfer-dock").remove();
+	schedule_settings_field_state(frm, apply_payment_field_state);
 }
 
+// Field di tab "Pembayaran" tetap tampil walau checkbox induk tidak dicentang,
+// hanya saja input-nya dinonaktifkan (read-only) sampai checkbox diaktifkan.
 function build_integrations_dock(frm) {
 	const ctx = get_settings_section(frm, "integrations_section");
 	if (!ctx || !ctx.$wrapper) return;
@@ -3888,7 +4199,7 @@ const SHIFT_SETTINGS_FIELDS = [
 	"default_closing_time",
 ];
 
-const KITCHEN_SETTINGS_FIELDS = ["enable_kitchen_display", "enable_fulfillment"];
+const KITCHEN_SETTINGS_FIELDS = ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"];
 
 const KITCHEN_DOCK_LIST_CONFIGS = [
 	{
@@ -3933,6 +4244,7 @@ const RECEIPT_DOCK_FIELDS = [
 const DOCK_CHECKBOX_FIELDS = [
 	"enable_pos_shift",
 	"enable_shift_cash_detail",
+	"enable_table_service",
 	"enable_kitchen_display",
 	"enable_fulfillment",
 	"auto_print_receipt_on_success",
@@ -4103,6 +4415,7 @@ const DOCK_FIELD_HOME_SECTION = {
 	enable_shift_cash_detail: "general_section",
 	default_pos_profile: "general_section",
 	default_warehouse: "general_section",
+	enable_table_service: "flow_section",
 	enable_kitchen_display: "flow_section",
 	enable_fulfillment: "flow_section",
 	kitchen_item_group_rows: "flow_section",
@@ -4383,15 +4696,8 @@ function mount_settings_dock_fields(frm, $grid, fieldnames, field_class) {
 	$grid.find("> .imogi-dock-check-row").remove();
 
 	fieldnames.forEach((fieldname) => {
-		const should_show = dock_field_should_show(frm, fieldname);
-		if (!should_show) {
-			const $hidden = get_dock_field_control(frm, fieldname);
-			if ($hidden?.length) {
-				$hidden.detach().addClass("hide-control").hide();
-			}
-			frm.toggle_display(fieldname, false);
-			return;
-		}
+		// Checkbox induk dimatikan -> field tetap tampil di dock, hanya dinonaktifkan.
+		const enabled = dock_field_should_show(frm, fieldname);
 		const $ctrl = get_dock_field_control(frm, fieldname);
 		if (!$ctrl || !$ctrl.length) return;
 		$ctrl.detach().removeClass("hide-control").addClass(field_class).show();
@@ -4401,6 +4707,8 @@ function mount_settings_dock_fields(frm, $grid, fieldnames, field_class) {
 		}
 		$ctrl.find(".help-box, .small.text-muted").remove();
 		$grid.append($ctrl);
+		frm.toggle_display(fieldname, true);
+		set_settings_field_disabled(frm, fieldname, !enabled);
 	});
 }
 
@@ -4461,15 +4769,15 @@ function layout_kitchen_settings(frm) {
 			</div>`);
 		$body.append($dock);
 	}
-	ensure_dock_section_head($dock, __("Kitchen & Fulfillment"), "");
+	ensure_dock_section_head($dock, __("Layanan, Dapur & Fulfillment"), "");
 
 	const $grid = $dock.find(".imogi-kitchen-form-grid");
 	$grid.addClass("imogi-kitchen-form-grid--horizontal");
 	mount_settings_dock_fields(frm, $grid, KITCHEN_SETTINGS_FIELDS, "imogi-kitchen-field");
-	group_dock_checkbox_row($grid, frm, ["enable_kitchen_display", "enable_fulfillment"]);
+	group_dock_checkbox_row($grid, frm, ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"]);
 	configure_kitchen_dock_tables(frm);
 	render_kitchen_dock_list_cards(frm, $dock);
-	sync_dock_checkbox_from_doc(frm, ["enable_kitchen_display", "enable_fulfillment"]);
+	sync_dock_checkbox_from_doc(frm, ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"]);
 	hide_duplicate_dock_fields(frm, KITCHEN_DOCK_ALL_FIELDS);
 	$dock.find(".imogi-kitchen-status, .imogi-kitchen-quick-links").remove();
 
@@ -4529,15 +4837,18 @@ function layout_receipt_settings_dock(frm) {
 		RECEIPT_DOCK_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
 	}
 
-	const wa_on = cint(frm.doc.enable_whatsapp_receipt);
+	// Sub-field WhatsApp tetap tampil; hanya dinonaktifkan jika WhatsApp tidak aktif.
+	const print_on = cint(frm.doc.enable_receipt_print);
+	const wa_on = print_on && cint(frm.doc.enable_whatsapp_receipt);
 	["whatsapp_api_provider", "fonnte_api_token", "whatsapp_receipt_default_phone", "whatsapp_receipt_message"].forEach((fieldname) => {
 		const $ctrl = $grid.find(`.frappe-control[data-fieldname="${fieldname}"]`);
 		if (!$ctrl.length) return;
-		if (fieldname === "fonnte_api_token") {
-			$ctrl.toggle(!!wa_on && (frm.doc.whatsapp_api_provider || "") === "Fonnte");
-			return;
-		}
-		$ctrl.toggle(!!wa_on);
+		$ctrl.show();
+		const field_enabled =
+			fieldname === "fonnte_api_token"
+				? !!wa_on && (frm.doc.whatsapp_api_provider || "") === "Fonnte"
+				: !!wa_on;
+		set_settings_field_disabled(frm, fieldname, !field_enabled);
 	});
 }
 
@@ -4545,22 +4856,22 @@ function render_kitchen_dock_summary(frm) {
 	const $status = frm.$wrapper.find(".imogi-kitchen-status");
 	if (!$status.length) return;
 
+	const table_on = cint(frm.doc.enable_table_service);
 	const kds_on = cint(frm.doc.enable_kitchen_display);
 	const fulfillment_on = cint(frm.doc.enable_fulfillment);
 
+	const active = [];
+	if (table_on) active.push(__("Table Service"));
+	if (kds_on) active.push(__("KDS"));
+	if (fulfillment_on) active.push(__("Fulfillment"));
+
 	$status
-		.toggleClass("is-off", !kds_on && !fulfillment_on)
+		.toggleClass("is-off", !active.length)
 		.html(
-			kds_on || fulfillment_on
-				? `<i class="fa fa-check-circle"></i> ${__(
-						kds_on && fulfillment_on
-							? "KDS aktif · Fulfillment aktif"
-							: kds_on
-							? "KDS aktif — pesanan masuk layar dapur"
-							: "Fulfillment aktif — packing takeaway/delivery"
-				  )}`
+			active.length
+				? `<i class="fa fa-check-circle"></i> ${__("Aktif")}: ${active.join(" · ")}`
 				: `<i class="fa fa-info-circle"></i> ${__(
-						"Nonaktif — aktifkan Kitchen Display jika pesanan perlu masuk dapur (KDS)."
+						"Nonaktif — aktifkan modul layanan yang dipakai outlet ini."
 				  )}`
 		);
 }

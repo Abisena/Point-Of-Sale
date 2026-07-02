@@ -536,14 +536,19 @@ imogi_pos.cashier_extras.run_checkout_call = function (page, dialog, args, payme
 			const cashRow = payment_list.find((p) => page.is_cash_mode?.(p.mode_of_payment));
 			const change =
 				cashRow && flt(paid_amount) > total ? flt(paid_amount) - total : 0;
-			page.show_success(r.message || {}, {
-				change,
-				paid_amount: flt(paid_amount),
-				mode_of_payment: payment_list.length === 1 ? primary_mode : null,
-				payments: payment_list.length > 1 ? payment_list : null,
-			});
-			page.refresh_sales_target();
 			page.clear_cart_after_checkout();
+			const keep_cart = page.cart.length > 0;
+			page.show_success(
+				r.message || {},
+				{
+					change,
+					paid_amount: flt(paid_amount),
+					mode_of_payment: payment_list.length === 1 ? primary_mode : null,
+					payments: payment_list.length > 1 ? payment_list : null,
+				},
+				{ keep_cart }
+			);
+			page.refresh_sales_target();
 			page.refresh_marketplace_badge();
 		},
 	});

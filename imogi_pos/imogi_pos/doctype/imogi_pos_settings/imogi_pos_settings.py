@@ -26,6 +26,11 @@ class IMOGIPOSSettings(Document):
 
 			ensure_default_role_authorizations(self)
 
+		if self.enable_page_authorization:
+			from imogi_pos.imogi_pos.utils.page_authorization import ensure_default_page_authorizations
+
+			ensure_default_page_authorizations(self)
+
 		self._validate_kitchen_fulfillment_rows()
 
 	def _validate_kitchen_fulfillment_rows(self):

@@ -32,6 +32,17 @@
  },
  {
   "doctype": "Custom Field",
+  "dt": "Item",
+  "fieldname": "imogi_max_stock",
+  "fieldtype": "Float",
+  "insert_after": "imogi_pos_add_ons",
+  "label": "Maksimal Stok (IMOGI POS)",
+  "description": "Batas maksimal stok per produk. Dipakai untuk peringatan overstock di IMOGI POS. 0 = tanpa batas.",
+  "non_negative": 1,
+  "name": "Item-imogi_max_stock"
+ },
+ {
+  "doctype": "Custom Field",
   "dt": "POS Invoice",
   "fieldname": "imogi_pos_order",
   "fieldtype": "Link",

@@ -11,6 +11,7 @@
  "owner": "Administrator",
  "page_name": "table-service",
  "roles": [
+  {"role": "Administrator"},
   {"role": "System Manager"},
   {"role": "Sales Manager"},
   {"role": "IMOGI Waiter"},

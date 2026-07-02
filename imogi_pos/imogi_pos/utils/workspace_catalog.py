@@ -67,8 +67,8 @@ WORKSPACE_SECTIONS = [
 		"links": [
 			{
 				"label": "Manajemen Order",
-				"link_type": "DocType",
-				"link_to": "Riwayat Order",
+				"link_type": "Page",
+				"link_to": "imogi-pos-order-management",
 				"feature_id": "order_management",
 				"onboard": 1,
 			},
@@ -84,17 +84,19 @@ WORKSPACE_SECTIONS = [
 		"label": "Kitchen & Fulfillment",
 		"links": [
 			{"label": "Kitchen Display", "link_type": "Page", "link_to": "kitchen-display", "feature_id": "kitchen_display", "onboard": 1},
-			{"label": "Kitchen Order", "link_type": "DocType", "link_to": "IMOGI Kitchen Order", "feature_id": "kitchen_queue"},
-			{"label": "Kitchen Station", "link_type": "DocType", "link_to": "IMOGI Kitchen Station", "feature_id": "kitchen_station"},
+			{"label": "Kitchen Order", "link_type": "Page", "link_to": "kitchen-order", "feature_id": "kitchen_queue"},
+			{"label": "Kitchen Station", "link_type": "Page", "link_to": "kitchen-station", "feature_id": "kitchen_station"},
 			{"label": "Fulfillment Queue", "link_type": "Page", "link_to": "fulfillment-queue", "feature_id": "delivery_order", "onboard": 1},
 			{"label": "Fulfillment Task", "link_type": "DocType", "link_to": "IMOGI Fulfillment Task", "feature_id": "delivery_order"},
 			{"label": "Delivery Task", "link_type": "DocType", "link_to": "IMOGI Delivery Task", "feature_id": "delivery_order"},
 		],
 	},
 	{
-		"label": "Meja & Layanan",
+		"label": 		"Meja & Layanan",
 		"links": [
 			{"label": "Table Service", "link_type": "Page", "link_to": "table-service", "feature_id": "table_management", "onboard": 1},
+			{"label": "Restaurant Floor", "link_type": "DocType", "link_to": "IMOGI Restaurant Floor", "feature_id": "table_management"},
+			{"label": "Restaurant Area", "link_type": "DocType", "link_to": "IMOGI Restaurant Area", "feature_id": "table_management"},
 			{"label": "Restaurant Table", "link_type": "DocType", "link_to": "IMOGI Restaurant Table", "feature_id": "table_management"},
 			{"label": "Table Reservation", "link_type": "DocType", "link_to": "IMOGI POS Table Reservation", "feature_id": "table_reservation"},
 			{"label": "Waiting List", "link_type": "DocType", "link_to": "IMOGI POS Waiting List", "feature_id": "waiting_list"},

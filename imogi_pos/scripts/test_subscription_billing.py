@@ -68,14 +68,50 @@ def test_cancelled_status():
 	assert resolve_effective_tier(settings) == "Free"
 
 
+def _tier_disabled() -> bool:
+	"""True on self-host/Enterprise deployments where gating is turned off."""
+	try:
+		from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+
+		return bool(is_subscription_tier_disabled())
+	except Exception:
+		return False
+
+
+def test_tier_disabled_mode():
+	"""When gating is off, resolve_effective_tier always returns Enterprise."""
+	for kwargs in (
+		{"subscription_tier": "Starter", "enable_saas_billing_sync": 0},
+		{
+			"subscription_tier": "Free",
+			"enable_saas_billing_sync": 1,
+			"billing_status": "Cancelled",
+			"billing_plan_code": "starter",
+		},
+	):
+		assert resolve_effective_tier(_Settings(**kwargs)) == "Enterprise"
+
+
 def main():
+	# Pure plan→tier mapping is always valid (no deployment dependency).
 	test_plan_mapping()
-	test_manual_mode()
-	test_active_billing()
-	test_expired_period()
-	test_cancelled_status()
-	print("OK: subscription billing tests passed")
+
+	if _tier_disabled():
+		test_tier_disabled_mode()
+		print("OK: subscription billing tests passed (tier-disabled mode)")
+	else:
+		test_manual_mode()
+		test_active_billing()
+		test_expired_period()
+		test_cancelled_status()
+		print("OK: subscription billing tests passed (saas mode)")
 	print(f"Active statuses: {sorted(BILLING_STATUS_ACTIVE)}")
+
+
+def run():
+	"""Entry-point for `bench execute ...test_subscription_billing.run`."""
+	main()
+	return {"ok": True}
 
 
 if __name__ == "__main__":

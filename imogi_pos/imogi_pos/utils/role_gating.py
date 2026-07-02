@@ -211,7 +211,7 @@ def is_role_allowed_for_feature(feature_id: str, user: str | None = None, settin
 	)
 
 	if is_role_authorization_enabled(settings) and user_has_grant_for_feature(
-		feature_id, user=user, settings=settings
+		user, feature_id, settings=settings
 	):
 		return True
 
@@ -266,7 +266,7 @@ def is_workspace_role_allowed_for_feature(
 	)
 
 	if is_role_authorization_enabled(settings) and user_has_grant_for_feature(
-		feature_id, user=user, settings=settings
+		user, feature_id, settings=settings
 	):
 		return True
 

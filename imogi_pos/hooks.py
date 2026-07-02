@@ -38,6 +38,7 @@ app_include_js = [
 	"/assets/imogi_pos/js/imogi_pos_boot.js",
 	"/assets/imogi_pos/js/imogi_pos_dashboard_focus.js",
 	"/assets/imogi_pos/js/imogi_pos_page_shell.js",
+	"/assets/imogi_pos/js/imogi_pos_order_surface.js",
 	"/assets/imogi_pos/js/imogi_pos_settings_api.js",
 	"/assets/imogi_pos/js/imogi_customer_quick_entry.js",
 	"/assets/imogi_pos/js/imogi_pos_shift.js",
@@ -70,6 +71,8 @@ web_include_css = "/assets/imogi_pos/css/imogi_pos_login.css"
 page_js = {
 	"imogi-pos-open-shift": "public/js/imogi_pos_shift.js",
 	"imogi-pos-close-shift": "public/js/imogi_pos_shift.js",
+	"imogi-pos-order-history": "public/js/imogi_pos_order_surface.js",
+	"imogi-pos-order-management": "public/js/imogi_pos_order_surface.js",
 }
 
 doctype_js = {
@@ -80,6 +83,7 @@ doctype_js = {
 	"IMOGI Branch": "public/js/imogi_branch.js",
 	"POS Opening Entry": "public/js/imogi_pos_opening_entry.js",
 	"POS Closing Entry": "public/js/imogi_pos_closing_entry.js",
+	"User": "public/js/imogi_user_roles.js",
 }
 doctype_list_js = {
 	"Riwayat Order": "public/js/imogi_pos_order_list.js",
@@ -93,6 +97,7 @@ fixtures = [
 			"Item-imogi_is_kitchen_item",
 			"Item-imogi_pos_category",
 			"Item-imogi_pos_add_ons",
+			"Item-imogi_max_stock",
 			"POS Invoice-imogi_pos_order",
 			"POS Invoice-imogi_order_channel",
 			"POS Invoice-imogi_order_type",

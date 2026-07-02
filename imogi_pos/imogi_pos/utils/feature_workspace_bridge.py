@@ -8,7 +8,7 @@ from imogi_pos.imogi_pos.utils.dashboard_focus import dashboard_route_with_focus
 FEATURE_WORKSPACE_ROUTES: dict[str, dict] = {
 	"pos_order": {"label": "POS Order / Kasir", "route": "imogi-pos-cashier"},
 	"order_history": {"label": "Riwayat Transaksi", "route": "imogi-pos-order-history"},
-	"order_management": {"label": "Manajemen Order", "route": "List/Riwayat Order"},
+	"order_management": {"label": "Manajemen Order", "route": "imogi-pos-order-management"},
 	"customer": {"label": "Customer", "route": "imogi-pos-cashier"},
 	"take_away": {"label": "Take Away", "route": "imogi-pos-cashier"},
 	"delivery_order": {"label": "Delivery Order", "route": "imogi-pos-cashier"},

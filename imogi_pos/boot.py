@@ -10,12 +10,14 @@ from imogi_pos.website import IMOGI_POS_DESK_LOGO, IMOGI_POS_LOGO, IMOGI_POS_LOG
 
 CASHIER_ROLE = "IMOGI Cashier"
 WAITER_ROLE = "IMOGI Waiter"
+KITCHEN_ROLE = "IMOGI Kitchen Staff"
 OWNER_ROLE = "IMOGI Owner"
 AREA_MANAGER_ROLE = "IMOGI Area Manager"
 MANAGER_ROLE = "IMOGI Manager"
 AREA_MANAGER_HOME_PAGE = "imogi-pos-dashboard"
 CASHIER_HOME_PAGE = "imogi-pos-cashier"
 WAITER_HOME_PAGE = "table-service"
+KITCHEN_HOME_PAGE = "kitchen-display"
 OWNER_HOME_PAGE = "imogi-pos-dashboard"
 MANAGER_HOME_PAGE = "imogi-pos-menu"
 CASHIER_HOME_ROUTE = f"/app/{CASHIER_HOME_PAGE}"
@@ -38,6 +40,22 @@ WAITER_ESCALATION_ROLES = frozenset(
 		"IMOGI Area Manager",
 		"IMOGI Supervisor",
 		"IMOGI Cashier",
+	}
+)
+
+# A dedicated kitchen user (locked to Kitchen Display) is anyone with IMOGI
+# Kitchen Staff and none of these "elevated" roles that imply broader desk usage.
+KITCHEN_ESCALATION_ROLES = frozenset(
+	{
+		"Administrator",
+		"System Manager",
+		"Sales Manager",
+		"IMOGI Owner",
+		"IMOGI Manager",
+		"IMOGI Area Manager",
+		"IMOGI Supervisor",
+		"IMOGI Cashier",
+		"IMOGI Waiter",
 	}
 )
 
@@ -85,6 +103,20 @@ def should_use_waiter_home(user=None):
 	if roles & WAITER_ESCALATION_ROLES:
 		return False
 	if should_use_cashier_home(user):
+		return False
+	return True
+
+
+def should_use_kitchen_home(user=None):
+	"""Dedicated kitchen user — Kitchen Display only, no ERPNext workspace."""
+	user = user or frappe.session.user
+	if not user or user == "Guest":
+		return False
+
+	roles = set(frappe.get_roles(user))
+	if KITCHEN_ROLE not in roles:
+		return False
+	if roles & KITCHEN_ESCALATION_ROLES:
 		return False
 	return True
 
@@ -203,8 +235,17 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
 	bootinfo.imogi_pos_dedicated_cashier = should_use_cashier_home()
 	bootinfo.imogi_pos_dedicated_waiter = should_use_waiter_home()
+	bootinfo.imogi_pos_dedicated_kitchen = should_use_kitchen_home()
+	from imogi_pos.imogi_pos.utils.page_authorization import get_allowed_pages_for_user
 
-	if not settings.setup_complete and not should_use_cashier_home() and not should_use_waiter_home():
+	bootinfo.imogi_pos_allowed_pages = get_allowed_pages_for_user(settings=settings)
+
+	if (
+		not settings.setup_complete
+		and not should_use_cashier_home()
+		and not should_use_waiter_home()
+		and not should_use_kitchen_home()
+	):
 		bootinfo.home_page = "imogi-pos-setup"
 		return
 
@@ -222,6 +263,11 @@ def boot_session(bootinfo):
 		return
 	if MANAGER_ROLE in roles and not roles & MANAGER_ROLES and CASHIER_ROLE not in roles:
 		bootinfo.home_page = MANAGER_HOME_PAGE
+		return
+
+	if should_use_kitchen_home():
+		bootinfo.imogi_pos_kitchen_home = True
+		bootinfo.home_page = KITCHEN_HOME_PAGE
 		return
 
 	if should_use_waiter_home():

@@ -30,6 +30,7 @@ SETTINGS_FEATURE_MAP = {
 	"enable_cashback": "cashback",
 	"enable_birthday_promo": "birthday_promo",
 	"enable_pos_shift": "open_shift",
+	"enable_table_service": "table_management",
 	"enable_kitchen_display": "kitchen_display",
 	"enable_order_api": "api_access",
 	"multi_branch": "multi_outlet",

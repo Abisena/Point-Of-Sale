@@ -8,6 +8,7 @@ from frappe import _
 from frappe.utils import cint
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, release_restaurant_table, reserve_restaurant_table
+from imogi_pos.imogi_pos.utils.floor_area import list_areas_for_service, list_floors_for_service
 
 
 def get_table_doc(table_name: str):
@@ -128,7 +129,17 @@ def get_open_orders_by_table(company: str | None = None) -> dict[str, dict]:
 	rows = frappe.get_all(
 		"Riwayat Order",
 		filters=filters,
-		fields=["name", "restaurant_table", "status", "grand_total", "customer_name"],
+		fields=[
+			"name",
+			"restaurant_table",
+			"status",
+			"grand_total",
+			"customer_name",
+			"order_type",
+			"creation",
+			"requires_kitchen",
+			"kitchen_order",
+		],
 		order_by="modified desc",
 		limit=200,
 	)
@@ -159,16 +170,56 @@ def list_tables_for_service(company=None, include_occupied=1, status=None):
 			"capacity",
 			"status",
 			"location",
+			"restaurant_floor",
+			"restaurant_area",
 			"current_order",
 			"company",
+			"shape",
+			"pos_x",
+			"pos_y",
 		],
 		order_by="table_number asc",
 	)
+	area_names = {row.restaurant_area for row in rows if row.restaurant_area}
+	floor_names = {row.restaurant_floor for row in rows if row.restaurant_floor}
+	area_map = {}
+	floor_map = {}
+	if area_names:
+		for area in frappe.get_all(
+			"IMOGI Restaurant Area",
+			filters={"name": ["in", list(area_names)]},
+			fields=["name", "area_name", "area_type", "restaurant_floor"],
+		):
+			area_map[area.name] = area
+	if floor_names:
+		for floor in frappe.get_all(
+			"IMOGI Restaurant Floor",
+			filters={"name": ["in", list(floor_names)]},
+			fields=["name", "floor_name"],
+		):
+			floor_map[floor.name] = floor
 	open_orders = get_open_orders_by_table(company)
 	for row in rows:
+		area = area_map.get(row.restaurant_area)
+		if area:
+			row["area_name"] = area.area_name
+			row["area_type"] = area.area_type
+			if not row.restaurant_floor:
+				row.restaurant_floor = area.restaurant_floor
+		elif row.location:
+			row["area_name"] = row.location
+		floor = floor_map.get(row.restaurant_floor)
+		if floor:
+			row["floor_name"] = floor.floor_name
 		order = open_orders.get(row.name)
 		row["open_order"] = order.name if order else None
 		row["open_order_status"] = order.status if order else None
 		row["open_order_total"] = order.grand_total if order else None
 		row["open_order_customer"] = order.customer_name if order else None
+		row["open_order_type"] = order.order_type if order else None
+		row["open_order_since"] = order.creation.isoformat() if order and order.creation else None
+		if order and cint(order.requires_kitchen):
+			row["open_order_kitchen"] = "done" if order.kitchen_order else "pending"
+		else:
+			row["open_order_kitchen"] = None
 	return rows

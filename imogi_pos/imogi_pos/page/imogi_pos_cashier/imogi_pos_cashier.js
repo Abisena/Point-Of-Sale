@@ -4276,14 +4276,19 @@ imogi_pos.CashierPage = class CashierPage {
 		const order_name = row.order;
 		const on_order = (order) => {
 			me.pending_checkout_order_name = null;
-			me.show_success(order || {}, {
-				change: 0,
-				paid_amount: total,
-				mode_of_payment: mode,
-				breakdown: me.get_checkout_breakdown(dialog, subtotal),
-			});
-			me.refresh_sales_target();
 			me.clear_cart_after_checkout();
+			const keep_cart = me.cart.length > 0;
+			me.show_success(
+				order || {},
+				{
+					change: 0,
+					paid_amount: total,
+					mode_of_payment: mode,
+					breakdown: me.get_checkout_breakdown(dialog, subtotal),
+				},
+				{ keep_cart }
+			);
+			me.refresh_sales_target();
 			me.refresh_marketplace_badge();
 		};
 		if (order_name) {
@@ -6153,6 +6158,8 @@ imogi_pos.CashierPage = class CashierPage {
 
 		const origClear = this.clear_cart_after_checkout;
 		this.clear_cart_after_checkout = function () {
+			const had_split = this._split_checkout_active;
+			const remainder = (this._split_remainder || []).map((row) => ({ ...row }));
 			this.marketplace_order_name = null;
 			this.pending_checkout_order_name = null;
 			this.voucher_code = "";
@@ -6167,8 +6174,16 @@ imogi_pos.CashierPage = class CashierPage {
 			this._split_remainder = null;
 			this._remainder_promo_discount = 0;
 			this.wrapper.find(".imogi-split-remainder-hint").remove();
-			if (!this.cart.length) {
-				this.render_cart();
+			if (had_split) {
+				this.cart = remainder;
+			}
+			this.render_cart();
+			if (remainder.length) {
+				this.$cart_items.prepend(
+					`<div class="alert alert-info small imogi-split-remainder-hint" style="margin-bottom:8px">${__(
+						"Item di bawah menunggu pembayaran setelah transaksi ini selesai."
+					)}</div>`
+				);
 			}
 			this._invalidate_catalog_cache();
 			this.load_items({ force: true });
@@ -6740,14 +6755,19 @@ imogi_pos.CashierPage = class CashierPage {
 			this.busy = false;
 			this.update_mobile_dock();
 			dialog.hide();
-			this.show_success(order || {}, {
-				change,
-				paid_amount: flt(paid_amount),
-				mode_of_payment,
-				breakdown: checkout_breakdown,
-			});
-			this.refresh_sales_target();
 			this.clear_cart_after_checkout();
+			const keep_cart = this.cart.length > 0;
+			this.show_success(
+				order || {},
+				{
+					change,
+					paid_amount: flt(paid_amount),
+					mode_of_payment,
+					breakdown: checkout_breakdown,
+				},
+				{ keep_cart }
+			);
+			this.refresh_sales_target();
 			this.refresh_marketplace_badge();
 		};
 
@@ -7012,13 +7032,43 @@ imogi_pos.CashierPage = class CashierPage {
 			return;
 		}
 		if (action === "invoice" && order.pos_invoice) {
+			dialog._imogi_success_clear_cart = true;
 			dialog.hide();
 			frappe.set_route("Form", "POS Invoice", order.pos_invoice);
 			return;
 		}
 		if (action === "new") {
+			dialog._imogi_success_clear_cart = true;
 			dialog.hide();
 		}
+	}
+
+	finish_success_dialog(dialog) {
+		const force_clear = dialog._imogi_success_clear_cart;
+		const keep_cart = dialog._imogi_keep_cart && !force_clear;
+
+		if (keep_cart) {
+			if (!this.$cart_items.find(".imogi-split-remainder-hint").length) {
+				this.$cart_items.prepend(
+					`<div class="alert alert-info small imogi-split-remainder-hint" style="margin-bottom:8px">${__(
+						"Lanjutkan pembayaran untuk item yang masih di keranjang."
+					)}</div>`
+				);
+			}
+			this.render_cart();
+			frappe.show_alert({
+				message: __("Pembayaran selesai. Sisa item masih di keranjang."),
+				indicator: "blue",
+			});
+		} else {
+			this.clear_cart();
+		}
+
+		if (this.selected_customer && imogi_pos.loyalty) {
+			imogi_pos.loyalty.load_customer(this, this.selected_customer);
+		}
+		this._invalidate_catalog_cache();
+		this.load_items({ force: true });
 	}
 
 	bind_success_dialog_actions(dialog, order, payment_info) {
@@ -7034,9 +7084,15 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 	}
 
-	show_success(order, payment_info = {}) {
+	show_success(order, payment_info = {}, options = {}) {
 		const breakdown = payment_info.breakdown || this.build_order_breakdown(order);
 		const summary_html = this.build_success_summary_html(breakdown, payment_info);
+		const keep_cart = !!options.keep_cart;
+		const remainder_hint = keep_cart
+			? `<div class="alert alert-info small imogi-pay-success-remainder" style="margin-top:12px">${__(
+					"Sisa item masih ada di keranjang. Tutup dialog ini untuk lanjut bayar."
+			  )}</div>`
+			: "";
 		const stamp_html = order.stamp_reward
 			? `<div class="imogi-pay-stamp-reward text-success mt-2">
 					<i class="fa fa-gift"></i>
@@ -7086,6 +7142,7 @@ imogi_pos.CashierPage = class CashierPage {
 						</div>
 						${summary_html}
 						${stamp_html}
+						${remainder_hint}
 						<div class="imogi-pay-success-footer-meta">
 							<span class="imogi-pay-success-status-pill">${__("Status")}: ${frappe.utils.escape_html(order.status || __("Completed"))}</span>
 						</div>
@@ -7096,13 +7153,9 @@ imogi_pos.CashierPage = class CashierPage {
 		});
 
 		const me = this;
+		dialog._imogi_keep_cart = keep_cart;
 		dialog.onhide = () => {
-			me.clear_cart();
-			if (me.selected_customer && imogi_pos.loyalty) {
-				imogi_pos.loyalty.load_customer(me, me.selected_customer);
-			}
-			me._invalidate_catalog_cache();
-			me.load_items({ force: true });
+			me.finish_success_dialog(dialog);
 		};
 
 		dialog.$wrapper.addClass("imogi-pay-success-dialog");
