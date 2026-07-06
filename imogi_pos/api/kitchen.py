@@ -22,7 +22,13 @@ def get_kitchen_queue(station_type=None):
 	station_filter = ""
 	values = {}
 	if station_type and is_feature_operational("bar_station"):
-		station_filter = " and ks.station_type = %(station_type)s"
+		if station_type == "Kitchen":
+			station_filter = (
+				" and (ks.station_type = %(station_type)s"
+				" or ko.kitchen_station is null or ko.kitchen_station = '')"
+			)
+		else:
+			station_filter = " and ks.station_type = %(station_type)s"
 		values["station_type"] = station_type
 
 	orders = frappe.db.sql(

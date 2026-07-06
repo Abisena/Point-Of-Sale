@@ -69,6 +69,11 @@ const IMOGI_DASH_FOCUS_META = {
 		page_title: __("Penjualan per Channel"),
 		selector: '[data-imogi-dash-focus="channel"]',
 	},
+	kitchen_performance: {
+		subtitle: __("KPI dapur per stasiun — volume order, waktu rata-rata, dan order selesai."),
+		page_title: __("Kitchen Performance"),
+		selector: '[data-imogi-dash-focus="kitchen_performance"]',
+	},
 };
 
 const IMOGI_DASH_FOCUS_STORAGE_KEY = "imogi_dashboard_pending_focus_v1";

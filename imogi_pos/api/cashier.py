@@ -1304,9 +1304,6 @@ def _get_order_whatsapp_phone(order, settings, customer_phone=None):
 			customer = getattr(order, "customer", None)
 	if not phone and customer:
 		phone = _resolve_customer_phone(customer)
-	if not phone:
-		wa_cfg = get_whatsapp_receipt_config(settings)
-		phone = wa_cfg["whatsapp_receipt_default_phone"]
 	return _normalize_whatsapp_phone(phone)
 
 

@@ -9,6 +9,11 @@ from __future__ import annotations
 import frappe
 from frappe.utils import now_datetime
 
+from imogi_pos.imogi_pos.utils.central_kitchen import (
+	backfill_kitchen_order_stations,
+	ensure_default_kitchen_stations,
+)
+
 
 # Kitchen orders shown on KDS smoke test (must exist on site).
 SMOKE_PENDING = ("IMO-KIT-2026-00003", "IMO-KIT-2026-00004")
@@ -46,6 +51,10 @@ def execute():
 		settings.enable_kitchen_display = 1
 		settings.save(ignore_permissions=True)
 
+	company = frappe.db.get_single_value("IMOGI POS Settings", "default_company")
+	stations = ensure_default_kitchen_stations(company)
+	backfill = backfill_kitchen_order_stations(company)
+
 	results = []
 	for name in SMOKE_PENDING:
 		results.append(_set_kitchen_status(name, "Pending"))
@@ -59,6 +68,8 @@ def execute():
 
 	queue = get_kitchen_queue()
 	return {
+		"stations": stations,
+		"backfill": backfill,
 		"seeded": results,
 		"queue_count": len(queue),
 		"pending": sum(1 for row in queue if row.get("status") == "Pending"),

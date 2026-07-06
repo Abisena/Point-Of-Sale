@@ -3,9 +3,15 @@
 {% block title %}Pesan Meja{% endblock %}
 
 {% block page_content %}
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/assets/imogi_pos/css/imogi_qr_table_order.css" />
 <div id="imogi-qr-app" class="imogi-qr-app">
-	<div class="imogi-qr-loading">Memuat menu...</div>
+	<div class="imogi-qr-loading-screen">
+		<div class="imogi-qr-loading-spinner" aria-hidden="true"></div>
+		<p>Memuat menu...</p>
+	</div>
 </div>
 <script src="/assets/imogi_pos/js/qrcode.min.js"></script>
 <script src="/assets/imogi_pos/js/imogi_qr_table_order.js"></script>

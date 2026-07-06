@@ -28,12 +28,13 @@ def get_whatsapp_receipt_config(settings=None):
 	return {
 		"auto_print_receipt_on_success": cint(getattr(settings, "auto_print_receipt_on_success", 0)),
 		"enable_whatsapp_receipt": cint(getattr(settings, "enable_whatsapp_receipt", 0)),
-		"whatsapp_receipt_default_phone": (getattr(settings, "whatsapp_receipt_default_phone", None) or "").strip(),
 		"whatsapp_receipt_message": (
 			getattr(settings, "whatsapp_receipt_message", None) or DEFAULT_WHATSAPP_RECEIPT_MESSAGE
 		),
 		"whatsapp_api_provider": (getattr(settings, "whatsapp_api_provider", None) or "").strip(),
-		"fonnte_api_token": (getattr(settings, "fonnte_api_token", None) or "").strip(),
+		"fonnte_api_token": (
+			settings.get_password("fonnte_api_token", raise_exception=False) or ""
+		).strip(),
 	}
 
 

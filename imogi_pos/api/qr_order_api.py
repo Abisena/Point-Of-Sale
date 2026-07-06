@@ -14,6 +14,7 @@ from imogi_pos.api.cashier import (
 	_resolve_cashier_branch,
 )
 from imogi_pos.api.order import _serialize_order
+from imogi_pos.imogi_pos.utils.bom_stock import POS_CATEGORIES
 from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
 from imogi_pos.imogi_pos.utils.flow import get_settings
 from imogi_pos.imogi_pos.utils.payment_gateway import create_gateway_payment, is_gateway_enabled
@@ -58,41 +59,133 @@ def get_table_qr_link(table):
 		"url": build_table_qr_url(table),
 	}
 
+def _build_qr_categories(items):
+	"""Build category carousel payload from catalog items."""
+	counts = {}
+	images = {}
+	for row in items or []:
+		cat = (row.get("imogi_pos_category") or "").strip() or "Lainnya"
+		counts[cat] = counts.get(cat, 0) + 1
+		if cat not in images and row.get("image"):
+			images[cat] = row["image"]
+
+	taglines = {
+		"Food": "Hidangan lezat",
+		"Beverage": "Minuman segar",
+		"Dessert": "Pencuci mulut",
+		"Service": "Layanan",
+		"Combo Package": "Paket hemat",
+		"Lainnya": "Menu lainnya",
+	}
+
+	categories = []
+	seen = set()
+	for name in POS_CATEGORIES:
+		if counts.get(name):
+			categories.append(
+				{
+					"id": name,
+					"name": name,
+					"tagline": taglines.get(name, name),
+					"count": counts[name],
+					"image": images.get(name),
+				}
+			)
+			seen.add(name)
+	for name, count in sorted(counts.items()):
+		if name in seen:
+			continue
+		categories.append(
+			{
+				"id": name,
+				"name": name,
+				"tagline": taglines.get(name, name),
+				"count": count,
+				"image": images.get(name),
+			}
+		)
+	return categories
+
+
+def _with_qr_api_user(fn):
+	settings = get_settings()
+	api_user = settings.order_api_user or "Administrator"
+	previous_user = frappe.session.user
+	frappe.set_user(api_user)
+	try:
+		return fn()
+	finally:
+		frappe.set_user(previous_user)
+
 
 @frappe.whitelist(allow_guest=True)
-def get_qr_menu_board(table, token, search=None, pos_category=None, start=0, limit=40):
+def get_qr_menu_board(table, token, search=None, pos_category=None, start=0, limit=200):
 	"""Guest menu payload for QR table order page."""
 	require_qr_self_service()
 	ensure_setup_ready()
 	table = _require_guest_table(table, token)
 	ctx = get_table_public_context(table, token)
 
-	settings = get_settings()
-	api_user = settings.order_api_user or "Administrator"
-	previous_user = frappe.session.user
-	frappe.set_user(api_user)
-	try:
+	def _load():
 		from imogi_pos.api.catalog import get_items
 
-		catalog = get_items(
+		return get_items(
 			search=search,
 			pos_category=pos_category,
 			start=cint(start),
-			limit=min(cint(limit) or 40, 60),
+			limit=min(cint(limit) or 200, 200),
 			skip_cache=1,
 		)
-	finally:
-		frappe.set_user(previous_user)
+
+	catalog = _with_qr_api_user(_load)
+	items = catalog.get("items") or []
 
 	settings = get_settings()
 	return {
 		"table": ctx,
 		"catalog": catalog,
+		"categories": _build_qr_categories(items),
 		"payment": {
 			"gateway_enabled": bool(is_gateway_enabled()),
 			"default_mode": (getattr(settings, "qr_self_service_payment_mode", None) or "QRIS").strip(),
 		},
 	}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_qr_item_variant_config(table, token, template_item_code):
+	"""Guest: variant picker config for a template item."""
+	require_qr_self_service()
+	ensure_setup_ready()
+	_require_guest_table(table, token)
+	template_item_code = (template_item_code or "").strip()
+	if not template_item_code:
+		frappe.throw(_("template_item_code is required"))
+
+	def _load():
+		from imogi_pos.api.catalog import get_item_variant_config
+
+		return get_item_variant_config(template_item_code)
+
+	return _with_qr_api_user(_load)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_qr_item_addon_config(table, token, item_code):
+	"""Guest: add-on picker config for items without variant selection."""
+	require_qr_self_service()
+	ensure_setup_ready()
+	_require_guest_table(table, token)
+	item_code = (item_code or "").strip()
+	if not item_code:
+		frappe.throw(_("item_code is required"))
+
+	def _load():
+		from imogi_pos.api.catalog import get_item_addon_config
+
+		return get_item_addon_config(item_code)
+
+	return _with_qr_api_user(_load)
 
 
 @frappe.whitelist(allow_guest=True)

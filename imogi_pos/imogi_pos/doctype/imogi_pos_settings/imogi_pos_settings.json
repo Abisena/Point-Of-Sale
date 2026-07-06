@@ -45,8 +45,6 @@
   "enable_table_service",
   "enable_qr_self_service",
   "qr_self_service_payment_mode",
-  "whatsapp_qr_order_received_message",
-  "whatsapp_qr_order_complete_message",
   "table_floor_background",
   "enable_kitchen_display",
   "enable_fulfillment",
@@ -72,8 +70,10 @@
   "enable_whatsapp_receipt",
   "whatsapp_api_provider",
   "fonnte_api_token",
-  "whatsapp_receipt_default_phone",
   "whatsapp_receipt_message",
+  "whatsapp_qr_templates_section",
+  "whatsapp_qr_order_received_message",
+  "whatsapp_qr_order_complete_message",
   "import_section",
   "import_menu",
   "import_stock",
@@ -417,22 +417,6 @@
    "options": "Cash\nQRIS"
   },
   {
-   "default": "Terima kasih, {customer}!\n\nPesanan *{order_name}* di Meja *{table_number}* sudah kami terima.\nTotal: {total}\n\nPesanan sedang diproses. Mohon tunggu di meja Anda.",
-   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.enable_qr_self_service",
-   "description": "Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
-   "fieldname": "whatsapp_qr_order_received_message",
-   "fieldtype": "Small Text",
-   "label": "Template WA — Order Diterima (QR)"
-  },
-  {
-   "default": "Terima kasih sudah makan di {store_name}!\n\nPesanan *{order_name}* · Meja *{table_number}* sudah selesai.\nTotal: {total}",
-   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.enable_qr_self_service",
-   "description": "Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
-   "fieldname": "whatsapp_qr_order_complete_message",
-   "fieldtype": "Small Text",
-   "label": "Template WA — Pesanan Selesai (QR)"
-  },
-  {
    "depends_on": "eval:doc.enable_table_service",
    "description": "Gambar denah/blueprint lantai sebagai latar belakang halaman Table Service (opsional).",
    "fieldname": "table_floor_background",
@@ -596,25 +580,17 @@
   {
    "default": "Manual",
    "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
-   "description": "Manual = unduh/lampirkan di browser. Fonnte = kirim PDF otomatis dari server (butuh akun fonnte.com + paket yang support file).",
    "fieldname": "whatsapp_api_provider",
    "fieldtype": "Select",
    "label": "Cara Kirim WA",
    "options": "Manual\nFonnte"
   },
   {
-   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.whatsapp_api_provider=='Fonnte'",
-   "description": "API token dari dashboard Fonnte (device yang sudah scan QR WhatsApp).",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "API token dari dashboard Fonnte (device yang sudah scan QR WhatsApp). Wajib diisi jika Cara Kirim WA = Fonnte.",
    "fieldname": "fonnte_api_token",
    "fieldtype": "Password",
    "label": "Fonnte API Token"
-  },
-  {
-   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
-   "description": "Opsional — hanya dipakai jika customer tidak punya nomor HP di kasir.",
-   "fieldname": "whatsapp_receipt_default_phone",
-   "fieldtype": "Data",
-   "label": "Nomor WA Fallback (opsional)"
   },
   {
    "default": "Terima kasih atas kunjungan Anda!\n\nStruk pesanan *{order_name}*\nTotal: {total}\n\nUnduh struk PDF:\n{pdf_url}",
@@ -623,6 +599,29 @@
    "fieldname": "whatsapp_receipt_message",
    "fieldtype": "Small Text",
    "label": "Template Pesan WA"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "fieldname": "whatsapp_qr_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Template WhatsApp — QR Meja"
+  },
+  {
+   "default": "Terima kasih, {customer}!\n\nPesanan *{order_name}* di Meja *{table_number}* sudah kami terima.\nTotal: {total}\n\nPesanan sedang diproses. Mohon tunggu di meja Anda.",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "Dikirim saat tamu submit pesanan via QR Meja. Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "fieldname": "whatsapp_qr_order_received_message",
+   "fieldtype": "Small Text",
+   "label": "Template WA — Order Diterima (QR)"
+  },
+  {
+   "default": "Terima kasih sudah makan di {store_name}!\n\nPesanan *{order_name}* · Meja *{table_number}* sudah selesai.\nTotal: {total}",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
+   "description": "Dikirim saat pesanan QR ditandai selesai. Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "fieldname": "whatsapp_qr_order_complete_message",
+   "fieldtype": "Small Text",
+   "label": "Template WA — Pesanan Selesai (QR)"
   },
   {
    "collapsible": 1,

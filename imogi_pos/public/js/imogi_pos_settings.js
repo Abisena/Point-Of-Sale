@@ -17,7 +17,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 				render_receipt_preview(frm);
 			}
 			if (normalize_settings_tab_id(__imogi_settings_active_tab) === "receipt") {
-				layout_receipt_settings_dock(frm);
+				render_receipt_whatsapp_dock_summary(frm);
 			}
 		});
 	},
@@ -176,20 +176,19 @@ frappe.ui.form.on("IMOGI POS Settings", {
 	},
 
 	enable_whatsapp_receipt(frm) {
-		layout_receipt_settings_dock(frm);
+		render_receipt_whatsapp_dock_summary(frm);
 	},
 
 	whatsapp_api_provider(frm) {
-		layout_receipt_settings_dock(frm);
+		render_receipt_whatsapp_dock_summary(frm);
 	},
 
 	auto_print_receipt_on_success(frm) {
-		layout_receipt_settings_dock(frm);
+		render_receipt_whatsapp_dock_summary(frm);
 	},
 
 	enable_receipt_print(frm) {
-		layout_receipt_settings_dock(frm);
-		apply_settings_field_states(frm);
+		render_receipt_whatsapp_dock_summary(frm);
 	},
 
 	enable_sales_tax(frm) {
@@ -277,7 +276,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		render_kitchen_dock_summary(frm);
 		frappe.after_ajax(() => {
 			layout_kitchen_settings(frm);
-			layout_receipt_settings_dock(frm);
+			render_receipt_whatsapp_dock_summary(frm);
 		});
 	},
 
@@ -483,7 +482,7 @@ const SETTINGS_TABS = [
 		label: __("Printer & Struk"),
 		icon: "fa-print",
 		desc: __("Cetak struk thermal di kasir"),
-		sections: ["receipt_section"],
+		sections: ["receipt_section", "whatsapp_qr_templates_section"],
 	},
 	{
 		id: "integrations",
@@ -571,8 +570,12 @@ const SETTINGS_FORM_LAYOUT = [
 	"receipt_footer",
 	"auto_print_receipt_on_success",
 	"enable_whatsapp_receipt",
-	"whatsapp_receipt_default_phone",
+	"whatsapp_api_provider",
+	"fonnte_api_token",
 	"whatsapp_receipt_message",
+	{ section: "whatsapp_qr_templates_section" },
+	"whatsapp_qr_order_received_message",
+	"whatsapp_qr_order_complete_message",
 	{ section: "import_section" },
 	"import_menu",
 	"import_stock",
@@ -2342,6 +2345,7 @@ function init_settings_page(frm) {
 	build_api_dock(frm);
 	build_loyalty_dock(frm);
 	build_payment_dock(frm);
+	build_receipt_whatsapp_dock(frm);
 	build_transfer_dock(frm);
 	build_integrations_dock(frm);
 	build_franchise_dock(frm);
@@ -2363,7 +2367,7 @@ function init_settings_page(frm) {
 	render_page_authorization_matrix(frm);
 	bind_dock_checkbox_handlers_once(frm);
 	hook_settings_form_save(frm);
-	frappe.after_ajax(() => layout_receipt_settings_dock(frm));
+	frappe.after_ajax(() => render_receipt_whatsapp_dock_summary(frm));
 	activate_settings_tab(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
 }
 
@@ -3012,7 +3016,7 @@ function activate_settings_tab(frm, tabId) {
 		render_settings_tab_intro(frm, SETTINGS_TABS.find((t) => t.id === "general"));
 	}
 	if (tabId === "receipt") {
-		layout_receipt_settings_dock(frm);
+		render_receipt_whatsapp_dock_summary(frm);
 	}
 	// Pastikan semua field yang dependen ke checkbox tetap tampil (disabled),
 	// tidak hilang, di tab mana pun.
@@ -3034,6 +3038,7 @@ function style_setting_cards(frm) {
 		general_section: { icon: "fa-sliders", title: __("Pengaturan Dasar POS") },
 		inventory_section: { icon: "fa-cubes", title: __("Stok Otomatis") },
 		receipt_section: { icon: "fa-print", title: __("Struk / Receipt") },
+		whatsapp_qr_templates_section: { icon: "fa-whatsapp", title: __("Template WhatsApp — QR Meja") },
 		import_section: { icon: "fa-upload", title: __("Import Data Menu") },
 		analytics_section: { icon: "fa-line-chart", title: __("Pengaturan Dashboard") },
 		flow_section: { icon: "fa-cutlery", title: __("Kitchen & Fulfillment") },
@@ -3083,6 +3088,7 @@ function get_section_subtitle(fieldname) {
 		general_section: __("Perusahaan, profil kasir, gudang, dan shift kasir."),
 		inventory_section: "",
 		receipt_section: "",
+		whatsapp_qr_templates_section: "",
 		import_section: "",
 		analytics_section: "",
 		flow_section: __("Kitchen display, fulfillment, dan item group dapur."),
@@ -3513,8 +3519,7 @@ function set_settings_field_disabled(frm, fieldname, disabled) {
 
 // Peta field yang dependen ke checkbox induk (semua tab). Saat kondisi false,
 // field TIDAK disembunyikan — hanya dinonaktifkan (disabled), sesuai permintaan.
-// Catatan: field berbasis "dock" (shift/kitchen/receipt) ditangani terpisah di
-// mount_settings_dock_fields agar tidak merusak layout dock.
+// Catatan: field shift/kitchen yang dipindah ke dock ditangani di mount_settings_dock_fields.
 const SETTINGS_DEPENDENT_FIELD_CONDITIONS = {
 	// Tab Program & Promo
 	loyalty_points_per_amount: (d) => cint(d.enable_loyalty),
@@ -3534,6 +3539,25 @@ const SETTINGS_DEPENDENT_FIELD_CONDITIONS = {
 	receipt_logo: (d) => cint(d.enable_receipt_print),
 	receipt_header: (d) => cint(d.enable_receipt_print),
 	receipt_footer: (d) => cint(d.enable_receipt_print),
+	auto_print_receipt_on_success: (d) => cint(d.enable_receipt_print),
+	enable_whatsapp_receipt: (d) => cint(d.enable_receipt_print),
+	whatsapp_api_provider: (d) => cint(d.enable_receipt_print) && cint(d.enable_whatsapp_receipt),
+	fonnte_api_token: (d) =>
+		cint(d.enable_receipt_print) &&
+		cint(d.enable_whatsapp_receipt) &&
+		(d.whatsapp_api_provider || "").trim() === "Fonnte",
+	whatsapp_receipt_message: (d) =>
+		cint(d.enable_receipt_print) && cint(d.enable_whatsapp_receipt),
+	whatsapp_qr_order_received_message: (d) =>
+		cint(d.enable_receipt_print) &&
+		cint(d.enable_whatsapp_receipt) &&
+		cint(d.enable_table_service) &&
+		cint(d.enable_qr_self_service),
+	whatsapp_qr_order_complete_message: (d) =>
+		cint(d.enable_receipt_print) &&
+		cint(d.enable_whatsapp_receipt) &&
+		cint(d.enable_table_service) &&
+		cint(d.enable_qr_self_service),
 	// Tab Pembayaran
 	payment_gateway_provider: (d) => cint(d.enable_payment_gateway),
 	payment_gateway_sandbox: (d) => cint(d.enable_payment_gateway),
@@ -3741,6 +3765,36 @@ function render_payment_dock_summary(frm) {
 	// Badge dihilangkan — cukup sinkronkan state enable/disable field.
 	frm.$wrapper.find(".imogi-payment-dock").remove();
 	schedule_settings_field_state(frm, apply_payment_field_state);
+}
+
+const RECEIPT_WHATSAPP_FIELDS = [
+	"auto_print_receipt_on_success",
+	"enable_whatsapp_receipt",
+	"whatsapp_api_provider",
+	"fonnte_api_token",
+	"whatsapp_receipt_message",
+	"whatsapp_qr_order_received_message",
+	"whatsapp_qr_order_complete_message",
+];
+
+function build_receipt_whatsapp_dock(frm) {
+	const ctx = get_settings_section(frm, "receipt_section");
+	if (!ctx || !ctx.$wrapper) return;
+	ctx.$wrapper.addClass("imogi-section-receipt");
+
+	// Dock lama memindahkan field (termasuk Password) dan merusak input — hapus.
+	frm.$wrapper.find(".imogi-receipt-settings-dock").remove();
+
+	move_desc_to_placeholder(frm, {
+		fonnte_api_token: __("API token dari dashboard Fonnte (menu Device → Token)"),
+	});
+
+	render_receipt_whatsapp_dock_summary(frm);
+}
+
+function render_receipt_whatsapp_dock_summary(frm) {
+	RECEIPT_WHATSAPP_FIELDS.forEach((fieldname) => force_show_settings_field(frm, fieldname));
+	schedule_settings_field_state(frm, apply_settings_field_states);
 }
 
 function build_transfer_dock(frm) {
@@ -4259,17 +4313,6 @@ const _kitchen_dock_list_controls = new Map();
 
 const GENERAL_TAB_DOCK_FIELDS = [...SHIFT_SETTINGS_FIELDS, ...KITCHEN_DOCK_ALL_FIELDS];
 
-const RECEIPT_DOCK_FIELDS = [
-	"auto_print_receipt_on_success",
-	"enable_whatsapp_receipt",
-	"whatsapp_api_provider",
-	"fonnte_api_token",
-	"whatsapp_receipt_default_phone",
-	"whatsapp_receipt_message",
-];
-
-const QR_RECEIPT_DOCK_FIELDS = ["whatsapp_qr_order_received_message", "whatsapp_qr_order_complete_message"];
-
 const DOCK_CHECKBOX_FIELDS = [
 	"enable_pos_shift",
 	"enable_shift_cash_detail",
@@ -4277,8 +4320,6 @@ const DOCK_CHECKBOX_FIELDS = [
 	"enable_qr_self_service",
 	"enable_kitchen_display",
 	"enable_fulfillment",
-	"auto_print_receipt_on_success",
-	"enable_whatsapp_receipt",
 ];
 
 const STORE_IDENTITY_LAYOUT_VERSION = "4";
@@ -4398,18 +4439,6 @@ function dock_field_depends_visible(frm, fieldname) {
 		kitchen_item_group_rows: () => cint(frm.doc.enable_kitchen_display),
 		fulfillment_order_type_rows: () => cint(frm.doc.enable_fulfillment),
 		enable_shift_cash_detail: () => cint(frm.doc.enable_pos_shift),
-		auto_print_receipt_on_success: () => cint(frm.doc.enable_receipt_print),
-		enable_whatsapp_receipt: () => cint(frm.doc.enable_receipt_print),
-		whatsapp_api_provider: () =>
-			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
-		fonnte_api_token: () =>
-			cint(frm.doc.enable_receipt_print) &&
-			cint(frm.doc.enable_whatsapp_receipt) &&
-			(frm.doc.whatsapp_api_provider || "") === "Fonnte",
-		whatsapp_receipt_default_phone: () =>
-			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
-		whatsapp_receipt_message: () =>
-			cint(frm.doc.enable_receipt_print) && cint(frm.doc.enable_whatsapp_receipt),
 	};
 	if (depends_map[fieldname]) {
 		return depends_map[fieldname]();
@@ -4452,12 +4481,6 @@ const DOCK_FIELD_HOME_SECTION = {
 	enable_fulfillment: "flow_section",
 	kitchen_item_group_rows: "flow_section",
 	fulfillment_order_type_rows: "flow_section",
-	auto_print_receipt_on_success: "receipt_section",
-	enable_whatsapp_receipt: "receipt_section",
-	whatsapp_receipt_default_phone: "receipt_section",
-	whatsapp_receipt_message: "receipt_section",
-	whatsapp_qr_order_received_message: "receipt_section",
-	whatsapp_qr_order_complete_message: "receipt_section",
 };
 
 function ensure_dock_field_rendered(frm, fieldname) {
@@ -4524,7 +4547,7 @@ function bind_dock_checkbox_handlers_once(frm) {
 
 	frm.$wrapper.on(
 		"change.imogi_dock_check",
-		'.imogi-shift-settings-dock input[type="checkbox"], .imogi-kitchen-settings-dock input[type="checkbox"], .imogi-receipt-settings-dock input[type="checkbox"]',
+		'.imogi-shift-settings-dock input[type="checkbox"], .imogi-kitchen-settings-dock input[type="checkbox"]',
 		function () {
 			const $input = $(this);
 			const fieldname = $input.closest(".frappe-control").attr("data-fieldname");
@@ -4534,10 +4557,6 @@ function bind_dock_checkbox_handlers_once(frm) {
 			const apply_dock_layout = () => {
 				if (fieldname === "enable_pos_shift" || fieldname === "enable_shift_cash_detail") {
 					layout_shift_settings(frm);
-					return;
-				}
-				if (fieldname === "auto_print_receipt_on_success" || fieldname === "enable_whatsapp_receipt") {
-					layout_receipt_settings_dock(frm);
 					return;
 				}
 				layout_kitchen_settings(frm);
@@ -4765,6 +4784,7 @@ function group_dock_checkbox_row($grid, frm, fieldnames) {
 		.filter(Boolean);
 	if ($controls.length < 2) return;
 
+	$grid.find("> .imogi-dock-check-row .frappe-control").detach();
 	$grid.find("> .imogi-dock-check-row").remove();
 	const $row = $('<div class="imogi-dock-check-row"></div>');
 	$controls[0].before($row);
@@ -4839,98 +4859,6 @@ function layout_kitchen_settings(frm) {
 	if (flow_ctx && flow_ctx.$wrapper) {
 		flow_ctx.$wrapper.hide();
 	}
-}
-
-function layout_receipt_settings_dock(frm) {
-	const ctx = get_settings_section(frm, "receipt_section");
-	if (!ctx || !ctx.$wrapper) return;
-
-	sync_dock_fields_to_doc(frm);
-	if (frm.layout?.refresh_dependency) {
-		frm.layout.refresh_dependency();
-	}
-
-	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
-	let $dock = $body.find(".imogi-receipt-settings-dock");
-	if (!$dock.length) {
-		$dock = $(`
-			<div class="imogi-receipt-settings-dock">
-				<div class="imogi-receipt-dock-head">${__("WhatsApp & Cetak Otomatis")}</div>
-				<div class="imogi-receipt-form-grid"></div>
-			</div>`);
-		const $footer = frm.$wrapper.find('.frappe-control[data-fieldname="receipt_footer"]');
-		if ($footer.length) {
-			$footer.after($dock);
-		} else {
-			$body.append($dock);
-		}
-	}
-
-	const $grid = $dock.find(".imogi-receipt-form-grid");
-	$grid.empty();
-	$dock.find(".imogi-receipt-migrate-hint").remove();
-
-	const missing_fields = RECEIPT_DOCK_FIELDS.filter((fieldname) => !frm.fields_dict[fieldname]);
-	if (missing_fields.length) {
-		$dock.append(`
-			<div class="imogi-receipt-migrate-hint alert alert-warning" style="margin-top:8px;">
-				${__(
-					"Field WhatsApp belum tersedia di database. Jalankan <code>bench migrate</code> lalu muat ulang halaman ini."
-				)}
-			</div>`);
-		RECEIPT_DOCK_FIELDS.forEach((fieldname) => {
-			if (frm.fields_dict[fieldname]) frm.toggle_display(fieldname, true);
-		});
-		return;
-	}
-
-	$grid.addClass("imogi-receipt-form-grid--horizontal");
-	mount_settings_dock_fields(frm, $grid, RECEIPT_DOCK_FIELDS, "imogi-receipt-field");
-	group_dock_checkbox_row($grid, frm, ["auto_print_receipt_on_success", "enable_whatsapp_receipt"]);
-	sync_dock_checkbox_from_doc(frm, ["auto_print_receipt_on_success", "enable_whatsapp_receipt"]);
-
-	const mounted = $grid.find("> .frappe-control, > .imogi-dock-check-row .frappe-control").length;
-	if (mounted > 0) {
-		hide_duplicate_dock_fields(frm, RECEIPT_DOCK_FIELDS);
-	} else {
-		RECEIPT_DOCK_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
-	}
-
-	const qr_on =
-		cint(frm.doc.enable_table_service) &&
-		cint(frm.doc.enable_qr_self_service) &&
-		cint(frm.doc.enable_receipt_print) &&
-		cint(frm.doc.enable_whatsapp_receipt);
-	$dock.find(".imogi-qr-wa-templates").remove();
-	if (qr_on && QR_RECEIPT_DOCK_FIELDS.every((fieldname) => frm.fields_dict[fieldname])) {
-		const $qr_block = $(`
-			<div class="imogi-qr-wa-templates">
-				<div class="imogi-receipt-dock-head" style="margin-top:12px;">${__("Template WhatsApp — QR Meja")}</div>
-				<div class="imogi-receipt-form-grid imogi-qr-wa-grid"></div>
-			</div>`);
-		$dock.append($qr_block);
-		const $qr_grid = $qr_block.find(".imogi-qr-wa-grid");
-		mount_settings_dock_fields(frm, $qr_grid, QR_RECEIPT_DOCK_FIELDS, "imogi-receipt-field");
-		hide_duplicate_dock_fields(frm, QR_RECEIPT_DOCK_FIELDS);
-	} else {
-		QR_RECEIPT_DOCK_FIELDS.forEach((fieldname) => {
-			if (frm.fields_dict[fieldname]) frm.toggle_display(fieldname, false);
-		});
-	}
-
-	// Sub-field WhatsApp tetap tampil; hanya dinonaktifkan jika WhatsApp tidak aktif.
-	const print_on = cint(frm.doc.enable_receipt_print);
-	const wa_on = print_on && cint(frm.doc.enable_whatsapp_receipt);
-	["whatsapp_api_provider", "fonnte_api_token", "whatsapp_receipt_default_phone", "whatsapp_receipt_message"].forEach((fieldname) => {
-		const $ctrl = $grid.find(`.frappe-control[data-fieldname="${fieldname}"]`);
-		if (!$ctrl.length) return;
-		$ctrl.show();
-		const field_enabled =
-			fieldname === "fonnte_api_token"
-				? !!wa_on && (frm.doc.whatsapp_api_provider || "") === "Fonnte"
-				: !!wa_on;
-		set_settings_field_disabled(frm, fieldname, !field_enabled);
-	});
 }
 
 function render_kitchen_dock_summary(frm) {

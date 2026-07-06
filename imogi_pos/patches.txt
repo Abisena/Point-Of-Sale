@@ -57,5 +57,6 @@ imogi_pos.patches.setup_whatsapp_fonnte_settings
 imogi_pos.patches.create_item_max_stock_field
 imogi_pos.patches.enable_table_service_default
 imogi_pos.patches.enable_qr_self_service_default
+imogi_pos.patches.ensure_default_kitchen_stations
 imogi_pos.patches.migrate_restaurant_floor_area
 imogi_pos.patches.grant_table_service_admin_page

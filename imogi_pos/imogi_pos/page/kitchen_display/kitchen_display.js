@@ -22,6 +22,7 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		this.wrapper = $(page.body);
 		this.refresh_interval = 30;
 		this.orders = [];
+		this.station_filter = null;
 		this.activate_fullscreen();
 		this.make();
 		this.load_settings();
@@ -164,6 +165,41 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 				color: #e2e8f0 !important;
 			}
 			.imogi-kds-appbar .imogi-kds-refresh:hover { background: rgba(255,255,255,0.16) !important; color: #fff !important; }
+			.imogi-kds-station-tabs {
+				align-items: center;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px;
+				margin-right: 8px;
+			}
+			.imogi-kds-station-tab {
+				background: rgba(255,255,255,0.08);
+				border: 1px solid rgba(255,255,255,0.14);
+				border-radius: 999px;
+				color: rgba(226,232,240,0.88);
+				cursor: pointer;
+				font-size: 11px;
+				font-weight: 700;
+				padding: 6px 12px;
+				transition: all .15s ease;
+			}
+			.imogi-kds-station-tab:hover { background: rgba(255,255,255,0.14); color: #fff; }
+			.imogi-kds-station-tab.is-active {
+				background: linear-gradient(135deg, #f5b041, #f39c12);
+				border-color: transparent;
+				color: #fff;
+			}
+			.imogi-kds-station-badge {
+				background: rgba(255,255,255,0.12);
+				border: 1px solid rgba(255,255,255,0.18);
+				border-radius: 999px;
+				color: #e2e8f0;
+				font-size: 10px;
+				font-weight: 700;
+				padding: 3px 8px;
+			}
+			.imogi-kds-station-badge--bar { background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.35); color: #7dd3fc; }
+			.imogi-kds-station-badge--kitchen { background: rgba(251,146,60,0.18); border-color: rgba(251,146,60,0.35); color: #fdba74; }
 			.imogi-kds-logout {
 				align-items: center;
 				background: rgba(239,68,68,0.16);
@@ -211,6 +247,13 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 				display: flex;
 				gap: 10px;
 				justify-content: space-between;
+			}
+			.imogi-kds-card-badges {
+				align-items: center;
+				display: flex;
+				flex-direction: column;
+				flex-shrink: 0;
+				gap: 6px;
 			}
 			.imogi-kds-card-id {
 				color: #0f172a !important;
@@ -425,6 +468,11 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 						<div class="imogi-kds-live"><span class="imogi-kds-live-dot"></span>${__("Live")}</div>
 					</div>
 					<div class="imogi-kds-appbar-right">
+						<div class="imogi-kds-station-tabs" role="tablist" aria-label="${__("Filter stasiun")}">
+							<button type="button" class="imogi-kds-station-tab is-active" data-station-filter="">${__("Semua")}</button>
+							<button type="button" class="imogi-kds-station-tab" data-station-filter="Kitchen">${__("Dapur")}</button>
+							<button type="button" class="imogi-kds-station-tab" data-station-filter="Bar">${__("Bar")}</button>
+						</div>
 						<span class="imogi-kds-stat-pill imogi-kds-stat-total">${__("Aktif")} <span class="imogi-kds-stat-num">0</span></span>
 						<span class="imogi-kds-stat-pill imogi-kds-stat-pill--pending imogi-kds-stat-pending">${__("Menunggu")} <span class="imogi-kds-stat-num">0</span></span>
 						<span class="imogi-kds-stat-pill imogi-kds-stat-pill--preparing imogi-kds-stat-preparing">${__("Dimasak")} <span class="imogi-kds-stat-num">0</span></span>
@@ -460,6 +508,13 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 
 		this.wrapper.find(".imogi-kds-refresh").on("click", () => this.refresh());
 		this.wrapper.find(".imogi-kds-logout").on("click", () => this.logout());
+		this.wrapper.find(".imogi-kds-station-tab").on("click", (e) => {
+			const filter = $(e.currentTarget).data("station-filter");
+			this.station_filter = filter || null;
+			this.wrapper.find(".imogi-kds-station-tab").removeClass("is-active");
+			$(e.currentTarget).addClass("is-active");
+			this.refresh();
+		});
 	}
 
 	logout() {
@@ -494,8 +549,13 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 	}
 
 	refresh() {
+		const args = {};
+		if (this.station_filter) {
+			args.station_type = this.station_filter;
+		}
 		frappe.call({
 			method: "imogi_pos.api.kitchen.get_kitchen_queue",
+			args,
 			callback: (r) => {
 				if (r.exc) {
 					this.orders = [];
@@ -581,6 +641,10 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 			})
 			.join("");
 		const short_ref = (order.pos_order || order.name || "").replace(/^ORD-/, "#");
+		const station_type = order.station_type || "Kitchen";
+		const station_tone = station_type === "Bar" ? "bar" : "kitchen";
+		const station_label =
+			station_type === "Bar" ? __("Bar") : station_type === "Kitchen" ? __("Dapur") : station_type;
 
 		const $card = $(`
 			<article class="imogi-kds-card imogi-kds-card--${type_meta.tone}" data-kitchen-order="${frappe.utils.escape_html(order.name)}">
@@ -591,9 +655,12 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 							<div class="imogi-kds-card-id">${frappe.utils.escape_html(short_ref)}</div>
 							<div class="imogi-kds-card-ref">${frappe.utils.escape_html(order.name)}</div>
 						</div>
-						<span class="imogi-kds-type imogi-kds-type--${type_meta.tone}">
-							<i class="fa ${type_meta.icon}"></i>${frappe.utils.escape_html(order.order_type || "-")}
-						</span>
+						<div class="imogi-kds-card-badges">
+							<span class="imogi-kds-station-badge imogi-kds-station-badge--${station_tone}">${frappe.utils.escape_html(station_label)}</span>
+							<span class="imogi-kds-type imogi-kds-type--${type_meta.tone}">
+								<i class="fa ${type_meta.icon}"></i>${frappe.utils.escape_html(order.order_type || "-")}
+							</span>
+						</div>
 					</div>
 					<div class="imogi-kds-customer">
 						<span class="imogi-kds-customer-icon"><i class="fa fa-user"></i></span>

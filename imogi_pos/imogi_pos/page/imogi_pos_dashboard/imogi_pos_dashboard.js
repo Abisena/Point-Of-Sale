@@ -941,6 +941,7 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 		this.add_panel("imogi-payment-chart", "purple", "sales_by_payment");
 		this.add_panel("imogi-food-cost", "orange", "food_cost_report");
 		this.add_panel("imogi-table-turnover", "slate", "table_turnover_report");
+		this.add_panel("imogi-kitchen-performance", "orange", "kitchen_performance");
 	}
 
 	render(data) {
@@ -1068,6 +1069,49 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 				}))
 			);
 		}
+		this.render_kitchen_performance(reports.kitchen_performance || {});
+	}
+
+	render_kitchen_performance(report) {
+		const el = this.wrapper.find(".imogi-kitchen-performance");
+		if (!el.length || report.locked) return;
+		const rows = report.rows || [];
+		const range =
+			report.date_from && report.date_to ? `${report.date_from} — ${report.date_to}` : "";
+		if (!rows.length) {
+			el.html(
+				this.render_panel_open(__("Kitchen Performance"), "fa-fire", null, range) +
+					this.render_empty(
+						__(
+							"Belum ada data KPI dapur. Pastikan order masuk KDS dan stasiun dapur sudah diatur."
+						)
+					) +
+					`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
+						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-station">${__("Atur Stasiun")}</a>
+					</div>` +
+					this.render_panel_close()
+			);
+			return;
+		}
+		el.html(
+			this.render_panel_open(__("Kitchen Performance"), "fa-fire", `${rows.length} stasiun`, range) +
+				`<div class="imogi-dash-bars">${rows
+					.map((r) => {
+						const label = r.station_label || r.kitchen_station || __("Tanpa stasiun");
+						const type = r.station_type === "Bar" ? __("Bar") : __("Dapur");
+						const avg = Math.round(flt(r.avg_minutes));
+						return `<div class="imogi-dash-bar-head">
+						<span class="imogi-dash-bar-name">${frappe.utils.escape_html(label)} <span class="imogi-dash-muted">(${frappe.utils.escape_html(type)})</span></span>
+						<span class="imogi-dash-bar-meta">${r.orders || 0} order · ${avg} min · ${r.completed || 0} ${__("selesai")}</span>
+					</div>`;
+					})
+					.join("")}</div>
+				<div style="margin-top:10px;">
+					<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
+				</div>` +
+				this.render_panel_close()
+		);
 	}
 
 	render_bars_panel(el, title, icon, rows, opts) {

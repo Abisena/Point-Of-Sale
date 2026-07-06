@@ -183,19 +183,23 @@ def get_customer_visit_report(date_from=None, date_to=None, company=None) -> dic
 
 
 def get_kitchen_performance_report(date_from=None, date_to=None) -> dict:
-	day_start = getdate(date_from) if date_from else add_days(getdate(today()), -7)
+	day_start = getdate(date_from) if date_from else add_days(getdate(today()), -30)
 	day_end = add_days(getdate(date_to) if date_to else getdate(today()), 1)
 
 	rows = frappe.db.sql(
 		"""
-		select ko.kitchen_station,
+		select
+			coalesce(ks.station_name, nullif(ko.kitchen_station, ''), 'Tanpa Stasiun') as station_label,
+			ko.kitchen_station,
+			coalesce(ks.station_type, 'Kitchen') as station_type,
 			count(*) as orders,
 			avg(timestampdiff(MINUTE, ko.creation, coalesce(ko.modified, ko.creation))) as avg_minutes,
 			sum(case when ko.status = 'Done' then 1 else 0 end) as completed
 		from `tabIMOGI Kitchen Order` ko
+		left join `tabIMOGI Kitchen Station` ks on ks.name = ko.kitchen_station
 		where ko.docstatus < 2
 			and ko.creation >= %(start)s and ko.creation < %(end)s
-		group by ko.kitchen_station
+		group by ko.kitchen_station, ks.station_name, ks.station_type
 		order by orders desc
 		""",
 		{"start": day_start, "end": day_end},
