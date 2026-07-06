@@ -13,6 +13,7 @@ from imogi_pos.imogi_pos.utils.floor_area import (
 	sync_table_area_fields,
 )
 from imogi_pos.imogi_pos.utils.flow import get_settings, release_restaurant_table, reserve_restaurant_table
+from imogi_pos.imogi_pos.utils.qr_table_order import is_qr_self_service_enabled
 from imogi_pos.imogi_pos.utils.table_service import (
 	get_table_doc,
 	list_tables_for_service,
@@ -74,6 +75,7 @@ def get_table_service_board(company=None, floor=None):
 			"merge_table": is_feature_operational("merge_table"),
 			"table_reservation": is_feature_operational("table_reservation"),
 			"waiting_list": is_feature_operational("waiting_list"),
+			"qr_self_service": is_qr_self_service_enabled(settings),
 		},
 	}
 

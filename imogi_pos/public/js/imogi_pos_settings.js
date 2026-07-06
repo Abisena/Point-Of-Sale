@@ -272,6 +272,15 @@ frappe.ui.form.on("IMOGI POS Settings", {
 		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
+	enable_qr_self_service(frm) {
+		render_mode_summary(frm);
+		render_kitchen_dock_summary(frm);
+		frappe.after_ajax(() => {
+			layout_kitchen_settings(frm);
+			layout_receipt_settings_dock(frm);
+		});
+	},
+
 	enable_kitchen_display(frm) {
 		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
@@ -3477,17 +3486,29 @@ function set_settings_field_disabled(frm, fieldname, disabled) {
 	const field = frm.fields_dict[fieldname];
 	if (!field) return;
 	frm.set_df_property(fieldname, "read_only", disabled ? 1 : 0);
-	const $ctrl = field.$wrapper?.closest(".frappe-control");
-	if ($ctrl?.length) {
+	if (!disabled && field.df) {
+		// Dock fields stay visible; clear stale Frappe dependency lock.
+		field.df.hidden_due_to_dependency = 0;
+	}
+	frm.$wrapper.find(`.frappe-control[data-fieldname="${fieldname}"]`).each(function () {
+		const $ctrl = $(this);
 		$ctrl.toggleClass("imogi-field-disabled", !!disabled);
+		if (!disabled) {
+			$ctrl.removeClass("hide-control").show();
+		}
+	});
+	if (typeof field.refresh === "function") {
+		field.refresh();
 	}
 	if (field.df?.fieldtype === "Check") {
 		field.$wrapper?.find('input[type="checkbox"]').prop("disabled", !!disabled);
 	} else if (field.$input) {
 		field.$input.prop("disabled", !!disabled);
+		if (!disabled && field.disp_status === "Write") {
+			field.$wrapper?.find(".control-input").show();
+			field.$wrapper?.find(".disp-area").hide();
+		}
 	}
-	if (typeof field.disable === "function" && disabled) field.disable();
-	else if (typeof field.enable === "function" && !disabled) field.enable();
 }
 
 // Peta field yang dependen ke checkbox induk (semua tab). Saat kondisi false,
@@ -4199,7 +4220,13 @@ const SHIFT_SETTINGS_FIELDS = [
 	"default_closing_time",
 ];
 
-const KITCHEN_SETTINGS_FIELDS = ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"];
+const KITCHEN_SETTINGS_FIELDS = [
+	"enable_table_service",
+	"enable_qr_self_service",
+	"qr_self_service_payment_mode",
+	"enable_kitchen_display",
+	"enable_fulfillment",
+];
 
 const KITCHEN_DOCK_LIST_CONFIGS = [
 	{
@@ -4241,10 +4268,13 @@ const RECEIPT_DOCK_FIELDS = [
 	"whatsapp_receipt_message",
 ];
 
+const QR_RECEIPT_DOCK_FIELDS = ["whatsapp_qr_order_received_message", "whatsapp_qr_order_complete_message"];
+
 const DOCK_CHECKBOX_FIELDS = [
 	"enable_pos_shift",
 	"enable_shift_cash_detail",
 	"enable_table_service",
+	"enable_qr_self_service",
 	"enable_kitchen_display",
 	"enable_fulfillment",
 	"auto_print_receipt_on_success",
@@ -4416,6 +4446,8 @@ const DOCK_FIELD_HOME_SECTION = {
 	default_pos_profile: "general_section",
 	default_warehouse: "general_section",
 	enable_table_service: "flow_section",
+	enable_qr_self_service: "flow_section",
+	qr_self_service_payment_mode: "flow_section",
 	enable_kitchen_display: "flow_section",
 	enable_fulfillment: "flow_section",
 	kitchen_item_group_rows: "flow_section",
@@ -4424,6 +4456,8 @@ const DOCK_FIELD_HOME_SECTION = {
 	enable_whatsapp_receipt: "receipt_section",
 	whatsapp_receipt_default_phone: "receipt_section",
 	whatsapp_receipt_message: "receipt_section",
+	whatsapp_qr_order_received_message: "receipt_section",
+	whatsapp_qr_order_complete_message: "receipt_section",
 };
 
 function ensure_dock_field_rendered(frm, fieldname) {
@@ -4489,25 +4523,31 @@ function bind_dock_checkbox_handlers_once(frm) {
 	frm._imogi_dock_checkbox_bound = true;
 
 	frm.$wrapper.on(
-		"click.imogi_dock_check",
+		"change.imogi_dock_check",
 		'.imogi-shift-settings-dock input[type="checkbox"], .imogi-kitchen-settings-dock input[type="checkbox"], .imogi-receipt-settings-dock input[type="checkbox"]',
 		function () {
 			const $input = $(this);
 			const fieldname = $input.closest(".frappe-control").attr("data-fieldname");
 			if (!fieldname || !DOCK_CHECKBOX_FIELDS.includes(fieldname)) return;
 
-			setTimeout(() => {
-				const value = $input.prop("checked") ? 1 : 0;
-				if (cint(frm.doc[fieldname]) !== value) {
-					frm.doc[fieldname] = value;
-					frm.dirty();
-				}
+			const value = $input.prop("checked") ? 1 : 0;
+			const apply_dock_layout = () => {
 				if (fieldname === "enable_pos_shift" || fieldname === "enable_shift_cash_detail") {
-					frappe.after_ajax(() => layout_shift_settings(frm));
+					layout_shift_settings(frm);
 					return;
 				}
-				frappe.after_ajax(() => layout_kitchen_settings(frm));
-			}, 0);
+				if (fieldname === "auto_print_receipt_on_success" || fieldname === "enable_whatsapp_receipt") {
+					layout_receipt_settings_dock(frm);
+					return;
+				}
+				layout_kitchen_settings(frm);
+			};
+
+			if (cint(frm.doc[fieldname]) !== value) {
+				frm.set_value(fieldname, value).then(apply_dock_layout);
+			} else {
+				apply_dock_layout();
+			}
 		}
 	);
 }
@@ -4774,10 +4814,24 @@ function layout_kitchen_settings(frm) {
 	const $grid = $dock.find(".imogi-kitchen-form-grid");
 	$grid.addClass("imogi-kitchen-form-grid--horizontal");
 	mount_settings_dock_fields(frm, $grid, KITCHEN_SETTINGS_FIELDS, "imogi-kitchen-field");
-	group_dock_checkbox_row($grid, frm, ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"]);
+	group_dock_checkbox_row($grid, frm, [
+		"enable_table_service",
+		"enable_qr_self_service",
+		"enable_kitchen_display",
+		"enable_fulfillment",
+	]);
 	configure_kitchen_dock_tables(frm);
 	render_kitchen_dock_list_cards(frm, $dock);
-	sync_dock_checkbox_from_doc(frm, ["enable_table_service", "enable_kitchen_display", "enable_fulfillment"]);
+	sync_dock_checkbox_from_doc(frm, [
+		"enable_table_service",
+		"enable_qr_self_service",
+		"enable_kitchen_display",
+		"enable_fulfillment",
+	]);
+	const table_on = cint(frm.doc.enable_table_service);
+	const qr_on = table_on && cint(frm.doc.enable_qr_self_service);
+	set_settings_field_disabled(frm, "enable_qr_self_service", !table_on);
+	set_settings_field_disabled(frm, "qr_self_service_payment_mode", !qr_on);
 	hide_duplicate_dock_fields(frm, KITCHEN_DOCK_ALL_FIELDS);
 	$dock.find(".imogi-kitchen-status, .imogi-kitchen-quick-links").remove();
 
@@ -4790,6 +4844,11 @@ function layout_kitchen_settings(frm) {
 function layout_receipt_settings_dock(frm) {
 	const ctx = get_settings_section(frm, "receipt_section");
 	if (!ctx || !ctx.$wrapper) return;
+
+	sync_dock_fields_to_doc(frm);
+	if (frm.layout?.refresh_dependency) {
+		frm.layout.refresh_dependency();
+	}
 
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	let $dock = $body.find(".imogi-receipt-settings-dock");
@@ -4837,6 +4896,28 @@ function layout_receipt_settings_dock(frm) {
 		RECEIPT_DOCK_FIELDS.forEach((fieldname) => frm.toggle_display(fieldname, true));
 	}
 
+	const qr_on =
+		cint(frm.doc.enable_table_service) &&
+		cint(frm.doc.enable_qr_self_service) &&
+		cint(frm.doc.enable_receipt_print) &&
+		cint(frm.doc.enable_whatsapp_receipt);
+	$dock.find(".imogi-qr-wa-templates").remove();
+	if (qr_on && QR_RECEIPT_DOCK_FIELDS.every((fieldname) => frm.fields_dict[fieldname])) {
+		const $qr_block = $(`
+			<div class="imogi-qr-wa-templates">
+				<div class="imogi-receipt-dock-head" style="margin-top:12px;">${__("Template WhatsApp — QR Meja")}</div>
+				<div class="imogi-receipt-form-grid imogi-qr-wa-grid"></div>
+			</div>`);
+		$dock.append($qr_block);
+		const $qr_grid = $qr_block.find(".imogi-qr-wa-grid");
+		mount_settings_dock_fields(frm, $qr_grid, QR_RECEIPT_DOCK_FIELDS, "imogi-receipt-field");
+		hide_duplicate_dock_fields(frm, QR_RECEIPT_DOCK_FIELDS);
+	} else {
+		QR_RECEIPT_DOCK_FIELDS.forEach((fieldname) => {
+			if (frm.fields_dict[fieldname]) frm.toggle_display(fieldname, false);
+		});
+	}
+
 	// Sub-field WhatsApp tetap tampil; hanya dinonaktifkan jika WhatsApp tidak aktif.
 	const print_on = cint(frm.doc.enable_receipt_print);
 	const wa_on = print_on && cint(frm.doc.enable_whatsapp_receipt);
@@ -4857,11 +4938,13 @@ function render_kitchen_dock_summary(frm) {
 	if (!$status.length) return;
 
 	const table_on = cint(frm.doc.enable_table_service);
+	const qr_on = table_on && cint(frm.doc.enable_qr_self_service);
 	const kds_on = cint(frm.doc.enable_kitchen_display);
 	const fulfillment_on = cint(frm.doc.enable_fulfillment);
 
 	const active = [];
 	if (table_on) active.push(__("Table Service"));
+	if (qr_on) active.push(__("QR Self-Service"));
 	if (kds_on) active.push(__("KDS"));
 	if (fulfillment_on) active.push(__("Fulfillment"));
 

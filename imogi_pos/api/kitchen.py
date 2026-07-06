@@ -87,9 +87,24 @@ def complete_kitchen_from_display(kitchen_order):
 	if not ko.pos_order:
 		frappe.throw(_("Kitchen order is not linked to a POS order"))
 
-	ko.db_set("status", "Done")
+	if ko.status in ("Done", "Cancelled"):
+		frappe.throw(_("Kitchen order already completed"))
+
 	pos_order = frappe.get_doc("Riwayat Order", ko.pos_order)
-	return pos_order.action_complete_kitchen()
+
+	if pos_order.status == "In Kitchen":
+		return pos_order.action_complete_kitchen()
+
+	# Active KDS ticket but POS status drifted (smoke seed / partial flow recovery).
+	if ko.status in ("Pending", "Preparing", "Ready"):
+		ko.db_set("status", "Done")
+		frappe.publish_realtime(
+			"imogi_kitchen_updated",
+			{"kitchen_order": kitchen_order, "status": "Done"},
+		)
+		return ko.name
+
+	frappe.throw(_("Order is not in kitchen"))
 
 
 # ── Kitchen Order management page ──────────────────────────────────────────

@@ -238,6 +238,16 @@ class RiwayatOrder(Document):
 			self._start_service_phase()
 			self._notify_status()
 
+	def _notify_qr_order_complete_if_needed(self):
+		if (self.order_channel or "").strip().upper() != "QR":
+			return
+		try:
+			from imogi_pos.imogi_pos.utils.qr_table_order import send_qr_order_whatsapp
+
+			send_qr_order_whatsapp(self.name, event="complete", customer_phone=self.customer_phone)
+		except Exception:
+			frappe.log_error(title="IMOGI QR Order WhatsApp Complete")
+
 	def _complete_direct_order(self):
 		"""Payment completes the order when no kitchen/fulfillment steps apply."""
 		self.db_set(
@@ -248,6 +258,7 @@ class RiwayatOrder(Document):
 		)
 		release_restaurant_table(self)
 		frappe.publish_realtime("imogi_pos_order_completed", {"order": self.name})
+		self._notify_qr_order_complete_if_needed()
 		if self.order_source != "IMOGI API":
 			self._emit_webhook("order.completed")
 
@@ -327,6 +338,7 @@ class RiwayatOrder(Document):
 		)
 		release_restaurant_table(self)
 		frappe.publish_realtime("imogi_pos_order_completed", {"order": self.name})
+		self._notify_qr_order_complete_if_needed()
 		return self.name
 
 	@frappe.whitelist()

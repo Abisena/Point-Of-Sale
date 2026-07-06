@@ -53,12 +53,13 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 	inject_css() {
 		// Inject critical navy/fullscreen styles inline so the theme always tracks
 		// this page JS (avoids stale /assets/imogi_pos/css/imogi_pos.css cache).
-		const ID = "imogi-kds-inline-css-v3";
+		const ID = "imogi-kds-inline-css-v4";
 		if (document.getElementById(ID)) return;
 		[
 			"imogi-kds-inline-css",
 			"imogi-kds-inline-css-v1",
 			"imogi-kds-inline-css-v2",
+			"imogi-kds-inline-css-v3",
 		].forEach((id) => document.getElementById(id)?.remove());
 		const style = document.createElement("style");
 		style.id = ID;
@@ -177,6 +178,229 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 				padding: 7px 12px;
 			}
 			.imogi-kds-logout:hover { background: rgba(239,68,68,0.28); color: #fff; }
+
+			/* ── Order cards ── */
+			.imogi-kds-card {
+				background: #fff !important;
+				border: 1px solid #e2e8f0 !important;
+				border-radius: 16px !important;
+				box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(15, 23, 42, 0.1) !important;
+				color: #0f172a !important;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+				overflow: hidden;
+				transition: box-shadow 0.2s ease, transform 0.2s ease;
+			}
+			.imogi-kds-card:hover {
+				box-shadow: 0 8px 12px rgba(15, 23, 42, 0.06), 0 20px 36px rgba(15, 23, 42, 0.12) !important;
+				transform: translateY(-1px);
+			}
+			.imogi-kds-card.is-urgent {
+				border-color: #fca5a5 !important;
+				box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28), 0 12px 28px rgba(239, 68, 68, 0.12) !important;
+			}
+			.imogi-kds-card-bar { height: 4px; flex-shrink: 0; }
+			.imogi-kds-card-bar--dine { background: linear-gradient(90deg, #6366f1, #818cf8) !important; }
+			.imogi-kds-card-bar--take { background: linear-gradient(90deg, #0ea5e9, #38bdf8) !important; }
+			.imogi-kds-card-bar--delivery { background: linear-gradient(90deg, #f59e0b, #fb923c) !important; }
+			.imogi-kds-card-bar--default { background: linear-gradient(90deg, #64748b, #94a3b8) !important; }
+
+			.imogi-kds-card-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 14px !important; }
+
+			.imogi-kds-card-top {
+				align-items: flex-start;
+				display: flex;
+				gap: 10px;
+				justify-content: space-between;
+			}
+			.imogi-kds-card-id {
+				color: #0f172a !important;
+				font-size: 22px !important;
+				font-weight: 800 !important;
+				letter-spacing: -0.02em;
+				line-height: 1.15 !important;
+				font-variant-numeric: tabular-nums;
+			}
+			.imogi-kds-card-ref {
+				color: #94a3b8 !important;
+				font-size: 11px !important;
+				font-weight: 600 !important;
+				letter-spacing: 0.02em;
+				margin-top: 3px;
+				font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
+			}
+			.imogi-kds-type {
+				align-items: center;
+				border-radius: 999px;
+				display: inline-flex;
+				flex-shrink: 0;
+				font-size: 11px !important;
+				font-weight: 700 !important;
+				gap: 6px;
+				letter-spacing: 0.03em;
+				line-height: 1;
+				padding: 6px 11px;
+				text-transform: uppercase;
+				white-space: nowrap;
+			}
+			.imogi-kds-type i {
+				font-size: 12px !important;
+				opacity: 0.95;
+			}
+			.imogi-kds-type--dine { background: #eef2ff !important; color: #4338ca !important; }
+			.imogi-kds-type--take { background: #e0f2fe !important; color: #0369a1 !important; }
+			.imogi-kds-type--delivery { background: #fff7ed !important; color: #c2410c !important; }
+			.imogi-kds-type--default { background: #f1f5f9 !important; color: #475569 !important; }
+
+			.imogi-kds-customer {
+				align-items: center;
+				color: #334155 !important;
+				display: flex;
+				font-size: 14px !important;
+				font-weight: 600 !important;
+				gap: 10px;
+			}
+			.imogi-kds-customer-icon {
+				align-items: center;
+				background: #f1f5f9 !important;
+				border-radius: 10px;
+				color: #64748b !important;
+				display: inline-flex;
+				flex-shrink: 0;
+				font-size: 13px !important;
+				height: 32px;
+				justify-content: center;
+				width: 32px;
+			}
+
+			.imogi-kds-items {
+				background: #f8fafc !important;
+				border: 1px solid #e2e8f0 !important;
+				border-radius: 12px;
+				list-style: none;
+				margin: 0 !important;
+				padding: 10px 12px !important;
+			}
+			.imogi-kds-items li {
+				align-items: flex-start;
+				display: flex;
+				gap: 10px;
+				padding: 6px 0;
+			}
+			.imogi-kds-items li + li { border-top: 1px dashed #e2e8f0; }
+			.imogi-kds-items li:first-child { padding-top: 0; }
+			.imogi-kds-items li:last-child { padding-bottom: 0; }
+			.imogi-kds-item-qty {
+				align-items: center;
+				background: #fff !important;
+				border: 1px solid #fed7aa !important;
+				border-radius: 8px;
+				color: #c2410c !important;
+				display: inline-flex;
+				flex-shrink: 0;
+				font-size: 15px !important;
+				font-weight: 800 !important;
+				justify-content: center;
+				min-width: 42px;
+				padding: 4px 8px;
+				font-variant-numeric: tabular-nums;
+			}
+			.imogi-kds-item-name {
+				color: #0f172a !important;
+				flex: 1;
+				font-size: 15px !important;
+				font-weight: 700 !important;
+				line-height: 1.35 !important;
+				padding-top: 2px;
+			}
+			.imogi-kds-item-note {
+				color: #64748b !important;
+				display: block;
+				font-size: 12px !important;
+				font-weight: 500 !important;
+				margin-top: 2px;
+			}
+
+			.imogi-kds-meta {
+				align-items: center;
+				display: flex;
+				gap: 10px;
+			}
+			.imogi-kds-timer {
+				align-items: center;
+				background: #f1f5f9 !important;
+				border-radius: 8px;
+				color: #475569 !important;
+				display: inline-flex;
+				flex-shrink: 0;
+				font-size: 12px !important;
+				font-weight: 600 !important;
+				gap: 6px;
+				padding: 6px 10px;
+			}
+			.imogi-kds-timer i { color: #64748b !important; font-size: 13px !important; }
+			.imogi-kds-timer-value {
+				color: #0f172a !important;
+				font-size: 13px !important;
+				font-variant-numeric: tabular-nums;
+				font-weight: 800 !important;
+			}
+			.imogi-kds-timer.is-urgent {
+				background: #fef2f2 !important;
+				color: #b91c1c !important;
+			}
+			.imogi-kds-timer.is-urgent .imogi-kds-timer-value { color: #dc2626 !important; }
+			.imogi-kds-sla {
+				background: #e2e8f0 !important;
+				border-radius: 999px;
+				flex: 1;
+				height: 6px;
+				overflow: hidden;
+			}
+			.imogi-kds-sla-fill {
+				background: linear-gradient(90deg, #22c55e, #16a34a) !important;
+				border-radius: 999px;
+				height: 100%;
+				transition: width 0.4s ease;
+			}
+			.imogi-kds-sla-fill.is-warning { background: linear-gradient(90deg, #fbbf24, #f59e0b) !important; }
+			.imogi-kds-sla-fill.is-urgent { background: linear-gradient(90deg, #ef4444, #dc2626) !important; }
+
+			.imogi-kds-actions { margin-top: 2px; }
+			.imogi-kds-btn {
+				align-items: center;
+				border: none !important;
+				border-radius: 10px !important;
+				cursor: pointer;
+				display: inline-flex;
+				font-size: 13px !important;
+				font-weight: 700 !important;
+				gap: 8px;
+				justify-content: center;
+				letter-spacing: 0.01em;
+				padding: 11px 16px !important;
+				transition: background 0.15s ease, transform 0.1s ease;
+				width: 100%;
+			}
+			.imogi-kds-btn:active { transform: scale(0.98); }
+			.imogi-kds-btn i { font-size: 14px !important; }
+			.imogi-kds-btn--start {
+				background: linear-gradient(135deg, #f97316, #ea580c) !important;
+				box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+				color: #fff !important;
+			}
+			.imogi-kds-btn--start:hover {
+				background: linear-gradient(135deg, #fb923c, #f97316) !important;
+				color: #fff !important;
+			}
+			.imogi-kds-btn--ready {
+				background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+				box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35) !important;
+				color: #fff !important;
+			}
+			.imogi-kds-btn--ready:hover {
+				background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+				color: #fff !important;
+			}
 		`;
 		document.head.appendChild(style);
 	}
@@ -342,21 +566,28 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 			tone: "default",
 		};
 		const items = (order.items || [])
-			.map(
-				(item) => `<li>
+			.map((item) => {
+				const note = (item.notes || "").trim();
+				const note_html = note
+					? `<span class="imogi-kds-item-note">${frappe.utils.escape_html(note)}</span>`
+					: "";
+				return `<li>
 					<span class="imogi-kds-item-qty">${flt(item.qty, 0)}×</span>
-					<span class="imogi-kds-item-name">${frappe.utils.escape_html(item.item_name || item.item_code)}</span>
-				</li>`
-			)
+					<span class="imogi-kds-item-name">
+						${frappe.utils.escape_html(item.item_name || item.item_code)}
+						${note_html}
+					</span>
+				</li>`;
+			})
 			.join("");
 		const short_ref = (order.pos_order || order.name || "").replace(/^ORD-/, "#");
 
 		const $card = $(`
-			<article class="imogi-kds-card" data-kitchen-order="${frappe.utils.escape_html(order.name)}">
+			<article class="imogi-kds-card imogi-kds-card--${type_meta.tone}" data-kitchen-order="${frappe.utils.escape_html(order.name)}">
 				<div class="imogi-kds-card-bar imogi-kds-card-bar--${type_meta.tone}"></div>
 				<div class="imogi-kds-card-body">
 					<div class="imogi-kds-card-top">
-						<div>
+						<div class="imogi-kds-card-head-text">
 							<div class="imogi-kds-card-id">${frappe.utils.escape_html(short_ref)}</div>
 							<div class="imogi-kds-card-ref">${frappe.utils.escape_html(order.name)}</div>
 						</div>
@@ -365,7 +596,7 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 						</span>
 					</div>
 					<div class="imogi-kds-customer">
-						<i class="fa fa-user"></i>
+						<span class="imogi-kds-customer-icon"><i class="fa fa-user"></i></span>
 						<span>${frappe.utils.escape_html(order.customer_name || __("Walk-in"))}</span>
 					</div>
 					<ul class="imogi-kds-items">${items || `<li><span class="imogi-kds-item-name text-muted">${__("Tidak ada item")}</span></li>`}</ul>

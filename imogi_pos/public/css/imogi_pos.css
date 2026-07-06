@@ -630,19 +630,26 @@ body.imogi-kds-fullscreen .imogi-kds-board {
 .imogi-kds-card {
 	background: #fff !important;
 	border: 1px solid #e2e8f0;
-	border-radius: 12px;
-	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+	border-radius: 16px;
+	box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(15, 23, 42, 0.1);
 	color: #0f172a !important;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	overflow: hidden;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.imogi-kds-card:hover {
+	box-shadow: 0 8px 12px rgba(15, 23, 42, 0.06), 0 20px 36px rgba(15, 23, 42, 0.12);
+	transform: translateY(-1px);
 }
 
 .imogi-kds-card.is-urgent {
 	border-color: #fca5a5 !important;
-	box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35);
+	box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.28), 0 12px 28px rgba(239, 68, 68, 0.12);
 }
 
 .imogi-kds-card-bar {
-	height: 5px;
+	height: 4px;
 }
 
 .imogi-kds-card-bar--dine {
@@ -662,13 +669,55 @@ body.imogi-kds-fullscreen .imogi-kds-board {
 }
 
 .imogi-kds-card-body {
-	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px 16px 14px;
+}
+
+.imogi-kds-card-top {
+	align-items: flex-start;
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
 }
 
 .imogi-kds-card-id {
 	color: #0f172a !important;
-	font-size: 17px;
+	font-size: 22px;
+	font-variant-numeric: tabular-nums;
 	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+}
+
+.imogi-kds-card-ref {
+	color: #94a3b8 !important;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	margin-top: 3px;
+}
+
+.imogi-kds-type {
+	align-items: center;
+	border-radius: 999px;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 700;
+	gap: 6px;
+	letter-spacing: 0.03em;
+	line-height: 1;
+	padding: 6px 11px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.imogi-kds-type i {
+	font-size: 12px;
+	opacity: 0.95;
 }
 
 .imogi-kds-type--dine {
@@ -686,25 +735,197 @@ body.imogi-kds-fullscreen .imogi-kds-board {
 	color: #c2410c !important;
 }
 
+.imogi-kds-type--default {
+	background: #f1f5f9 !important;
+	color: #475569 !important;
+}
+
+.imogi-kds-customer {
+	align-items: center;
+	color: #334155 !important;
+	display: flex;
+	font-size: 14px;
+	font-weight: 600;
+	gap: 10px;
+}
+
+.imogi-kds-customer-icon {
+	align-items: center;
+	background: #f1f5f9 !important;
+	border-radius: 10px;
+	color: #64748b !important;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 13px;
+	height: 32px;
+	justify-content: center;
+	width: 32px;
+}
+
+.imogi-kds-items {
+	background: #f8fafc !important;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	list-style: none;
+	margin: 0;
+	padding: 10px 12px;
+}
+
+.imogi-kds-items li {
+	align-items: flex-start;
+	display: flex;
+	gap: 10px;
+	padding: 6px 0;
+}
+
+.imogi-kds-items li + li {
+	border-top: 1px dashed #e2e8f0;
+}
+
+.imogi-kds-items li:first-child {
+	padding-top: 0;
+}
+
+.imogi-kds-items li:last-child {
+	padding-bottom: 0;
+}
+
 .imogi-kds-item-qty {
-	color: #ea580c !important;
-	font-size: 18px;
+	align-items: center;
+	background: #fff !important;
+	border: 1px solid #fed7aa;
+	border-radius: 8px;
+	color: #c2410c !important;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 15px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	justify-content: center;
+	min-width: 42px;
+	padding: 4px 8px;
+}
+
+.imogi-kds-item-name {
+	color: #0f172a !important;
+	flex: 1;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.35;
+	padding-top: 2px;
+}
+
+.imogi-kds-item-note {
+	color: #64748b !important;
+	display: block;
+	font-size: 12px;
+	font-weight: 500;
+	margin-top: 2px;
+}
+
+.imogi-kds-meta {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+}
+
+.imogi-kds-timer {
+	align-items: center;
+	background: #f1f5f9 !important;
+	border-radius: 8px;
+	color: #475569 !important;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 6px;
+	padding: 6px 10px;
+}
+
+.imogi-kds-timer i {
+	color: #64748b !important;
+	font-size: 13px;
+}
+
+.imogi-kds-timer-value {
+	color: #0f172a !important;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
 	font-weight: 800;
 }
 
+.imogi-kds-timer.is-urgent {
+	background: #fef2f2 !important;
+	color: #b91c1c !important;
+}
+
+.imogi-kds-timer.is-urgent .imogi-kds-timer-value {
+	color: #dc2626 !important;
+}
+
+.imogi-kds-sla {
+	background: #e2e8f0 !important;
+	border-radius: 999px;
+	flex: 1;
+	height: 6px;
+	overflow: hidden;
+}
+
+.imogi-kds-actions {
+	margin-top: 2px;
+}
+
+.imogi-kds-btn {
+	align-items: center;
+	border: none !important;
+	border-radius: 10px !important;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 13px;
+	font-weight: 700;
+	gap: 8px;
+	justify-content: center;
+	letter-spacing: 0.01em;
+	padding: 11px 16px !important;
+	transition: background 0.15s ease, transform 0.1s ease;
+	width: 100%;
+}
+
+.imogi-kds-btn:active {
+	transform: scale(0.98);
+}
+
+.imogi-kds-btn i {
+	font-size: 14px;
+}
+
 .imogi-kds-btn--start {
-	background: #fff7ed !important;
-	border: 1px solid #fdba74 !important;
-	color: #c2410c !important;
+	background: linear-gradient(135deg, #f97316, #ea580c) !important;
+	box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+	color: #fff !important;
+}
+
+.imogi-kds-btn--start:hover {
+	background: linear-gradient(135deg, #fb923c, #f97316) !important;
+	color: #fff !important;
 }
 
 .imogi-kds-btn--ready {
-	background: linear-gradient(135deg, #16a34a, #15803d) !important;
+	background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+	box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+	color: #fff !important;
+}
+
+.imogi-kds-btn--ready:hover {
+	background: linear-gradient(135deg, #4ade80, #22c55e) !important;
 	color: #fff !important;
 }
 
 .imogi-kds-sla-fill {
 	background: linear-gradient(90deg, #22c55e, #16a34a) !important;
+	border-radius: 999px;
+	height: 100%;
+	transition: width 0.4s ease;
 }
 
 .imogi-kds-sla-fill.is-warning {

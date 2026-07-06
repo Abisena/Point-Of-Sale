@@ -13,11 +13,12 @@ const IMOGI_TS_STATUS_LABEL = {
 const IMOGI_TS_FLOOR_CHIP_MAX = 3;
 const IMOGI_TS_AREA_CHIP_MAX = 4;
 
-const IMOGI_TS_V2_STYLE_ID = "imogi-ts-v2-css-c";
+const IMOGI_TS_V2_STYLE_ID = "imogi-ts-v2-css-d";
 
 function imogi_ts_ensure_v2_css() {
 	const legacy_id = "imogi-ts-v2-css";
 	document.getElementById(legacy_id)?.remove();
+	document.getElementById("imogi-ts-v2-css-c")?.remove();
 	if (document.getElementById(IMOGI_TS_V2_STYLE_ID)) {
 		return;
 	}
@@ -476,7 +477,7 @@ function imogi_ts_ensure_v2_css() {
 			font-size: 11px !important;
 			font-weight: 700 !important;
 		}
-		.imogi-ts-shell--v2 .imogi-ts-empty,
+		.imogi-ts-shell--v2 .imogi-ts-empty:not(.imogi-ts-guided-empty),
 		.imogi-ts-shell--v2 .imogi-ts-list-empty {
 			align-items: center;
 			background: #f8fafc;
@@ -494,7 +495,7 @@ function imogi_ts_ensure_v2_css() {
 			padding: 20px;
 			text-align: center;
 		}
-		.imogi-ts-shell--v2 .imogi-ts-empty i {
+		.imogi-ts-shell--v2 .imogi-ts-empty:not(.imogi-ts-guided-empty) i {
 			color: var(--ts-accent);
 			font-size: 26px;
 		}
@@ -856,6 +857,11 @@ function imogi_ts_ensure_modal_css() {
 			border-color: #0f1f35 !important;
 			color: #fff !important;
 		}
+		.imogi-ts-act--qr {
+			background: #f8fafc !important;
+			border-color: #cbd5e1 !important;
+			color: #334155 !important;
+		}
 		.imogi-ts-list-item {
 			background: #fff;
 			border: 1px solid #e2e8f0;
@@ -1158,10 +1164,11 @@ frappe.pages["table-service"].on_page_hide = function () {
 	imogi_ts_apply_fullscreen(false);
 };
 
-const IMOGI_TS_ENHANCE_STYLE_ID = "imogi-ts-enhance-css-v5";
+const IMOGI_TS_ENHANCE_STYLE_ID = "imogi-ts-enhance-css-v6";
 
 function imogi_ts_ensure_enhance_css() {
 	document.getElementById("imogi-ts-enhance-css-v4")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v5")?.remove();
 	if (document.getElementById(IMOGI_TS_ENHANCE_STYLE_ID)) return;
 	frappe.dom.set_style(
 		`
@@ -1277,21 +1284,32 @@ function imogi_ts_ensure_enhance_css() {
 			width: 100%;
 		}
 		.imogi-ts-filter-select:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15); outline: none; }
-		.imogi-ts-guided-empty { background: rgba(255,255,255,.94); border: 1px dashed #cbd5e1; border-radius: 14px; box-shadow: 0 8px 24px rgba(15,23,42,.08); max-width: 420px; padding: 22px 20px; text-align: center; z-index: 5; }
+		.imogi-ts-guided-empty {
+			background: rgba(255,255,255,.94);
+			border: 1px dashed #cbd5e1;
+			border-radius: 14px;
+			box-shadow: 0 8px 24px rgba(15,23,42,.08);
+			box-sizing: border-box;
+			display: block;
+			flex: none;
+			margin: 0 auto;
+			max-width: 420px;
+			padding: 22px 20px;
+			text-align: center;
+			width: min(420px, calc(100% - 32px));
+			z-index: 5;
+		}
 		.imogi-ts-floor-empty.imogi-ts-guided-empty { left: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); }
-		.imogi-ts-empty.imogi-ts-guided-empty { margin: 16px auto; min-height: 220px; }
 		.imogi-ts-shell--v2 .imogi-ts-table-grid.is-empty-state {
 			align-content: center;
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
-			min-height: min(420px, 48vh);
+			min-height: min(540px, 52vh);
 			padding: 16px;
 		}
-		.imogi-ts-shell--v2 .imogi-ts-table-grid.is-empty-state > .imogi-ts-empty,
 		.imogi-ts-shell--v2 .imogi-ts-table-grid.is-empty-state > .imogi-ts-guided-empty {
 			margin: 0 auto;
-			width: 100%;
 		}
 		.imogi-ts-guided-empty__icon { align-items: center; background: #eef2ff; border-radius: 999px; color: #4338ca; display: inline-flex; font-size: 22px; height: 52px; justify-content: center; margin-bottom: 12px; width: 52px; }
 		.imogi-ts-guided-empty__title { color: #1e293b; font-size: 16px; font-weight: 800; line-height: 1.3; margin: 0 0 8px; }
@@ -1576,6 +1594,26 @@ imogi_pos.TableService = class TableService {
 		return !this.active_zone || this.active_zone === all_label;
 	}
 
+	_is_floor_zone_split_mode() {
+		const areas = this._areas_for_active_floor();
+		return (this.arrange_mode || this.view_mode === "floor") && areas.length > 1;
+	}
+
+	_ensure_floor_zone_scope() {
+		if (!this._is_floor_zone_split_mode()) {
+			return;
+		}
+		const all_label = __("Semua");
+		const areas = this._areas_for_active_floor();
+		const names = new Set(areas.map((area) => area.name));
+		if (this.active_zone && this.active_zone !== all_label && names.has(this.active_zone)) {
+			return;
+		}
+		if (areas.length) {
+			this.active_zone = areas[0].name;
+		}
+	}
+
 	_active_area_display_label() {
 		const all_label = __("Semua");
 		if (!this.active_zone || this.active_zone === all_label) return "";
@@ -1619,6 +1657,9 @@ imogi_pos.TableService = class TableService {
 		}
 		if (this.view_mode === "list" && this.arrange_mode) {
 			this.toggle_arrange_mode(false);
+		}
+		if (this.view_mode === "floor") {
+			this._ensure_floor_zone_scope();
 		}
 		this._sync_view_toggle();
 		this.render_surface(this.board.tables || [], this.board.features || {});
@@ -1734,6 +1775,7 @@ imogi_pos.TableService = class TableService {
 		if (!floor_name || floor_name === this.active_floor) return;
 		this.active_floor = floor_name;
 		this.active_zone = __("Semua");
+		this._ensure_floor_zone_scope();
 		this._persist_active_floor();
 		const active = (this.board.floors || []).find((f) => f.name === floor_name);
 		this.board.floor_background = active?.floor_background || null;
@@ -1758,6 +1800,7 @@ imogi_pos.TableService = class TableService {
 		if (floor_areas.length) {
 			return {
 				all_label,
+				hide_all: this._is_floor_zone_split_mode(),
 				items: floor_areas.map((area) => ({
 					value: area.name,
 					label: imogi_ts_area_display_name(area),
@@ -1771,9 +1814,11 @@ imogi_pos.TableService = class TableService {
 			if (!key || by_area.has(key)) return;
 			by_area.set(key, imogi_ts_table_area_label(table));
 		});
+		const items = [...by_area.entries()].map(([value, label]) => ({ value, label }));
 		return {
 			all_label,
-			items: [...by_area.entries()].map(([value, label]) => ({ value, label })),
+			hide_all: this._is_floor_zone_split_mode() && items.length > 1,
+			items,
 		};
 	}
 
@@ -1927,6 +1972,9 @@ imogi_pos.TableService = class TableService {
 	}
 
 	render_surface(tables, features) {
+		if (this.arrange_mode || this.view_mode === "floor") {
+			this._ensure_floor_zone_scope();
+		}
 		if (!this.arrange_mode) {
 			this.render_floor_nav(this.board.floors || []);
 			this.render_zone_filter(tables);
@@ -1994,7 +2042,7 @@ imogi_pos.TableService = class TableService {
 			return;
 		}
 
-		const { all_label, items } = this._build_zone_options(tables);
+		const { all_label, items, hide_all } = this._build_zone_options(tables);
 		const $zone_group = this.$zone_filter.closest(".imogi-ts-filter-group");
 		if (!items.length) {
 			this.$zone_filter.empty().removeClass("is-select-mode is-chip-mode");
@@ -2008,9 +2056,13 @@ imogi_pos.TableService = class TableService {
 
 		if (use_select) {
 			const options = [
-				`<option value="__all__" ${this.active_zone === all_label ? "selected" : ""}>${frappe.utils.escape_html(
-					all_label
-				)}</option>`,
+				...(hide_all
+					? []
+					: [
+							`<option value="__all__" ${this.active_zone === all_label ? "selected" : ""}>${frappe.utils.escape_html(
+								all_label
+							)}</option>`,
+						]),
 				...items.map((item) => {
 					const sel = this.active_zone === item.value ? "selected" : "";
 					return `<option value="${frappe.utils.escape_html(item.value)}" ${sel}>${frappe.utils.escape_html(
@@ -2030,7 +2082,13 @@ imogi_pos.TableService = class TableService {
 		}
 
 		const chips = [
-			`<button type="button" class="imogi-ts-zone-chip ${this.active_zone === all_label ? "is-active" : ""}" data-zone="__all__">${frappe.utils.escape_html(all_label)}</button>`,
+			...(hide_all
+				? []
+				: [
+						`<button type="button" class="imogi-ts-zone-chip ${this.active_zone === all_label ? "is-active" : ""}" data-zone="__all__">${frappe.utils.escape_html(
+							all_label
+						)}</button>`,
+					]),
 			...items.map((item) => {
 				const active = this.active_zone === item.value ? "is-active" : "";
 				return `<button type="button" class="imogi-ts-zone-chip ${active}" data-zone="${frappe.utils.escape_html(
@@ -2577,10 +2635,16 @@ imogi_pos.TableService = class TableService {
 				$actions.append(`<button type="button" class="imogi-ts-act" data-action="merge"><i class="fa fa-compress"></i> ${__("Gabung")}</button>`);
 			}
 		} else if (table.status === "Available" || table.status === "Reserved") {
-			$actions.addClass("imogi-ts-table-actions--single");
+			if (!features.qr_self_service) {
+				$actions.addClass("imogi-ts-table-actions--single");
+			}
 			$actions.append(`<button type="button" class="imogi-ts-act imogi-ts-act--primary" data-action="new-order"><i class="fa fa-plus"></i> ${__("Order Baru")}</button>`);
 		} else {
 			$actions.remove();
+		}
+		if (features.qr_self_service && $actions.length) {
+			$actions.removeClass("imogi-ts-table-actions--single");
+			$actions.append(`<button type="button" class="imogi-ts-act imogi-ts-act--qr" data-action="qr"><i class="fa fa-qrcode"></i> ${__("QR")}</button>`);
 		}
 
 		$card.on("click", "[data-action='open-order']", (e) => {
@@ -2598,6 +2662,10 @@ imogi_pos.TableService = class TableService {
 		$card.on("click", "[data-action='new-order']", (e) => {
 			e.stopPropagation();
 			this.open_cashier_for_table(table);
+		});
+		$card.on("click", "[data-action='qr']", (e) => {
+			e.stopPropagation();
+			this.show_table_qr(table);
 		});
 
 		return $card;
@@ -3213,6 +3281,71 @@ imogi_pos.TableService = class TableService {
 					this.refresh();
 				},
 			});
+		});
+	}
+
+	show_table_qr(table) {
+		frappe.call({
+			method: "imogi_pos.api.qr_order_api.get_table_qr_link",
+			args: { table: table.name },
+			freeze: true,
+			callback: (r) => {
+				if (r.exc) return;
+				const msg = r.message || {};
+				const url = msg.url || "";
+				const label = table.table_number || table.name;
+				const dialog = new frappe.ui.Dialog({
+					title: __("QR Meja {0}", [label]),
+					fields: [
+						{
+							fieldtype: "HTML",
+							fieldname: "qr_html",
+							options: `<div class="imogi-ts-qr-dialog text-center">
+								<p class="text-muted small">${__(
+									"Tamu scan QR ini untuk pesan mandiri. Meja terdeteksi otomatis."
+								)}</p>
+								<div class="imogi-ts-qr-canvas my-3"></div>
+								<div class="imogi-ts-qr-url small text-muted text-break"></div>
+							</div>`,
+						},
+					],
+					primary_action_label: __("Salin Link"),
+					primary_action: () => {
+						frappe.utils.copy_to_clipboard(url);
+						frappe.show_alert({ message: __("Link disalin"), indicator: "green" });
+					},
+					secondary_action_label: __("Cetak"),
+					secondary_action: () => {
+						const $canvas = dialog.$wrapper.find(".imogi-ts-qr-canvas");
+						const win = window.open("", "_blank");
+						if (!win) return;
+						win.document.write(
+							`<html><head><title>QR Meja ${frappe.utils.escape_html(label)}</title></head><body style="text-align:center;font-family:sans-serif;padding:24px;"><h2>Meja ${frappe.utils.escape_html(label)}</h2>${$canvas.html()}<p style="font-size:12px;word-break:break-all;">${frappe.utils.escape_html(url)}</p></body></html>`
+						);
+						win.document.close();
+						win.focus();
+						win.print();
+					},
+				});
+				dialog.show();
+				dialog.$wrapper.find(".imogi-ts-qr-url").text(url);
+				const render_qr = () => {
+					const $holder = dialog.$wrapper.find(".imogi-ts-qr-canvas").empty();
+					const $node = $('<div class="d-inline-block"></div>');
+					$holder.append($node);
+					new QRCode($node[0], {
+						text: url,
+						width: 220,
+						height: 220,
+						correctLevel: QRCode.CorrectLevel.L,
+					});
+				};
+				if (typeof QRCode !== "undefined") {
+					render_qr();
+				} else {
+					frappe.require("/assets/imogi_pos/js/qrcode.min.js").then(render_qr);
+				}
+			},
 		});
 	}
 };

@@ -71,3 +71,45 @@ def send_fonnte_document(api_token, target, message, pdf_bytes, filename):
 		frappe.throw(_("Fonnte gagal kirim: {0}").format(detail))
 
 	return {"phone": phone, "provider": "Fonnte", "response": body}
+
+
+def send_fonnte_message(api_token, target, message):
+	"""Send plain WhatsApp text via Fonnte (no attachment)."""
+	import requests
+
+	api_token = (api_token or "").strip()
+	if not api_token:
+		frappe.throw(_("Token Fonnte belum diisi di IMOGI POS Settings."))
+
+	phone = normalize_whatsapp_phone(target)
+	if not phone:
+		frappe.throw(_("Nomor HP customer tidak valid."))
+
+	try:
+		response = requests.post(
+			"https://api.fonnte.com/send",
+			headers={"Authorization": api_token},
+			data={
+				"target": phone,
+				"message": message or "",
+				"countryCode": "62",
+			},
+			timeout=60,
+		)
+	except requests.RequestException as exc:
+		frappe.throw(_("Tidak bisa menghubungi Fonnte: {0}").format(str(exc)))
+
+	try:
+		body = response.json()
+	except ValueError:
+		body = {"detail": response.text}
+
+	if response.status_code >= 400:
+		detail = body.get("reason") or body.get("detail") or body.get("message") or response.text
+		frappe.throw(_("Fonnte error ({0}): {1}").format(response.status_code, detail))
+
+	if body.get("status") is False:
+		detail = body.get("reason") or body.get("detail") or body.get("message") or str(body)
+		frappe.throw(_("Fonnte gagal kirim: {0}").format(detail))
+
+	return {"phone": phone, "provider": "Fonnte", "response": body}

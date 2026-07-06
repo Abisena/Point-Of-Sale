@@ -347,11 +347,11 @@ FEATURES: tuple[dict, ...] = (
 		"category": "TABLE SERVICE",
 		"role": "Waiter",
 		"min_tier": "Professional",
-		"status": FEATURE_STATUS_PLANNED,
-		"settings_key": None,
+		"status": FEATURE_STATUS_BUILT,
+		"settings_key": "enable_qr_self_service",
 		"trigger_upgrade": "Pesan mandiri via QR",
-		"module": "(planned) qr-self-service",
-		"notes": "Pelanggan scan QR di meja, buka menu digital, dan pesan sendiri. Order masuk ke Table Management + KDS. Belum diimplementasikan.",
+		"module": "table-service",
+		"notes": "Pelanggan scan QR di meja, pesan via web, bayar, dan terima notifikasi WhatsApp.",
 	},
 	# ── KITCHEN (8) ────────────────────────────────────────────────────────
 	{

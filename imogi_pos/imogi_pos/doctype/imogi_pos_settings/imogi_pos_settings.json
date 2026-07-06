@@ -43,6 +43,10 @@
   "sync_subscription_tier",
   "flow_section",
   "enable_table_service",
+  "enable_qr_self_service",
+  "qr_self_service_payment_mode",
+  "whatsapp_qr_order_received_message",
+  "whatsapp_qr_order_complete_message",
   "table_floor_background",
   "enable_kitchen_display",
   "enable_fulfillment",
@@ -394,6 +398,39 @@
    "fieldname": "enable_table_service",
    "fieldtype": "Check",
    "label": "Table Service"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_table_service",
+   "description": "Tamu scan QR di meja untuk pesan mandiri via web. Meja otomatis terdeteksi dari QR.",
+   "fieldname": "enable_qr_self_service",
+   "fieldtype": "Check",
+   "label": "QR Self-Service"
+  },
+  {
+   "default": "Cash",
+   "depends_on": "eval:doc.enable_table_service && doc.enable_qr_self_service",
+   "description": "Metode pembayaran default di halaman QR tamu. Cash untuk dev; QRIS jika gateway aktif.",
+   "fieldname": "qr_self_service_payment_mode",
+   "fieldtype": "Select",
+   "label": "Pembayaran QR Tamu",
+   "options": "Cash\nQRIS"
+  },
+  {
+   "default": "Terima kasih, {customer}!\n\nPesanan *{order_name}* di Meja *{table_number}* sudah kami terima.\nTotal: {total}\n\nPesanan sedang diproses. Mohon tunggu di meja Anda.",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.enable_qr_self_service",
+   "description": "Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "fieldname": "whatsapp_qr_order_received_message",
+   "fieldtype": "Small Text",
+   "label": "Template WA — Order Diterima (QR)"
+  },
+  {
+   "default": "Terima kasih sudah makan di {store_name}!\n\nPesanan *{order_name}* · Meja *{table_number}* sudah selesai.\nTotal: {total}",
+   "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt && doc.enable_qr_self_service",
+   "description": "Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "fieldname": "whatsapp_qr_order_complete_message",
+   "fieldtype": "Small Text",
+   "label": "Template WA — Pesanan Selesai (QR)"
   },
   {
    "depends_on": "eval:doc.enable_table_service",
