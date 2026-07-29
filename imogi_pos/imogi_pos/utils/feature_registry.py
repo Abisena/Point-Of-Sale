@@ -827,6 +827,7 @@ FEATURES: tuple[dict, ...] = (
 		"settings_key": None,
 		"trigger_upgrade": "Profit",
 		"module": "finance-hub + P&L Report",
+		"notes": "finance-hub cuma tombol link ke Profit and Loss Statement bawaan ERPNext; belum ada laporan/view custom IMOGI.",
 	},
 	{
 		"id": "cash_flow",
@@ -838,6 +839,7 @@ FEATURES: tuple[dict, ...] = (
 		"settings_key": None,
 		"trigger_upgrade": "Cashflow",
 		"module": "finance-hub + Cash Flow Report",
+		"notes": "finance-hub cuma tombol link ke Cash Flow Statement bawaan ERPNext; belum ada laporan/view custom IMOGI.",
 	},
 	# ── REPORT (12) ─────────────────────────────────────────────────────────
 	{
