@@ -17,11 +17,17 @@ from imogi_pos.imogi_pos.utils.sales_target import get_sales_target_progress
 
 
 def _require_dashboard_access():
-	"""Owner dashboard API — tier + role gate (blocks Manager/Cashier cross-access)."""
+	"""Owner/Manager dashboard API — tier + role gate (blocks Cashier cross-access).
+
+	dashboard_sales (Owner) and dashboard_operational (Manager) share this same
+	endpoint/page, so either being operational is enough to pass.
+	"""
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Not permitted"), frappe.AuthenticationError)
-	from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
+	from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational, require_feature_operational
 
+	if is_feature_operational("dashboard_sales") or is_feature_operational("dashboard_operational"):
+		return
 	require_feature_operational("dashboard_sales")
 
 
