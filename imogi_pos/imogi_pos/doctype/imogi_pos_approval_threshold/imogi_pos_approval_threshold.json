@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-07-15 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "from_amount",
+  "to_amount",
+  "approver_role"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "from_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Dari Nominal",
+   "reqd": 1
+  },
+  {
+   "description": "Kosongkan / isi 0 untuk tanpa batas atas",
+   "fieldname": "to_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Sampai Nominal"
+  },
+  {
+   "fieldname": "approver_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role Approver",
+   "options": "IMOGI Purchasing\nIMOGI Supervisor\nIMOGI Inventory\nIMOGI Manager\nIMOGI Area Manager\nIMOGI Finance\nIMOGI Owner",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "IMOGI POS Approval Threshold",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

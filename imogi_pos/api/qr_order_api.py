@@ -23,7 +23,6 @@ from imogi_pos.imogi_pos.utils.qr_table_order import (
 	get_table_public_context,
 	is_qr_self_service_enabled,
 	require_qr_self_service,
-	send_qr_order_whatsapp,
 	sign_table_token,
 	validate_table_for_qr_order,
 	verify_table_token,
@@ -118,6 +117,33 @@ def _with_qr_api_user(fn):
 		frappe.set_user(previous_user)
 
 
+def _qr_payment_options(settings=None):
+	"""Available guest payment modes for QR table checkout."""
+	settings = settings or get_settings()
+	default_mode = (getattr(settings, "qr_self_service_payment_mode", None) or "Cash").strip()
+	gateway_on = bool(is_gateway_enabled())
+	modes = [{"id": "Cash", "label": _("Tunai (Cash)")}]
+	if gateway_on:
+		modes.append({"id": "QRIS", "label": _("QRIS")})
+	allowed = {row["id"] for row in modes}
+	if default_mode not in allowed:
+		default_mode = modes[0]["id"]
+	return {
+		"modes": modes,
+		"default_mode": default_mode,
+		"gateway_enabled": gateway_on,
+	}
+
+
+def _require_qr_payment_mode(payment_mode, settings=None):
+	payment_mode = (payment_mode or "").strip()
+	opts = _qr_payment_options(settings)
+	allowed = {row["id"] for row in opts["modes"]}
+	if payment_mode not in allowed:
+		frappe.throw(_("Metode pembayaran tidak tersedia: {0}").format(payment_mode or "-"))
+	return payment_mode
+
+
 @frappe.whitelist(allow_guest=True)
 def get_qr_menu_board(table, token, search=None, pos_category=None, start=0, limit=200):
 	"""Guest menu payload for QR table order page."""
@@ -141,14 +167,12 @@ def get_qr_menu_board(table, token, search=None, pos_category=None, start=0, lim
 	items = catalog.get("items") or []
 
 	settings = get_settings()
+	payment_opts = _qr_payment_options(settings)
 	return {
 		"table": ctx,
 		"catalog": catalog,
 		"categories": _build_qr_categories(items),
-		"payment": {
-			"gateway_enabled": bool(is_gateway_enabled()),
-			"default_mode": (getattr(settings, "qr_self_service_payment_mode", None) or "QRIS").strip(),
-		},
+		"payment": payment_opts,
 	}
 
 
@@ -215,7 +239,10 @@ def submit_qr_table_order(
 		frappe.throw(_("Keranjang kosong"))
 
 	settings = get_settings()
-	payment_mode = (payment_mode or getattr(settings, "qr_self_service_payment_mode", None) or "Cash").strip()
+	payment_mode = _require_qr_payment_mode(
+		payment_mode or getattr(settings, "qr_self_service_payment_mode", None) or "Cash",
+		settings,
+	)
 	api_user = settings.order_api_user or "Administrator"
 	previous_user = frappe.session.user
 	frappe.set_user(api_user)
@@ -277,23 +304,50 @@ def submit_qr_table_order(
 		if customer_name:
 			order.db_set("customer_name", customer_name.strip(), update_modified=False)
 
-		total = flt(order.grand_total)
-		order.append("payments", {"mode_of_payment": payment_mode or "Cash", "amount": total})
-		order.calculate_totals()
-		order.flags.ignore_validate_update_after_submit = True
-		order.save(ignore_permissions=True)
+		from imogi_pos.api.hold import save_branch_hold
+		from imogi_pos.imogi_pos.utils.qr_table_order import (
+			QR_CASH_FLOW_KITCHEN_FIRST,
+			get_qr_cash_cashier_flow,
+			send_qr_order_whatsapp,
+		)
+
+		flow = get_qr_cash_cashier_flow(settings)
+		if flow == QR_CASH_FLOW_KITCHEN_FIRST:
+			order.action_start_qr_cash_kitchen_flow()
+		else:
+			send_qr_order_whatsapp(order.name, event="cash_hold", customer_phone=phone)
+
+		label_parts = []
+		if (customer_name or "").strip():
+			label_parts.append((customer_name or "").strip())
+		label_parts.append(order.name)
+
 		order.reload()
-		order.action_process_payment(silent=True)
-		order.reload()
+		from imogi_pos.api.order import _resolve_item_display_name
+
+		cart_snapshot = [
+			{
+				"item_code": row.item_code,
+				"item_name": _resolve_item_display_name(row.item_code, row.item_name),
+				"qty": flt(row.qty),
+				"rate": flt(row.rate),
+				"uom": row.uom,
+			}
+			for row in order.items
+		]
+		save_branch_hold(
+			order_name=order.name,
+			cart=cart_snapshot,
+			customer_label=(customer_name or "").strip(),
+			order_type="Dine-in",
+			label=" · ".join(label_parts),
+			pos_profile=branch_ctx["pos_profile"],
+		)
 		frappe.db.commit()
 
-		try:
-			send_qr_order_whatsapp(order.name, event="received", customer_phone=phone)
-		except Exception:
-			frappe.log_error(title="IMOGI QR Order WhatsApp")
-
 		return {
-			"payment_type": "instant",
+			"payment_type": "cashier_hold",
+			"flow": flow,
 			"order": _serialize_order(order),
 			"table": table,
 		}

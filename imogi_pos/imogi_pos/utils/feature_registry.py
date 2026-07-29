@@ -1,11 +1,13 @@
 # Copyright (c) 2026, Imogi and contributors
-"""IMOGI POS F&B — subscription tier feature matrix (101 features).
+"""IMOGI POS F&B — subscription tier feature matrix (99 features).
 
 Source of truth for Free / Starter / Professional / Enterprise gating.
-Tier counts (cumulative): Free 7, Starter 15, Professional 79, Enterprise 101.
+Tier counts (cumulative): Free 7, Starter 15, Professional 79, Enterprise 99.
 
-Status: built = available via IMOGI UI/API or workspace bridge to ERPNext;
-partial = reserved (legacy); planned = not implemented yet.
+Status (honest progress for Matrix UI):
+  built   = Sudah ada — Imogi UI/flow nyata atau integrasi POS yang dipakai operasional
+  partial = Partial / Sebagian — capability ada (sering lewat ERPNext / API tipis) tapi UX Imogi belum lengkap
+  planned = Belum ada — belum diimplementasi / belum dipakai di alur nyata
 
 Note: APPROVAL lists 6 rows from the matrix screenshots (header says 8 total).
 Add the remaining 2 when confirmed from the HTML matrix.
@@ -26,11 +28,25 @@ FEATURE_STATUS_BUILT = "built"
 FEATURE_STATUS_PARTIAL = "partial"
 FEATURE_STATUS_PLANNED = "planned"
 
-# Hidden from workspace, feature matrix, and cashier UI until marketplace launch.
+# Hidden from workspace, feature matrix, and cashier UI (not in FEATURES catalog
+# for GoFood/GrabFood — kept here so Settings marketplace fields stay hidden).
 HIDDEN_UI_FEATURE_IDS = frozenset(
 	{
 		"gofood_integration",
 		"grabfood_integration",
+		"kitchen_printer",
+		"cashback",
+		"qris",
+		"accounting_integration",
+		"api_access",
+		"audit_log",
+		"login_history",
+		"activity_timeline",
+		"discount_analysis",
+		"void_analysis",
+		"approval_discount",
+		"approval_void",
+		"approval_complimentary",
 	}
 )
 
@@ -41,8 +57,23 @@ DISABLED_OPERATIONAL_FEATURE_IDS = frozenset(
 		"refund",
 		"approval_refund",
 		"refund_report",
+		"kitchen_printer",
 	}
 )
+
+# Fulfillment/packing queue — QC is handled in kitchen (KDS). Set True to re-enable.
+FULFILLMENT_ROLLOUT_ENABLED = False
+
+FULFILLMENT_WORKSPACE_KEYS = frozenset(
+	{
+		("Page", "fulfillment-queue"),
+		("DocType", "IMOGI Fulfillment Task"),
+	}
+)
+
+
+def is_fulfillment_rollout_enabled() -> bool:
+	return FULFILLMENT_ROLLOUT_ENABLED
 
 
 def is_feature_temporarily_disabled(feature_id: str | None) -> bool:
@@ -438,6 +469,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "KPI dapur",
+		"module": "kitchen-performance",
 	},
 	# ── RECIPE (5) ─────────────────────────────────────────────────────────
 	{
@@ -449,7 +481,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Standarisasi resep",
-		"module": "ERPNext BOM + import_bom",
+		"module": "recipe-hub + BOM + import_bom",
 	},
 	{
 		"id": "food_costing",
@@ -460,7 +492,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Margin",
-		"module": "ERPNext BOM costing",
+		"module": "recipe-hub food cost + BOM costing",
 	},
 	{
 		"id": "portion_control",
@@ -471,7 +503,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Konsistensi",
-		"module": "BOM qty per porsi",
+		"module": "recipe-hub portion + BOM quantity",
 	},
 	{
 		"id": "ingredient_substitution",
@@ -482,6 +514,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pengganti bahan",
+		"module": "recipe-hub + Item Alternative",
 	},
 	{
 		"id": "recipe_versioning",
@@ -492,6 +525,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Histori resep",
+		"module": "recipe-hub versions + Version",
 	},
 	# ── INVENTORY (10) ──────────────────────────────────────────────────────
 	{
@@ -503,7 +537,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol bahan",
-		"module": "ERPNext Item (raw)",
+		"module": "inventory-hub/stock (katalog bahan)",
 	},
 	{
 		"id": "stock_raw",
@@ -514,7 +548,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kontrol stok",
-		"module": "ERPNext Stock Ledger",
+		"module": "inventory-hub/stock (qty & nilai)",
 	},
 	{
 		"id": "stock_consumption",
@@ -525,7 +559,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Auto deduction",
-		"module": "bom_stock auto deduct",
+		"module": "auto BOM saat jual (bukan form hub)",
 	},
 	{
 		"id": "waste_management",
@@ -536,7 +570,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Waste control",
-		"module": "ERPNext Stock Entry",
+		"module": "inventory-hub/waste · jenis Waste",
 	},
 	{
 		"id": "spoilage_management",
@@ -547,6 +581,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Barang rusak",
+		"module": "inventory-hub/waste · jenis Spoilage",
 	},
 	{
 		"id": "expired_monitoring",
@@ -557,6 +592,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Kedaluwarsa",
+		"module": "inventory-hub batch expiry",
 	},
 	{
 		"id": "batch_tracking",
@@ -567,7 +603,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Tracking bahan",
-		"module": "ERPNext Batch",
+		"module": "inventory-hub + Batch",
 	},
 	{
 		"id": "stock_opname",
@@ -578,7 +614,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit stok",
-		"module": "ERPNext Stock Reconciliation",
+		"module": "inventory-hub/opname (hitung fisik)",
 	},
 	{
 		"id": "stock_adjustment",
@@ -589,7 +625,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Koreksi stok",
-		"module": "ERPNext Stock Entry",
+		"module": "inventory-hub/stock (koreksi +/−)",
 	},
 	{
 		"id": "stock_forecast",
@@ -600,6 +636,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Prediksi kebutuhan",
+		"module": "inventory-hub forecast",
 	},
 	# ── PURCHASING (4) ─────────────────────────────────────────────────────
 	{
@@ -611,7 +648,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Restock",
-		"module": "ERPNext Supplier",
+		"module": "purchasing-hub + Supplier",
 	},
 	{
 		"id": "purchase_request",
@@ -622,7 +659,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pengadaan",
-		"module": "ERPNext Material Request",
+		"module": "purchasing-hub + Material Request",
 	},
 	{
 		"id": "purchase_order",
@@ -633,7 +670,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pengadaan",
-		"module": "ERPNext Purchase Order",
+		"module": "purchasing-hub + Purchase Order",
 	},
 	{
 		"id": "goods_receiving",
@@ -644,14 +681,14 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Penerimaan",
-		"module": "ERPNext Purchase Receipt",
+		"module": "purchasing-hub + Purchase Receipt",
 	},
 	# ── LOYALTY (5) ────────────────────────────────────────────────────────
 	{
 		"id": "voucher",
 		"label": "Voucher",
 		"category": "LOYALTY",
-		"role": "Manager",
+		"role": "Kasir",
 		"min_tier": "Professional",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_loyalty",
@@ -662,7 +699,7 @@ FEATURES: tuple[dict, ...] = (
 		"id": "point_reward",
 		"label": "Point Reward",
 		"category": "LOYALTY",
-		"role": "Manager",
+		"role": "Kasir",
 		"min_tier": "Professional",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_loyalty",
@@ -673,7 +710,7 @@ FEATURES: tuple[dict, ...] = (
 		"id": "cashback",
 		"label": "Cashback",
 		"category": "LOYALTY",
-		"role": "Manager",
+		"role": "Kasir",
 		"min_tier": "Professional",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_cashback",
@@ -683,17 +720,18 @@ FEATURES: tuple[dict, ...] = (
 		"id": "birthday_promo",
 		"label": "Birthday Promo",
 		"category": "LOYALTY",
-		"role": "Manager",
+		"role": "Kasir",
 		"min_tier": "Professional",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_birthday_promo",
 		"trigger_upgrade": "Marketing",
+		"module": "Kasir + Loyalty Member DOB",
 	},
 	{
 		"id": "membership_tier",
 		"label": "Membership Tier",
 		"category": "LOYALTY",
-		"role": "Manager",
+		"role": "Kasir",
 		"min_tier": "Professional",
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_loyalty",
@@ -732,7 +770,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_pos_shift",
 		"trigger_upgrade": "Kontrol kas",
-		"module": "shift closing expenses",
+		"module": "IMOGI POS Cash Movement",
 	},
 	{
 		"id": "shift_closing_report",
@@ -743,18 +781,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "enable_pos_shift",
 		"trigger_upgrade": "Tutup hari",
-		"module": "POS Closing Entry",
-	},
-	{
-		"id": "end_of_day",
-		"label": "End Of Day (EOD)",
-		"category": "SHIFT",
-		"role": "Supervisor",
-		"min_tier": "Professional",
-		"status": FEATURE_STATUS_BUILT,
-		"settings_key": "enable_pos_shift",
-		"trigger_upgrade": "Tutup operasional",
-		"module": "POS Closing Entry",
+		"module": "IMOGI Shift Closing Report",
 	},
 	# ── KEUANGAN (5) ───────────────────────────────────────────────────────
 	{
@@ -766,7 +793,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Cashflow",
-		"module": "ERPNext Account",
+		"module": "finance-hub + Payment Entry",
 	},
 	{
 		"id": "supplier_payable",
@@ -777,7 +804,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pembelian",
-		"module": "ERPNext Purchase Invoice",
+		"module": "finance-hub + Purchase Invoice",
 	},
 	{
 		"id": "customer_receivable",
@@ -788,7 +815,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Corporate customer",
-		"module": "ERPNext Sales Invoice",
+		"module": "finance-hub + Sales Invoice",
 	},
 	{
 		"id": "profit_loss",
@@ -799,7 +826,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Profit",
-		"module": "ERPNext P&L Report",
+		"module": "finance-hub + P&L Report",
 	},
 	{
 		"id": "cash_flow",
@@ -810,7 +837,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Cashflow",
-		"module": "ERPNext Cash Flow Report",
+		"module": "finance-hub + Cash Flow Report",
 	},
 	# ── REPORT (12) ─────────────────────────────────────────────────────────
 	{
@@ -876,6 +903,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Waste control",
+		"module": "dashboard + Inventory Hub waste",
 	},
 	{
 		"id": "sales_by_payment",
@@ -919,7 +947,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pajak",
-		"module": "ERPNext tax reports",
+		"module": "dashboard tax_report + Sales Register",
 	},
 	{
 		"id": "table_turnover_report",
@@ -940,6 +968,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Loyalitas",
+		"module": "dashboard customer_visit_report",
 	},
 	# ── MULTI OUTLET (5) ────────────────────────────────────────────────────
 	{
@@ -951,7 +980,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": "multi_branch",
 		"trigger_upgrade": "Banyak cabang",
-		"module": "IMOGI Branch",
+		"module": "IMOGI Branch + multi-outlet-hub",
 	},
 	{
 		"id": "central_kitchen",
@@ -973,6 +1002,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Gudang pusat",
+		"module": "multi-outlet-hub/inventory",
 	},
 	{
 		"id": "central_purchasing",
@@ -983,6 +1013,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Pembelian terpusat",
+		"module": "multi-outlet-hub/purchasing",
 	},
 	{
 		"id": "central_menu_management",
@@ -1069,7 +1100,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit",
-		"module": "Frappe Version / Activity Log",
+		"module": "audit-hub/versions",
 	},
 	{
 		"id": "login_history",
@@ -1080,7 +1111,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit",
-		"module": "Frappe Activity Log",
+		"module": "audit-hub/login",
 	},
 	{
 		"id": "activity_timeline",
@@ -1091,6 +1122,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit",
+		"module": "audit-hub/timeline",
 	},
 	{
 		"id": "discount_analysis",
@@ -1101,6 +1133,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit",
+		"module": "audit-hub/discount",
 	},
 	{
 		"id": "void_analysis",
@@ -1111,8 +1144,9 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Audit",
+		"module": "audit-hub/void",
 	},
-	# ── INTEGRASI (5) ──────────────────────────────────────────────────────
+	# ── INTEGRASI (3) ──────────────────────────────────────────────────────
 	{
 		"id": "qris",
 		"label": "QRIS",
@@ -1125,28 +1159,6 @@ FEATURES: tuple[dict, ...] = (
 		"module": "payment_gateway Midtrans/Xendit",
 	},
 	{
-		"id": "gofood_integration",
-		"label": "GoFood Integration",
-		"category": "INTEGRASI",
-		"role": "Owner",
-		"min_tier": "Enterprise",
-		"status": FEATURE_STATUS_BUILT,
-		"settings_key": "enable_marketplace_orders",
-		"trigger_upgrade": "Marketplace",
-		"module": "marketplace webhook (generic)",
-	},
-	{
-		"id": "grabfood_integration",
-		"label": "GrabFood Integration",
-		"category": "INTEGRASI",
-		"role": "Owner",
-		"min_tier": "Enterprise",
-		"status": FEATURE_STATUS_BUILT,
-		"settings_key": "enable_marketplace_orders",
-		"trigger_upgrade": "Marketplace",
-		"module": "marketplace webhook (generic)",
-	},
-	{
 		"id": "accounting_integration",
 		"label": "Accounting Integration",
 		"category": "INTEGRASI",
@@ -1155,7 +1167,7 @@ FEATURES: tuple[dict, ...] = (
 		"status": FEATURE_STATUS_BUILT,
 		"settings_key": None,
 		"trigger_upgrade": "Akuntansi",
-		"module": "ERPNext GL + POS Invoice",
+		"module": "finance-hub/accounting + POS Invoice",
 	},
 	{
 		"id": "api_access",
@@ -1171,13 +1183,28 @@ FEATURES: tuple[dict, ...] = (
 )
 # fmt: on
 
+# Honest matrix progress — keep FEATURES defaults as product intent, override here
+# after audit so "Sudah ada" is not an overclaim. Do not mark production DocType
+# bridges as planned (that would block is_feature_operational); use partial.
+FEATURE_STATUS_OVERRIDES: dict[str, str] = {
+	# KITCHEN — hidden from matrix UI; kept partial until dedicated printer connector
+	"kitchen_printer": FEATURE_STATUS_PARTIAL,
+}
+
+for _feature in FEATURES:
+	_override = FEATURE_STATUS_OVERRIDES.get(_feature["id"])
+	if _override:
+		_feature["status"] = _override
+
 FEATURE_BY_ID = {row["id"]: row for row in FEATURES}
 
 
 def _validate_registry():
-	if len(FEATURES) != 101:
-		raise ValueError(f"Feature registry must contain 101 features, got {len(FEATURES)}")
-	if len(FEATURE_BY_ID) != 101:
+	# 98, bukan 99 — "end_of_day" dihapus karena duplikat "close_shift" (alias
+	# ke doctype POS Closing Entry yang sama, tanpa implementasi terpisah).
+	if len(FEATURES) != 98:
+		raise ValueError(f"Feature registry must contain 98 features, got {len(FEATURES)}")
+	if len(FEATURE_BY_ID) != 98:
 		raise ValueError("Duplicate feature ids in registry")
 
 
@@ -1314,20 +1341,22 @@ def list_features(
 	return rows
 
 
-def summarize_tiers() -> dict:
-	"""Counts per tier matching product matrix (cumulative)."""
+def summarize_tiers(*, visible_only: bool = False) -> dict:
+	"""Counts per tier matching product matrix (cumulative).
+
+	visible_only=True excludes HIDDEN / temporarily disabled features (matrix UI cards).
+	"""
+	rows = [f for f in FEATURES if (not visible_only or is_feature_ui_visible(f["id"]))]
 	counts = {}
 	for tier_name in SUBSCRIPTION_TIERS:
-		counts[tier_name] = sum(
-			1 for feature in FEATURES if is_tier_at_least(tier_name, feature["min_tier"])
-		)
+		counts[tier_name] = sum(1 for feature in rows if is_tier_at_least(tier_name, feature["min_tier"]))
 	return {
-		"total_features": len(FEATURES),
+		"total_features": len(rows),
 		"per_tier": counts,
 		"by_status": {
-			FEATURE_STATUS_BUILT: sum(1 for f in FEATURES if f["status"] == FEATURE_STATUS_BUILT),
-			FEATURE_STATUS_PARTIAL: sum(1 for f in FEATURES if f["status"] == FEATURE_STATUS_PARTIAL),
-			FEATURE_STATUS_PLANNED: sum(1 for f in FEATURES if f["status"] == FEATURE_STATUS_PLANNED),
+			FEATURE_STATUS_BUILT: sum(1 for f in rows if f["status"] == FEATURE_STATUS_BUILT),
+			FEATURE_STATUS_PARTIAL: sum(1 for f in rows if f["status"] == FEATURE_STATUS_PARTIAL),
+			FEATURE_STATUS_PLANNED: sum(1 for f in rows if f["status"] == FEATURE_STATUS_PLANNED),
 		},
 	}
 
@@ -1402,6 +1431,6 @@ def serialize_feature_matrix(tier: str | None = None) -> dict:
 		"subscription_tier": site_tier,
 		"view_tier": view_tier,
 		"preview_tier": view_tier if view_tier != site_tier else None,
-		"summary": summarize_tiers(),
+		"summary": summarize_tiers(visible_only=True),
 		"features": features,
 	}

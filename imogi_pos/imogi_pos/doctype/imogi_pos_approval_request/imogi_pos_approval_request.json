@@ -10,6 +10,7 @@
   "status",
   "reference_name",
   "amount",
+  "required_role",
   "reason",
   "payload_json",
   "requested_by",
@@ -22,7 +23,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Approval Type",
-   "options": "Discount\nVoid\nRefund\nComplimentary",
+   "options": "Discount\nVoid\nRefund\nComplimentary\nWaste\nSpoilage\nOpname\nAdjustment\nPurchase Order\nCash In\nCash Out",
    "reqd": 1
   },
   {
@@ -31,7 +32,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected"
+   "options": "Pending\nApproved\nRejected\nDibatalkan"
   },
   {
    "fieldname": "reference_name",
@@ -43,6 +44,14 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "label": "Amount"
+  },
+  {
+   "description": "Diisi otomatis dari Hirarki Approval PO (kalau tabel tier terisi). Kosong = mode PIN lama.",
+   "fieldname": "required_role",
+   "fieldtype": "Select",
+   "label": "Role yang Dibutuhkan",
+   "options": "\nIMOGI Purchasing\nIMOGI Supervisor\nIMOGI Inventory\nIMOGI Manager\nIMOGI Area Manager\nIMOGI Finance\nIMOGI Owner",
+   "read_only": 1
   },
   {
    "fieldname": "reason",
@@ -96,22 +105,16 @@
    "write": 1
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "Sales Manager",
-   "write": 1
+   "role": "Sales Manager"
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "Sales User",
-   "write": 1
+   "role": "Sales User"
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "IMOGI Cashier",
-   "write": 1
+   "role": "IMOGI Cashier"
   }
  ],
  "sort_field": "modified",

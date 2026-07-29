@@ -88,16 +88,19 @@ def _sheet_rows_to_dicts(rows):
 
 
 def _load_csv_rows(csv_text):
+	from imogi_pos.imogi_pos.utils.menu_import_helpers import _detect_csv_delimiter
+
 	if not csv_text:
 		frappe.throw(_("Upload file CSV/Excel atau tempel teks CSV"))
 
-	reader = csv.DictReader(io.StringIO(csv_text))
+	delimiter = _detect_csv_delimiter(csv_text)
+	reader = csv.DictReader(io.StringIO(csv_text), delimiter=delimiter)
 	if not reader.fieldnames:
 		frappe.throw(_("File tidak memiliki baris header"))
 
 	rows = []
 	for idx, raw in enumerate(reader, start=2):
-		row = dict(raw)
+		row = {k: v for k, v in dict(raw).items() if k is not None}
 		row["_row"] = idx
 		rows.append(row)
 	return rows

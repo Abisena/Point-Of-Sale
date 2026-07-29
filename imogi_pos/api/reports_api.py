@@ -175,6 +175,8 @@ def get_refund_report(date=None, date_from=None, date_to=None, company=None, pos
 def get_extended_reports(date=None, company=None, pos_profile=None, branch=None):
 	"""Bundle report panels for dashboard (skips locked tiers gracefully)."""
 	_require_report_access()
+	import inspect
+
 	from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
 
 	settings = get_settings()
@@ -185,6 +187,7 @@ def get_extended_reports(date=None, company=None, pos_profile=None, branch=None)
 		get_food_cost_report,
 		get_kitchen_performance_report,
 		get_table_turnover_report,
+		get_tax_report,
 		get_void_analysis,
 		get_waste_report,
 	)
@@ -196,18 +199,35 @@ def get_extended_reports(date=None, company=None, pos_profile=None, branch=None)
 		("refund_report", "refund_report", get_refund_report),
 		("food_cost_report", "food_cost_report", get_food_cost_report),
 		("waste_report", "waste_report", get_waste_report),
+		("tax_report", "tax_report", get_tax_report),
 		("table_turnover_report", "table_turnover_report", get_table_turnover_report),
 		("customer_visit_report", "customer_visit_report", get_customer_visit_report),
 		("kitchen_performance", "kitchen_performance", get_kitchen_performance_report),
 		("discount_analysis", "discount_analysis", get_discount_analysis),
 		("void_analysis", "void_analysis", get_void_analysis),
 	)
+
+	def _call_report(fn):
+		params = inspect.signature(fn).parameters
+		kwargs = {}
+		for key, value in common.items():
+			if key in params:
+				kwargs[key] = value
+		# Dashboard passes a single `date`; map it onto date_from/date_to when needed.
+		if date and "date" not in params:
+			if "date_from" in params and "date_from" not in kwargs:
+				kwargs["date_from"] = date
+			if "date_to" in params and "date_to" not in kwargs:
+				kwargs["date_to"] = date
+		return fn(**kwargs)
+
 	out = {}
 	for key, feature_id, fn in specs:
 		if is_feature_operational(feature_id, settings):
 			try:
-				out[key] = fn(**common)
+				out[key] = _call_report(fn)
 			except Exception:
+				frappe.log_error(title=f"IMOGI extended report failed: {key}")
 				out[key] = {"rows": [], "error": True}
 		else:
 			out[key] = {"rows": [], "locked": True}

@@ -61,6 +61,7 @@ def list_areas_for_service(company=None, floor=None, active_only=1):
 			"company",
 			"sort_order",
 			"is_active",
+			"floor_background",
 			"description",
 		],
 		order_by="sort_order asc, area_name asc",
@@ -76,6 +77,12 @@ def get_floor_background(floor_name: str | None) -> str | None:
 	if not floor_name or not frappe.db.exists("IMOGI Restaurant Floor", floor_name):
 		return None
 	return frappe.db.get_value("IMOGI Restaurant Floor", floor_name, "floor_background") or None
+
+
+def get_area_background(area_name: str | None) -> str | None:
+	if not area_name or not frappe.db.exists("IMOGI Restaurant Area", area_name):
+		return None
+	return frappe.db.get_value("IMOGI Restaurant Area", area_name, "floor_background") or None
 
 
 def ensure_default_floor(company=None, floor_label: str = "Lantai Utama"):
@@ -155,6 +162,34 @@ _AREA_TYPES = {
 	"Smoking",
 	"Other",
 }
+
+
+def restaurant_table_doc_name(restaurant_floor: str, table_number: str) -> str:
+	"""Document id — table numbers may repeat on different floors."""
+	floor = (restaurant_floor or "").strip()
+	number = (table_number or "").strip()
+	if not floor or not number:
+		return number
+	return f"{floor} / {number}"
+
+
+def table_number_exists_on_floor(restaurant_floor, table_number, exclude_name=None):
+	if not restaurant_floor or not table_number:
+		return None
+	filters = {
+		"restaurant_floor": restaurant_floor,
+		"table_number": table_number,
+	}
+	if exclude_name:
+		filters["name"] = ["!=", exclude_name]
+	return frappe.db.get_value("IMOGI Restaurant Table", filters, "name")
+
+
+def assert_table_number_available_on_floor(restaurant_floor, table_number, exclude_name=None):
+	if not restaurant_floor or not table_number:
+		return
+	if table_number_exists_on_floor(restaurant_floor, table_number, exclude_name=exclude_name):
+		frappe.throw(_("Meja {0} sudah ada di lantai ini").format(table_number))
 
 
 def sync_table_area_fields(table_name: str, restaurant_area: str | None):

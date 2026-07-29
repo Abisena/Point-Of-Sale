@@ -10,22 +10,46 @@ const IMOGI_TS_STATUS_LABEL = {
 	Reserved: __("Dipesan"),
 };
 
+function imogi_ts_table_in_use(table) {
+	return table?.status === "Occupied" || !!table?.open_order;
+}
+
+function imogi_ts_table_display(table) {
+	if (imogi_ts_table_in_use(table)) {
+		return {
+			status: "Occupied",
+			label: IMOGI_TS_STATUS_LABEL.Occupied,
+			className: IMOGI_TABLE_STATUS_CLASS.Occupied,
+		};
+	}
+	const status = table?.status || "Available";
+	return {
+		status,
+		label: IMOGI_TS_STATUS_LABEL[status] || status,
+		className: IMOGI_TABLE_STATUS_CLASS[status] || "",
+	};
+}
+
 const IMOGI_TS_FLOOR_CHIP_MAX = 3;
 const IMOGI_TS_AREA_CHIP_MAX = 4;
 
-const IMOGI_TS_V2_STYLE_ID = "imogi-ts-v2-css-d";
+const IMOGI_TS_V2_STYLE_ID = "imogi-ts-v2-css-h";
 
 function imogi_ts_ensure_v2_css() {
 	const legacy_id = "imogi-ts-v2-css";
 	document.getElementById(legacy_id)?.remove();
 	document.getElementById("imogi-ts-v2-css-c")?.remove();
+	document.getElementById("imogi-ts-v2-css-d")?.remove();
+	document.getElementById("imogi-ts-v2-css-e")?.remove();
+	document.getElementById("imogi-ts-v2-css-f")?.remove();
+	document.getElementById("imogi-ts-v2-css-g")?.remove();
 	if (document.getElementById(IMOGI_TS_V2_STYLE_ID)) {
 		return;
 	}
 	frappe.dom.set_style(
 		`
 		.imogi-ts-shell--v2 {
-			--ts-bg: #eef1f5;
+			--ts-bg: #fff;
 			--ts-surface: #fff;
 			--ts-border: #e4e8ee;
 			--ts-text: #1a2332;
@@ -35,7 +59,11 @@ function imogi_ts_ensure_v2_css() {
 			--ts-occupied: #ea580c;
 			--ts-reserved: #2563eb;
 			background: var(--ts-bg);
+			display: flex;
+			flex: 1;
+			flex-direction: column;
 			gap: 0;
+			min-height: 0;
 		}
 		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 {
 			background: var(--ts-bg);
@@ -94,9 +122,11 @@ function imogi_ts_ensure_v2_css() {
 		}
 		.imogi-ts-shell--v2 .imogi-ts-layout--v2 {
 			display: grid;
+			flex: 1;
 			gap: 0;
 			grid-template-columns: minmax(0, 1fr) 320px;
 			min-height: 0;
+			overflow: hidden;
 		}
 		@media (max-width: 1100px) {
 			.imogi-ts-shell--v2 .imogi-ts-layout--v2 {
@@ -105,9 +135,15 @@ function imogi_ts_ensure_v2_css() {
 		}
 		.imogi-ts-shell--v2 .imogi-ts-floor {
 			display: flex;
+			flex: 1;
 			flex-direction: column;
 			min-height: 0;
+			overflow: hidden;
 			padding: 10px 14px 14px;
+		}
+		.imogi-ts-shell--v2 .imogi-ts-floor-head,
+		.imogi-ts-shell--v2 .imogi-ts-filter-bar {
+			flex-shrink: 0;
 		}
 		.imogi-ts-shell--v2 .imogi-ts-floor-head {
 			align-items: center;
@@ -506,15 +542,32 @@ function imogi_ts_ensure_v2_css() {
 		}
 		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-layout--v2 {
 			flex: 1;
+			grid-template-rows: minmax(0, 1fr);
 			min-height: 0;
 			overflow: hidden;
 		}
 		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-floor {
+			flex: 1;
 			min-height: 0;
 			overflow: hidden;
 		}
 		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-table-grid {
 			min-height: 0;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-table-grid.is-floor {
+			align-items: stretch;
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			justify-content: stretch;
+			min-height: 0;
+			overflow: hidden;
+			padding: 0;
+		}
+		body.imogi-table-service-fullscreen .imogi-ts-shell--v2 .imogi-ts-table-grid.is-grouped {
+			flex: 1;
+			min-height: 0;
+			overflow: auto;
 		}
 		`,
 		IMOGI_TS_V2_STYLE_ID
@@ -913,7 +966,17 @@ function imogi_ts_decorate_dialog(dialog, { title, subtitle, icon, wide = false 
 	$header.find(".close").on("click", () => dialog.hide());
 }
 
-function imogi_ts_open_form_dialog({ title, subtitle, icon, fields, primary_label, wide, on_submit }) {
+function imogi_ts_open_form_dialog({
+	title,
+	subtitle,
+	icon,
+	fields,
+	primary_label,
+	secondary_label,
+	wide,
+	on_submit,
+	on_secondary,
+}) {
 	const dialog = new frappe.ui.Dialog({
 		title: title || "",
 		fields: fields || [],
@@ -925,6 +988,15 @@ function imogi_ts_open_form_dialog({ title, subtitle, icon, fields, primary_labe
 			}
 		},
 	});
+	if (secondary_label && on_secondary) {
+		dialog.set_secondary_action_label(secondary_label);
+		dialog.set_secondary_action(() => {
+			const keep_open = on_secondary(dialog) === false;
+			if (!keep_open) {
+				dialog.hide();
+			}
+		});
+	}
 	imogi_ts_decorate_dialog(dialog, { title, subtitle, icon, wide });
 	dialog.show();
 	return dialog;
@@ -978,6 +1050,63 @@ function imogi_ts_build_area_select_options(areas, selected) {
 		.join("");
 }
 
+const IMOGI_TS_AREA_TYPES = ["Indoor", "Outdoor", "VIP", "Bar", "Private Room", "Smoking", "Other"];
+
+function imogi_ts_area_type_options(current) {
+	return IMOGI_TS_AREA_TYPES.map(
+		(t) => `<option value="${t}" ${(current || "Indoor") === t ? "selected" : ""}>${__(t)}</option>`
+	).join("");
+}
+
+function imogi_ts_area_table_count(area_name, tables) {
+	return (tables || []).filter((t) => t.restaurant_area === area_name).length;
+}
+
+function imogi_ts_build_manage_areas_html(areas, tables) {
+	if (!areas.length) {
+		return `<div class="imogi-ts-dialog__empty-note">${__(
+			"Belum ada ruangan di lantai ini. Tambahkan ruangan pertama di bawah."
+		)}</div>`;
+	}
+	const rows = areas
+		.map((area) => {
+			const table_count = imogi_ts_area_table_count(area.name, tables);
+			const in_use = table_count > 0;
+			const inactive = !cint(area.is_active);
+			const has_bg = !!area.floor_background;
+			return `
+				<div class="imogi-ts-manage-row imogi-ts-manage-area-row ${in_use ? "is-occupied" : ""} ${inactive ? "is-inactive" : ""}" data-name="${frappe.utils.escape_html(area.name)}">
+					<input type="text" class="imogi-ts-manage-area-name" value="${frappe.utils.escape_html(area.area_name || "")}" />
+					<select class="imogi-ts-manage-area-type">${imogi_ts_area_type_options(area.area_type)}</select>
+					<span class="imogi-ts-manage-area-tables">${table_count} ${__("meja")}</span>
+					<span class="imogi-ts-manage-area-bg">
+						${has_bg ? `<i class="fa fa-picture-o" title="${__("Denah sudah diunggah")}"></i>` : `<span class="imogi-ts-manage-area-bg-empty">—</span>`}
+						<button type="button" class="btn btn-xs btn-default imogi-ts-manage-area-bg-btn">${__("Denah")}</button>
+					</span>
+					<label class="imogi-ts-manage-area-active" title="${__("Aktif")}">
+						<input type="checkbox" class="imogi-ts-manage-area-active-cb" ${cint(area.is_active) ? "checked" : ""} />
+						${__("Aktif")}
+					</label>
+					<button type="button" class="imogi-ts-manage-btn-save">${__("Simpan")}</button>
+					<button type="button" class="imogi-ts-manage-btn-del" ${in_use ? `disabled title="${__("Masih ada meja di ruangan ini")}"` : ""}>${__(
+						"Hapus"
+					)}</button>
+				</div>`;
+		})
+		.join("");
+	return `
+		<div class="imogi-ts-manage-head imogi-ts-manage-area-head">
+			<span>${__("Nama Ruangan")}</span>
+			<span>${__("Jenis")}</span>
+			<span>${__("Meja")}</span>
+			<span>${__("Denah")}</span>
+			<span>${__("Status")}</span>
+			<span></span>
+			<span></span>
+		</div>
+		<div class="imogi-ts-manage-list">${rows}</div>`;
+}
+
 function imogi_ts_build_manage_tables_html(tables, areas) {
 	if (!tables.length) {
 		return `<div class="imogi-ts-dialog__empty-note">${__("Belum ada meja. Tambahkan meja pertama di bawah.")}</div>`;
@@ -991,7 +1120,7 @@ function imogi_ts_build_manage_tables_html(tables, areas) {
 			.join("");
 	const rows = tables
 		.map((table) => {
-			const in_use = table.status === "Occupied" || !!table.open_order;
+			const in_use = imogi_ts_table_in_use(table);
 			const status_label = IMOGI_TS_STATUS_LABEL[table.status] || table.status || "Available";
 			return `
 				<div class="imogi-ts-manage-row ${in_use ? "is-occupied" : ""}" data-name="${frappe.utils.escape_html(table.name)}">
@@ -1164,26 +1293,127 @@ frappe.pages["table-service"].on_page_hide = function () {
 	imogi_ts_apply_fullscreen(false);
 };
 
-const IMOGI_TS_ENHANCE_STYLE_ID = "imogi-ts-enhance-css-v6";
+const IMOGI_TS_ENHANCE_STYLE_ID = "imogi-ts-enhance-css-v20";
 
 function imogi_ts_ensure_enhance_css() {
 	document.getElementById("imogi-ts-enhance-css-v4")?.remove();
 	document.getElementById("imogi-ts-enhance-css-v5")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v6")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v7")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v8")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v9")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v10")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v11")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v12")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v13")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v14")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v15")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v16")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v17")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v18")?.remove();
+	document.getElementById("imogi-ts-enhance-css-v19")?.remove();
 	if (document.getElementById(IMOGI_TS_ENHANCE_STYLE_ID)) return;
 	frappe.dom.set_style(
 		`
-		.imogi-ts-shell--v2 .imogi-ts-kpi-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+		.imogi-ts-shell--v2 .imogi-ts-kpi-strip { flex-shrink: 0; gap: 6px; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 4px 10px; }
 		@media (max-width: 1100px) { .imogi-ts-shell--v2 .imogi-ts-kpi-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 		@media (max-width: 640px) { .imogi-ts-shell--v2 .imogi-ts-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+		.imogi-ts-shell--v2 .imogi-ts-kpi { gap: 8px; padding: 5px 8px; }
+		.imogi-ts-shell--v2 .imogi-ts-kpi__icon { font-size: 12px; height: 28px; width: 28px; }
+		.imogi-ts-shell--v2 .imogi-ts-kpi__val { font-size: 16px; }
+		.imogi-ts-shell--v2 .imogi-ts-kpi__label { font-size: 9px; margin-top: 2px; }
+		.imogi-ts-shell--v2 .imogi-ts-floor { padding: 4px 10px 6px; }
+		.imogi-ts-shell--v2 .imogi-ts-floor-head { gap: 6px; margin-bottom: 2px; }
+		.imogi-ts-shell--v2 .imogi-ts-floor-title { font-size: 14px; }
+		.imogi-ts-shell--v2 .imogi-ts-floor-sub { font-size: 11px; margin: 1px 0 0; }
+		.imogi-ts-filter-bar { gap: 6px; margin-bottom: 4px; }
+		.imogi-ts-filter-label { font-size: 9px !important; }
+		.imogi-ts-shell--v2 .imogi-ts-floor-chip,
+		.imogi-ts-shell--v2 .imogi-ts-zone-chip { font-size: 11px; padding: 4px 11px; }
+		.imogi-ts-shell--v2 .imogi-ts-layout--v2 { grid-template-columns: minmax(0, 1fr) 248px; grid-template-rows: minmax(0, 1fr); transition: grid-template-columns .2s ease; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-context-meta,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-context-meta { display: none; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-sub.is-context,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor-sub.is-context { display: none; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor { padding: 2px 8px 4px; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-head__title,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor-head__title { display: none; }
+		.imogi-ts-floor-controls { display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-controls,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor-controls { align-items: center; flex-direction: row; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; margin-bottom: 4px; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-filter-bar,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-filter-bar { align-items: center; flex: 1 1 auto; margin-bottom: 0; min-width: 0; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-filter-groups,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-filter-groups { align-items: center; gap: 10px 14px; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-filter-group,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-filter-group { align-items: center; flex-direction: row; gap: 6px; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-filter-label,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-filter-label { line-height: 1; margin: 0; white-space: nowrap; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-head,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor-head { flex-shrink: 0; justify-content: flex-end; margin-bottom: 0; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-toolbar,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-floor-toolbar { align-items: center; }
+		.imogi-ts-shell--v2.is-floor-view.is-sidebar-collapsed .imogi-ts-layout--v2,
+		.imogi-ts-shell--v2.is-list-view.is-sidebar-collapsed .imogi-ts-layout--v2 { grid-template-columns: minmax(0, 1fr); }
+		.imogi-ts-shell--v2.is-floor-view.is-sidebar-collapsed .imogi-ts-sidebar,
+		.imogi-ts-shell--v2.is-list-view.is-sidebar-collapsed .imogi-ts-sidebar { display: none; }
+		.imogi-ts-sidebar-toggle,
+		.imogi-ts-floor-expand-btn { align-items: center; background: #fff; border: 1px solid var(--ts-border, #e4e8ee); border-radius: 8px; color: var(--ts-muted, #6b7a90); cursor: pointer; display: none; font-size: 12px; height: 32px; justify-content: center; padding: 0; width: 32px; }
+		.imogi-ts-sidebar-toggle:hover,
+		.imogi-ts-floor-expand-btn:hover { border-color: #cbd5e1; color: var(--ts-text, #1a2332); }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-sidebar-toggle,
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-floor-expand-btn,
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-sidebar-toggle { display: inline-flex; }
+		.imogi-ts-floor-expand-btn.is-expanded { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-kpi-strip,
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-topbar,
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-sidebar { display: none !important; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-layout--v2 { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-floor { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 2px 8px 4px; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-floor-controls { flex-shrink: 0; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-table-grid.is-floor { flex: 1 1 auto; min-height: 0; }
+		.imogi-ts-shell--v2.is-floor-expanded .imogi-ts-floor-canvas { min-height: 0; }
+		.imogi-ts-shell--v2 .imogi-ts-side-head { padding: 8px 10px; }
+		.imogi-ts-shell--v2 .imogi-ts-side-head h4 { font-size: 12px; }
+		.imogi-ts-shell--v2 .imogi-ts-side-panel { min-height: 160px; }
 		.imogi-ts-kpi--reserved .imogi-ts-kpi__icon { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
 		.imogi-ts-refresh-meta { color: var(--ts-muted, #6b7a90); font-size: 11px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
 		.imogi-ts-shell--v2 .imogi-ts-table-grid.is-grouped { display: block; overflow: auto; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-grid.is-grouped { flex: 1 1 auto; min-height: min(420px, 52vh); overflow: auto; padding: 0; }
 		.imogi-ts-zone-group { margin-bottom: 18px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-zone-group { margin-bottom: 10px; }
 		.imogi-ts-zone-group:last-child { margin-bottom: 0; }
 		.imogi-ts-zone-group-head { align-items: center; color: var(--ts-text, #1a2332); display: flex; font-size: 13px; font-weight: 800; gap: 8px; letter-spacing: .02em; margin: 0 0 10px; text-transform: uppercase; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-zone-group.is-zone-scoped .imogi-ts-zone-group-head { display: none; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-zone-group-head { font-size: 11px; margin: 0 0 6px; }
 		.imogi-ts-zone-group-head .imogi-ts-zone-group-count { background: #eef2f7; border-radius: 999px; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 9px; }
 		.imogi-ts-zone-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-zone-grid { gap: 10px; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); }
 		@media (min-width: 1400px) { .imogi-ts-zone-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); } }
+		@media (min-width: 1400px) { .imogi-ts-shell--v2.is-list-view .imogi-ts-zone-grid { grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); } }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-card__main { padding: 10px 12px 8px 14px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-num { font-size: 18px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-meta-row { font-size: 11px; gap: 6px; margin-top: 2px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-order { padding: 6px 12px 6px 14px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-order-ref { font-size: 11px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-order-meta { font-size: 11px; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-actions {
+			display: grid;
+			gap: 6px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			padding: 8px 10px 10px 14px;
+		}
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-actions--single { grid-template-columns: 1fr; }
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-actions .imogi-ts-act {
+			flex: unset;
+			font-size: 10px;
+			gap: 4px;
+			min-height: 32px;
+			min-width: 0;
+			padding: 6px 8px;
+		}
+		.imogi-ts-shell--v2.is-list-view .imogi-ts-table-actions .imogi-ts-act i { font-size: 11px; width: 12px; }
 		.imogi-ts-table-substatus { align-items: center; color: var(--ts-muted, #6b7a90); display: flex; flex-wrap: wrap; font-size: 11px; font-weight: 700; gap: 6px; margin-top: 4px; }
 		.imogi-ts-elapsed { align-items: center; display: inline-flex; gap: 4px; }
 		.imogi-ts-elapsed.is-warn { color: #b45309; }
@@ -1195,6 +1425,17 @@ function imogi_ts_ensure_enhance_css() {
 		.imogi-ts-chip-mini--kpending { background: #ffedd5; color: #9a3412; }
 		.imogi-ts-chip-mini--kdone { background: #d1fae5; color: #065f46; }
 		.imogi-ts-manage-row { align-items: center; border: 1px solid #e4e8ee; border-radius: 10px; display: grid; gap: 8px; grid-template-columns: 1fr 0.7fr 1fr 0.8fr auto auto; margin-bottom: 8px; padding: 8px 10px; }
+		.imogi-ts-manage-area-head,
+		.imogi-ts-manage-area-row { grid-template-columns: 1.15fr 0.95fr 0.55fr 0.8fr 0.65fr auto auto; }
+		.imogi-ts-manage-area-bg { align-items: center; display: inline-flex; gap: 6px; justify-content: center; }
+		.imogi-ts-manage-area-bg .fa-picture-o { color: #16a34a; font-size: 13px; }
+		.imogi-ts-manage-area-bg-empty { color: #cbd5e1; }
+		.imogi-ts-manage-area-name,
+		.imogi-ts-manage-area-type { border: 1px solid #d4d4d8; border-radius: 7px; font-size: 12px; padding: 5px 8px; width: 100%; }
+		.imogi-ts-manage-area-tables { color: #64748b; font-size: 11px; font-weight: 700; text-align: center; white-space: nowrap; }
+		.imogi-ts-manage-area-active { align-items: center; color: #475569; display: inline-flex; font-size: 11px; font-weight: 700; gap: 4px; justify-content: center; margin: 0; white-space: nowrap; }
+		.imogi-ts-manage-area-active input { margin: 0; }
+		.imogi-ts-manage-area-row.is-inactive { opacity: .72; }
 		.imogi-ts-manage-row select { border: 1px solid #d4d4d8; border-radius: 7px; font-size: 12px; padding: 5px 8px; width: 100%; }
 		.imogi-ts-manage-row.is-occupied { background: #fff7ed; border-color: #fed7aa; }
 		.imogi-ts-manage-row input { border: 1px solid #d4d4d8; border-radius: 7px; font-size: 12px; padding: 5px 8px; width: 100%; }
@@ -1208,30 +1449,63 @@ function imogi_ts_ensure_enhance_css() {
 		.imogi-ts-order-modal-cell { background: #f8fafc; border: 1px solid #e4e8ee; border-radius: 10px; padding: 10px 12px; }
 		.imogi-ts-order-modal-cell label { color: #64748b; display: block; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 3px; text-transform: uppercase; }
 		.imogi-ts-order-modal-cell .val { color: #1a2332; font-size: 14px; font-weight: 700; }
+		.imogi-ts-kitchen-tracking-host { margin-top: 12px; }
+		.imogi-ts-kitchen-tracking { background: #fff; border: 1px solid #e4e8ee; border-radius: 10px; overflow: hidden; }
+		.imogi-ts-kitchen-tracking__head { align-items: center; background: #f8fafc; border-bottom: 1px solid #e4e8ee; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding: 8px 10px; }
+		.imogi-ts-kitchen-tracking__title { color: #1e293b; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+		.imogi-ts-kitchen-tracking__title i { color: #ea580c; margin-right: 6px; }
+		.imogi-ts-kitchen-tracking__summary { display: flex; flex-wrap: wrap; gap: 6px; }
+		.imogi-ts-kitchen-sum { border-radius: 999px; font-size: 10px; font-weight: 800; padding: 3px 8px; }
+		.imogi-ts-kitchen-sum.is-pending { background: #fef3c7; color: #92400e; }
+		.imogi-ts-kitchen-sum.is-preparing { background: #ffedd5; color: #9a3412; }
+		.imogi-ts-kitchen-sum.is-ready { background: #dcfce7; color: #166534; }
+		.imogi-ts-kitchen-tracking__list { list-style: none; margin: 0; max-height: min(42vh, 280px); overflow: auto; padding: 6px; }
+		.imogi-ts-kitchen-item { align-items: center; border: 1px solid #e4e8ee; border-radius: 8px; display: flex; gap: 8px; justify-content: space-between; margin-bottom: 6px; padding: 8px 10px; }
+		.imogi-ts-kitchen-item:last-child { margin-bottom: 0; }
+		.imogi-ts-kitchen-item-main { align-items: flex-start; display: flex; flex: 1 1 auto; gap: 8px; min-width: 0; }
+		.imogi-ts-kitchen-item-qty { color: #64748b; flex-shrink: 0; font-size: 12px; font-weight: 800; min-width: 24px; }
+		.imogi-ts-kitchen-item-name { color: #1e293b; font-size: 12px; font-weight: 700; line-height: 1.35; min-width: 0; }
+		.imogi-ts-kitchen-item-note { color: #64748b; display: block; font-size: 10px; font-weight: 600; margin-top: 2px; }
+		.imogi-ts-kitchen-item-badge { border-radius: 999px; flex-shrink: 0; font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 4px 8px; text-transform: uppercase; white-space: nowrap; }
+		.imogi-ts-kitchen-item.is-pending { background: #fffbeb; border-color: #fde68a; }
+		.imogi-ts-kitchen-item.is-pending .imogi-ts-kitchen-item-badge { background: #fef3c7; color: #92400e; }
+		.imogi-ts-kitchen-item.is-preparing { background: #fff7ed; border-color: #fdba74; }
+		.imogi-ts-kitchen-item.is-preparing .imogi-ts-kitchen-item-badge { background: #ffedd5; color: #9a3412; }
+		.imogi-ts-kitchen-item.is-ready { background: #f0fdf4; border-color: #bbf7d0; }
+		.imogi-ts-kitchen-item.is-ready .imogi-ts-kitchen-item-badge { background: #dcfce7; color: #166534; }
+		.imogi-ts-kitchen-item.is-mixed { background: #f8fafc; border-color: #cbd5e1; }
+		.imogi-ts-kitchen-item.is-mixed .imogi-ts-kitchen-item-badge { background: #e2e8f0; color: #334155; }
+		.imogi-ts-kitchen-item-breakdown { color: #64748b; display: block; font-size: 10px; font-weight: 700; margin-top: 3px; }
+		.imogi-ts-kitchen-tracking--empty .imogi-ts-kitchen-tracking__empty,
+		.imogi-ts-kitchen-tracking--loading .imogi-ts-kitchen-tracking__empty { color: #64748b; font-size: 12px; font-weight: 600; padding: 12px 10px; text-align: center; }
 		.imogi-ts-view-toggle { display: inline-flex; background: #fff; border: 1px solid var(--ts-border, #e4e8ee); border-radius: 8px; overflow: hidden; }
 		.imogi-ts-view-toggle button { background: transparent; border: none; color: var(--ts-muted, #6b7a90); cursor: pointer; font-size: 12px; font-weight: 700; padding: 6px 12px; }
 		.imogi-ts-view-toggle button.is-active { background: var(--ts-accent, #714b67); color: #fff; }
-		.imogi-ts-table-grid.is-floor { display: block; overflow: visible; }
-		.imogi-ts-floor-canvas { background-color: #f1f5f9; background-position: center; background-repeat: no-repeat; background-size: cover; border: 1px solid var(--ts-border, #e4e8ee); border-radius: 14px; min-height: 540px; overflow: hidden; position: relative; width: 100%; }
-		.imogi-ts-floor-canvas::before { background-image: linear-gradient(rgba(148,163,184,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.16) 1px, transparent 1px); background-size: 40px 40px; content: ""; inset: 0; pointer-events: none; position: absolute; }
+		.imogi-ts-shell--v2.is-floor-view .imogi-ts-table-grid.is-floor { flex: 1 1 auto; min-height: min(420px, 52vh); }
+		.imogi-ts-table-grid.is-floor { align-items: stretch; display: flex; flex: 1 1 auto; flex-direction: column; justify-content: stretch; min-height: min(420px, 52vh); overflow: hidden; padding: 0; }
+		.imogi-ts-floor-canvas { background-color: #fff; background-position: center; background-repeat: no-repeat; background-size: cover; border: 1px solid var(--ts-border, #e4e8ee); border-radius: 10px; flex: 1 1 auto; height: auto; min-height: min(280px, 45vh); overflow: visible; position: relative; width: 100%; }
+		.imogi-ts-floor-canvas.has-bg { background-color: #fff; background-size: contain; }
+		.imogi-ts-floor-canvas.is-sized { height: 100%; width: 100%; }
+		.imogi-ts-floor-canvas:not(.is-sized) { min-height: clamp(280px, 58vh, 100%); width: 100%; }
+		.imogi-ts-floor-canvas::before { background-image: linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px); background-size: 40px 40px; content: ""; inset: 0; pointer-events: none; position: absolute; }
 		.imogi-ts-floor-canvas.has-bg::before { background-image: none; }
 		.imogi-ts-floor-canvas.is-editing { box-shadow: inset 0 0 0 2px #c7d2fe; cursor: crosshair; touch-action: none; }
 		.imogi-ts-floor-canvas.is-editing .imogi-ts-chair { pointer-events: none; }
 		.imogi-ts-floor-node.is-dragging { cursor: grabbing !important; transition: none !important; z-index: 30 !important; }
 		.imogi-ts-floor-empty { color: #94a3b8; left: 50%; position: absolute; text-align: center; top: 50%; transform: translate(-50%, -50%); z-index: 2; }
 		.imogi-ts-floor-empty i { display: block; font-size: 30px; margin-bottom: 8px; }
-		.imogi-ts-floor-node { align-items: center; background: #fff; border: 2px solid #cbd5e1; border-radius: 16px; box-shadow: 0 2px 10px rgba(15,23,42,.12); display: flex; flex-direction: column; gap: 3px; height: 118px; justify-content: center; padding: 8px; position: absolute; transform: translate(-50%, -50%); transition: box-shadow .15s, transform .1s; user-select: none; width: 118px; z-index: 3; }
+		.imogi-ts-floor-node { align-items: center; background: #fff; border: 2px solid #cbd5e1; border-radius: 12px; box-shadow: 0 2px 8px rgba(15,23,42,.1); display: flex; flex-direction: column; gap: 1px; height: 76px; justify-content: center; padding: 5px; position: absolute; transition: box-shadow .15s; user-select: none; width: 76px; z-index: 3; }
 		.imogi-ts-floor-node.shape-round { border-radius: 50%; }
-		.imogi-ts-floor-node.shape-bar { border-radius: 12px; height: 76px; width: 168px; }
+		.imogi-ts-floor-node.shape-bar { border-radius: 8px; height: 52px; width: 110px; }
 		.imogi-ts-floor-node:hover { box-shadow: 0 6px 20px rgba(15,23,42,.2); z-index: 6; }
 		.imogi-ts-floor-node.is-available { border-color: #16a34a; }
 		.imogi-ts-floor-node.is-occupied { border-color: #ea580c; background: #fff7ed; }
 		.imogi-ts-floor-node.is-reserved { border-color: #2563eb; background: #eff6ff; }
-		.imogi-ts-floor-node .imogi-ts-fn-num { color: #1a2332; font-size: 19px; font-weight: 800; line-height: 1; }
-		.imogi-ts-floor-node .imogi-ts-fn-cap { color: #64748b; font-size: 10px; font-weight: 700; }
-		.imogi-ts-floor-node .imogi-ts-fn-zone { background: #eef2f7; border-radius: 999px; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .03em; margin-top: 1px; max-width: 92px; overflow: hidden; padding: 1px 7px; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-		.imogi-ts-floor-node .imogi-ts-fn-info { color: #9a3412; font-size: 10px; font-weight: 800; line-height: 1.15; text-align: center; }
-		.imogi-ts-floor-node .imogi-ts-fn-dot { border-radius: 999px; height: 8px; position: absolute; right: 9px; top: 9px; width: 8px; z-index: 2; }
+		.imogi-ts-floor-node .imogi-ts-fn-num { color: #1a2332; font-size: 14px; font-weight: 800; line-height: 1; }
+		.imogi-ts-floor-node .imogi-ts-fn-cap { color: #64748b; font-size: 8px; font-weight: 700; }
+		.imogi-ts-floor-node .imogi-ts-fn-zone { background: #eef2f7; border-radius: 999px; color: #64748b; font-size: 8px; font-weight: 800; letter-spacing: .03em; margin-top: 1px; max-width: 72px; overflow: hidden; padding: 1px 6px; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+		.imogi-ts-floor-node .imogi-ts-fn-info { color: #9a3412; font-size: 8px; font-weight: 800; line-height: 1.1; text-align: center; }
+		.imogi-ts-floor-node .imogi-ts-fn-dot { border-radius: 999px; height: 7px; position: absolute; right: 7px; top: 7px; width: 7px; z-index: 2; }
 		.imogi-ts-floor-node.is-available .imogi-ts-fn-dot { background: #16a34a; }
 		.imogi-ts-floor-node.is-occupied .imogi-ts-fn-dot { background: #ea580c; }
 		.imogi-ts-floor-node.is-reserved .imogi-ts-fn-dot { background: #2563eb; }
@@ -1242,6 +1516,11 @@ function imogi_ts_ensure_enhance_css() {
 		.imogi-ts-floor-node.is-available .imogi-ts-chair { background: #86efac; }
 		.imogi-ts-floor-canvas.is-editing .imogi-ts-floor-node { cursor: grab; }
 		.imogi-ts-floor-canvas.is-editing .imogi-ts-floor-node.is-dragging { cursor: grabbing; opacity: .85; z-index: 20; box-shadow: 0 10px 28px rgba(15,23,42,.28); }
+		.imogi-ts-floor-canvas.is-editing .imogi-ts-floor-node .imogi-ts-floor-rotate,
+		.imogi-ts-floor-canvas.is-editing .imogi-ts-floor-node .imogi-ts-floor-resize-handle { display: flex; }
+		.imogi-ts-floor-rotate { align-items: center; background: #4338ca; border: none; border-radius: 999px; bottom: -10px; box-shadow: 0 2px 6px rgba(67,56,202,.35); color: #fff; cursor: pointer; display: none; font-size: 10px; height: 22px; justify-content: center; left: 50%; position: absolute; transform: translateX(-50%); width: 22px; z-index: 5; }
+		.imogi-ts-floor-rotate:hover { background: #3730a3; }
+		.imogi-ts-floor-resize-handle { background: #fff; border: 2px solid #4338ca; border-radius: 3px; bottom: -5px; cursor: nwse-resize; display: none; height: 12px; position: absolute; right: -5px; width: 12px; z-index: 5; }
 		.imogi-ts-arrange-btn.is-active,
 		.imogi-ts-arrange-menu-item.is-active { background: var(--ts-accent, #714b67) !important; border-color: var(--ts-accent, #714b67) !important; color: #fff !important; }
 		.imogi-ts-floor-hint { align-items: center; background: #eef2ff; border: 1px dashed #c7d2fe; border-radius: 8px; color: #4338ca; display: flex; font-size: 12px; font-weight: 600; gap: 6px; margin-bottom: 10px; padding: 8px 12px; }
@@ -1263,7 +1542,7 @@ function imogi_ts_ensure_enhance_css() {
 		.imogi-ts-manage-menu button.is-active { background: #eef2ff; color: #4338ca; }
 		.imogi-ts-manage-menu button.is-active i { color: #4338ca; }
 		.imogi-ts-manage-menu .imogi-ts-menu-divider { border-top: 1px solid #e4e8ee; margin: 4px 0; }
-		.imogi-ts-floor-canvas { min-height: clamp(460px, 62vh, 880px); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 3px rgba(15,23,42,.06); }
+		.imogi-ts-floor-canvas:not(.is-sized) { box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 3px rgba(15,23,42,.06); }
 		.imogi-ts-floor-bg-hint { background: rgba(255,255,255,.88); border: 1px dashed #cbd5e1; border-radius: 10px; bottom: 14px; color: #64748b; font-size: 11px; font-weight: 600; left: 14px; max-width: 320px; padding: 8px 12px; position: absolute; z-index: 4; }
 		.imogi-ts-floor-bg-hint a { color: #4338ca; cursor: pointer; font-weight: 700; }
 		.imogi-ts-floor-sub.is-context { color: #475569; font-weight: 600; }
@@ -1332,6 +1611,66 @@ const IMOGI_TS_ORDER_STATUS_CHIP = {
 	"In Progress": { cls: "ordered", label: __("Diproses") },
 };
 
+const IMOGI_TS_KITCHEN_ITEM_STATUS_CLASS = {
+	Pending: "is-pending",
+	Preparing: "is-preparing",
+	Ready: "is-ready",
+};
+
+function imogi_ts_build_kitchen_tracking_html(tracking) {
+	tracking = tracking || {};
+	const items = tracking.items || [];
+
+	if (!tracking.has_kitchen || !items.length) {
+		const msg = tracking.message || __("Belum ada item dapur pada order ini");
+		return `<div class="imogi-ts-kitchen-tracking imogi-ts-kitchen-tracking--empty">
+			<div class="imogi-ts-kitchen-tracking__head">
+				<span class="imogi-ts-kitchen-tracking__title"><i class="fa fa-fire"></i> ${__("Tracking Dapur")}</span>
+			</div>
+			<div class="imogi-ts-kitchen-tracking__empty">${frappe.utils.escape_html(msg)}</div>
+		</div>`;
+	}
+
+	const rows = items
+		.map((item) => {
+			const status = item.status || "Pending";
+			const is_mixed = !!item.is_mixed;
+			const cls = is_mixed
+				? "is-mixed"
+				: IMOGI_TS_KITCHEN_ITEM_STATUS_CLASS[status] || "is-pending";
+			const note = (item.notes || "").trim();
+			const note_html = note
+				? `<span class="imogi-ts-kitchen-item-note">${frappe.utils.escape_html(note)}</span>`
+				: "";
+			const breakdown_html =
+				is_mixed && item.status_label
+					? `<span class="imogi-ts-kitchen-item-breakdown">${frappe.utils.escape_html(item.status_label)}</span>`
+					: "";
+			const badge_text = is_mixed
+				? item.progress_label || item.status_label || status
+				: item.status_label || status;
+			return `<li class="imogi-ts-kitchen-item ${cls}">
+				<div class="imogi-ts-kitchen-item-main">
+					<span class="imogi-ts-kitchen-item-qty">${flt(item.qty, 0)}×</span>
+					<span class="imogi-ts-kitchen-item-name">
+						${frappe.utils.escape_html(item.item_name || item.item_code)}
+						${note_html}
+						${breakdown_html}
+					</span>
+				</div>
+				<span class="imogi-ts-kitchen-item-badge">${frappe.utils.escape_html(badge_text)}</span>
+			</li>`;
+		})
+		.join("");
+
+	return `<div class="imogi-ts-kitchen-tracking">
+		<div class="imogi-ts-kitchen-tracking__head">
+			<span class="imogi-ts-kitchen-tracking__title"><i class="fa fa-fire"></i> ${__("Tracking Dapur")}</span>
+		</div>
+		<ul class="imogi-ts-kitchen-tracking__list">${rows}</ul>
+	</div>`;
+}
+
 function imogi_ts_format_elapsed(since_iso) {
 	if (!since_iso) return null;
 	const start = moment(since_iso);
@@ -1366,16 +1705,46 @@ imogi_pos.TableService = class TableService {
 		this.last_refreshed = null;
 		this.arrange_mode = false;
 		this.view_mode = "floor";
+		this.floor_expanded = false;
+		this.sidebar_collapsed = true;
+		this._floor_canvas_bg = null;
+		this._floor_canvas_ar = 16 / 9;
+		this._floor_canvas_floor = null;
+		this._floor_canvas_layout_cache = null;
+		this._floor_nav_key = "";
+		this._zone_options_key = "";
+		this._surface_epoch = 0;
+		this._floor_canvas_epoch = -1;
+		this._refresh_debounce_timer = null;
+		this._floor_resize_observer = null;
 		try {
 			const saved = localStorage.getItem("_imogi_ts_view_mode");
 			if (saved === "list" || saved === "floor") this.view_mode = saved;
 		} catch (e) {
 			/* ignore */
 		}
+		try {
+			const saved_sidebar = localStorage.getItem("_imogi_ts_sidebar_collapsed");
+			if (saved_sidebar === "0" || saved_sidebar === "1") {
+				this.sidebar_collapsed = saved_sidebar === "1";
+			}
+		} catch (e) {
+			/* ignore */
+		}
 		this.make();
 		this.refresh();
 		this._bind_focus_refresh();
+		this._bind_realtime_refresh();
 		this._start_meta_ticker();
+	}
+
+	_bind_realtime_refresh() {
+		this._on_table_update = () => {
+			if (!this._is_active()) return;
+			clearTimeout(this._refresh_debounce_timer);
+			this._refresh_debounce_timer = setTimeout(() => this.refresh(), 3000);
+		};
+		frappe.realtime.on("imogi_table_service_updated", this._on_table_update);
 	}
 
 	_is_active() {
@@ -1383,13 +1752,17 @@ imogi_pos.TableService = class TableService {
 	}
 
 	_bind_focus_refresh() {
+		this._focus_debounce_timer = null;
+		this._schedule_focus_refresh = () => {
+			if (!this._is_active()) return;
+			clearTimeout(this._focus_debounce_timer);
+			this._focus_debounce_timer = setTimeout(() => this.refresh(), 800);
+		};
 		this._on_visible = () => {
-			if (document.visibilityState === "visible" && this._is_active()) this.refresh();
+			if (document.visibilityState === "visible") this._schedule_focus_refresh();
 		};
 		document.addEventListener("visibilitychange", this._on_visible);
-		this._on_focus = () => {
-			if (this._is_active()) this.refresh();
-		};
+		this._on_focus = () => this._schedule_focus_refresh();
 		window.addEventListener("focus", this._on_focus);
 	}
 
@@ -1482,8 +1855,22 @@ imogi_pos.TableService = class TableService {
 				</div>
 				<div class="imogi-ts-layout imogi-ts-layout--v2">
 					<main class="imogi-ts-floor">
+						<div class="imogi-ts-floor-controls">
+						<div class="imogi-ts-filter-bar">
+							<div class="imogi-ts-filter-groups">
+								<div class="imogi-ts-filter-group">
+									<span class="imogi-ts-filter-label">${__("Lantai")}</span>
+									<div class="imogi-ts-floor-nav"></div>
+								</div>
+								<div class="imogi-ts-filter-group">
+									<span class="imogi-ts-filter-label">${__("Ruangan")}</span>
+									<div class="imogi-ts-zone-filter"></div>
+								</div>
+							</div>
+							<div class="imogi-ts-context-meta"></div>
+						</div>
 						<div class="imogi-ts-floor-head">
-							<div>
+							<div class="imogi-ts-floor-head__title">
 								<h2 class="imogi-ts-floor-title">${__("Denah Meja")}</h2>
 								<p class="imogi-ts-floor-sub imogi-ts-floor-context">${__("Pilih lantai dan ruangan")}</p>
 							</div>
@@ -1504,27 +1891,22 @@ imogi_pos.TableService = class TableService {
 										</button>
 										<div class="imogi-ts-manage-menu">
 											<button type="button" data-action="tables"><i class="fa fa-th-large"></i>${__("Kelola Meja")}</button>
-											<button type="button" data-action="spaces"><i class="fa fa-building"></i>${__("Lantai & Ruangan")}</button>
+											<button type="button" data-action="areas"><i class="fa fa-map-marker"></i>${__("Kelola Ruangan")}</button>
+											<button type="button" data-action="spaces"><i class="fa fa-building"></i>${__("Kelola Lantai")}</button>
 											<div class="imogi-ts-menu-divider imogi-ts-menu-floor-only"></div>
-											<button type="button" data-action="floor-settings" class="imogi-ts-menu-floor-only"><i class="fa fa-picture-o"></i>${__("Pengaturan Denah")}</button>
+											<button type="button" data-action="floor-settings" class="imogi-ts-menu-floor-only"><i class="fa fa-picture-o"></i>${__("Pengaturan Denah Ruangan")}</button>
 											<button type="button" data-action="arrange" class="imogi-ts-menu-floor-only imogi-ts-arrange-menu-item"><i class="fa fa-arrows"></i>${__("Atur Denah")}</button>
 										</div>
 									</div>
+									<button type="button" class="imogi-ts-floor-expand-btn imogi-ts-menu-floor-only" title="${__("Perbesar layar")}">
+										<i class="fa fa-expand"></i>
+									</button>
+									<button type="button" class="imogi-ts-sidebar-toggle" title="${__("Sembunyikan panel")}">
+										<i class="fa fa-chevron-right"></i>
+									</button>
 								</div>
 							</div>
 						</div>
-						<div class="imogi-ts-filter-bar">
-							<div class="imogi-ts-filter-groups">
-								<div class="imogi-ts-filter-group">
-									<span class="imogi-ts-filter-label">${__("Lantai")}</span>
-									<div class="imogi-ts-floor-nav"></div>
-								</div>
-								<div class="imogi-ts-filter-group">
-									<span class="imogi-ts-filter-label">${__("Ruangan")}</span>
-									<div class="imogi-ts-zone-filter"></div>
-								</div>
-							</div>
-							<div class="imogi-ts-context-meta"></div>
 						</div>
 						<div class="imogi-ts-table-grid"></div>
 					</main>
@@ -1566,6 +1948,15 @@ imogi_pos.TableService = class TableService {
 		this.wrapper.find(".imogi-ts-view-toggle button").on("click", (e) => {
 			this.set_view_mode($(e.currentTarget).attr("data-view"));
 		});
+		this.wrapper.find(".imogi-ts-sidebar-toggle").on("click", () => this.toggle_sidebar_collapsed());
+		this.wrapper.find(".imogi-ts-floor-expand-btn").on("click", () => this.toggle_floor_expanded());
+		this._on_expand_esc = (e) => {
+			if (e.key === "Escape" && this.floor_expanded) {
+				e.preventDefault();
+				this.toggle_floor_expanded(false);
+			}
+		};
+		document.addEventListener("keydown", this._on_expand_esc);
 		this._sync_view_toggle();
 		imogi_ts_paint_desk_topbar(this.wrapper[0]);
 	}
@@ -1583,6 +1974,7 @@ imogi_pos.TableService = class TableService {
 			const action = $(e.currentTarget).attr("data-action");
 			close();
 			if (action === "tables") this.prompt_manage_tables();
+			else if (action === "areas") this.prompt_manage_areas();
 			else if (action === "spaces") this.prompt_manage_spaces();
 			else if (action === "floor-settings") this.prompt_floor_settings();
 			else if (action === "arrange") this.toggle_arrange_mode();
@@ -1622,6 +2014,40 @@ imogi_pos.TableService = class TableService {
 		return this.active_zone;
 	}
 
+	_floor_canvas_layout_key() {
+		const all_label = __("Semua");
+		const zone =
+			this.active_zone && this.active_zone !== all_label ? String(this.active_zone) : "";
+		return `${this.active_floor || ""}|${zone}`;
+	}
+
+	_active_area_doc_for_floor_view() {
+		const all_label = __("Semua");
+		if (this.active_zone && this.active_zone !== all_label) {
+			return (this.board.areas || []).find((a) => a.name === this.active_zone) || null;
+		}
+		const areas = this._areas_for_active_floor();
+		return areas[0] || null;
+	}
+
+	_resolve_floor_canvas_bg() {
+		const active_floor_doc = (this.board.floors || []).find((f) => f.name === this.active_floor);
+		const area_doc = this._active_area_doc_for_floor_view();
+		if (area_doc?.floor_background) {
+			return area_doc.floor_background;
+		}
+		const all_label = __("Semua");
+		if (this.active_zone && this.active_zone !== all_label) {
+			return null;
+		}
+		return active_floor_doc?.floor_background || this.board.floor_background || null;
+	}
+
+	_sync_board_area_field(area_name, patch) {
+		const area = (this.board.areas || []).find((a) => a.name === area_name);
+		if (area && patch) Object.assign(area, patch);
+	}
+
 	_render_context_meta() {
 		const scoped = this._tables_for_active_context(this.board.tables || []);
 		const floor = (this.board.floors || []).find((f) => f.name === this.active_floor);
@@ -1631,8 +2057,8 @@ imogi_pos.TableService = class TableService {
 		if (floor_label) parts.push(floor_label);
 		if (area_label) parts.push(area_label);
 		const ctx = parts.length ? parts.join(" · ") : __("Semua area");
-		const available = scoped.filter((t) => t.status === "Available").length;
-		const occupied = scoped.filter((t) => t.status === "Occupied").length;
+		const available = scoped.filter((t) => t.status === "Available" && !t.open_order).length;
+		const occupied = scoped.filter((t) => imogi_ts_table_in_use(t)).length;
 		const summary = `${scoped.length} ${__("meja")} · ${available} ${__("kosong")} · ${occupied} ${__("terisi")}`;
 		this.wrapper
 			.find(".imogi-ts-floor-context")
@@ -1649,7 +2075,9 @@ imogi_pos.TableService = class TableService {
 	}
 
 	set_view_mode(mode) {
-		this.view_mode = mode === "list" ? "list" : "floor";
+		const next = mode === "list" ? "list" : "floor";
+		const view_changed = next !== this.view_mode;
+		this.view_mode = next;
 		try {
 			localStorage.setItem("_imogi_ts_view_mode", this.view_mode);
 		} catch (e) {
@@ -1657,6 +2085,13 @@ imogi_pos.TableService = class TableService {
 		}
 		if (this.view_mode === "list" && this.arrange_mode) {
 			this.toggle_arrange_mode(false);
+		}
+		if (this.view_mode === "list" && this.floor_expanded) {
+			this.toggle_floor_expanded(false);
+		}
+		if (view_changed) {
+			this._bump_surface_epoch();
+			this._reset_grid_surface();
 		}
 		if (this.view_mode === "floor") {
 			this._ensure_floor_zone_scope();
@@ -1672,6 +2107,56 @@ imogi_pos.TableService = class TableService {
 			.filter(`[data-view="${this.view_mode}"]`)
 			.addClass("is-active");
 		this.wrapper.find(".imogi-ts-menu-floor-only").toggle(this.view_mode === "floor");
+		const $shell = this.wrapper.find(".imogi-ts-shell--v2");
+		$shell.toggleClass("is-floor-view", this.view_mode === "floor");
+		$shell.toggleClass("is-list-view", this.view_mode === "list");
+		this._sync_sidebar_ui();
+		this._sync_floor_expand_ui();
+	}
+
+	toggle_floor_expanded(force) {
+		const next = typeof force === "boolean" ? force : !this.floor_expanded;
+		if (next === this.floor_expanded) return;
+		if (next && (this.view_mode !== "floor" || this.arrange_mode)) return;
+		this.floor_expanded = next;
+		this._sync_floor_expand_ui();
+		if (next) {
+			requestAnimationFrame(() => this._fit_floor_canvas_to_viewport());
+		}
+	}
+
+	_sync_floor_expand_ui() {
+		const expanded = this.floor_expanded && this.view_mode === "floor" && !this.arrange_mode;
+		const $shell = this.wrapper.find(".imogi-ts-shell--v2");
+		$shell.toggleClass("is-floor-expanded", expanded);
+		const $btn = this.wrapper.find(".imogi-ts-floor-expand-btn");
+		$btn.toggleClass("is-expanded", expanded);
+		$btn.attr("title", expanded ? __("Kecilkan layar") : __("Perbesar layar"));
+		$btn.html(expanded ? '<i class="fa fa-compress"></i>' : '<i class="fa fa-expand"></i>');
+	}
+
+	toggle_sidebar_collapsed(force) {
+		const next = typeof force === "boolean" ? force : !this.sidebar_collapsed;
+		this.sidebar_collapsed = next;
+		try {
+			localStorage.setItem("_imogi_ts_sidebar_collapsed", next ? "1" : "0");
+		} catch (e) {
+			/* ignore */
+		}
+		this._sync_sidebar_ui();
+		if (this.view_mode === "floor") {
+			this._fit_floor_canvas_to_viewport();
+		}
+	}
+
+	_sync_sidebar_ui() {
+		const $shell = this.wrapper.find(".imogi-ts-shell--v2");
+		const collapsed = this.sidebar_collapsed;
+		$shell.toggleClass("is-sidebar-collapsed", collapsed);
+		const $btn = this.wrapper.find(".imogi-ts-sidebar-toggle");
+		$btn.toggleClass("is-collapsed", collapsed);
+		$btn.attr("title", collapsed ? __("Tampilkan panel") : __("Sembunyikan panel"));
+		$btn.html(collapsed ? '<i class="fa fa-chevron-left"></i>' : '<i class="fa fa-chevron-right"></i>');
 	}
 
 	_sync_arrange_menu_state() {
@@ -1751,8 +2236,12 @@ imogi_pos.TableService = class TableService {
 		return rows;
 	}
 
-	_areas_for_active_floor() {
-		return imogi_ts_areas_for_floor(this.board.areas || [], this.active_floor);
+	_areas_for_active_floor(include_inactive = false) {
+		let rows = imogi_ts_areas_for_floor(this.board.areas || [], this.active_floor);
+		if (!include_inactive) {
+			rows = rows.filter((area) => cint(area.is_active) !== 0);
+		}
+		return rows;
 	}
 
 	_tables_on_floor(floor_name, tables) {
@@ -1764,8 +2253,8 @@ imogi_pos.TableService = class TableService {
 	_floor_summary_label(floor) {
 		const stats = this._tables_on_floor(floor.name);
 		const total = stats.length;
-		const occupied = stats.filter((t) => t.status === "Occupied").length;
-		const available = stats.filter((t) => t.status === "Available").length;
+		const occupied = stats.filter((t) => imogi_ts_table_in_use(t)).length;
+		const available = stats.filter((t) => t.status === "Available" && !t.open_order).length;
 		const name = floor.floor_name || floor.name;
 		if (!total) return `${name} — ${__("belum ada meja")}`;
 		return `${name} — ${total} ${__("meja")} · ${available} ${__("kosong")} · ${occupied} ${__("terisi")}`;
@@ -1773,9 +2262,16 @@ imogi_pos.TableService = class TableService {
 
 	_set_active_floor(floor_name) {
 		if (!floor_name || floor_name === this.active_floor) return;
+		this._bump_surface_epoch();
 		this.active_floor = floor_name;
+		this._sync_floor_nav_ui();
 		this.active_zone = __("Semua");
+		this._restore_active_zone();
+		this._invalidate_active_zone(this._areas_for_active_floor());
+		this._zone_options_key = "";
+		this._invalidate_floor_canvas();
 		this._ensure_floor_zone_scope();
+		this._persist_active_zone();
 		this._persist_active_floor();
 		const active = (this.board.floors || []).find((f) => f.name === floor_name);
 		this.board.floor_background = active?.floor_background || null;
@@ -1789,6 +2285,7 @@ imogi_pos.TableService = class TableService {
 		const names = new Set((floor_areas || []).map((area) => area.name));
 		if (names.has(this.active_zone)) return;
 		this.active_zone = all_label;
+		this._invalidate_floor_canvas();
 	}
 
 	_build_zone_options(tables) {
@@ -1856,7 +2353,7 @@ imogi_pos.TableService = class TableService {
 				steps: [step(1, __("Lantai"), "is-active"), step(2, __("Ruangan"), ""), step(3, __("Meja"), "")],
 				actions: `
 					<button type="button" class="btn btn-primary btn-sm" data-action="add-floor">${__("Tambah Lantai")}</button>
-					<button type="button" class="btn btn-default btn-sm" data-action="manage-spaces">${__("Lantai & Ruangan")}</button>`,
+					<button type="button" class="btn btn-default btn-sm" data-action="manage-spaces">${__("Kelola Lantai")}</button>`,
 			},
 			no_areas: {
 				icon: "fa-map-marker",
@@ -1869,7 +2366,7 @@ imogi_pos.TableService = class TableService {
 				],
 				actions: `
 					<button type="button" class="btn btn-primary btn-sm" data-action="add-area">${__("Tambah Ruangan")}</button>
-					<button type="button" class="btn btn-default btn-sm" data-action="manage-spaces">${__("Lantai & Ruangan")}</button>`,
+					<button type="button" class="btn btn-default btn-sm" data-action="manage-areas">${__("Kelola Ruangan")}</button>`,
 			},
 			no_tables: {
 				icon: "fa-th-large",
@@ -1911,13 +2408,13 @@ imogi_pos.TableService = class TableService {
 		$container.find("[data-action='add-area']").on("click", () => this.prompt_add_area_for_floor());
 		$container.find("[data-action='add-table']").on("click", () => this.prompt_manage_tables());
 		$container.find("[data-action='manage-spaces']").on("click", () => this.prompt_manage_spaces());
+		$container.find("[data-action='manage-areas']").on("click", () => this.prompt_manage_areas());
 		$container.find("[data-action='upload-floor']").on("click", () => this.prompt_floor_settings());
 		$container.find("[data-action='clear-zone']").on("click", () => this._reset_zone_filter());
 	}
 
 	_reset_zone_filter() {
-		this.active_zone = __("Semua");
-		this.render_surface(this.board.tables || [], this.board.features || {});
+		this._apply_zone_filter("__all__");
 	}
 
 	prompt_add_floor() {
@@ -1929,7 +2426,7 @@ imogi_pos.TableService = class TableService {
 			this.prompt_manage_spaces();
 			return;
 		}
-		frappe.new_doc("IMOGI Restaurant Area", { restaurant_floor: this.active_floor });
+		this.prompt_manage_areas();
 	}
 
 	_append_guided_empty($target, kind, extra_class) {
@@ -1938,6 +2435,21 @@ imogi_pos.TableService = class TableService {
 		$target.append($empty);
 		this._bind_guided_empty($empty);
 		return $empty;
+	}
+
+	_render_floor_empty_state($canvas, filtered_tables) {
+		$canvas.find(".imogi-ts-floor-node").remove();
+		$canvas.find(".imogi-ts-floor-empty").remove();
+		const kind = this._detect_floor_empty_kind(filtered_tables);
+		if (kind) {
+			this._append_guided_empty($canvas, kind, "imogi-ts-floor-empty");
+		} else {
+			$canvas.append(`
+				<div class="imogi-ts-floor-empty">
+					<i class="fa fa-th-large"></i>
+					<div>${__("Tidak ada meja di zona ini.")}</div>
+				</div>`);
+		}
 	}
 
 	_apply_refresh_timer(seconds) {
@@ -1949,15 +2461,6 @@ imogi_pos.TableService = class TableService {
 
 	render() {
 		const { tables = [], reservations = [], waiting = [], features = {} } = this.board;
-		const scoped = this._tables_for_active_context(tables);
-		const available_count = scoped.filter((t) => t.status === "Available").length;
-		const occupied_count = scoped.filter((t) => t.status === "Occupied").length;
-		const reserved_count = scoped.filter((t) => t.status === "Reserved").length;
-
-		this.wrapper.find(".imogi-ts-stat-tables, .imogi-ts-kpi-total").text(scoped.length);
-		this.wrapper.find(".imogi-ts-kpi-available").text(available_count);
-		this.wrapper.find(".imogi-ts-kpi-occupied").text(occupied_count);
-		this.wrapper.find(".imogi-ts-kpi-reserved").text(reserved_count);
 		this.wrapper.find(".imogi-ts-stat-reservations, .imogi-ts-side-count-reservations").text(reservations.length);
 		this.wrapper.find(".imogi-ts-stat-waiting, .imogi-ts-kpi-waiting, .imogi-ts-side-count-waiting").text(waiting.length);
 
@@ -1971,7 +2474,127 @@ imogi_pos.TableService = class TableService {
 		this.render_waiting(waiting, features);
 	}
 
+	_update_scoped_kpis(tables = []) {
+		const scoped = this._tables_for_active_context(tables);
+		const available_count = scoped.filter((t) => t.status === "Available" && !t.open_order).length;
+		const occupied_count = scoped.filter((t) => imogi_ts_table_in_use(t)).length;
+		const reserved_count = scoped.filter((t) => t.status === "Reserved").length;
+
+		this.wrapper.find(".imogi-ts-stat-tables, .imogi-ts-kpi-total").text(scoped.length);
+		this.wrapper.find(".imogi-ts-kpi-available").text(available_count);
+		this.wrapper.find(".imogi-ts-kpi-occupied").text(occupied_count);
+		this.wrapper.find(".imogi-ts-kpi-reserved").text(reserved_count);
+	}
+
+	_apply_zone_filter(zone) {
+		const all_label = __("Semua");
+		const next_zone = zone === "__all__" ? all_label : String(zone || "");
+		if (next_zone !== this.active_zone) {
+			this._bump_surface_epoch();
+		}
+		this.active_zone = next_zone;
+		this._persist_active_zone();
+		this._sync_zone_filter_ui();
+		this._invalidate_floor_canvas();
+		this._update_scoped_kpis(this.board.tables || []);
+		this._render_context_meta();
+		const filtered = this._tables_for_active_context(this.board.tables || []);
+		const features = this.board.features || {};
+		if (this.arrange_mode || this.view_mode === "floor") {
+			this.render_floor(filtered, features);
+		} else {
+			this.render_tables(filtered, features);
+		}
+	}
+
+	_sync_zone_filter_ui() {
+		if (!this.$zone_filter?.length) return;
+		const all_label = __("Semua");
+		this.$zone_filter.find(".imogi-ts-zone-chip").each((_, el) => {
+			const $el = $(el);
+			const z = $el.attr("data-zone");
+			const active = z === "__all__" ? this.active_zone === all_label : this.active_zone === z;
+			$el.toggleClass("is-active", active);
+		});
+		const $select = this.$zone_filter.find(".imogi-ts-zone-select");
+		if ($select.length) {
+			const val = this.active_zone === all_label ? "__all__" : this.active_zone;
+			$select.val(val);
+		}
+	}
+
+	_sync_floor_nav_ui() {
+		if (!this.$floor_nav?.length) return;
+		this.$floor_nav.find(".imogi-ts-floor-chip").each((_, el) => {
+			const $el = $(el);
+			$el.toggleClass("is-active", $el.attr("data-floor") === this.active_floor);
+		});
+		const $select = this.$floor_nav.find(".imogi-ts-floor-select");
+		if ($select.length && this.active_floor) {
+			$select.val(this.active_floor);
+		}
+	}
+
+	_persist_active_zone() {
+		try {
+			if (this.active_floor && this.active_zone) {
+				localStorage.setItem(`_imogi_ts_zone_${this.active_floor}`, this.active_zone);
+			}
+		} catch (e) {
+			/* ignore */
+		}
+	}
+
+	_restore_active_zone() {
+		try {
+			if (!this.active_floor) return;
+			const saved = localStorage.getItem(`_imogi_ts_zone_${this.active_floor}`);
+			if (saved) this.active_zone = saved;
+		} catch (e) {
+			/* ignore */
+		}
+	}
+
+	_invalidate_floor_canvas() {
+		this._floor_canvas_bg = null;
+		this._floor_canvas_floor = null;
+		this._floor_canvas_layout_cache = null;
+		this._floor_canvas_epoch = -1;
+		this.$floor_canvas = null;
+	}
+
+	_bump_surface_epoch() {
+		this._surface_epoch += 1;
+	}
+
+	_reset_grid_surface() {
+		this._teardown_floor_drag();
+		this._invalidate_floor_canvas();
+		if (!this.$table_grid?.length) return;
+		this.$table_grid.empty().removeClass("is-floor is-grouped is-empty-state");
+	}
+
+	_ensure_surface_matches_view(want_floor) {
+		const $grid = this.$table_grid;
+		if (!$grid?.length) return;
+		const has_list = $grid.hasClass("is-grouped") || $grid.find(".imogi-ts-zone-group").length > 0;
+		const has_floor = $grid.hasClass("is-floor") && $grid.find("> .imogi-ts-floor-canvas").length > 0;
+		if (want_floor && has_list) {
+			this._bump_surface_epoch();
+			this._reset_grid_surface();
+			return;
+		}
+		if (!want_floor && ($grid.hasClass("is-floor") || has_floor)) {
+			this._bump_surface_epoch();
+			this._reset_grid_surface();
+		}
+	}
+
 	render_surface(tables, features) {
+		if (this.active_floor) {
+			this._restore_active_zone();
+			this._invalidate_active_zone(this._areas_for_active_floor());
+		}
 		if (this.arrange_mode || this.view_mode === "floor") {
 			this._ensure_floor_zone_scope();
 		}
@@ -1982,7 +2605,10 @@ imogi_pos.TableService = class TableService {
 		this._render_context_meta();
 		this._sync_arrange_menu_state();
 		const filtered = this._tables_for_active_context(tables);
-		if (this.arrange_mode || this.view_mode === "floor") {
+		this._update_scoped_kpis(tables);
+		const want_floor = this.arrange_mode || this.view_mode === "floor";
+		this._ensure_surface_matches_view(want_floor);
+		if (want_floor) {
 			this.render_floor(filtered, features);
 		} else {
 			this.render_tables(filtered, features);
@@ -1991,6 +2617,12 @@ imogi_pos.TableService = class TableService {
 
 	render_floor_nav(floors) {
 		if (!this.$floor_nav?.length) return;
+		const nav_key = (floors || []).map((f) => f.name).join("|");
+		if (nav_key === this._floor_nav_key && this.$floor_nav.children().length) {
+			this._sync_floor_nav_ui();
+			return;
+		}
+		this._floor_nav_key = nav_key;
 		if (!floors.length) {
 			this.$floor_nav
 				.removeClass("is-select-mode is-chip-mode")
@@ -2043,9 +2675,16 @@ imogi_pos.TableService = class TableService {
 		}
 
 		const { all_label, items, hide_all } = this._build_zone_options(tables);
+		const zone_key = `${this.active_floor || ""}|${hide_all ? 1 : 0}|${items.map((i) => i.value).join("|")}`;
+		if (zone_key === this._zone_options_key && this.$zone_filter.children().length) {
+			this._sync_zone_filter_ui();
+			return;
+		}
+		this._zone_options_key = zone_key;
 		const $zone_group = this.$zone_filter.closest(".imogi-ts-filter-group");
 		if (!items.length) {
 			this.$zone_filter.empty().removeClass("is-select-mode is-chip-mode");
+			this._zone_options_key = `${this.active_floor || ""}|empty`;
 			$zone_group.hide();
 			return;
 		}
@@ -2074,9 +2713,7 @@ imogi_pos.TableService = class TableService {
 				`<select class="imogi-ts-filter-select imogi-ts-zone-select">${options.join("")}</select>`
 			);
 			this.$zone_filter.off("change.zone click.zone").on("change.zone", ".imogi-ts-zone-select", (e) => {
-				const zone = $(e.currentTarget).val();
-				this.active_zone = zone === "__all__" ? all_label : String(zone || "");
-				this.render_surface(this.board.tables || [], this.board.features || {});
+				this._apply_zone_filter($(e.currentTarget).val());
 			});
 			return;
 		}
@@ -2098,13 +2735,18 @@ imogi_pos.TableService = class TableService {
 		];
 		this.$zone_filter.html(chips.join(""));
 		this.$zone_filter.off("change.zone click.zone").on("click.zone", ".imogi-ts-zone-chip", (e) => {
-			const zone = $(e.currentTarget).attr("data-zone");
-			this.active_zone = zone === "__all__" ? all_label : String(zone || "");
-			this.render_surface(this.board.tables || [], this.board.features || {});
+			this._apply_zone_filter($(e.currentTarget).attr("data-zone"));
 		});
 	}
 
+	_should_hide_zone_heads() {
+		const all_label = __("Semua");
+		const areas = this._areas_for_active_floor();
+		return areas.length > 1 && this.active_zone && this.active_zone !== all_label;
+	}
+
 	render_tables(filtered_tables, features) {
+		this._invalidate_floor_canvas();
 		this.$table_grid.empty().removeClass("is-floor is-empty-state").addClass("is-grouped");
 		if (!filtered_tables.length) {
 			this.$table_grid.removeClass("is-grouped").addClass("is-empty-state");
@@ -2132,11 +2774,13 @@ imogi_pos.TableService = class TableService {
 			a.localeCompare(b, undefined, { sensitivity: "base" })
 		);
 
+		const hide_zone_heads = this._should_hide_zone_heads();
+
 		zones.forEach((zone) => {
 			const zone_tables = groups.get(zone);
-			const open_count = zone_tables.filter((t) => t.status === "Occupied").length;
+			const open_count = zone_tables.filter((t) => imogi_ts_table_in_use(t)).length;
 			const $group = $(`
-				<section class="imogi-ts-zone-group">
+				<section class="imogi-ts-zone-group ${hide_zone_heads ? "is-zone-scoped" : ""}">
 					<div class="imogi-ts-zone-group-head">
 						<i class="fa fa-map-marker"></i> ${frappe.utils.escape_html(zone)}
 						<span class="imogi-ts-zone-group-count">${zone_tables.length} ${__("meja")} · ${open_count} ${__("terisi")}</span>
@@ -2151,19 +2795,50 @@ imogi_pos.TableService = class TableService {
 	}
 
 	render_floor(tables, features) {
-		this.$table_grid.removeClass("is-grouped is-empty-state").addClass("is-floor").empty();
+		if (!tables.length) {
+			const kind = this._detect_floor_empty_kind(tables);
+			if (kind) {
+				this._invalidate_floor_canvas();
+				this.$table_grid.empty().removeClass("is-floor is-grouped").addClass("is-empty-state");
+				this._append_guided_empty(this.$table_grid, kind, "imogi-ts-empty");
+				return;
+			}
+		}
 
-		const active_floor_doc = (this.board.floors || []).find((f) => f.name === this.active_floor);
-		const bg = active_floor_doc?.floor_background || this.board.floor_background;
+		const bg = this._resolve_floor_canvas_bg();
+		const layout_key = this._floor_canvas_layout_key();
+		const $grid = this.$table_grid;
+		const has_live_canvas =
+			!!$grid?.find("> .imogi-ts-floor-canvas").length &&
+			$grid.hasClass("is-floor") &&
+			!$grid.hasClass("is-grouped") &&
+			!$grid.hasClass("is-empty-state");
+
+		if (has_live_canvas && this._can_soft_render_floor(bg, layout_key)) {
+			this._update_floor_nodes(tables, features);
+			return;
+		}
+
+		this.$table_grid.removeClass("is-grouped is-empty-state").addClass("is-floor").empty();
+		this._floor_canvas_bg = bg;
+		this._floor_canvas_floor = this.active_floor;
+		this._floor_canvas_layout_cache = layout_key;
+		this._floor_canvas_epoch = this._surface_epoch;
+
 		const $canvas = $(
 			`<div class="imogi-ts-floor-canvas ${this.arrange_mode ? "is-editing" : ""} ${bg ? "has-bg" : ""}"></div>`
 		);
 		if (bg) {
 			$canvas.css("background-image", `url("${encodeURI(bg)}")`);
-		} else if (!this.arrange_mode) {
+			this._sync_floor_canvas_to_image($canvas, bg);
+		} else {
+			$canvas.css("background-image", "");
+			$canvas.removeClass("has-bg is-sized");
+			this._floor_canvas_ar = 16 / 9;
+			if (!this.arrange_mode) {
 			const $hint = $(`
 				<div class="imogi-ts-floor-bg-hint">
-					${__("Tip")}: <a class="imogi-ts-open-floor-settings">${__("Unggah gambar denah")}</a> ${__(
+					${__("Tip")}: <a class="imogi-ts-open-floor-settings">${__("Unggah gambar denah ruangan")}</a> ${__(
 						"agar layout mirip ruangan asli."
 					)}
 				</div>`);
@@ -2173,6 +2848,7 @@ imogi_pos.TableService = class TableService {
 				this.prompt_floor_settings();
 			});
 			$canvas.append($hint);
+			}
 		}
 		if (this.arrange_mode) {
 			this.$table_grid.append(
@@ -2183,25 +2859,47 @@ imogi_pos.TableService = class TableService {
 		}
 		this.$table_grid.append($canvas);
 		this.$floor_canvas = $canvas;
+		this._bind_floor_resize_observer();
 
 		if (!tables.length) {
-			const kind = this._detect_floor_empty_kind(tables);
-			if (kind) {
-				this._append_guided_empty($canvas, kind, "imogi-ts-floor-empty");
-			} else {
-				$canvas.append(`
-					<div class="imogi-ts-floor-empty">
-						<i class="fa fa-th-large"></i>
-						<div>${__("Tidak ada meja di zona ini.")}</div>
-					</div>`);
-			}
+			this._render_floor_empty_state($canvas, tables);
+			this._fit_floor_canvas_to_viewport();
 			return;
 		}
 
+		$canvas.find(".imogi-ts-floor-empty").remove();
+		this._paint_floor_nodes($canvas, tables, features);
+
+		if (this.arrange_mode) {
+			this._bind_floor_drag($canvas);
+			this._bind_floor_node_edit($canvas);
+		}
+		this._fit_floor_canvas_to_viewport();
+	}
+
+	_can_soft_render_floor(bg, layout_key) {
+		const $grid = this.$table_grid;
+		const canvas_el = this.$floor_canvas?.[0];
+		const grid_el = $grid?.[0];
+		return (
+			this._floor_canvas_epoch === this._surface_epoch &&
+			!!canvas_el &&
+			!!grid_el &&
+			grid_el.contains(canvas_el) &&
+			$grid.hasClass("is-floor") &&
+			!$grid.hasClass("is-grouped") &&
+			!$grid.hasClass("is-empty-state") &&
+			this._floor_canvas_bg === (bg || null) &&
+			this._floor_canvas_floor === this.active_floor &&
+			this._floor_canvas_layout_cache === layout_key &&
+			!this._floor_force_rebuild
+		);
+	}
+
+	_floor_positions(tables) {
 		const has_pos = (t) =>
 			Number.isFinite(t.pos_x) && Number.isFinite(t.pos_y) && (t.pos_x || t.pos_y);
 		const unpositioned = tables.filter((t) => !has_pos(t));
-		// Spread unpositioned tables evenly across the FULL canvas (both axes), with margins.
 		const n = unpositioned.length;
 		const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
 		const rows = Math.max(1, Math.ceil(n / cols));
@@ -2213,23 +2911,287 @@ imogi_pos.TableService = class TableService {
 			t._auto_x = cols === 1 ? 50 : margin + (col / (cols - 1)) * span;
 			t._auto_y = rows === 1 ? 50 : margin + (row / (rows - 1)) * span;
 		});
+		return tables.map((table) => ({
+			table,
+			x: has_pos(table) ? table.pos_x : table._auto_x,
+			y: has_pos(table) ? table.pos_y : table._auto_y,
+		}));
+	}
 
-		tables.forEach((table) => {
-			const x = has_pos(table) ? table.pos_x : table._auto_x;
-			const y = has_pos(table) ? table.pos_y : table._auto_y;
+	_paint_floor_nodes($canvas, tables, features) {
+		this._floor_positions(tables).forEach(({ table, x, y }) => {
 			const $node = this.build_floor_node(table, features);
-			$node.attr("data-name", table.name).css({ left: `${x}%`, top: `${y}%` });
+			this._apply_floor_node_layout($node, table, x, y);
+			if (this.arrange_mode) this._decorate_floor_node_for_edit($node);
 			$canvas.append($node);
 		});
+	}
 
-		if (this.arrange_mode) {
-			this._bind_floor_drag($canvas);
+	_floor_node_scale(table) {
+		const scale = parseFloat(table?.pos_scale);
+		return Number.isFinite(scale) ? Math.max(0.5, Math.min(2.5, scale)) : 1;
+	}
+
+	_floor_node_rotation(table) {
+		const rotation = parseFloat(table?.pos_rotation);
+		return Number.isFinite(rotation) ? ((rotation % 360) + 360) % 360 : 0;
+	}
+
+	_floor_node_transform(scale, rotation) {
+		return `translate(-50%, -50%) rotate(${rotation || 0}deg) scale(${scale || 1})`;
+	}
+
+	_get_floor_image_rect() {
+		const canvas = this.$floor_canvas?.[0];
+		if (!canvas) return null;
+		const W = canvas.clientWidth;
+		const H = canvas.clientHeight;
+		if (W < 1 || H < 1) return null;
+		if (!this._floor_canvas_bg) {
+			return { W, H, imgW: W, imgH: H, left: 0, top: 0 };
+		}
+		const ar = this._floor_canvas_ar || 16 / 9;
+		let imgW;
+		let imgH;
+		let left;
+		let top;
+		if (W / H > ar) {
+			imgH = H;
+			imgW = H * ar;
+			left = (W - imgW) / 2;
+			top = 0;
+		} else {
+			imgW = W;
+			imgH = W / ar;
+			left = 0;
+			top = (H - imgH) / 2;
+		}
+		return { W, H, imgW, imgH, left, top };
+	}
+
+	_logical_pct_to_display_pct(x, y) {
+		const rect = this._get_floor_image_rect();
+		if (!rect) return { x, y };
+		return {
+			x: ((rect.left + (x / 100) * rect.imgW) / rect.W) * 100,
+			y: ((rect.top + (y / 100) * rect.imgH) / rect.H) * 100,
+		};
+	}
+
+	_display_pct_to_logical_pct(x, y) {
+		const rect = this._get_floor_image_rect();
+		if (!rect) return { x, y };
+		const px = (x / 100) * rect.W;
+		const py = (y / 100) * rect.H;
+		return {
+			x: Math.max(0, Math.min(100, ((px - rect.left) / rect.imgW) * 100)),
+			y: Math.max(0, Math.min(100, ((py - rect.top) / rect.imgH) * 100)),
+		};
+	}
+
+	_reflow_all_floor_nodes() {
+		if (!this.$floor_canvas?.length) return;
+		this.$floor_canvas.find(".imogi-ts-floor-node").each((_, el) => {
+			let lx = parseFloat(el.dataset.logicalX ?? el.dataset.posX);
+			let ly = parseFloat(el.dataset.logicalY ?? el.dataset.posY);
+			if (!Number.isFinite(lx) || !Number.isFinite(ly)) {
+				const dx = parseFloat(el.style.left);
+				const dy = parseFloat(el.style.top);
+				if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+				const logical = this._display_pct_to_logical_pct(dx, dy);
+				lx = logical.x;
+				ly = logical.y;
+				el.dataset.logicalX = String(lx);
+				el.dataset.logicalY = String(ly);
+				el.dataset.posX = String(lx);
+				el.dataset.posY = String(ly);
+			}
+			const display = this._logical_pct_to_display_pct(lx, ly);
+			el.style.left = `${display.x}%`;
+			el.style.top = `${display.y}%`;
+		});
+	}
+
+	_apply_floor_node_layout($node, table, x, y) {
+		const scale = this._floor_node_scale(table);
+		const rotation = this._floor_node_rotation(table);
+		const display = this._logical_pct_to_display_pct(x, y);
+		$node
+			.attr("data-name", table.name)
+			.attr("data-logical-x", String(x))
+			.attr("data-logical-y", String(y))
+			.attr("data-scale", String(scale))
+			.attr("data-rotation", String(rotation))
+			.css({
+				left: `${display.x}%`,
+				top: `${display.y}%`,
+				transform: this._floor_node_transform(scale, rotation),
+			});
+		const el = $node[0];
+		if (el) {
+			el.dataset.posX = String(x);
+			el.dataset.posY = String(y);
+			el.dataset.logicalX = String(x);
+			el.dataset.logicalY = String(y);
+			el.dataset.scale = String(scale);
+			el.dataset.rotation = String(rotation);
 		}
 	}
 
+	_read_floor_node_layout($node) {
+		return {
+			x: parseFloat($node[0]?.style?.left),
+			y: parseFloat($node[0]?.style?.top),
+			scale: parseFloat($node.attr("data-scale")) || 1,
+			rotation: parseFloat($node.attr("data-rotation")) || 0,
+		};
+	}
+
+	_decorate_floor_node_for_edit($node) {
+		if ($node.find(".imogi-ts-floor-rotate").length) return;
+		$node.append(`
+			<button type="button" class="imogi-ts-floor-rotate" title="${__("Putar meja (+15°)")}"><i class="fa fa-rotate-right"></i></button>
+			<span class="imogi-ts-floor-resize-handle" title="${__("Ubah ukuran meja")}"></span>
+		`);
+	}
+
+	_update_floor_nodes(tables, features) {
+		const $canvas = this.$floor_canvas;
+		if (!$canvas?.length) {
+			this._floor_force_rebuild = true;
+			this.render_floor(tables, features);
+			this._floor_force_rebuild = false;
+			return;
+		}
+
+		if (!tables.length) {
+			const kind = this._detect_floor_empty_kind(tables);
+			if (kind) {
+				this._floor_force_rebuild = true;
+				this.render_floor(tables, features);
+				this._floor_force_rebuild = false;
+				return;
+			}
+			this._render_floor_empty_state($canvas, tables);
+			this._fit_floor_canvas_to_viewport();
+			return;
+		}
+
+		$canvas.find(".imogi-ts-floor-empty").remove();
+		const next_names = new Set(tables.map((t) => t.name));
+		$canvas.find(".imogi-ts-floor-node").each((_, el) => {
+			const name = el.getAttribute("data-name");
+			if (!next_names.has(name)) el.remove();
+		});
+
+		this._floor_positions(tables).forEach(({ table, x, y }) => {
+			let $node = $canvas.find(`.imogi-ts-floor-node[data-name="${table.name}"]`);
+			if ($node.length) {
+				this._patch_floor_node($node, table, features);
+				this._apply_floor_node_layout($node, table, x, y);
+				if (this.arrange_mode) this._decorate_floor_node_for_edit($node);
+			} else {
+				$node = this.build_floor_node(table, features);
+				this._apply_floor_node_layout($node, table, x, y);
+				if (this.arrange_mode) this._decorate_floor_node_for_edit($node);
+				$canvas.append($node);
+			}
+		});
+		this._fit_floor_canvas_to_viewport();
+		if (this.arrange_mode) {
+			this._bind_floor_node_edit($canvas);
+		}
+	}
+
+	_patch_floor_node($node, table, features) {
+		const display = imogi_ts_table_display(table);
+		$node.removeClass("is-available is-occupied is-reserved").addClass(display.className);
+		const shape = (table.shape || "Square").toLowerCase();
+		$node.removeClass("shape-square shape-round shape-bar").addClass(`shape-${shape}`);
+		$node.find(".imogi-ts-fn-num").text(table.table_number || table.name);
+		$node.find(".imogi-ts-fn-cap").html(`<i class="fa fa-user"></i> ${table.capacity || 0}`);
+		const $info = $node.find(".imogi-ts-fn-info");
+		if (table.open_order) {
+			const elapsed = imogi_ts_format_elapsed(table.open_order_since);
+			const parts = [];
+			if (elapsed) parts.push(elapsed.text);
+			parts.push(format_currency(table.open_order_total || 0));
+			if ($info.length) $info.html(parts.join("<br>"));
+			else $node.find(".imogi-ts-fn-cap").after(`<span class="imogi-ts-fn-info">${parts.join("<br>")}</span>`);
+		} else {
+			$info.remove();
+		}
+	}
+
+	_bind_floor_resize_observer() {
+		if (!window.ResizeObserver || !this.$table_grid?.length) return;
+		if (!this._floor_resize_observer) {
+			this._floor_resize_observer = new ResizeObserver(() => this._fit_floor_canvas_to_viewport());
+		}
+		const el = this.$table_grid[0];
+		this._floor_resize_observer.disconnect();
+		this._floor_resize_observer.observe(el);
+	}
+
+	_fit_floor_canvas_to_viewport() {
+		const $grid = this.$table_grid;
+		const $canvas = this.$floor_canvas;
+		if (!$grid?.length || !$canvas?.length || !$grid.hasClass("is-floor")) return;
+
+		const apply = () => {
+			const gh = $grid[0].clientHeight || 0;
+			const fallback = "min(420px, 52vh)";
+			$canvas.addClass("is-sized").css({
+				width: "100%",
+				flex: "1 1 auto",
+				height: gh >= 120 ? "100%" : fallback,
+				minHeight: gh >= 120 ? 0 : fallback,
+				maxHeight: "100%",
+			});
+			this._reflow_all_floor_nodes();
+		};
+
+		requestAnimationFrame(() => {
+			apply();
+			if (($grid[0].clientHeight || 0) < 120) {
+				requestAnimationFrame(apply);
+			}
+		});
+	}
+
+	_sync_floor_canvas_to_image($canvas, bg_url) {
+		if (!$canvas?.length || !bg_url) {
+			$canvas?.removeClass("is-sized").css("--ts-floor-ar", "");
+			this._floor_canvas_ar = 16 / 9;
+			this._fit_floor_canvas_to_viewport();
+			return;
+		}
+		if (this._floor_canvas_bg === bg_url && this._floor_canvas_ar) {
+			this._fit_floor_canvas_to_viewport();
+			return;
+		}
+		const img = new Image();
+		img.onload = () => {
+			const w = img.naturalWidth || 0;
+			const h = img.naturalHeight || 0;
+			if (w > 0 && h > 0) {
+				this._floor_canvas_ar = w / h;
+				$canvas.css("--ts-floor-ar", `${w} / ${h}`).addClass("is-sized");
+				this._fit_floor_canvas_to_viewport();
+			}
+		};
+		img.onerror = () => {
+			$canvas.removeClass("is-sized");
+			this._floor_canvas_ar = 16 / 9;
+			this._fit_floor_canvas_to_viewport();
+		};
+		img.src = encodeURI(bg_url);
+	}
+
 	build_floor_node(table, features) {
-		const status_class = IMOGI_TABLE_STATUS_CLASS[table.status] || "";
-		const status_label = IMOGI_TS_STATUS_LABEL[table.status] || table.status || "Available";
+		const display = imogi_ts_table_display(table);
+		const status_class = display.className;
+		const status_label = display.label;
 		const shape = (table.shape || "Square").toLowerCase();
 		const zone = imogi_ts_table_area_label(table);
 		let info = "";
@@ -2302,10 +3264,12 @@ imogi_pos.TableService = class TableService {
 			const { node, moved } = drag;
 			node.classList.remove("is-dragging");
 			if (moved) {
-				self._mark_dirty_position(
+				self._mark_dirty_layout(
 					node.getAttribute("data-name"),
 					parseFloat(node.dataset.posX),
-					parseFloat(node.dataset.posY)
+					parseFloat(node.dataset.posY),
+					parseFloat(node.dataset.scale) || 1,
+					parseFloat(node.dataset.rotation) || 0
 				);
 			}
 			try {
@@ -2320,14 +3284,18 @@ imogi_pos.TableService = class TableService {
 			if (!drag) return;
 			ev.preventDefault();
 			const rect = drag.rect;
-			let x = ((ev.clientX - rect.left) / rect.width) * 100;
-			let y = ((ev.clientY - rect.top) / rect.height) * 100;
-			x = Math.max(5, Math.min(95, x));
-			y = Math.max(5, Math.min(95, y));
-			drag.node.style.left = `${x.toFixed(2)}%`;
-			drag.node.style.top = `${y.toFixed(2)}%`;
-			drag.node.dataset.posX = String(x.toFixed(2));
-			drag.node.dataset.posY = String(y.toFixed(2));
+			let displayX = ((ev.clientX - rect.left) / rect.width) * 100;
+			let displayY = ((ev.clientY - rect.top) / rect.height) * 100;
+			displayX = Math.max(2, Math.min(98, displayX));
+			displayY = Math.max(2, Math.min(98, displayY));
+			const logical = self._display_pct_to_logical_pct(displayX, displayY);
+			drag.node.style.left = `${displayX.toFixed(2)}%`;
+			drag.node.style.top = `${displayY.toFixed(2)}%`;
+			drag.node.dataset.logicalX = String(logical.x.toFixed(2));
+			drag.node.dataset.logicalY = String(logical.y.toFixed(2));
+			drag.node.dataset.posX = drag.node.dataset.logicalX;
+			drag.node.dataset.posY = drag.node.dataset.logicalY;
+			drag.node.style.transform = self._floor_node_transform(drag.scale, drag.rotation);
 			drag.moved = true;
 		};
 
@@ -2344,6 +3312,8 @@ imogi_pos.TableService = class TableService {
 				rect: canvas_el.getBoundingClientRect(),
 				moved: false,
 				pointerId,
+				scale: parseFloat(node.dataset.scale) || 1,
+				rotation: parseFloat(node.dataset.rotation) || 0,
 			};
 			node.classList.add("is-dragging");
 			try {
@@ -2356,6 +3326,7 @@ imogi_pos.TableService = class TableService {
 		$canvas.off("pointerdown.tsdrag mousedown.tsdrag");
 		$canvas.on("pointerdown.tsdrag", ".imogi-ts-floor-node", function (ev) {
 			if (!self.arrange_mode || ev.button !== 0) return;
+			if ($(ev.target).closest(".imogi-ts-floor-rotate, .imogi-ts-floor-resize-handle").length) return;
 			ev.preventDefault();
 			ev.stopPropagation();
 			skip_mouse = true;
@@ -2367,6 +3338,7 @@ imogi_pos.TableService = class TableService {
 		// Fallback for environments where Pointer Events are flaky.
 		$canvas.on("mousedown.tsdrag", ".imogi-ts-floor-node", function (ev) {
 			if (skip_mouse || !self.arrange_mode || ev.button !== 0) return;
+			if ($(ev.target).closest(".imogi-ts-floor-rotate, .imogi-ts-floor-resize-handle").length) return;
 			ev.preventDefault();
 			ev.stopPropagation();
 			start_drag(this, ev.clientX, ev.clientY, null);
@@ -2379,17 +3351,95 @@ imogi_pos.TableService = class TableService {
 
 	_teardown_floor_drag() {
 		$(document).off("pointermove.tsdrag mousemove.tsdrag pointerup.tsdrag mouseup.tsdrag pointercancel.tsdrag");
-		this.$floor_canvas?.off("pointerdown.tsdrag mousedown.tsdrag");
+		$(document).off("pointermove.tsresize pointerup.tsresize pointercancel.tsresize");
+		this.$floor_canvas?.off("pointerdown.tsdrag mousedown.tsdrag click.tsrotate pointerdown.tsresize");
 	}
 
-	_mark_dirty_position(name, x, y) {
+	_bind_floor_node_edit($canvas) {
+		const self = this;
+		$canvas.find(".imogi-ts-floor-node").each((_, el) => self._decorate_floor_node_for_edit($(el)));
+
+		$canvas.off("click.tsrotate").on("click.tsrotate", ".imogi-ts-floor-rotate", function (ev) {
+			ev.preventDefault();
+			ev.stopPropagation();
+			const $node = $(this).closest(".imogi-ts-floor-node");
+			const name = $node.attr("data-name");
+			let rotation = (parseFloat($node.attr("data-rotation")) || 0) + 15;
+			rotation = ((rotation % 360) + 360) % 360;
+			const scale = parseFloat($node.attr("data-scale")) || 1;
+			$node.attr("data-rotation", String(rotation));
+			$node.css("transform", self._floor_node_transform(scale, rotation));
+			const lx = parseFloat($node.attr("data-logical-x")) || parseFloat($node[0].dataset.posX);
+			const ly = parseFloat($node.attr("data-logical-y")) || parseFloat($node[0].dataset.posY);
+			self._mark_dirty_layout(name, lx, ly, scale, rotation);
+		});
+
+		let resize = null;
+		const finish_resize = () => {
+			if (!resize) return;
+			const { node, scale, rotation } = resize;
+			const name = node.getAttribute("data-name");
+			const lx = parseFloat(node.dataset.logicalX ?? node.dataset.posX);
+			const ly = parseFloat(node.dataset.logicalY ?? node.dataset.posY);
+			self._mark_dirty_layout(name, lx, ly, scale, rotation);
+			try {
+				if (resize.pointerId != null) node.releasePointerCapture(resize.pointerId);
+			} catch (e) {
+				/* ignore */
+			}
+			resize = null;
+		};
+
+		$canvas.off("pointerdown.tsresize").on("pointerdown.tsresize", ".imogi-ts-floor-resize-handle", function (ev) {
+			ev.preventDefault();
+			ev.stopPropagation();
+			const node = this.closest(".imogi-ts-floor-node");
+			resize = {
+				node,
+				startY: ev.clientY,
+				startScale: parseFloat(node.dataset.scale) || 1,
+				scale: parseFloat(node.dataset.scale) || 1,
+				rotation: parseFloat(node.dataset.rotation) || 0,
+				pointerId: ev.pointerId,
+			};
+			try {
+				node.setPointerCapture(ev.pointerId);
+			} catch (e) {
+				/* ignore */
+			}
+		});
+
+		$(document).off("pointermove.tsresize").on("pointermove.tsresize", (ev) => {
+			if (!resize) return;
+			ev.preventDefault();
+			const delta = (resize.startY - ev.clientY) * 0.008;
+			const scale = Math.max(0.5, Math.min(2.5, Math.round((resize.startScale + delta) * 100) / 100));
+			resize.scale = scale;
+			resize.node.dataset.scale = String(scale);
+			resize.node.style.transform = self._floor_node_transform(scale, resize.rotation);
+		});
+		$(document).off("pointerup.tsresize pointercancel.tsresize").on("pointerup.tsresize pointercancel.tsresize", (ev) => {
+			if (!resize) return;
+			ev.preventDefault();
+			finish_resize();
+		});
+	}
+
+	_mark_dirty_layout(name, x, y, scale, rotation) {
 		if (!name || !Number.isFinite(x) || !Number.isFinite(y)) return;
 		if (!this._dirty_positions) this._dirty_positions = new Map();
-		this._dirty_positions.set(name, { x, y });
+		this._dirty_positions.set(name, {
+			x,
+			y,
+			scale: Number.isFinite(scale) ? scale : 1,
+			rotation: Number.isFinite(rotation) ? rotation : 0,
+		});
 		const t = (this.board.tables || []).find((tt) => tt.name === name);
 		if (t) {
 			t.pos_x = x;
 			t.pos_y = y;
+			t.pos_scale = scale;
+			t.pos_rotation = rotation;
 		}
 	}
 
@@ -2398,11 +3448,16 @@ imogi_pos.TableService = class TableService {
 		if (next && this.view_mode !== "floor") {
 			this.set_view_mode("floor");
 		}
+		if (next && this.floor_expanded) {
+			this.toggle_floor_expanded(false);
+		}
 		this.arrange_mode = next;
+		this._bump_surface_epoch();
+		this._invalidate_floor_canvas();
 		if (next) {
 			if (this._timer) clearInterval(this._timer);
 			frappe.show_alert({
-				message: __("Mode atur denah aktif — klik & tahan meja, lalu seret"),
+				message: __("Mode atur denah — seret meja, putar (+), atau resize (sudut)"),
 				indicator: "blue",
 			});
 		} else {
@@ -2414,13 +3469,25 @@ imogi_pos.TableService = class TableService {
 	}
 
 	_collect_floor_positions_from_dom() {
+		const self = this;
 		const positions = [];
 		(this.$floor_canvas || this.wrapper.find(".imogi-ts-floor-canvas")).find(".imogi-ts-floor-node").each(function () {
 			const name = this.getAttribute("data-name");
-			const x = parseFloat(this.style.left);
-			const y = parseFloat(this.style.top);
+			let x = parseFloat(this.dataset.logicalX ?? this.dataset.posX);
+			let y = parseFloat(this.dataset.logicalY ?? this.dataset.posY);
+			if (!Number.isFinite(x) || !Number.isFinite(y)) {
+				const dx = parseFloat(this.style.left);
+				const dy = parseFloat(this.style.top);
+				if (Number.isFinite(dx) && Number.isFinite(dy)) {
+					const logical = self._display_pct_to_logical_pct(dx, dy);
+					x = logical.x;
+					y = logical.y;
+				}
+			}
+			const scale = parseFloat(this.dataset.scale) || 1;
+			const rotation = parseFloat(this.dataset.rotation) || 0;
 			if (name && Number.isFinite(x) && Number.isFinite(y)) {
-				positions.push({ name, pos_x: x, pos_y: y });
+				positions.push({ name, pos_x: x, pos_y: y, pos_scale: scale, pos_rotation: rotation });
 			}
 		});
 		return positions;
@@ -2433,7 +3500,15 @@ imogi_pos.TableService = class TableService {
 
 		from_dom.forEach((p) => merged.set(p.name, p));
 		if (dirty?.size) {
-			dirty.forEach((p, name) => merged.set(name, { name, pos_x: p.x, pos_y: p.y }));
+			dirty.forEach((p, name) =>
+				merged.set(name, {
+					name,
+					pos_x: p.x,
+					pos_y: p.y,
+					pos_scale: p.scale,
+					pos_rotation: p.rotation,
+				})
+			);
 		}
 
 		const positions = [...merged.values()];
@@ -2449,6 +3524,8 @@ imogi_pos.TableService = class TableService {
 					if (t) {
 						t.pos_x = p.pos_x;
 						t.pos_y = p.pos_y;
+						if (p.pos_scale != null) t.pos_scale = p.pos_scale;
+						if (p.pos_rotation != null) t.pos_rotation = p.pos_rotation;
 					}
 				});
 				frappe.show_alert({ message: __("Denah meja disimpan"), indicator: "green" });
@@ -2456,13 +3533,25 @@ imogi_pos.TableService = class TableService {
 		});
 	}
 
-	prompt_floor_settings() {
-		const active_floor_doc = (this.board.floors || []).find((f) => f.name === this.active_floor);
-		const floor_label = active_floor_doc?.floor_name || __("Lantai aktif");
-		const has_bg = !!(active_floor_doc?.floor_background || this.board.floor_background);
+	prompt_floor_settings(area_name) {
+		const area_doc = area_name
+			? (this.board.areas || []).find((a) => a.name === area_name)
+			: this._active_area_doc_for_floor_view();
+		if (!area_doc) {
+			frappe.msgprint({
+				title: __("Pilih ruangan dulu"),
+				indicator: "orange",
+				message: __("Buat atau pilih ruangan/zona di filter atas sebelum mengatur denah."),
+			});
+			return;
+		}
+		const floor = (this.board.floors || []).find((f) => f.name === area_doc.restaurant_floor);
+		const floor_label = floor?.floor_name || area_doc.restaurant_floor || "";
+		const area_label = imogi_ts_area_display_name(area_doc);
+		const has_bg = !!area_doc.floor_background;
 		const dialog = imogi_ts_open_form_dialog({
-			title: __("Pengaturan Denah"),
-			subtitle: __("Background untuk {0} & penataan otomatis", [floor_label]),
+			title: __("Pengaturan Denah Ruangan"),
+			subtitle: __("{0} · {1}", [floor_label, area_label]),
 			icon: "fa-picture-o",
 			fields: [
 				{
@@ -2472,7 +3561,7 @@ imogi_pos.TableService = class TableService {
 						<div class="imogi-ts-order-modal-cell" style="margin-bottom:10px;">
 							<label>${__("Background Denah")}</label>
 							<div class="val" style="font-size:12px;font-weight:600;color:#475569;">
-								${has_bg ? __("Gambar denah aktif sebagai latar lantai.") : __("Belum ada gambar. Unggah blueprint/denah lantai (opsional).")}
+								${has_bg ? __("Gambar denah ruangan aktif — canvas mengikuti proporsi gambar.") : __("Unggah blueprint/denah khusus ruangan ini. Meja di zona ini akan ditata di atas gambar.")}
 							</div>
 						</div>
 						<div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -2486,7 +3575,7 @@ imogi_pos.TableService = class TableService {
 					fieldtype: "HTML",
 					options: `
 						<div class="val" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px;">
-							${__("Tata ulang semua meja jadi grid rapi (posisi manual akan ditimpa).")}
+							${__("Tata ulang meja di ruangan ini jadi grid rapi di atas denah (posisi manual zona ini akan ditimpa).")}
 						</div>
 						<button type="button" class="btn btn-sm btn-default imogi-ts-bg-autoarrange"><i class="fa fa-th"></i> ${__("Tata Otomatis")}</button>`,
 				},
@@ -2497,21 +3586,22 @@ imogi_pos.TableService = class TableService {
 		dialog.get_primary_btn().off("click").on("click", () => dialog.hide());
 
 		dialog.$wrapper.find(".imogi-ts-bg-upload").on("click", () => {
-			new frappe.ui.FileUploader({
-				allow_multiple: false,
-				restrictions: { allowed_file_types: ["image/*"] },
-				on_success: (file_doc) => {
-					frappe.call({
-						method: "imogi_pos.api.table_api.set_floor_background",
-						args: { image_url: file_doc.file_url, floor: this.active_floor },
-						freeze: true,
-						callback: () => {
-							this.board.floor_background = file_doc.file_url;
-							if (active_floor_doc) active_floor_doc.floor_background = file_doc.file_url;
-							frappe.show_alert({ message: __("Background denah diperbarui"), indicator: "green" });
-							dialog.hide();
-							this.render_surface(this.board.tables || [], this.board.features || {});
-						},
+			this._upload_area_background(area_doc.name, {
+				on_success: (file_url) => {
+					this._sync_board_area_field(area_doc.name, { floor_background: file_url });
+					this._invalidate_floor_canvas();
+					dialog.hide();
+					const all_label = __("Semua");
+					if (this.active_zone !== area_doc.name) {
+						this.active_zone = area_doc.name;
+						this._persist_active_zone();
+						this._sync_zone_filter_ui();
+					}
+					this._auto_arrange_all({
+						message: __(
+							"Denah ruangan mengikuti gambar — meja ditata otomatis. Gunakan Atur Denah untuk geser posisi."
+						),
+						enable_arrange: true,
 					});
 				},
 			});
@@ -2519,13 +3609,13 @@ imogi_pos.TableService = class TableService {
 
 		dialog.$wrapper.find(".imogi-ts-bg-clear").on("click", () => {
 			frappe.call({
-				method: "imogi_pos.api.table_api.set_floor_background",
-				args: { image_url: "", floor: this.active_floor },
+				method: "imogi_pos.api.table_api.set_area_background",
+				args: { image_url: "", area: area_doc.name },
 				freeze: true,
 				callback: () => {
-					this.board.floor_background = null;
-					if (active_floor_doc) active_floor_doc.floor_background = null;
-					frappe.show_alert({ message: __("Background dihapus"), indicator: "orange" });
+					this._sync_board_area_field(area_doc.name, { floor_background: null });
+					this._invalidate_floor_canvas();
+					frappe.show_alert({ message: __("Background ruangan dihapus"), indicator: "orange" });
 					dialog.hide();
 					this.render_surface(this.board.tables || [], this.board.features || {});
 				},
@@ -2534,18 +3624,51 @@ imogi_pos.TableService = class TableService {
 
 		dialog.$wrapper.find(".imogi-ts-bg-autoarrange").on("click", () => {
 			imogi_ts_confirm(
-				__("Tata ulang semua meja jadi grid rapi? Posisi manual saat ini akan ditimpa."),
+				__("Tata ulang meja di ruangan ini jadi grid rapi? Posisi manual saat ini akan ditimpa."),
 				() => {
-					this._auto_arrange_all();
+					const prev_zone = this.active_zone;
+					if (this.active_zone !== area_doc.name) {
+						this.active_zone = area_doc.name;
+						this._persist_active_zone();
+					}
+					this._auto_arrange_all({
+						callback: () => {
+							if (prev_zone !== area_doc.name) {
+								this.active_zone = prev_zone;
+								this._persist_active_zone();
+							}
+						},
+					});
 				},
 				{ parent_dialog: dialog }
 			);
 		});
 	}
 
-	_auto_arrange_all() {
+	_upload_area_background(area_name, { on_success } = {}) {
+		new frappe.ui.FileUploader({
+			allow_multiple: false,
+			restrictions: { allowed_file_types: ["image/*"] },
+			on_success: (file_doc) => {
+				frappe.call({
+					method: "imogi_pos.api.table_api.set_area_background",
+					args: { image_url: file_doc.file_url, area: area_name },
+					freeze: true,
+					callback: () => {
+						on_success?.(file_doc.file_url);
+					},
+				});
+			},
+		});
+	}
+
+	_auto_arrange_all(options = {}) {
 		const tables = this._tables_for_active_context(this.board.tables || []);
-		if (!tables.length) return;
+		if (!tables.length) {
+			if (options.callback) options.callback();
+			else this.render_surface(this.board.tables || [], this.board.features || {});
+			return;
+		}
 		const n = tables.length;
 		const cols = Math.max(1, Math.ceil(Math.sqrt(n)));
 		const rows = Math.max(1, Math.ceil(n / cols));
@@ -2565,15 +3688,21 @@ imogi_pos.TableService = class TableService {
 			args: { positions: JSON.stringify(positions) },
 			freeze: true,
 			callback: () => {
-				frappe.show_alert({ message: __("Meja ditata ulang"), indicator: "green" });
-				this.render_surface(this.board.tables || [], this.board.features || {});
+				frappe.show_alert({
+					message: options.message || __("Meja ditata ulang"),
+					indicator: "green",
+				});
+				if (options.enable_arrange) this.arrange_mode = true;
+				if (options.callback) options.callback();
+				else this.render_surface(this.board.tables || [], this.board.features || {});
 			},
 		});
 	}
 
 	build_table_card(table, features) {
-		const status_class = IMOGI_TABLE_STATUS_CLASS[table.status] || "";
-		const status_label = IMOGI_TS_STATUS_LABEL[table.status] || table.status || "Available";
+		const display = imogi_ts_table_display(table);
+		const status_class = display.className;
+		const status_label = display.label;
 		const zone_label = imogi_ts_table_area_label(table);
 		const zone_html =
 			this._should_show_area_badge() && zone_label
@@ -2673,32 +3802,18 @@ imogi_pos.TableService = class TableService {
 
 	prompt_table_order(table, features) {
 		features = features || this.board.features || {};
-		const status_chip = IMOGI_TS_ORDER_STATUS_CHIP[table.open_order_status];
-		const status_label = status_chip ? status_chip.label : table.open_order_status || "—";
 		const elapsed = imogi_ts_format_elapsed(table.open_order_since);
-		const kitchen_label =
-			table.open_order_kitchen === "pending"
-				? __("Sedang dimasak")
-				: table.open_order_kitchen === "done"
-					? __("Siap diantar")
-					: __("Tanpa dapur");
-		const can_supervise = this.can_open_cashier();
-
-		const move_btn = features.move_table
-			? `<button type="button" class="btn btn-sm btn-default imogi-ts-modal-move"><i class="fa fa-arrows"></i> ${__("Pindah Meja")}</button>`
-			: "";
-		const merge_btn = features.merge_table
-			? `<button type="button" class="btn btn-sm btn-default imogi-ts-modal-merge"><i class="fa fa-compress"></i> ${__("Gabung Meja")}</button>`
-			: "";
-		const actions_row =
-			move_btn || merge_btn
-				? `<div class="imogi-ts-order-actions" style="display:flex;gap:8px;margin-top:12px;">${move_btn}${merge_btn}</div>`
-				: "";
+		const order_refs = (table.open_orders || []).filter(Boolean);
+		const subtitle =
+			order_refs.length > 1
+				? `${order_refs.join(" · ")} (${order_refs.length} ${__("order")})`
+				: table.open_order || "";
 
 		const dialog = imogi_ts_open_form_dialog({
 			title: __("Order Meja {0}", [table.table_number || table.name]),
-			subtitle: table.open_order,
+			subtitle,
 			icon: "fa-file-text-o",
+			wide: true,
 			fields: [
 				{
 					fieldname: "order_html",
@@ -2714,50 +3829,89 @@ imogi_pos.TableService = class TableService {
 								<div class="val">${format_currency(table.open_order_total || 0)}</div>
 							</div>
 							<div class="imogi-ts-order-modal-cell">
-								<label>${__("Status")}</label>
-								<div class="val">${frappe.utils.escape_html(status_label)}</div>
-							</div>
-							<div class="imogi-ts-order-modal-cell">
 								<label>${__("Lama")}</label>
 								<div class="val">${elapsed ? elapsed.text : "—"}</div>
 							</div>
-							<div class="imogi-ts-order-modal-cell">
-								<label>${__("Tipe")}</label>
-								<div class="val">${frappe.utils.escape_html(table.open_order_type || "Dine-in")}</div>
-							</div>
-							<div class="imogi-ts-order-modal-cell">
-								<label>${__("Dapur")}</label>
-								<div class="val">${kitchen_label}</div>
-							</div>
 						</div>
-						${actions_row}`,
+						<div class="imogi-ts-kitchen-tracking-host">
+							<div class="imogi-ts-kitchen-tracking imogi-ts-kitchen-tracking--loading">
+								<div class="imogi-ts-kitchen-tracking__head">
+									<span class="imogi-ts-kitchen-tracking__title"><i class="fa fa-fire"></i> ${__("Tracking Dapur")}</span>
+								</div>
+								<div class="imogi-ts-kitchen-tracking__empty"><i class="fa fa-spinner fa-spin"></i> ${__(
+									"Memuat tracking dapur..."
+								)}</div>
+							</div>
+						</div>`,
 				},
 			],
-			primary_label: __("Buka di Kasir"),
+			primary_label: __("Tambah Order"),
 			on_submit: () => {
-				this.open_cashier_for_table(table, {
-					customer_name: table.open_order_customer,
-					order_name: table.open_order,
-				});
+				this.open_cashier_for_table_addon(table);
 			},
 		});
+		this._bind_order_kitchen_tracking(table, dialog);
+	}
 
-		dialog.$wrapper.find(".imogi-ts-modal-move").on("click", () => {
-			dialog.hide();
-			this.prompt_move_table(table);
-		});
-		dialog.$wrapper.find(".imogi-ts-modal-merge").on("click", () => {
-			dialog.hide();
-			this.prompt_merge_table(table);
-		});
+	_bind_order_kitchen_tracking(table, dialog) {
+		if (!table?.name) return;
 
-		if (can_supervise) {
-			dialog.set_secondary_action_label(__("Detail Lengkap"));
-			dialog.set_secondary_action(() => {
-				dialog.hide();
-				frappe.set_route("Form", "Riwayat Order", table.open_order);
+		let alive = true;
+		const get_host = () => dialog.$wrapper.find(".imogi-ts-kitchen-tracking-host");
+
+		const render_tracking = (tracking) => {
+			if (!alive) return;
+			const $host = get_host();
+			if (!$host.length) return;
+			$host.html(imogi_ts_build_kitchen_tracking_html(tracking || {}));
+		};
+
+		const render_error = () => {
+			render_tracking({
+				has_kitchen: false,
+				items: [],
+				summary: { pending: 0, preparing: 0, ready: 0, total: 0 },
+				message: __("Gagal memuat tracking dapur. Coba tutup dan buka lagi."),
 			});
+		};
+
+		// Order tanpa item dapur — tampilkan langsung tanpa round-trip API.
+		if (!table.open_order_kitchen) {
+			requestAnimationFrame(() => {
+				render_tracking({
+					has_kitchen: false,
+					items: [],
+					summary: { pending: 0, preparing: 0, ready: 0, total: 0 },
+					message: __("Tidak ada item dapur pada order ini"),
+				});
+			});
+			return;
 		}
+
+		const load = () => {
+			if (!alive) return;
+			frappe.call({
+				method: "imogi_pos.api.table_api.get_table_kitchen_tracking",
+				args: {
+					restaurant_table: table.name,
+					pos_order: table.open_order || undefined,
+				},
+				callback: (r) => render_tracking(r.message || {}),
+				error: () => render_error(),
+			});
+		};
+
+		const on_kitchen = () => {
+			if (!alive) return;
+			load();
+		};
+
+		dialog.$wrapper.on("hidden.bs.modal.imogi-ts-kitchen", () => {
+			alive = false;
+			frappe.realtime.off("imogi_kitchen_updated", on_kitchen);
+		});
+		frappe.realtime.on("imogi_kitchen_updated", on_kitchen);
+		requestAnimationFrame(() => load());
 	}
 
 	render_reservations(reservations) {
@@ -2836,6 +3990,28 @@ imogi_pos.TableService = class TableService {
 					table_number: table.table_number || table.name,
 					customer_label: extra.customer_name || "",
 					party_size: extra.party_size || null,
+				})
+			);
+		} catch (e) {
+			/* ignore */
+		}
+		frappe.set_route("imogi-pos-cashier");
+	}
+
+	open_cashier_for_table_addon(table) {
+		if (!table?.open_order) {
+			frappe.msgprint(__("Meja tidak punya order aktif"));
+			return;
+		}
+		try {
+			localStorage.setItem(
+				"_imogi_pos_cashier_prefill",
+				JSON.stringify({
+					order_type: "Dine-in",
+					restaurant_table: table.name,
+					table_number: table.table_number || table.name,
+					customer_label: table.open_order_customer || "",
+					addon_order_name: table.open_order,
 				})
 			);
 		} catch (e) {
@@ -2941,10 +4117,16 @@ imogi_pos.TableService = class TableService {
 		});
 	}
 
+	_after_master_data_changed(on_done) {
+		this._zone_options_key = "";
+		this._floor_nav_key = "";
+		this.refresh(on_done);
+	}
+
 	prompt_manage_spaces() {
 		const dialog = imogi_ts_open_form_dialog({
-			title: __("Lantai & Ruangan"),
-			subtitle: __("Kelola master data lantai dan ruangan (Indoor, Outdoor, VIP, dll.)"),
+			title: __("Kelola Lantai"),
+			subtitle: __("Tambah atau edit lantai restoran (Lantai Utama, Lantai 2, Rooftop, dll.)"),
 			icon: "fa-building",
 			fields: [
 				{
@@ -2952,14 +4134,14 @@ imogi_pos.TableService = class TableService {
 					options: `
 						<div style="display:flex;gap:8px;flex-wrap:wrap;">
 							<button type="button" class="btn btn-primary btn-sm imogi-ts-open-floors">
-								<i class="fa fa-layer-group"></i> ${__("Kelola Lantai")}
+								<i class="fa fa-layer-group"></i> ${__("Buka Daftar Lantai")}
 							</button>
 							<button type="button" class="btn btn-default btn-sm imogi-ts-open-areas">
 								<i class="fa fa-map-marker"></i> ${__("Kelola Ruangan")}
 							</button>
 						</div>
 						<p class="text-muted small" style="margin-top:10px;">${__(
-							"Tambahkan lantai (mis. Lantai 1, Rooftop) lalu buat ruangan per lantai. Setelah itu muat ulang Table Service."
+							"Setelah menambah lantai, buat ruangan per lantai lewat Kelola Ruangan, lalu tambahkan meja."
 						)}</p>`,
 				},
 			],
@@ -2971,7 +4153,152 @@ imogi_pos.TableService = class TableService {
 			frappe.set_route("List", "IMOGI Restaurant Floor");
 		});
 		dialog.$wrapper.find(".imogi-ts-open-areas").on("click", () => {
-			frappe.set_route("List", "IMOGI Restaurant Area");
+			dialog.hide();
+			this.prompt_manage_areas();
+		});
+	}
+
+	prompt_manage_areas() {
+		if (!this.active_floor) {
+			frappe.msgprint({
+				title: __("Pilih lantai dulu"),
+				indicator: "orange",
+				message: __("Pilih lantai di filter atas, atau buat lantai baru lewat <b>Kelola Lantai</b>."),
+			});
+			return;
+		}
+		const floor = (this.board.floors || []).find((f) => f.name === this.active_floor);
+		const floor_label = floor?.floor_name || this.active_floor;
+		const areas = this._areas_for_active_floor(true);
+		const tables = (this.board.tables || []).filter((t) => t.restaurant_floor === this.active_floor);
+		const dialog = imogi_ts_open_form_dialog({
+			title: __("Kelola Ruangan"),
+			subtitle: __("{0} — tambah, edit, atau nonaktifkan ruangan/zona", [floor_label]),
+			icon: "fa-map-marker",
+			wide: true,
+			fields: [
+				{
+					fieldname: "areas_html",
+					fieldtype: "HTML",
+					options: imogi_ts_build_manage_areas_html(areas, tables),
+				},
+				{ fieldtype: "Section Break", label: __("Tambah Ruangan Baru") },
+				{
+					fieldname: "area_name",
+					fieldtype: "Data",
+					label: __("Nama Ruangan"),
+					reqd: 1,
+					description: __("Contoh: Indoor, Outdoor, VIP, Bar, Rooftop"),
+				},
+				{
+					fieldname: "area_type",
+					fieldtype: "Select",
+					label: __("Jenis Area"),
+					options: IMOGI_TS_AREA_TYPES,
+					default: "Indoor",
+					reqd: 1,
+				},
+			],
+			primary_label: __("Tambah Ruangan"),
+			on_submit: (values) => {
+				const area_name = (values.area_name || "").trim();
+				if (!area_name) {
+					frappe.msgprint(__("Nama ruangan wajib diisi"));
+					return false;
+				}
+				frappe.call({
+					method: "imogi_pos.api.table_api.create_restaurant_area",
+					args: {
+						area_name,
+						restaurant_floor: this.active_floor,
+						area_type: values.area_type,
+					},
+					freeze: true,
+					callback: () => {
+						frappe.show_alert({ message: __("Ruangan {0} ditambahkan", [area_name]), indicator: "green" });
+						dialog.set_value("area_name", "");
+						this._after_master_data_changed(() => this._bind_manage_area_rows(dialog));
+					},
+				});
+				return false;
+			},
+		});
+		dialog.set_secondary_action_label(__("Tutup"));
+		dialog.set_secondary_action(() => dialog.hide());
+		this._bind_manage_area_rows(dialog);
+	}
+
+	_bind_manage_area_rows(dialog) {
+		const $wrap = dialog.fields_dict.areas_html?.$wrapper;
+		if (!$wrap) return;
+		const areas = this._areas_for_active_floor(true);
+		const tables = (this.board.tables || []).filter((t) => t.restaurant_floor === this.active_floor);
+		$wrap.html(imogi_ts_build_manage_areas_html(areas, tables));
+
+		$wrap.off("click.tsareamanage").on("click.tsareamanage", ".imogi-ts-manage-btn-save", (e) => {
+			const $row = $(e.currentTarget).closest(".imogi-ts-manage-area-row");
+			const name = $row.attr("data-name");
+			const area_name = ($row.find(".imogi-ts-manage-area-name").val() || "").trim();
+			const area_type = $row.find(".imogi-ts-manage-area-type").val();
+			const is_active = $row.find(".imogi-ts-manage-area-active-cb").is(":checked") ? 1 : 0;
+			if (!area_name) {
+				frappe.msgprint(__("Nama ruangan wajib diisi"));
+				return;
+			}
+			frappe.call({
+				method: "imogi_pos.api.table_api.update_restaurant_area",
+				args: { name, area_name, area_type, is_active },
+				freeze: true,
+				callback: (r) => {
+					const updated = r.message || {};
+					frappe.show_alert({
+						message: __("Ruangan {0} diperbarui", [updated.area_name || area_name]),
+						indicator: "green",
+					});
+					const all_label = __("Semua");
+					if (this.active_zone === name && updated.name) {
+						this.active_zone = updated.name;
+					}
+					if (!is_active && (this.active_zone === name || this.active_zone === updated.name)) {
+						this.active_zone = all_label;
+					}
+					this._persist_active_zone();
+					this._after_master_data_changed(() => this._bind_manage_area_rows(dialog));
+				},
+			});
+		});
+
+		$wrap.on("click.tsareamanage", ".imogi-ts-manage-area-bg-btn", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const name = $(e.currentTarget).closest(".imogi-ts-manage-area-row").attr("data-name");
+			if (name) this.prompt_floor_settings(name);
+		});
+
+		$wrap.on("click.tsareamanage", ".imogi-ts-manage-btn-del", (e) => {
+			const $row = $(e.currentTarget).closest(".imogi-ts-manage-area-row");
+			const name = $row.attr("data-name");
+			const label = ($row.find(".imogi-ts-manage-area-name").val() || name).trim();
+			imogi_ts_confirm(
+				__("Hapus ruangan {0}? Tindakan ini tidak bisa dibatalkan.", [label]),
+				() => {
+					frappe.call({
+						method: "imogi_pos.api.table_api.delete_restaurant_area",
+						args: { name },
+						freeze: true,
+						callback: () => {
+							frappe.show_alert({ message: __("Ruangan {0} dihapus", [label]), indicator: "orange" });
+							const all_label = __("Semua");
+							if (this.active_zone === name) {
+								this.active_zone = all_label;
+								this._persist_active_zone();
+							}
+							this._after_master_data_changed(() => this._bind_manage_area_rows(dialog));
+						},
+					});
+				},
+				{ parent_dialog: dialog }
+			);
 		});
 	}
 
@@ -2981,7 +4308,7 @@ imogi_pos.TableService = class TableService {
 			frappe.msgprint({
 				title: __("Ruangan belum ada"),
 				indicator: "orange",
-				message: __("Buat lantai dan ruangan dulu melalui tombol <b>Lantai & Ruangan</b>."),
+				message: __("Buat ruangan dulu melalui <b>Kelola → Kelola Ruangan</b>."),
 			});
 			return;
 		}
@@ -3004,7 +4331,7 @@ imogi_pos.TableService = class TableService {
 					fieldtype: "Data",
 					label: __("Nomor Meja"),
 					reqd: 1,
-					description: __("Contoh: TS-04, A1, VIP-01"),
+					description: __("Contoh: TS-01, A1, VIP-01. Nomor boleh sama di lantai berbeda."),
 				},
 				{
 					fieldname: "capacity",

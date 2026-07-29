@@ -4,7 +4,7 @@ const IMOGI_TIER_RANK = { Free: 0, Starter: 1, Professional: 2, Enterprise: 3 };
 const IMOGI_TIER_COLUMNS = ["Free", "Starter", "Professional", "Enterprise"];
 const IMOGI_STATUS_LABELS = {
 	built: __("Sudah ada"),
-	partial: __("Sebagian"),
+	partial: __("Partial"),
 	planned: __("Belum ada"),
 };
 
@@ -189,7 +189,7 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 		const statuses = [
 			{ id: "all", label: __("Semua status") },
 			{ id: "built", label: __("Sudah ada") },
-			{ id: "partial", label: __("Sebagian") },
+			{ id: "partial", label: __("Partial") },
 			{ id: "planned", label: __("Belum ada") },
 		];
 		this.$chips.html(
@@ -239,7 +239,7 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 				<div class="imogi-fm-stat is-status-built"><div class="imogi-fm-stat-label">${__("Sudah ada")}</div><div class="imogi-fm-stat-value">${
 					by_status.built || 0
 				}</div></div>
-				<div class="imogi-fm-stat is-status-partial"><div class="imogi-fm-stat-label">${__("Sebagian")}</div><div class="imogi-fm-stat-value">${
+				<div class="imogi-fm-stat is-status-partial"><div class="imogi-fm-stat-label">${__("Partial")}</div><div class="imogi-fm-stat-value">${
 					by_status.partial || 0
 				}</div></div>
 				<div class="imogi-fm-stat is-status-planned"><div class="imogi-fm-stat-label">${__("Belum ada")}</div><div class="imogi-fm-stat-value">${
@@ -275,7 +275,7 @@ imogi_pos.FeatureMatrixPage = class FeatureMatrixPage {
 			<div class="imogi-fm-stat is-status-built"><div class="imogi-fm-stat-label">${__("Sudah ada")}</div><div class="imogi-fm-stat-value">${
 				by_status.built || 0
 			}</div></div>
-			<div class="imogi-fm-stat is-status-partial"><div class="imogi-fm-stat-label">${__("Sebagian")}</div><div class="imogi-fm-stat-value">${
+			<div class="imogi-fm-stat is-status-partial"><div class="imogi-fm-stat-label">${__("Partial")}</div><div class="imogi-fm-stat-value">${
 				by_status.partial || 0
 			}</div></div>
 			<div class="imogi-fm-stat is-status-planned"><div class="imogi-fm-stat-label">${__("Belum ada")}</div><div class="imogi-fm-stat-value">${

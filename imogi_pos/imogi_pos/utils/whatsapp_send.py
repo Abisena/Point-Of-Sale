@@ -29,7 +29,43 @@ def is_fonnte_configured(settings=None):
 	)
 
 
-def send_fonnte_document(api_token, target, message, pdf_bytes, filename):
+def _parse_fonnte_response(response):
+	try:
+		body = response.json()
+	except ValueError:
+		body = {"detail": response.text}
+
+	if response.status_code >= 400:
+		detail = body.get("reason") or body.get("detail") or body.get("message") or response.text
+		frappe.throw(_("Fonnte error ({0}): {1}").format(response.status_code, detail))
+
+	if body.get("status") is False:
+		detail = body.get("reason") or body.get("detail") or body.get("message") or str(body)
+		frappe.throw(_("Fonnte gagal kirim: {0}").format(detail))
+
+	return body
+
+
+def _fonnte_file_error(detail):
+	text = (detail or "").strip().lower()
+	return any(
+		token in text
+		for token in (
+			"file",
+			"attachment",
+			"format",
+			"url",
+			"package",
+			"plan",
+			"premium",
+			"super",
+			"advanced",
+			"ultra",
+		)
+	)
+
+
+def send_fonnte_document(api_token, target, message, pdf_bytes, filename, file_url=None):
 	"""Send WhatsApp message + PDF via Fonnte API (https://fonnte.com)."""
 	import requests
 
@@ -41,36 +77,60 @@ def send_fonnte_document(api_token, target, message, pdf_bytes, filename):
 	if not phone:
 		frappe.throw(_("Nomor HP customer tidak valid."))
 
+	pdf_bytes = pdf_bytes or b""
+	if not pdf_bytes and not file_url:
+		frappe.throw(_("PDF struk kosong — gagal membuat lampiran."))
+
+	safe_name = (filename or "struk.pdf").strip()
+	if not safe_name.lower().endswith(".pdf"):
+		safe_name = f"{safe_name}.pdf"
+
+	headers = {"Authorization": api_token}
+	base_data = {
+		"target": phone,
+		"message": message or "",
+		"countryCode": "62",
+		"filename": safe_name,
+	}
+
+	# Public URL is more reliable than multipart upload on several Fonnte setups.
+	if file_url:
+		try:
+			response = requests.post(
+				"https://api.fonnte.com/send",
+				headers=headers,
+				data={**base_data, "url": file_url},
+				timeout=60,
+			)
+			body = _parse_fonnte_response(response)
+			return {"phone": phone, "provider": "Fonnte", "response": body, "method": "url"}
+		except frappe.ValidationError as exc:
+			if not pdf_bytes or not _fonnte_file_error(str(exc)):
+				raise
+
 	try:
 		response = requests.post(
 			"https://api.fonnte.com/send",
-			headers={"Authorization": api_token},
-			data={
-				"target": phone,
-				"message": message or "",
-				"countryCode": "62",
-			},
-			files={"file": (filename or "struk.pdf", pdf_bytes, "application/pdf")},
+			headers=headers,
+			data=base_data,
+			files={"file": (safe_name, pdf_bytes, "application/pdf")},
 			timeout=60,
 		)
+		body = _parse_fonnte_response(response)
+		return {"phone": phone, "provider": "Fonnte", "response": body, "method": "file"}
 	except requests.RequestException as exc:
 		frappe.throw(_("Tidak bisa menghubungi Fonnte: {0}").format(str(exc)))
-
-	try:
-		body = response.json()
-	except ValueError:
-		body = {"detail": response.text}
-
-	if response.status_code >= 400:
-		detail = body.get("reason") or body.get("detail") or body.get("message") or response.text
-		frappe.throw(_("Fonnte error ({0}): {1}").format(response.status_code, detail))
-
-	# Fonnte returns status true/false in JSON
-	if body.get("status") is False:
-		detail = body.get("reason") or body.get("detail") or body.get("message") or str(body)
-		frappe.throw(_("Fonnte gagal kirim: {0}").format(detail))
-
-	return {"phone": phone, "provider": "Fonnte", "response": body}
+	except frappe.ValidationError as exc:
+		if file_url and pdf_bytes:
+			response = requests.post(
+				"https://api.fonnte.com/send",
+				headers=headers,
+				data={**base_data, "url": file_url},
+				timeout=60,
+			)
+			body = _parse_fonnte_response(response)
+			return {"phone": phone, "provider": "Fonnte", "response": body, "method": "url_retry"}
+		raise
 
 
 def send_fonnte_message(api_token, target, message):
@@ -99,17 +159,5 @@ def send_fonnte_message(api_token, target, message):
 	except requests.RequestException as exc:
 		frappe.throw(_("Tidak bisa menghubungi Fonnte: {0}").format(str(exc)))
 
-	try:
-		body = response.json()
-	except ValueError:
-		body = {"detail": response.text}
-
-	if response.status_code >= 400:
-		detail = body.get("reason") or body.get("detail") or body.get("message") or response.text
-		frappe.throw(_("Fonnte error ({0}): {1}").format(response.status_code, detail))
-
-	if body.get("status") is False:
-		detail = body.get("reason") or body.get("detail") or body.get("message") or str(body)
-		frappe.throw(_("Fonnte gagal kirim: {0}").format(detail))
-
+	body = _parse_fonnte_response(response)
 	return {"phone": phone, "provider": "Fonnte", "response": body}

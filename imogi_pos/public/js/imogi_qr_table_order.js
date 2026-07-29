@@ -27,6 +27,9 @@
 		items: [],
 		cart: [],
 		payment: {},
+		paymentMode: "Cash",
+		checkoutName: "",
+		checkoutPhone: "",
 		selectedCategory: null,
 		categoryIndex: 0,
 		productIndex: 0,
@@ -563,6 +566,54 @@
 			</div>`;
 	}
 
+	function getPaymentModes() {
+		return state.payment?.modes?.length ? state.payment.modes : [{ id: "Cash", label: "Tunai (Cash)" }];
+	}
+
+	function selectedPaymentMode() {
+		const modes = getPaymentModes();
+		const allowed = new Set(modes.map((m) => m.id));
+		if (allowed.has(state.paymentMode)) return state.paymentMode;
+		return state.payment?.default_mode || modes[0]?.id || "Cash";
+	}
+
+	function payButtonLabel() {
+		const total = money(cartTotal());
+		return selectedPaymentMode() === "QRIS" ? `Bayar QRIS ${total}` : `Bayar Tunai ${total}`;
+	}
+
+	function renderPaymentModes() {
+		const modes = getPaymentModes();
+		if (modes.length <= 1) return "";
+		const current = selectedPaymentMode();
+		return `
+			<div class="imogi-qr-field">
+				<label>Metode pembayaran</label>
+				<div class="imogi-qr-payment-modes">
+					${modes
+						.map(
+							(mode) => `
+						<button type="button" class="imogi-qr-payment-mode${current === mode.id ? " is-active" : ""}" data-payment-mode="${esc(mode.id)}">
+							${esc(mode.label)}
+						</button>`
+						)
+						.join("")}
+				</div>
+				<p class="imogi-qr-field-hint">${
+					current === "QRIS"
+						? "Scan QRIS setelah konfirmasi. Halaman akan lanjut otomatis setelah bayar."
+						: "Pesanan langsung masuk dapur. Bayar tunai ke staff di meja Anda."
+				}</p>
+			</div>`;
+	}
+
+	function syncCheckoutFields() {
+		const nameEl = document.getElementById("imogi-qr-name");
+		const phoneEl = document.getElementById("imogi-qr-phone");
+		if (nameEl) state.checkoutName = nameEl.value;
+		if (phoneEl) state.checkoutPhone = phoneEl.value;
+	}
+
 	function renderCheckoutSheet() {
 		return `
 			<div class="imogi-qr-sheet" id="imogi-qr-sheet">
@@ -589,14 +640,15 @@
 					</div>
 					<div class="imogi-qr-field">
 						<label>Nama (opsional)</label>
-						<input id="imogi-qr-name" type="text" placeholder="Nama tamu" />
+						<input id="imogi-qr-name" type="text" placeholder="Nama tamu" value="${esc(state.checkoutName || "")}" />
 					</div>
 					<div class="imogi-qr-field">
 						<label>No. WhatsApp *</label>
-						<input id="imogi-qr-phone" type="tel" placeholder="08xxxxxxxxxx" required />
+						<input id="imogi-qr-phone" type="tel" placeholder="08xxxxxxxxxx" value="${esc(state.checkoutPhone || "")}" required />
 					</div>
 					<p class="imogi-qr-field-hint">Notifikasi status pesanan akan dikirim ke WhatsApp ini.</p>
-					<button type="button" class="imogi-qr-pay-btn" id="imogi-qr-pay">Bayar ${money(cartTotal())}</button>
+					${renderPaymentModes()}
+					<button type="button" class="imogi-qr-pay-btn" id="imogi-qr-pay">${payButtonLabel()}</button>
 					<div id="imogi-qr-qris" class="imogi-qr-qris"></div>
 				</div>
 			</div>`;
@@ -623,6 +675,8 @@
 	function showSuccess(orderName, phone) {
 		stopPoll();
 		state.cart = [];
+		state.checkoutName = "";
+		state.checkoutPhone = "";
 		state.view = "categories";
 		$app.innerHTML = `
 			<div class="imogi-qr-stage imogi-qr-stage--categories">
@@ -631,6 +685,22 @@
 					<h2>Pesanan berhasil!</h2>
 					<p>Order <strong>${esc(orderName)}</strong> sudah dikirim ke dapur.</p>
 					<p>Notifikasi WhatsApp akan dikirim ke <strong>${esc(phone)}</strong>.</p>
+				</div>
+			</div>`;
+	}
+
+	function showCashHoldSuccess(orderName) {
+		stopPoll();
+		state.cart = [];
+		state.checkoutName = "";
+		state.checkoutPhone = "";
+		state.view = "categories";
+		$app.innerHTML = `
+			<div class="imogi-qr-stage imogi-qr-stage--categories">
+				${renderWelcomeHeader(`<p class="imogi-qr-kicker">${esc(state.table?.store_name || "IMOGI")}</p><p class="imogi-qr-title">Terima kasih!</p>`, false)}
+				<div class="imogi-qr-success">
+					<h2>Pesanan diterima!</h2>
+					<p>Order <strong>${esc(orderName)}</strong>, Silakan bayar tunai di kasir</p>
 				</div>
 			</div>`;
 	}
@@ -654,21 +724,31 @@
 			$qris.innerHTML = html;
 		}
 		stopPoll();
+		let pollAttempts = 0;
 		pollTimer = setInterval(async () => {
+			pollAttempts += 1;
 			try {
 				const row = await api("imogi_pos.api.qr_order_api.poll_qr_gateway_payment", { payment_name: paymentName });
 				if (row.status === "Paid") {
+					stopPoll();
 					showSuccess(row.order || row.order_detail?.name || "", phone);
 				} else if (row.status === "Failed") {
 					stopPoll();
 					alert("Pembayaran gagal atau kedaluwarsa. Silakan coba lagi.");
 					if ($pay) {
 						$pay.disabled = false;
-						$pay.textContent = `Bayar ${money(cartTotal())}`;
+						$pay.textContent = payButtonLabel();
 					}
 				}
 			} catch (e) {
-				/* keep polling */
+				if (pollAttempts >= 8 && $qris) {
+					const $wait = $qris.querySelector(".imogi-qr-qris-wait");
+					if ($wait && !$wait.dataset.warned) {
+						$wait.dataset.warned = "1";
+						$wait.innerHTML =
+							'<span class="imogi-qr-spinner"></span> Pembayaran sedang diverifikasi… halaman akan lanjut otomatis.';
+					}
+				}
 			}
 		}, 3000);
 	}
@@ -775,6 +855,7 @@
 			});
 			$sheet.querySelectorAll("[data-qty]").forEach((btn) => {
 				btn.addEventListener("click", () => {
+					syncCheckoutFields();
 					const idx = Number(btn.closest(".imogi-qr-line")?.getAttribute("data-idx"));
 					const delta = Number(btn.getAttribute("data-qty"));
 					const row = state.cart[idx];
@@ -786,6 +867,22 @@
 				});
 			});
 		}
+
+		document.querySelectorAll("[data-payment-mode]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				syncCheckoutFields();
+				state.paymentMode = btn.getAttribute("data-payment-mode") || "Cash";
+				render();
+				document.getElementById("imogi-qr-sheet")?.classList.add("is-open");
+			});
+		});
+
+		document.getElementById("imogi-qr-name")?.addEventListener("input", (e) => {
+			state.checkoutName = e.target.value;
+		});
+		document.getElementById("imogi-qr-phone")?.addEventListener("input", (e) => {
+			state.checkoutPhone = e.target.value;
+		});
 
 		document.getElementById("imogi-qr-pay")?.addEventListener("click", submitOrder);
 
@@ -814,6 +911,7 @@
 	}
 
 	function render() {
+		syncCheckoutFields();
 		const main =
 			state.view === "categories" ? renderCategoryCards() : renderProductCards();
 		$app.innerHTML = `${main}${renderVariantSheet()}${renderCheckoutSheet()}${renderCartBar()}${renderToast()}`;
@@ -821,8 +919,9 @@
 	}
 
 	async function submitOrder() {
-		const phone = (document.getElementById("imogi-qr-phone")?.value || "").trim();
-		const name = (document.getElementById("imogi-qr-name")?.value || "").trim();
+		syncCheckoutFields();
+		const phone = (state.checkoutPhone || "").trim();
+		const name = (state.checkoutName || "").trim();
 		if (!phone) {
 			alert("Nomor WhatsApp wajib diisi.");
 			return;
@@ -841,11 +940,15 @@
 				items: JSON.stringify(state.cart.map((r) => ({ item_code: r.item_code, qty: r.qty, rate: r.rate }))),
 				customer_phone: phone,
 				customer_name: name,
-				payment_mode: state.payment.default_mode || "Cash",
+				payment_mode: selectedPaymentMode(),
 			});
 			if (result.payment_type === "qris" && result.gateway) {
 				document.getElementById("imogi-qr-sheet")?.classList.add("is-open");
 				startQrisPoll(result.gateway.name, phone, result.gateway);
+				return;
+			}
+			if (result.payment_type === "cashier_hold") {
+				showCashHoldSuccess(result.order?.name || "");
 				return;
 			}
 			showSuccess(result.order?.name || "", phone);
@@ -853,7 +956,7 @@
 			alert(err.message || "Gagal memproses pesanan");
 			if ($pay) {
 				$pay.disabled = false;
-				$pay.textContent = `Bayar ${money(cartTotal())}`;
+				$pay.textContent = payButtonLabel();
 			}
 		}
 	}
@@ -866,6 +969,7 @@
 			state.items = board.catalog?.items || [];
 			state.categories = board.categories || [];
 			state.payment = board.payment || {};
+			state.paymentMode = state.payment.default_mode || state.payment.modes?.[0]?.id || "Cash";
 			if (!state.table?.can_order) {
 				$app.innerHTML = `<div class="imogi-qr-error">Meja ini sedang tidak tersedia untuk pesan mandiri. Silakan panggil waiter.</div>`;
 				return;

@@ -1,0 +1,24 @@
+{
+ "creation": "2026-07-13 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "shield",
+ "idx": 0,
+ "modified": "2026-07-13 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "audit-hub",
+ "owner": "Administrator",
+ "page_name": "audit-hub",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "IMOGI Owner"},
+  {"role": "IMOGI Manager"},
+  {"role": "IMOGI Area Manager"},
+  {"role": "IMOGI Auditor"},
+  {"role": "IMOGI Finance"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Audit Hub"
+}

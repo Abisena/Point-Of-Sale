@@ -93,7 +93,7 @@ BUSINESS_TEMPLATES = {
 		"supplier_groups": ["Distributor", "Brand"],
 		"price_lists": ["Standard Selling"],
 		"enable_kitchen": 1,
-		"enable_fulfillment": 1,
+		"enable_fulfillment": 0,
 		"enable_pos_shift": 1,
 		"kitchen_item_groups": "Consumable,Food",
 	},

@@ -32,6 +32,8 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("POS Profile", {"read": 1, "write": 1, "create": 1}),
 		("User Permission", {"read": 1, "write": 1, "create": 1}),
 		("Warehouse", {"read": 1}),
+		("IMOGI POS Shift Closing", {"read": 1, "report": 1}),
+		("IMOGI POS Cash Movement", {"read": 1, "report": 1}),
 	],
 	"IMOGI Finance": [
 		("IMOGI POS Settings", {"read": 1}),
@@ -46,6 +48,12 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("Riwayat Order", {"read": 1, "report": 1}),
 		("Company", {"read": 1}),
 		("IMOGI Branch", {"read": 1}),
+		# Finance juga salah satu opsi role approver di Hirarki Approval PO.
+		("Purchase Order", {"read": 1}),
+		("Material Request", {"read": 1}),
+		("IMOGI POS Approval Request", {"read": 1}),
+		("IMOGI POS Shift Closing", {"read": 1, "report": 1}),
+		("IMOGI POS Cash Movement", {"read": 1, "report": 1}),
 		("IMOGI POS Royalty Accrual", {"read": 1, "write": 1, "create": 1}),
 		("Page", {"read": 1}),
 		("Report", {"read": 1}),
@@ -65,6 +73,12 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("POS Profile", {"read": 1}),
 		("Page", {"read": 1}),
 		("Report", {"read": 1}),
+		# Bisa mengajukan Purchase Request (PR) — keputusan beli ke supplier
+		# (PO) tetap di tangan role Purchasing, ini cuma tahap permintaan.
+		("Material Request", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
+		("Supplier", {"read": 1}),
+		("Purchase Order", {"read": 1}),
+		("IMOGI POS Approval Request", {"read": 1}),
 	],
 	"IMOGI Purchasing": [
 		("IMOGI POS Settings", {"read": 1}),
@@ -72,7 +86,18 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("Material Request", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
 		("Purchase Order", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
 		("Purchase Receipt", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
+		("Purchase Invoice", {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1}),
+		("Payment Entry", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 		("Item", {"read": 1}),
+		("Item Tax Template", {"read": 1}),
+		("Stock Settings", {"read": 1}),
+		# ERPNext core buying/transaction JS reads Accounts Settings while the
+		# Purchase Order form loads (over-billing allowance, currency checks,
+		# etc). Standard ERPNext roles (Purchase User/Manager) get this by
+		# default; our custom role never did, so opening a fresh PO threw
+		# "No permission for Accounts Settings" for anyone with only
+		# IMOGI Purchasing.
+		("Accounts Settings", {"read": 1}),
 		("Warehouse", {"read": 1}),
 		("Company", {"read": 1}),
 		("IMOGI Branch", {"read": 1}),
@@ -92,6 +117,14 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("IMOGI Branch", {"read": 1}),
 		("Warehouse", {"read": 1}),
 		("POS Profile", {"read": 1}),
+		# Manager mengeskalasi approval Purchasing/Supervisor di Hirarki Approval
+		# PO, jadi perlu bisa buka & lihat PO/PR/Supplier walau bukan pembuatnya.
+		("Purchase Order", {"read": 1}),
+		("Material Request", {"read": 1}),
+		("Supplier", {"read": 1}),
+		("IMOGI POS Approval Request", {"read": 1}),
+		("IMOGI POS Shift Closing", {"read": 1, "report": 1}),
+		("IMOGI POS Cash Movement", {"read": 1, "report": 1}),
 		("IMOGI POS Combo Package", {"read": 1, "write": 1, "create": 1}),
 		("IMOGI POS Loyalty Member", {"read": 1, "write": 1, "create": 1}),
 		("IMOGI POS Voucher", {"read": 1, "write": 1, "create": 1}),
@@ -117,6 +150,7 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("Company", {"read": 1}),
 		("IMOGI Branch", {"read": 1, "write": 1}),
 		("Warehouse", {"read": 1}),
+		("Stock Settings", {"read": 1}),
 		("POS Profile", {"read": 1}),
 		("Material Request", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 		("Purchase Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
@@ -167,6 +201,8 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("IMOGI Branch", {"read": 1}),
 		("IMOGI Kitchen Order", {"read": 1, "write": 1}),
 		("IMOGI Kitchen Station", {"read": 1, "write": 1, "create": 1}),
+		("IMOGI POS Shift Closing", {"read": 1, "report": 1}),
+		("IMOGI POS Cash Movement", {"read": 1, "report": 1}),
 	],
 	"IMOGI Chef": [
 		("IMOGI Kitchen Order", {"read": 1, "write": 1, "create": 1, "submit": 1}),
@@ -183,6 +219,7 @@ IMOGI_ROLE_PERMISSIONS: dict[str, list[tuple[str, dict]]] = {
 		("IMOGI POS Waiting List", {"read": 1}),
 		("IMOGI POS Shift Opening", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 		("IMOGI POS Shift Closing", {"read": 1, "write": 1, "create": 1, "submit": 1}),
+		("IMOGI POS Cash Movement", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 		("POS Invoice", {"read": 1}),
 		("POS Opening Entry", {"read": 1, "write": 1, "create": 1, "submit": 1}),
 		("POS Closing Entry", {"read": 1, "write": 1, "create": 1, "submit": 1}),
@@ -263,6 +300,10 @@ FEATURE_DOCTYPE_ACCESS: dict[str, tuple[str, str]] = {
 	"customer_receivable": ("Sales Invoice", "read"),
 	"accounting_integration": ("Sales Invoice", "read"),
 	"recipe_management": ("BOM", "read"),
+	"food_costing": ("BOM", "read"),
+	"portion_control": ("BOM", "write"),
+	"ingredient_substitution": ("Item Alternative", "write"),
+	"recipe_versioning": ("Version", "read"),
 	"qris": ("IMOGI POS Gateway Payment", "read"),
 	"central_purchasing": ("Material Request", "write"),
 	"central_inventory": ("IMOGI Branch", "read"),
@@ -272,6 +313,9 @@ FEATURE_DOCTYPE_ACCESS: dict[str, tuple[str, str]] = {
 	"tax_report": ("Report", "read"),
 	"audit_log": ("Version", "read"),
 	"login_history": ("Activity Log", "read"),
+	"activity_timeline": ("Activity Log", "read"),
+	"discount_analysis": ("Riwayat Order", "read"),
+	"void_analysis": ("Riwayat Order", "read"),
 }
 
 # Report name → Frappe roles that may run the report

@@ -1,7 +1,6 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:table_number",
  "creation": "2026-06-04 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -16,7 +15,9 @@
   "location",
   "shape",
   "pos_x",
-  "pos_y"
+  "pos_y",
+  "pos_scale",
+  "pos_rotation"
  ],
  "fields": [
   {
@@ -24,8 +25,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Table Number",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "company",
@@ -99,6 +99,22 @@
    "fieldtype": "Float",
    "label": "Floor Y",
    "precision": "2"
+  },
+  {
+   "default": "1",
+   "description": "Floor plan size multiplier (0.5–2.5).",
+   "fieldname": "pos_scale",
+   "fieldtype": "Float",
+   "label": "Floor Scale",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "description": "Floor plan rotation in degrees (0–359).",
+   "fieldname": "pos_rotation",
+   "fieldtype": "Float",
+   "label": "Floor Rotation",
+   "precision": "1"
   }
  ],
  "links": [],

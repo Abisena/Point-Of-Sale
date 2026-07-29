@@ -7,7 +7,8 @@ imogi_pos.cashier_extras.inject_css = function () {
 	if (document.getElementById("imogi-cashier-extras-css")) return;
 	frappe.dom.set_style(
 		`
-		.imogi-cashier-table-row{align-items:center;display:flex;gap:8px;margin-bottom:8px}
+		.imogi-cashier-addon-banner{align-items:center;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;color:#1e3a8a;display:flex;font-size:12px;font-weight:600;gap:8px;margin:0 0 10px;padding:8px 12px}
+		.imogi-cashier-addon-banner i{color:#2563eb}
 		.imogi-cashier-table-row select{flex:1;font-size:12px!important;min-width:0}
 		.imogi-cashier-table-chip{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;color:#047857;font-size:11px;font-weight:700;padding:4px 8px}
 		.imogi-cashier-split-btn,.imogi-cashier-multi-pay-hint{font-size:11px!important}
@@ -33,6 +34,7 @@ imogi_pos.cashier_extras.patch = function () {
 		origApplyGates.call(this);
 		imogi_pos.cashier_extras.render_table_row(this);
 		imogi_pos.cashier_extras.render_split_button(this);
+		imogi_pos.cashier_extras.render_addon_order_banner(this);
 	};
 
 	const origApplyContext = proto.apply_cashier_context;
@@ -44,13 +46,20 @@ imogi_pos.cashier_extras.patch = function () {
 	const origClearCart = proto.clear_cart_after_checkout;
 	proto.clear_cart_after_checkout = function () {
 		origClearCart.call(this);
+		this.pending_addon_order_name = null;
 		this.selected_table = "";
 		this._tables_loaded = false;
 		if (this.$table_select?.length) {
 			this.$table_select.val("");
 			this.$table_chip?.hide().text("");
 		}
-		imogi_pos.cashier_extras.load_tables(this, { force: true });
+		// Unconditional before this fix — fired on every completed checkout
+		// regardless of order type or whether Table Service is even enabled,
+		// tripping the table_management role/feature gate for any non-Waiter
+		// cashier right after a successful payment.
+		if (this.feature_allowed("table_management")) {
+			imogi_pos.cashier_extras.load_tables(this, { force: true });
+		}
 	};
 
 	const origSyncOrderType = proto.sync_order_type_ui;
@@ -112,6 +121,7 @@ imogi_pos.cashier_extras.render_table_row = function (page) {
 			page.selected_table = $(this).val() || "";
 			const label = $(this).find("option:selected").data("label") || "";
 			page.$table_chip.toggle(!!page.selected_table).text(label);
+			imogi_pos.cashier_extras.sync_table_addon_mode(page);
 		});
 	}
 	$row.toggle(show);
@@ -122,20 +132,56 @@ imogi_pos.cashier_extras.toggle_table_row = function (page) {
 	imogi_pos.cashier_extras.render_table_row(page);
 };
 
+imogi_pos.cashier_extras.sync_table_addon_mode = function (page) {
+	if (!page || page.order_type !== "Dine-in") {
+		return;
+	}
+	const table_name = page.selected_table || "";
+	if (!table_name) {
+		page.pending_addon_order_name = null;
+		imogi_pos.cashier_extras.render_addon_order_banner(page);
+		return;
+	}
+	const open_order =
+		page._table_open_orders?.[table_name] ||
+		page.$table_select?.find("option:selected").attr("data-open-order") ||
+		"";
+	page.pending_addon_order_name = open_order || null;
+	imogi_pos.cashier_extras.render_addon_order_banner(page);
+};
+
 imogi_pos.cashier_extras.load_tables = function (page, opts = {}) {
 	if (page._tables_loaded && !opts.force) return;
+	const needs_occupied =
+		!!(
+			page.selected_table ||
+			page.pending_checkout_order_name ||
+			page.pending_addon_order_name ||
+			page.marketplace_order_name
+		);
 	frappe.call({
 		method: "imogi_pos.api.table_api.list_restaurant_tables",
-		args: { company: page.context?.company, include_occupied: 0 },
+		args: {
+			company: page.context?.company,
+			include_occupied: needs_occupied ? 1 : 0,
+			ensure_table: page.selected_table || undefined,
+		},
 		callback(r) {
 			const tables = (r.message || {}).tables || [];
+			page._table_open_orders = {};
 			const opts_html = [`<option value="">${__("Pilih meja")}</option>`]
 				.concat(
 					tables.map((t) => {
 						const label = `${t.table_number}${t.location ? ` · ${t.location}` : ""}`;
+						if (t.open_order) {
+							page._table_open_orders[t.name] = t.open_order;
+						}
+						const open_attr = t.open_order
+							? ` data-open-order="${frappe.utils.escape_html(t.open_order)}"`
+							: "";
 						return `<option value="${frappe.utils.escape_html(t.name)}" data-label="${frappe.utils.escape_html(
 							t.table_number
-						)}">${frappe.utils.escape_html(label)}</option>`;
+						)}"${open_attr}>${frappe.utils.escape_html(label)}</option>`;
 					})
 				)
 				.join("");
@@ -146,6 +192,7 @@ imogi_pos.cashier_extras.load_tables = function (page, opts = {}) {
 				page.$table_chip?.toggle(!!page.selected_table).text(label);
 			}
 			page._tables_loaded = true;
+			imogi_pos.cashier_extras.sync_table_addon_mode(page);
 		},
 	});
 };
@@ -162,16 +209,47 @@ imogi_pos.cashier_extras.apply_table_prefill = function (page) {
 		prefill = null;
 	}
 	if (!prefill || !prefill.restaurant_table) return;
+	if (!page.feature_allowed("table_management")) return;
 	if (typeof page.set_order_type === "function") {
 		page.set_order_type("Dine-in", true);
 	}
 	page.selected_table = prefill.restaurant_table;
+	if (prefill.addon_order_name) {
+		page.pending_addon_order_name = prefill.addon_order_name;
+	}
 	if (prefill.customer_label) {
 		page.wrapper.find(".imogi-cashier-customer-search").val(prefill.customer_label);
 	}
 	page._tables_loaded = false;
+	page._table_open_orders = page._table_open_orders || {};
+	if (prefill.addon_order_name) {
+		page._table_open_orders[prefill.restaurant_table] = prefill.addon_order_name;
+	}
 	imogi_pos.cashier_extras.render_table_row(page);
+	imogi_pos.cashier_extras.render_addon_order_banner(page);
 	imogi_pos.cashier_extras.load_tables(page, { force: true });
+};
+
+imogi_pos.cashier_extras.render_addon_order_banner = function (page) {
+	let $banner = page.wrapper.find(".imogi-cashier-addon-banner");
+	const order_name = page.pending_addon_order_name;
+	if (!order_name) {
+		$banner.remove();
+		return;
+	}
+	if (!$banner.length) {
+		const $host = page.wrapper.find(".imogi-cashier-layout, .imogi-cashier-shell").first();
+		if ($host.length) {
+			$host.prepend(`
+				<div class="imogi-cashier-addon-banner">
+					<i class="fa fa-plus-circle"></i>
+					<span>${__("Menambah item ke order")} <strong class="imogi-cashier-addon-ref"></strong></span>
+				</div>`);
+		}
+		$banner = page.wrapper.find(".imogi-cashier-addon-banner");
+	}
+	$banner.find(".imogi-cashier-addon-ref").text(order_name);
+	$banner.show();
 };
 
 imogi_pos.cashier_extras.render_split_button = function (page) {
@@ -407,7 +485,9 @@ imogi_pos.cashier_extras.start_multi_qris_checkout = function (
 	}
 	args.order_type = page.order_type || "Takeaway";
 	args.order_channel = "Walk-in";
-	if (dialog._imogi_pending_order_name || page.pending_checkout_order_name) {
+	if (page.pending_addon_order_name) {
+		args.addon_order_name = page.pending_addon_order_name;
+	} else if (dialog._imogi_pending_order_name || page.pending_checkout_order_name) {
 		args.order_name = dialog._imogi_pending_order_name || page.pending_checkout_order_name;
 	}
 
@@ -481,17 +561,27 @@ imogi_pos.cashier_extras.build_checkout_args = function (page, extra = {}) {
 		...extra,
 	};
 	if (page.selected_customer) args.customer = page.selected_customer;
-	if (page.discount_type) {
-		args.discount_type = page.discount_type;
-		args.discount_value = page.discount_value;
+	const customer_label = (page.wrapper.find(".imogi-cashier-customer-search").val() || "").trim();
+	if (customer_label) args.customer_label = customer_label;
+	const phone = page.get_customer_phone_draft ? page.get_customer_phone_draft() : "";
+	if (phone) args.customer_phone = phone;
+	if (!page.pending_addon_order_name) {
+		if (page.discount_type) {
+			args.discount_type = page.discount_type;
+			args.discount_value = page.discount_value;
+		}
+		if (page.voucher_code) args.voucher_code = page.voucher_code;
+		if (page.loyalty_points_redeem) args.loyalty_points_redeem = page.loyalty_points_redeem;
 	}
-	if (page.voucher_code) args.voucher_code = page.voucher_code;
-	if (page.loyalty_points_redeem) args.loyalty_points_redeem = page.loyalty_points_redeem;
 	args.order_type = page.order_type || "Takeaway";
 	if (page.marketplace_order_name) args.marketplace_order_name = page.marketplace_order_name;
 	if (page.selected_table) args.restaurant_table = page.selected_table;
 	if (page._pending_approval_code) args.approval_code = page._pending_approval_code;
-	if (page.pending_checkout_order_name) args.order_name = page.pending_checkout_order_name;
+	if (page.pending_addon_order_name) {
+		args.addon_order_name = page.pending_addon_order_name;
+	} else if (page.pending_checkout_order_name) {
+		args.order_name = page.pending_checkout_order_name;
+	}
 	return args;
 };
 
@@ -532,6 +622,7 @@ imogi_pos.cashier_extras.run_checkout_call = function (page, dialog, args, payme
 			page._pending_approval_code = null;
 			dialog._imogi_checkout_completed = true;
 			page.pending_checkout_order_name = null;
+			page.pending_addon_order_name = null;
 			dialog.hide();
 			const cashRow = payment_list.find((p) => page.is_cash_mode?.(p.mode_of_payment));
 			const change =

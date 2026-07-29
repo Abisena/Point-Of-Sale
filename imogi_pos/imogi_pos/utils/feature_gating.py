@@ -23,7 +23,12 @@ from imogi_pos.imogi_pos.utils.flow import get_settings
 SETTINGS_FEATURE_MAP = {
 	"enable_loyalty": "point_reward",
 	"enable_stamp_card": "point_reward",
-	"enable_promo_rules": "voucher",
+	# "voucher" is intentionally NOT mapped here to enable_promo_rules — that
+	# toggle is for the unrelated automatic Buy X Get Y rules (Wave 3), and
+	# mapping it to voucher meant turning Promo Rules off silently broke
+	# manual voucher codes too. Leaving voucher unmapped falls back to its own
+	# feature_registry settings_key ("enable_loyalty"), which matches what the
+	# Voucher feature's UI label actually says it depends on.
 	"enable_payment_gateway": "qris",
 	"enable_marketplace_orders": "grabfood_integration",
 	"enable_kitchen_printer": "kitchen_printer",
@@ -90,6 +95,16 @@ def is_setting_enabled(settings_key: str, settings=None) -> bool:
 	if not feature_id:
 		return True
 	return is_feature_operational(feature_id, settings)
+
+
+def is_fulfillment_operational(settings=None) -> bool:
+	"""Fulfillment toggle + rollout flag (hidden until QC-in-kitchen is validated)."""
+	from imogi_pos.imogi_pos.utils.feature_registry import is_fulfillment_rollout_enabled
+
+	if not is_fulfillment_rollout_enabled():
+		return False
+	settings = settings or get_settings()
+	return bool(cint(getattr(settings, "enable_fulfillment", 0)))
 
 
 def require_feature_operational(feature_id: str, settings=None, user=None):
@@ -314,6 +329,44 @@ def require_feature_doctype_access(feature_id: str, ptype: str | None = None, se
 		return
 	doctype, default_ptype = mapping
 	frappe.has_permission(doctype, ptype or default_ptype, throw=True)
+
+
+# Purchasing doctype → feature_id, for the doc-level gate below. Keeps
+# feature/role gating in effect even when a document is created or submitted
+# straight from the native ERPNext desk form instead of the Purchasing Hub
+# API (whose whitelisted endpoints already call require_feature_operational
+# themselves — this closes the same gap for the /app path).
+PURCHASING_DOCTYPE_FEATURE_MAP: dict[str, str] = {
+	"Supplier": "supplier",
+	"Material Request": "purchase_request",
+	"Purchase Order": "purchase_order",
+	"Purchase Receipt": "goods_receiving",
+	"Purchase Invoice": "supplier_payable",
+}
+
+
+def require_purchasing_feature(doc, method=None):
+	feature_id = PURCHASING_DOCTYPE_FEATURE_MAP.get(doc.doctype)
+	if not feature_id:
+		return
+	require_feature_operational(feature_id)
+
+
+# Same reasoning as PURCHASING_DOCTYPE_FEATURE_MAP above — shift/cash-drawer
+# doctypes are only gated by the cashier API's own require_feature_operational
+# calls, so a direct Desk/REST insert skips the tier/settings/role check.
+SHIFT_DOCTYPE_FEATURE_MAP: dict[str, str] = {
+	"IMOGI POS Shift Opening": "open_shift",
+	"IMOGI POS Shift Closing": "close_shift",
+	"IMOGI POS Cash Movement": "cash_in_out",
+}
+
+
+def require_shift_feature(doc, method=None):
+	feature_id = SHIFT_DOCTYPE_FEATURE_MAP.get(doc.doctype)
+	if not feature_id:
+		return
+	require_feature_operational(feature_id)
 
 
 def enforce_settings_tier_limits(doc):

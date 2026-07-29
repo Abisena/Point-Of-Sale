@@ -15,6 +15,7 @@ FEATURE_ID_TO_FOCUS: dict[str, str] = {
 	"refund_report": "refund_report",
 	"food_cost_report": "food_cost_report",
 	"waste_report": "waste_report",
+	"tax_report": "tax_report",
 	"kitchen_performance": "operational",
 	"table_turnover_report": "table_turnover_report",
 	"customer_visit_report": "customer_visit_report",

@@ -22,6 +22,16 @@ def _parse_json(value, label):
 		frappe.throw(_("{0} must be valid JSON").format(label))
 
 
+def _resolve_item_display_name(item_code, item_name=None):
+	name = (item_name or "").strip()
+	if name:
+		return name
+	code = (item_code or "").strip()
+	if not code:
+		return ""
+	return frappe.db.get_value("Item", code, "item_name") or code
+
+
 def _serialize_order(order):
 	return {
 		"name": order.name,
@@ -35,6 +45,7 @@ def _serialize_order(order):
 		"order_channel": order.order_channel,
 		"order_type": order.order_type,
 		"order_source": order.order_source,
+		"restaurant_table": order.restaurant_table,
 		"grand_total": flt(order.grand_total),
 		"subtotal": flt(order.subtotal),
 		"discount_type": order.discount_type,
@@ -54,10 +65,11 @@ def _serialize_order(order):
 		"items": [
 			{
 				"item_code": row.item_code,
-				"item_name": row.item_name,
+				"item_name": _resolve_item_display_name(row.item_code, row.item_name),
 				"qty": flt(row.qty),
 				"rate": flt(row.rate),
 				"amount": flt(row.amount),
+				"uom": row.uom,
 			}
 			for row in order.items
 		],

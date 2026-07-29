@@ -30,9 +30,20 @@ def request_approval(approval_type, reference_name=None, reason=None, amount=0, 
 
 
 @frappe.whitelist()
-def approve_with_pin(request_name, pin):
+def approve_with_pin(request_name, pin=None):
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 	result = approve_request(request_name, pin)
+	frappe.db.commit()
+	return result
+
+
+@frappe.whitelist()
+def reject_with_pin(request_name, pin=None, reason=None):
+	from imogi_pos.imogi_pos.utils.approval import reject_request
+
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	result = reject_request(request_name, pin=pin, reason=reason)
 	frappe.db.commit()
 	return result

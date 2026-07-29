@@ -7,6 +7,7 @@
  "field_order": [
   "customer",
   "company",
+  "date_of_birth",
   "column_break_main",
   "points",
   "total_earned",
@@ -35,27 +36,36 @@
    "reqd": 1
   },
   {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Tanggal Lahir"
+  },
+  {
    "fieldname": "column_break_main",
    "fieldtype": "Column Break"
   },
   {
    "default": "0",
+   "description": "Dihitung otomatis dari Total Poin Diperoleh dikurangi Total Poin Ditukar — tidak bisa diedit langsung.",
    "fieldname": "points",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Poin Saat Ini"
+   "label": "Poin Saat Ini",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "total_earned",
    "fieldtype": "Int",
-   "label": "Total Poin Diperoleh"
+   "label": "Total Poin Diperoleh",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "total_redeemed",
    "fieldtype": "Int",
-   "label": "Total Poin Ditukar"
+   "label": "Total Poin Ditukar",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -99,16 +109,12 @@
    "write": 1
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "Sales Manager",
-   "write": 1
+   "role": "Sales Manager"
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "IMOGI Cashier",
-   "write": 1
+   "role": "IMOGI Cashier"
   }
  ],
  "sort_field": "modified",

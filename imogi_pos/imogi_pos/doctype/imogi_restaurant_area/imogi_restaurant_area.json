@@ -13,6 +13,7 @@
   "sort_order",
   "column_break_1",
   "is_active",
+  "floor_background",
   "description"
  ],
  "fields": [
@@ -66,6 +67,12 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Aktif"
+  },
+  {
+   "description": "Gambar denah/blueprint khusus ruangan ini (tampil di Table Service saat zona dipilih).",
+   "fieldname": "floor_background",
+   "fieldtype": "Attach Image",
+   "label": "Background Denah Ruangan"
   },
   {
    "fieldname": "description",

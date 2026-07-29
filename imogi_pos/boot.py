@@ -215,6 +215,9 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_role_gating_enabled = bool(getattr(settings, "enable_role_gating", 0))
 	bootinfo.imogi_pos_approval_workflow_enabled = bool(getattr(settings, "enable_approval_workflow", 0))
 	bootinfo.imogi_pos_role_context = serialize_user_role_context(frappe.session.user, settings)
+	from imogi_pos.imogi_pos.utils.recipe_hub import can_view_recipe_cost
+
+	bootinfo.imogi_pos_can_view_recipe_cost = can_view_recipe_cost(frappe.session.user)
 	from imogi_pos.imogi_pos.utils.feature_registry import (
 		DISABLED_OPERATIONAL_FEATURE_IDS,
 		HIDDEN_UI_FEATURE_IDS,
@@ -230,7 +233,14 @@ def boot_session(bootinfo):
 	bootinfo.imogi_pos_dashboard_focus_by_label = get_dashboard_focus_by_label()
 	bootinfo.imogi_pos_business_type = settings.business_type or ""
 	bootinfo.imogi_pos_enable_kds = bool(settings.enable_kitchen_display)
-	bootinfo.imogi_pos_enable_fulfillment = bool(settings.enable_fulfillment)
+	bootinfo.imogi_pos_kds_station_mode = (
+		getattr(settings, "kds_station_mode", None) or "Separate Kitchen and Bar"
+	)
+	from imogi_pos.imogi_pos.utils.feature_gating import is_fulfillment_operational
+	from imogi_pos.imogi_pos.utils.feature_registry import is_fulfillment_rollout_enabled
+
+	bootinfo.imogi_pos_fulfillment_rollout_enabled = is_fulfillment_rollout_enabled()
+	bootinfo.imogi_pos_enable_fulfillment = is_fulfillment_operational(settings)
 	bootinfo.imogi_pos_workspace_route = get_workspace_route(settings.business_type)
 	bootinfo.imogi_pos_requires_shift_workflow = requires_cashier_shift()
 	bootinfo.imogi_pos_dedicated_cashier = should_use_cashier_home()

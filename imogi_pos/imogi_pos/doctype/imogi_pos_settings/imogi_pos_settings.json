@@ -45,10 +45,13 @@
   "enable_table_service",
   "enable_qr_self_service",
   "qr_self_service_payment_mode",
+  "qr_cash_cashier_flow",
   "table_floor_background",
   "enable_kitchen_display",
+  "kds_station_mode",
   "enable_fulfillment",
   "kitchen_item_group_rows",
+  "bar_item_group_rows",
   "fulfillment_order_type_rows",
   "inventory_section",
   "low_stock_check_interval",
@@ -93,15 +96,20 @@
   "stamp_reward_discount_type",
   "stamp_reward_discount_value",
   "stamp_reward_min_order",
-  "promo_section",
-  "enable_promo_rules",
-  "payment_gateway_section",
+	"promo_section",
+	"enable_promo_rules",
+	"birthday_section",
+	"enable_birthday_promo",
+	"birthday_discount_percent",
+	"birthday_window_days",
+	"payment_gateway_section",
   "enable_payment_gateway",
   "payment_gateway_provider",
   "payment_gateway_sandbox",
   "payment_gateway",
   "payment_gateway_key",
   "payment_gateway_client_key",
+  "payment_gateway_webhook_token",
   "transfer_payment_section",
   "enable_transfer_payment_info",
   "transfer_bank_name",
@@ -129,14 +137,15 @@
   "enable_approval_workflow",
   "approval_discount_threshold_percent",
   "approval_supervisor_pin",
-  "enable_central_kitchen",
-  "central_kitchen_station",
-  "enable_kitchen_printer",
-  "enable_cashback",
-  "cashback_percent",
-  "enable_birthday_promo",
-  "birthday_discount_percent",
-  "franchise_section",
+  "approval_po_threshold_amount",
+  "po_approval_tiers",
+  "approval_cash_movement_threshold_amount",
+	"enable_central_kitchen",
+	"central_kitchen_station",
+	"enable_kitchen_printer",
+	"enable_cashback",
+	"cashback_percent",
+	"franchise_section",
   "generate_franchise_royalty",
   "post_franchise_royalty_journals",
   "royalty_expense_account",
@@ -219,11 +228,12 @@
    "options": "Price List"
   },
   {
-   "default": "1",
+   "default": "0",
    "depends_on": "eval:doc.multi_branch",
+   "description": "Import menu selalu menulis 1 harga ke Master Selling Price List. Centang ini hanya jika setelah import ingin ikut push ke price list cabang (biasanya tidak perlu).",
    "fieldname": "sync_prices_to_branches_on_import",
    "fieldtype": "Check",
-   "label": "Sync Harga ke Semua Cabang saat Import Menu"
+   "label": "Juga Sync Harga ke Cabang saat Import Menu"
   },
   {
    "depends_on": "eval:doc.multi_branch",
@@ -410,11 +420,20 @@
   {
    "default": "Cash",
    "depends_on": "eval:doc.enable_table_service && doc.enable_qr_self_service",
-   "description": "Metode pembayaran default di halaman QR tamu. Cash untuk dev; QRIS jika gateway aktif.",
+   "description": "Metode pembayaran default saat tamu buka checkout QR. Tamu tetap bisa pilih Cash atau QRIS (jika gateway aktif).",
    "fieldname": "qr_self_service_payment_mode",
    "fieldtype": "Select",
    "label": "Pembayaran QR Tamu",
    "options": "Cash\nQRIS"
+  },
+  {
+   "default": "Kitchen First",
+   "depends_on": "eval:doc.enable_table_service && doc.enable_qr_self_service",
+   "description": "Alur pembayaran tunai QR ke kasir. Kitchen First: dapur mulai saat checkout, tamu bayar di kasir. Pay First: tamu bayar di kasir dulu, baru dapur mulai.",
+   "fieldname": "qr_cash_cashier_flow",
+   "fieldtype": "Select",
+   "label": "Alur Cash QR ke Kasir",
+   "options": "Kitchen First\nPay First"
   },
   {
    "depends_on": "eval:doc.enable_table_service",
@@ -431,6 +450,15 @@
    "label": "Kitchen Display"
   },
   {
+   "default": "Separate Kitchen and Bar",
+   "depends_on": "eval:doc.enable_kitchen_display",
+   "description": "Kitchen Only = semua item dapur ke Dapur. Separate = makanan ke Dapur, minuman ke Bar (tiket terpisah). Combined Kitchen & Bar = makanan + minuman dikelola di satu stasiun.",
+   "fieldname": "kds_station_mode",
+   "fieldtype": "Select",
+   "label": "Mode Stasiun KDS",
+   "options": "Kitchen Only\nSeparate Kitchen and Bar\nCombined Kitchen & Bar"
+  },
+  {
    "default": "0",
    "description": "Aktifkan untuk pesanan Takeaway / Delivery yang perlu packing.",
    "fieldname": "enable_fulfillment",
@@ -439,10 +467,19 @@
   },
   {
    "depends_on": "eval:doc.enable_kitchen_display",
+   "description": "Item group yang masuk alur dapur/KDS (makanan + minuman yang perlu disiapkan).",
    "fieldname": "kitchen_item_group_rows",
    "fieldtype": "Table",
    "label": "Item Group Dapur",
    "options": "IMOGI POS Settings Kitchen Item Group"
+  },
+  {
+   "depends_on": "eval:doc.enable_kitchen_display && doc.kds_station_mode=='Separate Kitchen and Bar'",
+   "description": "Item group minuman yang diarahkan ke tab/stasiun Bar. Kosongkan untuk pakai deteksi otomatis (Minuman, Beverage, Coffee, dll).",
+   "fieldname": "bar_item_group_rows",
+   "fieldtype": "Table",
+   "label": "Item Group Bar (Minuman)",
+   "options": "IMOGI POS Settings Bar Item Group"
   },
   {
    "depends_on": "eval:doc.enable_fulfillment",
@@ -610,15 +647,15 @@
   {
    "default": "Terima kasih, {customer}!\n\nPesanan *{order_name}* di Meja *{table_number}* sudah kami terima.\nTotal: {total}\n\nPesanan sedang diproses. Mohon tunggu di meja Anda.",
    "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
-   "description": "Dikirim saat tamu submit pesanan via QR Meja. Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "description": "Dikirim saat tamu checkout via QR Meja (pesanan masuk dapur/kasir). Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
    "fieldname": "whatsapp_qr_order_received_message",
    "fieldtype": "Small Text",
    "label": "Template WA — Order Diterima (QR)"
   },
   {
-   "default": "Terima kasih sudah makan di {store_name}!\n\nPesanan *{order_name}* · Meja *{table_number}* sudah selesai.\nTotal: {total}",
+   "default": "Terima kasih sudah makan di {store_name}!\n\nPesanan *{order_name}* · Meja *{table_number}* sudah selesai.\nTotal: {total}\n\nSilahkan Ambil Pesanan",
    "depends_on": "eval:doc.enable_receipt_print && doc.enable_whatsapp_receipt",
-   "description": "Dikirim saat pesanan QR ditandai selesai. Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
+   "description": "Dikirim saat pesanan QR siap diambil (kitchen/fulfillment selesai). Variabel: {order_name}, {total}, {customer}, {table_number}, {store_name}",
    "fieldname": "whatsapp_qr_order_complete_message",
    "fieldtype": "Small Text",
    "label": "Template WA — Pesanan Selesai (QR)"
@@ -759,6 +796,13 @@
    "label": "Gateway Client Key"
   },
   {
+   "depends_on": "eval:doc.enable_payment_gateway",
+   "description": "Wajib untuk Xendit: isi dengan Verification Token dari Xendit Dashboard → Settings → Callbacks. Dipakai untuk memastikan notifikasi pembayaran (webhook) benar-benar berasal dari Xendit, bukan pihak lain. Midtrans tidak butuh field ini — Midtrans memakai Gateway Server Key di atas untuk menandatangani notifikasinya.",
+   "fieldname": "payment_gateway_webhook_token",
+   "fieldtype": "Password",
+   "label": "Xendit Webhook Verification Token"
+  },
+  {
    "fieldname": "transfer_payment_section",
    "fieldtype": "Section Break",
    "label": "Transfer Bank"
@@ -897,6 +941,35 @@
    "label": "Aktifkan Promo Rules"
   },
   {
+   "fieldname": "birthday_section",
+   "fieldtype": "Section Break",
+   "label": "Promo Ulang Tahun"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_loyalty",
+   "description": "Diskon otomatis di kasir saat customer berulang tahun.",
+   "fieldname": "enable_birthday_promo",
+   "fieldtype": "Check",
+   "label": "Aktifkan Promo Ulang Tahun"
+  },
+  {
+   "default": "10",
+   "depends_on": "enable_birthday_promo",
+   "fieldname": "birthday_discount_percent",
+   "fieldtype": "Percent",
+   "label": "Diskon Ulang Tahun (%)"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_birthday_promo",
+   "description": "0 = hanya hari H. Misal 3 = H-3 sampai H+3.",
+   "fieldname": "birthday_window_days",
+   "fieldtype": "Int",
+   "label": "Jendela Promo (hari)",
+   "non_negative": 1
+  },
+  {
    "fieldname": "integrations_section",
    "fieldtype": "Section Break",
    "label": "Offline & Marketplace"
@@ -977,25 +1050,49 @@
   },
   {
    "default": "0",
-   "description": "Void, refund, dan diskon besar memerlukan approval supervisor.",
+   "description": "Purchase Order di atas threshold memerlukan approval sesuai Hirarki Approval PO. Void/Refund/Diskon/Complimentary tidak lagi memerlukan approval.",
    "fieldname": "enable_approval_workflow",
    "fieldtype": "Check",
    "label": "Aktifkan Approval Workflow"
   },
   {
    "default": "15",
-   "depends_on": "enable_approval_workflow",
-   "description": "Diskon manual di atas % ini memerlukan PIN supervisor.",
+   "depends_on": "eval:0",
+   "description": "Tidak lagi dipakai — approval Diskon dinonaktifkan.",
    "fieldname": "approval_discount_threshold_percent",
    "fieldtype": "Percent",
-   "label": "Batas Diskon Approval (%)"
+   "label": "Batas Diskon Approval (%) [nonaktif]"
   },
   {
    "depends_on": "enable_approval_workflow",
-   "description": "PIN supervisor untuk approve void/refund/diskon.",
+   "description": "PIN supervisor fallback untuk approve Waste/Spoilage/Opname/Stock Adjustment saja (dicek role dulu; PIN cuma dipakai kalau role gak cukup). Tidak dipakai lagi untuk Void/Refund/Diskon/Complimentary maupun Purchase Order.",
    "fieldname": "approval_supervisor_pin",
    "fieldtype": "Data",
-   "label": "PIN Supervisor"
+   "label": "PIN Supervisor (fallback stock ops)"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_approval_workflow && !(doc.po_approval_tiers && doc.po_approval_tiers.length)",
+   "description": "Dipakai sebagai fallback (PIN supervisor) kalau tabel Hirarki Approval PO di bawah masih kosong. Isi 0 supaya semua PO selalu perlu approval (selama Approval Workflow aktif). Field ini otomatis sembunyi begitu tabel Hirarki Approval PO diisi.",
+   "fieldname": "approval_po_threshold_amount",
+   "fieldtype": "Currency",
+   "label": "Batas Nominal Approval PO (fallback)"
+  },
+  {
+   "depends_on": "enable_approval_workflow",
+   "description": "Hirarki approval PO berdasarkan rentang nominal. Kalau tabel ini diisi, approval PO dicek berdasarkan role approver di sini (bukan PIN) — role yang lebih tinggi otomatis boleh approve tier di bawahnya. Kosongkan tabel ini untuk pakai mode PIN lama (Batas Nominal Approval PO di atas).",
+   "fieldname": "po_approval_tiers",
+   "fieldtype": "Table",
+   "label": "Hirarki Approval PO",
+   "options": "IMOGI POS Approval Threshold"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_approval_workflow",
+   "description": "PIN supervisor wajib untuk Cash In/Out senilai ini atau lebih. Isi 0 supaya semua Cash In/Out selalu perlu approval (selama Approval Workflow aktif).",
+   "fieldname": "approval_cash_movement_threshold_amount",
+   "fieldtype": "Currency",
+   "label": "Batas Nominal Approval Cash In/Out"
   },
   {
    "default": "0",
@@ -1032,20 +1129,6 @@
    "fieldname": "cashback_percent",
    "fieldtype": "Percent",
    "label": "Cashback (%)"
-  },
-  {
-   "default": "0",
-   "depends_on": "enable_loyalty",
-   "fieldname": "enable_birthday_promo",
-   "fieldtype": "Check",
-   "label": "Promo Ulang Tahun"
-  },
-  {
-   "default": "10",
-   "depends_on": "enable_birthday_promo",
-   "fieldname": "birthday_discount_percent",
-   "fieldtype": "Percent",
-   "label": "Diskon Ulang Tahun (%)"
   },
   {
    "collapsible": 1,

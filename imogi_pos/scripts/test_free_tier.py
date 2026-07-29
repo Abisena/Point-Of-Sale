@@ -23,7 +23,6 @@ BLOCKED_ON_FREE = (
 	"kitchen_display",
 	"open_shift",
 	"qris",
-	"grabfood_integration",
 	"point_reward",
 	"multi_outlet",
 	"table_management",

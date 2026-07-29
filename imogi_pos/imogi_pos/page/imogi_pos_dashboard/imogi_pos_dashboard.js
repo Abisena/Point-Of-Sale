@@ -9,218 +9,443 @@ function imogi_dashboard_subscription_disabled() {
 	);
 }
 
+function inject_dashboard_font() {
+	if (document.getElementById("imogi-dashboard-font")) return;
+	const link = document.createElement("link");
+	link.id = "imogi-dashboard-font";
+	link.rel = "stylesheet";
+	link.href =
+		"https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap";
+	document.head.appendChild(link);
+}
+
 function inject_dashboard_css() {
-	document.getElementById("imogi-dashboard-inline-css-v1")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v2")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v3")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v4")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v5")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v6")?.remove();
-	document.getElementById("imogi-dashboard-inline-css-v7")?.remove();
-	if (document.getElementById("imogi-dashboard-inline-css-v8")) return;
+	[
+		"imogi-dashboard-inline-css-v1",
+		"imogi-dashboard-inline-css-v2",
+		"imogi-dashboard-inline-css-v3",
+		"imogi-dashboard-inline-css-v4",
+		"imogi-dashboard-inline-css-v5",
+		"imogi-dashboard-inline-css-v6",
+		"imogi-dashboard-inline-css-v7",
+		"imogi-dashboard-inline-css-v8",
+		"imogi-dashboard-inline-css-v9",
+		"imogi-dashboard-inline-css-v10",
+		"imogi-dashboard-inline-css-v11",
+		"imogi-dashboard-inline-css-v12",
+		"imogi-dashboard-inline-css-v13",
+		"imogi-dashboard-inline-css-v14",
+		"imogi-dashboard-inline-css-v15",
+	].forEach((id) => document.getElementById(id)?.remove());
+	if (document.getElementById("imogi-dashboard-inline-css-v16")) return;
+	inject_dashboard_font();
 	frappe.dom.set_style(
 		`
+		body:has(.imogi-dashboard-page) .page-head,
+		body:has(.imogi-dashboard-page) .page-head .page-title,
+		body:has(.imogi-dashboard-page) .breadcrumb,
+		.page-container:has(.imogi-dashboard-page) > .page-head{display:none!important}
+
+		body.imogi-dashboard-fullscreen,
+		body.imogi-dashboard-fullscreen .main-section,
+		body.imogi-dashboard-fullscreen .page-container,
+		body.imogi-dashboard-fullscreen .content.page-container,
+		body.imogi-dashboard-fullscreen .page-body,
+		body.imogi-dashboard-fullscreen .layout-main,
+		body.imogi-dashboard-fullscreen .layout-main-section-wrapper,
+		body.imogi-dashboard-fullscreen .layout-main-section,
 		.imogi-dashboard-page.layout-main-section,
 		.imogi-dashboard-page,
 		.imogi-dashboard-page .page-body,
-		.imogi-dashboard-page .layout-main-section-wrapper{background:#e8ecf1!important}
-		.imogi-dashboard-page .page-body{padding:12px 16px 24px!important}
-		.imogi-dash-shell{margin:0 auto;max-width:1320px;padding:0}
+		.imogi-dashboard-page .layout-main-section-wrapper{
+			background:#fff!important;
+			font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important
+		}
+		.imogi-dashboard-page .page-body{padding:12px 20px 28px!important}
+		.imogi-dash-shell{margin:0;max-width:100%!important;padding:0;width:100%!important}
 		.imogi-dash-loading{opacity:.55;pointer-events:none;transition:opacity .2s ease}
-		.imogi-dash-topbar{align-items:center;background:linear-gradient(180deg,#121a2b 0%,#0f1729 100%);border:1px solid #1e293b;border-radius:10px 10px 0 0;color:#e2e8f0;display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;padding:10px 16px}
-		.imogi-dash-topbar-left{align-items:center;display:flex;flex-wrap:wrap;gap:10px;min-width:0}
-		.imogi-dash-topbar-right{align-items:center;display:flex;flex-wrap:wrap;gap:10px}
-		.imogi-dash-live-dot{background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px rgba(34,197,94,.25);flex-shrink:0;height:8px;width:8px}
-		.imogi-dash-topbar-title{color:#f8fafc;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-		.imogi-dash-topbar-co{color:#94a3b8;font-size:12px;font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-		.imogi-dash-tier-badge{background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.35);border-radius:6px;color:#fbbf24;font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 8px;text-transform:uppercase}
-		.imogi-dash-tier-badge[data-tier="Starter"]{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#93c5fd}
+
+		.imogi-dashboard-page .imogi-dash-hero,
+		.imogi-dash-hero{
+			background:#0f172a!important;
+			background-image:
+				linear-gradient(135deg, rgba(245,158,11,.22), transparent 42%),
+				linear-gradient(180deg, #111827 0%, #0b1220 100%)!important;
+			border:1px solid rgba(255,255,255,.06)!important;
+			border-radius:20px!important;
+			box-shadow:0 18px 40px rgba(15,23,42,.28)!important;
+			color:#e2e8f0!important;
+			display:block!important;
+			margin-bottom:14px!important;
+			overflow:hidden!important;
+			padding:18px 20px 16px!important;
+			position:relative!important
+		}
+		.imogi-dash-hero::after{
+			background:radial-gradient(circle at 85% 20%, rgba(251,191,36,.25), transparent 45%);
+			content:"";
+			height:220px;
+			pointer-events:none;
+			position:absolute;
+			right:-40px;
+			top:-60px;
+			width:280px
+		}
+		.imogi-dash-hero-top{
+			align-items:center;
+			display:flex;
+			flex-wrap:wrap;
+			gap:10px 16px;
+			justify-content:space-between;
+			margin-bottom:14px;
+			position:relative;
+			z-index:1
+		}
+		.imogi-dash-header-brand{align-items:center;display:flex;gap:10px}
+		.imogi-dashboard-page .imogi-dash-logo,
+		.imogi-dash-logo{color:#fff!important;font-size:13px;font-weight:800;letter-spacing:.16em}
+		.imogi-dash-live-pill{
+			align-items:center;background:rgba(34,197,94,.14);border:1px solid rgba(74,222,128,.35);
+			border-radius:999px;color:#86efac;display:inline-flex;font-size:10px;font-weight:700;
+			gap:6px;letter-spacing:.06em;padding:4px 10px;text-transform:uppercase
+		}
+		.imogi-dash-live-dot{background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px rgba(34,197,94,.2);height:7px;width:7px}
+		.imogi-dash-header-meta{align-items:center;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+		.imogi-dashboard-page .imogi-dash-topbar-co,
+		.imogi-dash-topbar-co{color:#e2e8f0!important;font-size:12px;font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+		.imogi-dash-tier-badge{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:999px;color:#fbbf24;font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 10px;text-transform:uppercase}
+		.imogi-dash-tier-badge[data-tier="Starter"]{background:rgba(59,130,246,.14);border-color:rgba(96,165,250,.4);color:#93c5fd}
 		.imogi-dash-tier-badge[data-tier="Professional"],
-		.imogi-dash-tier-badge[data-tier="Enterprise"]{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.35);color:#6ee7b7}
-		.imogi-dash-topbar-date{color:#64748b;font-size:11px;font-weight:600}
+		.imogi-dash-tier-badge[data-tier="Enterprise"]{background:rgba(16,185,129,.14);border-color:rgba(52,211,153,.4);color:#6ee7b7}
+		.imogi-dashboard-page .imogi-dash-topbar-date,
+		.imogi-dash-topbar-date{color:#cbd5e1!important;font-size:12px;font-weight:600}
+
+		.imogi-dash-hero-body{
+			align-items:flex-end;display:flex;flex-wrap:wrap;gap:16px 20px;justify-content:space-between;position:relative;z-index:1
+		}
+		.imogi-dash-toolbar-main{flex:1;min-width:220px}
+		.imogi-dashboard-page .imogi-dash-date-display,
+		.imogi-dash-date-display{color:#fff!important;font-size:34px!important;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.04em;line-height:1}
+		.imogi-dashboard-page .imogi-dash-hero-sub,
+		.imogi-dash-hero-sub{color:#cbd5e1!important;font-size:13px!important;line-height:1.45;margin:8px 0 0;max-width:480px}
+		.imogi-dash-toolbar-actions{align-items:flex-end;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;min-width:260px}
+		.imogi-dash-hero-controls{align-items:flex-end;display:flex;flex-wrap:wrap;gap:8px 10px}
+		.imogi-dash-date-wrap,.imogi-dash-branch-wrap{display:flex;flex-direction:column;gap:4px}
+		.imogi-dashboard-page .imogi-dash-hero .imogi-dash-date-wrap label,
+		.imogi-dashboard-page .imogi-dash-hero .imogi-dash-branch-wrap label,
+		.imogi-dash-date-wrap label,.imogi-dash-branch-wrap label{color:#cbd5e1!important;font-size:10px;font-weight:700;letter-spacing:.08em;margin:0;text-transform:uppercase}
+		.imogi-dash-date,.imogi-dash-branch-select{
+			background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:10px!important;
+			color:#f8fafc!important;font-size:12px;font-weight:600;height:36px
+		}
+		.imogi-dash-date:focus,.imogi-dash-branch-select:focus{border-color:rgba(251,191,36,.55)!important;box-shadow:0 0 0 3px rgba(251,191,36,.18);outline:none}
+		.imogi-dash-date{max-width:150px;color-scheme:dark}
+		.imogi-dash-branch-select{max-width:200px;min-width:140px}
+		.imogi-dash-branch-select option{color:#0f172a}
+		.imogi-dash-quick-group{align-items:center;display:flex;flex-wrap:wrap;gap:6px}
+		.imogi-dashboard-page .imogi-dash-hero .imogi-dash-chip,
+		.imogi-dash-chip{
+			align-items:center;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:10px!important;
+			color:#f8fafc!important;cursor:pointer;display:inline-flex;font-size:11px;font-weight:700;height:36px;justify-content:center;padding:0 12px;transition:all .15s ease
+		}
+		.imogi-dash-chip:hover{background:rgba(251,191,36,.16);border-color:rgba(251,191,36,.4);color:#fde68a}
+		.imogi-dash-chip.is-active{background:#f59e0b;border-color:#f59e0b;color:#111827}
+		.imogi-dash-chip--icon{padding:0;width:36px}
+		.imogi-dash-hero-actions{align-items:center;display:flex;flex-wrap:wrap;gap:8px}
+		.imogi-dashboard-page .imogi-dash-hero a.imogi-btn-ghost,
+		.imogi-dashboard-page .imogi-dash-hero button.imogi-btn-ghost,
+		.imogi-dash-hero a.imogi-btn-ghost,.imogi-dash-hero button.imogi-btn-ghost{
+			background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:10px!important;
+			color:#f8fafc!important;height:36px!important
+		}
+		.imogi-dash-hero a.imogi-btn-ghost:hover{background:rgba(255,255,255,.14)!important;color:#fff!important}
+		a.imogi-btn-brand,button.imogi-btn-brand{
+			align-items:center!important;background:linear-gradient(135deg,#fbbf24,#f59e0b)!important;border:none!important;border-radius:10px!important;
+			box-shadow:0 8px 20px rgba(245,158,11,.35)!important;color:#111827!important;display:inline-flex!important;font-size:12px!important;
+			font-weight:800!important;gap:6px;height:36px!important;justify-content:center!important;padding:0 14px!important;text-decoration:none!important
+		}
+		a.imogi-btn-brand:hover,button.imogi-btn-brand:hover{filter:brightness(1.05);transform:translateY(-1px)}
+		.imogi-btn-brand--xs{height:30px!important;padding:0 10px!important;font-size:11px!important}
+		a.imogi-btn-ghost,button.imogi-btn-ghost{
+			align-items:center!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:10px!important;
+			color:#475569!important;display:inline-flex!important;font-size:12px!important;font-weight:600!important;gap:6px;
+			height:36px!important;justify-content:center!important;padding:0 14px!important;text-decoration:none!important
+		}
+		a.imogi-btn-ghost:hover{background:#f8fafc!important;border-color:#cbd5e1!important;color:#0f172a!important}
+		.imogi-btn-ghost--xs{height:30px!important;padding:0 10px!important;font-size:11px!important}
+
 		.imogi-dash-upgrade-slot:empty{display:none}
-		.imogi-dash-upgrade-strip{align-items:center;background:#fff;border:1px solid #cbd5e1;border-top:none;display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:space-between;padding:8px 14px}
+		.imogi-dash-upgrade-strip{align-items:center;background:#fff;border:1px solid #e8edf5;border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.04);display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:space-between;margin-bottom:14px;padding:12px 16px}
 		.imogi-dash-upgrade-strip-main{align-items:center;display:flex;flex:1;flex-wrap:wrap;gap:8px 10px;min-width:0}
-		.imogi-dash-upgrade-badge{background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;color:#c2410c;font-size:10px;font-weight:800;letter-spacing:.08em;padding:3px 7px}
-		.imogi-dash-upgrade-text{color:#475569;font-size:12px;font-weight:600;line-height:1.3;max-width:360px}
+		.imogi-dash-upgrade-badge{background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;color:#c2410c;font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 8px}
+		.imogi-dash-upgrade-text{color:#475569;font-size:12px;font-weight:600;line-height:1.35;max-width:420px}
 		.imogi-dash-upgrade-pills{display:flex;flex-wrap:wrap;gap:6px}
-		.imogi-dash-upgrade-pill{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;color:#64748b;display:inline-flex;font-size:10px;font-weight:600;gap:4px;padding:3px 8px;white-space:nowrap}
+		.imogi-dash-upgrade-pill{align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;color:#64748b;display:inline-flex;font-size:10px;font-weight:600;gap:4px;padding:4px 10px;white-space:nowrap}
 		.imogi-dash-upgrade-pill i{color:#94a3b8;font-size:9px}
 		.imogi-dash-upgrade-pill small{color:#94a3b8;font-weight:700}
-		.imogi-dash-upgrade-actions{align-items:center;display:flex;flex-shrink:0;gap:6px}
-		.imogi-dash-upgrade-actions a{align-items:center;border-radius:6px;display:inline-flex;font-size:11px;font-weight:700;gap:5px;height:28px;padding:0 10px;text-decoration:none!important;white-space:nowrap}
-		.imogi-dash-upgrade-actions .imogi-dash-link-ghost{background:#fff;border:1px solid #e2e8f0;color:#475569}
-		.imogi-dash-upgrade-actions .imogi-dash-link-ghost:hover{background:#f8fafc;border-color:#cbd5e1;color:#1e293b}
-		.imogi-dash-upgrade-actions .imogi-dash-link-brand{background:linear-gradient(135deg,#f5b041,#f39c12);border:none;color:#fff!important}
-		.imogi-dash-hero{align-items:center;background:#fff;border:1px solid #cbd5e1;border-radius:0 0 10px 10px;border-top:none;box-shadow:0 2px 8px rgba(15,23,42,.04);display:flex;flex-wrap:wrap;gap:12px 16px;justify-content:space-between;margin-bottom:12px;padding:12px 16px}
-		.imogi-dash-hero-text{flex:1;min-width:180px}
-		.imogi-dash-date-display{color:#0f172a;font-size:22px;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-		.imogi-dash-hero-sub{color:#64748b;font-size:12px;line-height:1.45;margin:4px 0 0;max-width:480px}
-		.imogi-dash-hero-right{align-items:flex-end;display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end}
-		.imogi-dash-hero-controls{align-items:flex-end;display:flex;flex-wrap:wrap;gap:8px 12px}
-		.imogi-dash-date-wrap,.imogi-dash-branch-wrap{display:flex;flex-direction:column;gap:3px}
-		.imogi-dash-date-wrap label,.imogi-dash-branch-wrap label{color:#64748b;display:block;font-size:10px;font-weight:700;letter-spacing:.06em;margin:0;text-transform:uppercase}
-		.imogi-dash-date,.imogi-dash-branch-select{background:#fff;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;height:32px}
-		.imogi-dash-date{max-width:150px}
-		.imogi-dash-branch-select{font-weight:600;max-width:200px;min-width:140px}
-		.imogi-dash-branch-panel{margin-bottom:12px}
-		.imogi-dash-branch-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
-		.imogi-dash-branch-card{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:12px 14px}
-		.imogi-dash-branch-card-head{align-items:flex-start;display:flex;gap:8px;justify-content:space-between;margin-bottom:8px}
-		.imogi-dash-branch-card-name{color:#0f172a;font-size:13px;font-weight:800;line-height:1.2}
-		.imogi-dash-branch-card-city{color:#64748b;font-size:10px;margin-top:2px}
-		.imogi-dash-branch-card-sales{color:#d97706;font-size:16px;font-variant-numeric:tabular-nums;font-weight:800}
-		.imogi-dash-branch-card-meta{color:#64748b;display:flex;font-size:10px;gap:8px;justify-content:space-between;margin-top:6px}
-		.imogi-dash-branch-card-track{background:#e2e8f0;border-radius:999px;height:6px;margin-top:8px;overflow:hidden}
-		.imogi-dash-branch-card-fill{background:linear-gradient(90deg,#fbbf24,#f39c12);border-radius:999px;height:100%;min-width:4px}
-		.imogi-dash-quick-group{align-items:center;display:flex;flex-shrink:0;flex-wrap:wrap;gap:6px}
-		.imogi-dash-chip{align-items:center;background:#fff;border:1px solid #cbd5e1;border-radius:6px;color:#475569;cursor:pointer;display:inline-flex;font-size:11px;font-weight:600;height:32px;justify-content:center;padding:0 10px;transition:all .12s ease}
-		.imogi-dash-chip:hover{background:#fff7ed;border-color:#f6ad55;color:#c05621}
-		.imogi-dash-chip--icon{padding:0;width:32px}
-		.imogi-dash-hero-actions{align-items:center;display:flex;flex-shrink:0;flex-wrap:wrap;gap:8px}
-		a.imogi-btn-brand,button.imogi-btn-brand{align-items:center!important;background:linear-gradient(135deg,#f5b041 0%,#f39c12 100%)!important;border:none!important;border-radius:6px!important;box-shadow:0 2px 8px rgba(243,156,18,.28)!important;box-sizing:border-box!important;color:#fff!important;display:inline-flex!important;font-size:12px!important;font-weight:700!important;gap:6px;height:32px!important;justify-content:center!important;line-height:1!important;margin:0!important;padding:0 12px!important;text-decoration:none!important;vertical-align:middle!important}
-		a.imogi-btn-brand:hover,button.imogi-btn-brand:hover{box-shadow:0 3px 10px rgba(243,156,18,.38)!important;color:#fff!important}
-		.imogi-btn-brand--xs{height:28px!important;padding:0 10px!important;font-size:11px!important}
-		a.imogi-btn-ghost,button.imogi-btn-ghost{align-items:center!important;background:#fff!important;border:1px solid #cbd5e1!important;border-radius:6px!important;box-sizing:border-box!important;color:#475569!important;display:inline-flex!important;font-size:12px!important;font-weight:600!important;gap:6px;height:32px!important;justify-content:center!important;line-height:1!important;margin:0!important;padding:0 12px!important;text-decoration:none!important;vertical-align:middle!important}
-		a.imogi-btn-ghost:hover{background:#f8fafc!important;border-color:#94a3b8!important;color:#1e293b!important}
-		.imogi-btn-ghost--xs{height:28px!important;padding:0 10px!important;font-size:11px!important}
-		.imogi-dash-alerts-stack{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+		.imogi-dash-upgrade-actions{align-items:center;display:flex;flex-shrink:0;gap:8px}
+		.imogi-dash-upgrade-actions a{align-items:center;border-radius:10px;display:inline-flex;font-size:11px;font-weight:700;gap:5px;height:32px;padding:0 12px;text-decoration:none!important;white-space:nowrap}
+		.imogi-dash-link-ghost{background:#fff;border:1px solid #e2e8f0;color:#475569}
+		.imogi-dash-link-ghost:hover{background:#f8fafc;border-color:#cbd5e1;color:#0f172a}
+		.imogi-dash-link-brand{background:linear-gradient(135deg,#fbbf24,#f59e0b);border:none;color:#111827!important;box-shadow:0 4px 12px rgba(245,158,11,.28)}
+
+		.imogi-dash-alerts-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 		.imogi-dash-alerts-stack:empty{display:none}
 		.imogi-dash-alerts-stack .imogi-pos-shift-alert,
 		.imogi-dash-alerts-stack .imogi-awaiting-alert{margin-bottom:0!important}
 		.imogi-dash-alerts-stack .imogi-pos-shift-alert:empty,
 		.imogi-dash-alerts-stack .imogi-awaiting-alert:empty{display:none}
-		.imogi-sales-target-banner{margin-bottom:10px}
-		.imogi-target-strip{background:#fff;border:1px solid #cbd5e1;border-left:3px solid #f39c12;border-radius:8px;overflow:hidden;padding:10px 14px}
-		.imogi-target-strip.is-achieved{border-left-color:#10b981}
-		.imogi-target-strip.is-behind{border-left-color:#ef4444}
-		.imogi-target-strip-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-		.imogi-target-strip-head i{color:#f39c12;font-size:13px}
+		.imogi-sales-target-banner{margin-bottom:14px}
+		.imogi-target-strip{
+			background:#fff;border:1px solid #e8edf5;border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.05);
+			overflow:hidden;padding:18px 20px;position:relative
+		}
+		.imogi-target-strip::before{background:linear-gradient(180deg,#fbbf24,#f59e0b);content:"";height:100%;left:0;position:absolute;top:0;width:4px}
+		.imogi-target-strip.is-achieved::before{background:linear-gradient(180deg,#34d399,#10b981)}
+		.imogi-target-strip.is-behind::before{background:linear-gradient(180deg,#fb7185,#ef4444)}
+		.imogi-target-strip-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+		.imogi-target-strip-head i{color:#f59e0b;font-size:14px}
 		.imogi-target-strip.is-achieved .imogi-target-strip-head i{color:#10b981}
 		.imogi-target-strip.is-behind .imogi-target-strip-head i{color:#ef4444}
-		.imogi-target-strip-title{color:#0f172a;font-size:12px;font-weight:800;text-transform:uppercase}
-		.imogi-target-strip-sub{color:#64748b;font-size:11px;margin-left:auto}
-		.imogi-target-strip-badge{background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;color:#b45309;font-size:10px;font-weight:700;padding:3px 8px}
+		.imogi-target-strip-title{color:#0f172a;font-size:13px;font-weight:800}
+		.imogi-target-strip-sub{color:#64748b;font-size:12px;margin-left:auto}
+		.imogi-target-strip-badge{background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;color:#b45309;font-size:10px;font-weight:700;padding:4px 10px}
 		.imogi-target-strip.is-achieved .imogi-target-strip-badge{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
 		.imogi-target-strip.is-behind .imogi-target-strip-badge{background:#fff1f2;border-color:#fecdd3;color:#be123c}
-		.imogi-target-strip-body{align-items:center;display:flex;flex-wrap:wrap;gap:10px}
-		.imogi-target-strip-actual{color:#0f172a;font-size:18px;font-variant-numeric:tabular-nums;font-weight:800;min-width:120px}
-		.imogi-target-strip-track{background:#e2e8f0;border-radius:999px;flex:1;height:8px;min-width:80px;overflow:hidden}
-		.imogi-target-strip-fill{background:linear-gradient(90deg,#fbbf24,#f39c12);border-radius:999px;height:100%;min-width:4px}
+		.imogi-target-strip-body{align-items:center;display:flex;flex-wrap:wrap;gap:14px}
+		.imogi-target-strip-actual{color:#0f172a;font-size:28px;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.03em;min-width:150px}
+		.imogi-target-strip-track{background:#eef2f7;border-radius:999px;flex:1;height:12px;min-width:120px;overflow:hidden}
+		.imogi-target-strip-fill{background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:999px;height:100%;min-width:4px}
 		.imogi-target-strip.is-behind .imogi-target-strip-fill{background:linear-gradient(90deg,#fb7185,#ef4444)}
 		.imogi-target-strip.is-achieved .imogi-target-strip-fill{background:linear-gradient(90deg,#34d399,#10b981)}
-		.imogi-target-strip-pct{color:#64748b;font-size:12px;font-variant-numeric:tabular-nums;font-weight:800;min-width:36px;text-align:right}
-		.imogi-target-strip-meta{border-top:1px solid #edf2f7;display:grid;gap:6px;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px;padding-top:8px}
-		.imogi-target-strip-meta span{color:#334155;display:block;font-size:11px;font-variant-numeric:tabular-nums;font-weight:700}
-		.imogi-target-strip-meta small{color:#94a3b8;display:block;font-size:9px;font-weight:700;letter-spacing:.04em;margin-bottom:2px;text-transform:uppercase}
-		.imogi-dash-awaiting-strip{align-items:center;background:#fff;border:1px solid #fde68a;border-left:3px solid #f59e0b;border-radius:8px;display:flex;flex-wrap:wrap;gap:8px 12px;padding:8px 12px}
-		.imogi-dash-awaiting-label{align-items:center;color:#92400e;display:flex;font-size:12px;font-weight:700;gap:6px;white-space:nowrap}
-		.imogi-dash-awaiting-label strong{color:#b45309;font-size:14px;font-variant-numeric:tabular-nums}
+		.imogi-target-strip-pct{color:#0f172a;font-size:16px;font-variant-numeric:tabular-nums;font-weight:800;min-width:48px;text-align:right}
+		.imogi-target-strip-meta{border-top:1px solid #f1f5f9;display:grid;gap:10px;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:16px;padding-top:14px}
+		.imogi-target-strip-meta span{color:#0f172a;display:block;font-size:13px;font-variant-numeric:tabular-nums;font-weight:700}
+		.imogi-target-strip-meta small{color:#94a3b8;display:block;font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:4px;text-transform:uppercase}
+
+		.imogi-dash-awaiting-strip{align-items:center;background:linear-gradient(135deg,#fffbeb,#fff);border:1px solid #fde68a;border-radius:14px;box-shadow:0 6px 16px rgba(245,158,11,.08);display:flex;flex-wrap:wrap;gap:10px 14px;padding:12px 14px}
+		.imogi-dash-awaiting-label{align-items:center;color:#92400e;display:flex;font-size:12px;font-weight:700;gap:8px;white-space:nowrap}
+		.imogi-dash-awaiting-label strong{color:#b45309;font-size:16px;font-variant-numeric:tabular-nums}
 		.imogi-dash-awaiting-chips{align-items:center;display:flex;flex:1;flex-wrap:wrap;gap:6px;min-width:0}
-		.imogi-dash-awaiting-chip{align-items:center;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;color:#78350f;display:inline-flex;font-size:11px;font-variant-numeric:tabular-nums;font-weight:600;gap:6px;padding:4px 8px;text-decoration:none!important;white-space:nowrap}
-		.imogi-dash-awaiting-chip:hover{background:#fef3c7;border-color:#fbbf24;color:#92400e}
+		.imogi-dash-awaiting-chip{align-items:center;background:#fff;border:1px solid #fde68a;border-radius:10px;color:#78350f;display:inline-flex;font-size:11px;font-weight:600;gap:6px;padding:6px 10px;text-decoration:none!important;white-space:nowrap}
+		.imogi-dash-awaiting-chip:hover{background:#fef3c7;border-color:#fbbf24}
 		.imogi-dash-awaiting-chip span{color:#b45309;font-weight:800}
 		.imogi-dash-awaiting-more{color:#94a3b8;font-size:11px;font-weight:700}
-		.imogi-dash-awaiting-link{align-items:center;color:#c2410c;display:inline-flex;font-size:11px;font-weight:700;gap:4px;text-decoration:none!important;white-space:nowrap}
+		.imogi-dash-awaiting-link{align-items:center;color:#c2410c;display:inline-flex;font-size:11px;font-weight:700;gap:4px;text-decoration:none!important}
 		.imogi-dash-awaiting-link:hover{color:#9a3412}
-		.imogi-dash-stats-card{background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.04);margin-bottom:12px;overflow:hidden}
-		.imogi-dash-stats-head{background:#f8fafc;border-bottom:1px solid #e2e8f0;color:#475569;font-size:10px;font-weight:800;letter-spacing:.08em;padding:8px 14px;text-transform:uppercase}
-		.imogi-dash-stats-grid{display:grid!important;gap:0;grid-template-columns:repeat(6,minmax(0,1fr))}
-		.imogi-stat-card{align-items:center;background:#fff;border:none;border-right:1px solid #edf2f7;border-radius:0;box-shadow:none;display:flex;gap:10px;min-height:72px;padding:10px 12px}
-		.imogi-stat-card:last-child{border-right:none}
-		.imogi-stat-card-icon{align-items:center;border-radius:6px;display:inline-flex;flex-shrink:0;font-size:12px;height:30px;justify-content:center;width:30px}
-		.imogi-stat-card-body{min-width:0}
-		.imogi-stat-card--brand .imogi-stat-card-icon{background:#fef3c7;color:#d97706}
-		.imogi-stat-card--success .imogi-stat-card-icon{background:#d1fae5;color:#059669}
-		.imogi-stat-card--danger .imogi-stat-card-icon{background:#fee2e2;color:#dc2626}
-		.imogi-stat-card--blue .imogi-stat-card-icon{background:#dbeafe;color:#2563eb}
-		.imogi-stat-card--purple .imogi-stat-card-icon{background:#ede9fe;color:#7c3aed}
-		.imogi-stat-card--orange .imogi-stat-card-icon{background:#ffedd5;color:#ea580c}
-		.imogi-stat-card--warning .imogi-stat-card-icon{background:#fef9c3;color:#ca8a04}
-		.imogi-stat-card--slate .imogi-stat-card-icon{background:#f1f5f9;color:#64748b}
-		.imogi-stat-card-value{color:#0f172a;font-size:15px;font-variant-numeric:tabular-nums;font-weight:800;line-height:1.15;word-break:break-word}
-		.imogi-stat-card--hero .imogi-stat-card-value,.imogi-stat-card--brand.imogi-stat-card--hero .imogi-stat-card-value{color:#d97706;font-size:17px}
+
+		.imogi-dash-branch-panel{margin-bottom:14px}
+		.imogi-dash-branch-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(0,1fr));width:100%}
+		.imogi-dash-branch-grid[data-count="1"]{grid-template-columns:1fr}
+		.imogi-dash-branch-grid[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+		.imogi-dash-branch-grid[data-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+		.imogi-dash-branch-card{background:#fff;border:1px solid #e8edf5;border-radius:16px;box-shadow:0 8px 20px rgba(15,23,42,.04);padding:16px;width:100%}
+		.imogi-dash-branch-card--wide{align-items:center;display:grid;gap:16px 24px;grid-template-columns:minmax(180px,1.2fr) minmax(140px,.8fr) minmax(220px,1.4fr) minmax(160px,.9fr)}
+		.imogi-dash-branch-card-head{align-items:flex-start;display:flex;gap:8px;justify-content:space-between;margin-bottom:8px}
+		.imogi-dash-branch-card--wide .imogi-dash-branch-card-head{margin-bottom:0}
+		.imogi-dash-branch-card-name{color:#0f172a;font-size:14px;font-weight:800}
+		.imogi-dash-branch-card-city{color:#64748b;font-size:11px;margin-top:2px}
+		.imogi-dash-branch-card-sales{color:#ea580c;font-size:20px;font-variant-numeric:tabular-nums;font-weight:800}
+		.imogi-dash-branch-card-meta{color:#64748b;display:flex;font-size:11px;gap:8px;justify-content:space-between;margin-top:8px}
+		.imogi-dash-branch-card--wide .imogi-dash-branch-card-meta{flex-direction:column;gap:4px;justify-content:center;margin-top:0}
+		.imogi-dash-branch-card-track{background:#eef2f7;border-radius:999px;height:7px;margin-top:10px;overflow:hidden}
+		.imogi-dash-branch-card--wide .imogi-dash-branch-card-track{margin-top:8px}
+		.imogi-dash-branch-card-fill{background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:999px;height:100%;min-width:4px}
+		.imogi-dash-branch-kpi{display:flex;flex-direction:column;gap:2px}
+		.imogi-dash-branch-kpi-label{color:#94a3b8;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+		.imogi-dash-branch-kpi-value{color:#0f172a;font-size:16px;font-variant-numeric:tabular-nums;font-weight:800}
+
+		.imogi-dash-section{margin-bottom:16px}
+		.imogi-dash-section-head{align-items:baseline;display:flex;justify-content:space-between;margin:0 2px 12px}
+		.imogi-dash-section-head h2{color:#0f172a;font-size:15px;font-weight:800;letter-spacing:-.02em;margin:0}
+		.imogi-dash-section-head span{color:#94a3b8;font-size:11px;font-weight:600}
+		.imogi-dash-stats-grid{
+			align-items:stretch!important;display:grid!important;gap:12px;
+			grid-template-columns:repeat(6,minmax(0,1fr))!important;width:100%
+		}
+		.imogi-stat-card{
+			align-self:stretch!important;background:#fff;border:1px solid #e8edf5;border-radius:16px;
+			box-shadow:0 8px 20px rgba(15,23,42,.04);display:flex;flex-direction:column;gap:10px;
+			height:100%;margin:0!important;min-height:0;padding:14px 14px 12px;
+			transition:transform .15s ease,box-shadow .15s ease
+		}
+		.imogi-stat-card:hover{box-shadow:0 14px 28px rgba(15,23,42,.08);transform:translateY(-2px)}
+		.imogi-stat-card--hero{
+			background:linear-gradient(160deg,#fff 0%,#fff7ed 100%);
+			border-color:#fde68a;box-shadow:0 10px 28px rgba(245,158,11,.12);grid-column:auto!important
+		}
+		.imogi-stat-card-top{align-items:center;display:flex;flex-shrink:0;justify-content:space-between}
+		.imogi-stat-card-icon{align-items:center;border-radius:12px;display:inline-flex;flex-shrink:0;font-size:14px;height:34px;justify-content:center;width:34px}
+		.imogi-stat-card-body{display:flex;flex:1;flex-direction:column;gap:4px;justify-content:flex-start;min-height:72px;min-width:0}
+		.imogi-stat-card--brand .imogi-stat-card-icon{background:#fff7ed;color:#ea580c}
+		.imogi-stat-card--success .imogi-stat-card-icon{background:#ecfdf5;color:#059669}
+		.imogi-stat-card--danger .imogi-stat-card-icon{background:#fef2f2;color:#dc2626}
+		.imogi-stat-card--blue .imogi-stat-card-icon{background:#eff6ff;color:#2563eb}
+		.imogi-stat-card--purple .imogi-stat-card-icon{background:#f5f3ff;color:#7c3aed}
+		.imogi-stat-card--orange .imogi-stat-card-icon{background:#fff7ed;color:#ea580c}
+		.imogi-stat-card--warning .imogi-stat-card-icon{background:#fefce8;color:#ca8a04}
+		.imogi-stat-card--slate .imogi-stat-card-icon{background:#f8fafc;color:#64748b}
+		.imogi-stat-card-value{color:#0f172a;font-size:20px;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.03em;line-height:1.1;min-height:1.1em;word-break:break-word}
+		.imogi-stat-card--hero .imogi-stat-card-value{color:#c2410c;font-size:22px}
 		.imogi-stat-card--alert .imogi-stat-card-value{color:#dc2626}
-		.imogi-stat-card-label{color:#64748b;font-size:10px;font-weight:600;line-height:1.2;margin-top:2px}
-		.imogi-dash-panels{display:grid!important;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0}
-		.imogi-dash-panel{background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.04);display:flex;flex:1;flex-direction:column;min-height:100%;overflow:hidden;width:100%}
-		.imogi-dash-panel-head{align-items:center;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;flex-shrink:0;gap:8px;justify-content:space-between;padding:10px 14px}
-		.imogi-dash-panel-head-left{align-items:center;display:flex;gap:8px;min-width:0}
-		.imogi-dash-panel-icon{align-items:center;border-radius:6px;display:inline-flex;flex-shrink:0;font-size:11px;height:26px;justify-content:center;width:26px}
-		.imogi-dash-panel--brand .imogi-dash-panel-icon{background:#fef3c7;color:#d97706}
-		.imogi-dash-panel--warning .imogi-dash-panel-icon{background:#ffedd5;color:#ea580c}
-		.imogi-dash-panel--success .imogi-dash-panel-icon{background:#d1fae5;color:#059669}
-		.imogi-dash-panel--blue .imogi-dash-panel-icon{background:#dbeafe;color:#2563eb}
-		.imogi-dash-panel--purple .imogi-dash-panel-icon{background:#ede9fe;color:#7c3aed}
-		.imogi-dash-panel--orange .imogi-dash-panel-icon{background:#ffedd5;color:#ea580c}
-		.imogi-dash-panel--danger .imogi-dash-panel-icon{background:#fee2e2;color:#dc2626}
-		.imogi-dash-panel--slate .imogi-dash-panel-icon{background:#f1f5f9;color:#64748b}
-		.imogi-dash-panel-title{color:#0f172a;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
-		.imogi-dash-panel-badge{background:#fee2e2;border-radius:999px;color:#b91c1c;flex-shrink:0;font-size:10px;font-weight:700;padding:3px 8px}
-		.imogi-dash-panel-body{flex:1;min-height:120px;padding:12px 14px 14px}
-		.imogi-dash-bars,.imogi-dash-stock-list{display:flex;flex-direction:column;gap:10px}
-		.imogi-dash-bar-head,.imogi-dash-stock-head{align-items:center;display:flex;gap:8px;justify-content:space-between;margin-bottom:4px}
+		.imogi-stat-card-label{color:#64748b;font-size:11px;font-weight:600;line-height:1.3;min-height:2.6em}
+		.imogi-stat-card-foot{align-items:center;display:flex;flex-shrink:0;min-height:24px;margin-top:auto}
+
+		.imogi-dash-panels{display:grid!important;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+		.imogi-dash-panel{background:#fff;border:1px solid #e8edf5;border-radius:18px;box-shadow:0 8px 22px rgba(15,23,42,.04);display:flex;flex-direction:column;min-height:100%;overflow:hidden;transition:box-shadow .15s ease,transform .15s ease}
+		.imogi-dash-panel:hover{box-shadow:0 14px 30px rgba(15,23,42,.08);transform:translateY(-1px)}
+		.imogi-dash-panel-head{align-items:center;background:linear-gradient(180deg,#fbfcfe,#fff);border-bottom:1px solid #f1f5f9;display:flex;flex-shrink:0;gap:10px;justify-content:space-between;padding:14px 16px}
+		.imogi-dash-panel-head-left{align-items:center;display:flex;gap:10px;min-width:0}
+		.imogi-dash-panel-icon{align-items:center;border-radius:12px;display:inline-flex;flex-shrink:0;font-size:12px;height:34px;justify-content:center;width:34px}
+		.imogi-dash-panel--brand .imogi-dash-panel-icon{background:#fff7ed;color:#ea580c}
+		.imogi-dash-panel--warning .imogi-dash-panel-icon{background:#fff7ed;color:#ea580c}
+		.imogi-dash-panel--success .imogi-dash-panel-icon{background:#ecfdf5;color:#059669}
+		.imogi-dash-panel--blue .imogi-dash-panel-icon{background:#eff6ff;color:#2563eb}
+		.imogi-dash-panel--purple .imogi-dash-panel-icon{background:#f5f3ff;color:#7c3aed}
+		.imogi-dash-panel--orange .imogi-dash-panel-icon{background:#fff7ed;color:#ea580c}
+		.imogi-dash-panel--danger .imogi-dash-panel-icon{background:#fef2f2;color:#dc2626}
+		.imogi-dash-panel--slate .imogi-dash-panel-icon{background:#f8fafc;color:#64748b}
+		.imogi-dash-panel-title{color:#0f172a;font-size:13px;font-weight:800;letter-spacing:-.01em}
+		.imogi-dash-panel-badge{background:#fef2f2;border-radius:999px;color:#b91c1c;flex-shrink:0;font-size:10px;font-weight:700;padding:4px 10px}
+		.imogi-dash-panel-export{align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;cursor:pointer;display:inline-flex;flex-shrink:0;font-size:11px;height:26px;justify-content:center;margin-left:6px;width:26px}
+		.imogi-dash-panel-export:hover{background:#f8fafc;border-color:#cbd5e1;color:#0f172a}
+		.imogi-dash-panel-body{flex:1;min-height:140px;padding:14px 16px 16px}
+		.imogi-dash-bars,.imogi-dash-stock-list{display:flex;flex-direction:column;gap:12px}
+		.imogi-dash-bar-head,.imogi-dash-stock-head{align-items:center;display:flex;gap:8px;justify-content:space-between;margin-bottom:5px}
 		.imogi-dash-bar-name,.imogi-dash-stock-head span:first-child{color:#334155;flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 		.imogi-dash-bar-meta,.imogi-dash-stock-qty{color:#64748b;flex-shrink:0;font-size:11px;white-space:nowrap}
 		.imogi-dash-stock-qty b{color:#dc2626}
-		.imogi-dash-rank{background:#e2e8f0;border-radius:4px;color:#64748b;display:inline-block;font-size:10px;font-weight:700;margin-right:6px;min-width:18px;padding:1px 5px;text-align:center}
-		.imogi-dash-bar-track{background:#e2e8f0;border-radius:999px;height:6px;overflow:hidden;width:100%}
+		.imogi-dash-rank{background:#f1f5f9;border-radius:6px;color:#64748b;display:inline-block;font-size:10px;font-weight:700;margin-right:6px;min-width:20px;padding:2px 6px;text-align:center}
+		.imogi-dash-bar-track{background:#eef2f7;border-radius:999px;height:8px;overflow:hidden;width:100%}
 		.imogi-dash-bar-fill{border-radius:999px;height:100%;min-width:4px}
-		.imogi-dash-bar-fill--brand{background:linear-gradient(90deg,#fbbf24,#f39c12)}
+		.imogi-dash-bar-fill--brand{background:linear-gradient(90deg,#fbbf24,#f59e0b)}
 		.imogi-dash-bar-fill--success{background:linear-gradient(90deg,#34d399,#10b981)}
 		.imogi-dash-bar-fill--blue{background:linear-gradient(90deg,#60a5fa,#3b82f6)}
 		.imogi-dash-bar-fill--purple{background:linear-gradient(90deg,#a78bfa,#8b5cf6)}
 		.imogi-dash-bar-fill--danger{background:linear-gradient(90deg,#f87171,#ef4444)}
 		.imogi-dash-muted{color:#94a3b8}
-		.imogi-dash-empty{align-items:center;color:#94a3b8;display:flex;flex:1;flex-direction:column;font-size:12px;gap:8px;justify-content:center;min-height:100px;text-align:center}
-		.imogi-dash-stock-list{max-height:220px;overflow:auto;padding-right:2px}
-		.imogi-shift-banner{align-items:center;border-radius:8px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;padding:8px 12px}
-		.imogi-shift-banner--open{background:#ecfdf5;border:1px solid #a7f3d0;border-left:3px solid #10b981}
-		.imogi-shift-banner--closed{background:#fffbeb;border:1px solid #fde68a;border-left:3px solid #f59e0b}
+		.imogi-dash-empty{align-items:center;color:#94a3b8;display:flex;flex:1;flex-direction:column;font-size:12px;gap:10px;justify-content:center;min-height:110px;text-align:center}
+		.imogi-dash-empty i{font-size:22px;opacity:.4}
+		.imogi-dash-stock-list{max-height:240px;overflow:auto;padding-right:4px}
+
+		.imogi-shift-banner{align-items:center;border-radius:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;padding:12px 14px}
+		.imogi-shift-banner--open{background:#ecfdf5;border:1px solid #a7f3d0}
+		.imogi-shift-banner--closed{background:#fffbeb;border:1px solid #fde68a}
 		.imogi-shift-banner-text{align-items:center;display:flex;gap:10px;font-size:12px}
-		.imogi-shift-icon{align-items:center;border-radius:6px;display:inline-flex;flex-shrink:0;font-size:12px;height:28px;justify-content:center;width:28px}
+		.imogi-shift-icon{align-items:center;border-radius:10px;display:inline-flex;flex-shrink:0;font-size:12px;height:32px;justify-content:center;width:32px}
 		.imogi-shift-banner--open .imogi-shift-icon{background:#bbf7d0;color:#15803d}
 		.imogi-shift-banner--closed .imogi-shift-icon{background:#fde68a;color:#b45309}
 		.imogi-shift-meta{color:#64748b;font-size:11px;margin-top:2px}
 		.imogi-shift-banner-actions{align-items:center;display:flex;flex-wrap:wrap;gap:6px}
-		.imogi-dash-footer{color:#94a3b8;font-size:11px;margin-top:14px;text-align:right}
-		.imogi-dash-panel--focused{animation:imogi-dash-focus-pulse 2.2s ease;outline:2px solid #f39c12;outline-offset:2px}
-		@keyframes imogi-dash-focus-pulse{0%,100%{outline-color:rgba(243,156,18,.95)}50%{outline-color:rgba(243,156,18,.35)}}
+		.imogi-dash-footer{color:#94a3b8;font-size:11px;font-weight:500;margin-top:8px;text-align:center}
+		.imogi-dash-panel--focused{animation:imogi-dash-focus-pulse 2.2s ease;outline:2px solid #f59e0b;outline-offset:2px}
+		@keyframes imogi-dash-focus-pulse{0%,100%{outline-color:rgba(245,158,11,.9)}50%{outline-color:rgba(245,158,11,.3)}}
+
 		@media (max-width:1199px){
 			.imogi-target-strip-meta{grid-template-columns:repeat(2,minmax(0,1fr))}
 			.imogi-dash-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-			.imogi-stat-card{border-bottom:1px solid #edf2f7}
-			.imogi-stat-card:nth-child(3n){border-right:none}
+			.imogi-stat-card--hero{grid-column:auto!important}
+			.imogi-dash-branch-card--wide{grid-template-columns:1fr 1fr}
 		}
 		@media (max-width:767px){
-			.imogi-dash-topbar,.imogi-dash-hero{border-radius:8px}
-			.imogi-dash-upgrade-strip,.imogi-dash-hero{border-top:1px solid #cbd5e1}
-			.imogi-dash-hero{padding:12px}
-			.imogi-dash-hero-right,.imogi-shift-banner{flex-direction:column;align-items:stretch;width:100%}
-			.imogi-dash-hero-actions,.imogi-dash-hero-controls,.imogi-dash-upgrade-actions{width:100%}
+			.imogi-dashboard-page .page-body{padding:10px!important}
+			.imogi-dash-hero{border-radius:16px;padding:16px}
+			.imogi-dash-date-display{font-size:28px!important}
+			.imogi-dash-hero-body,.imogi-dash-toolbar-actions,.imogi-dash-hero-controls,.imogi-shift-banner{flex-direction:column;align-items:stretch;width:100%}
+			.imogi-dash-hero-actions,.imogi-dash-upgrade-actions{width:100%}
 			.imogi-target-strip-body{align-items:flex-start;flex-direction:column}
 			.imogi-target-strip-meta{grid-template-columns:1fr 1fr}
 			.imogi-dash-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-			.imogi-stat-card:nth-child(2n){border-right:none}
 			.imogi-dash-panels{grid-template-columns:1fr!important}
 			.imogi-btn-brand,.imogi-btn-ghost,.imogi-dash-upgrade-actions a{width:100%!important}
+			.imogi-dash-branch-card--wide{grid-template-columns:1fr}
+		}
+
+		.imogi-dash-insight-grid{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}
+		.imogi-dash-insight-card{background:#fff;border:1px solid #e8edf5;border-radius:16px;box-shadow:0 8px 20px rgba(15,23,42,.04);padding:14px 16px}
+		.imogi-dash-insight-label{color:#64748b;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+		.imogi-dash-insight-value{color:#0f172a;font-size:20px;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+		.imogi-dash-insight-meta{color:#94a3b8;font-size:11px;font-weight:600;margin-top:4px}
+		.imogi-dash-split{display:grid;gap:14px;grid-template-columns:1.1fr .9fr;margin-bottom:14px}
+		.imogi-dash-trend-card,.imogi-dash-funnel-card{background:#fff;border:1px solid #e8edf5;border-radius:18px;box-shadow:0 8px 22px rgba(15,23,42,.04);overflow:hidden}
+		.imogi-dash-trend-body{padding:14px 16px 16px}
+		.imogi-dash-trend-chart{align-items:flex-end;display:flex;gap:8px;height:140px;margin-top:8px}
+		.imogi-dash-trend-col{align-items:center;display:flex;flex:1;flex-direction:column;gap:6px;height:100%;justify-content:flex-end;min-width:0}
+		.imogi-dash-trend-bar-wrap{align-items:flex-end;display:flex;flex:1;justify-content:center;width:100%}
+		.imogi-dash-trend-bar{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:8px 8px 4px 4px;min-height:6px;width:100%;max-width:36px}
+		.imogi-dash-trend-col.is-today .imogi-dash-trend-bar{background:linear-gradient(180deg,#38bdf8,#2563eb);box-shadow:0 6px 14px rgba(37,99,235,.25)}
+		.imogi-dash-trend-day{color:#64748b;font-size:10px;font-weight:700}
+		.imogi-dash-trend-amt{color:#0f172a;font-size:10px;font-weight:700;text-align:center;white-space:nowrap}
+		.imogi-dash-funnel-list{display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px}
+		.imogi-dash-funnel-row{display:grid;gap:10px;grid-template-columns:110px 1fr 42px;align-items:center}
+		.imogi-dash-funnel-name{color:#334155;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+		.imogi-dash-funnel-track{background:#eef2f7;border-radius:999px;height:8px;overflow:hidden}
+		.imogi-dash-funnel-fill{background:linear-gradient(90deg,#60a5fa,#2563eb);border-radius:999px;height:100%;min-width:4px}
+		.imogi-dash-funnel-count{color:#0f172a;font-size:12px;font-variant-numeric:tabular-nums;font-weight:800;text-align:right}
+		.imogi-stat-delta{align-items:center;border-radius:999px;display:inline-flex;font-size:10px;font-weight:800;gap:3px;padding:3px 8px;width:fit-content}
+		.imogi-stat-delta.is-up{background:#ecfdf5;color:#047857}
+		.imogi-stat-delta.is-down{background:#fef2f2;color:#b91c1c}
+		.imogi-stat-delta.is-flat{background:#f1f5f9;color:#64748b}
+		.imogi-stat-delta.is-muted{background:#f8fafc;color:#94a3b8;font-weight:700}
+		.imogi-dash-panels{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+		@media (max-width:1199px){
+			.imogi-dash-insight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+			.imogi-dash-split{grid-template-columns:1fr}
+			.imogi-dash-panels{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+		}
+		@media (max-width:767px){
+			.imogi-dash-insight-grid{grid-template-columns:1fr 1fr}
+			.imogi-dash-funnel-row{grid-template-columns:90px 1fr 36px}
+			.imogi-dash-panels{grid-template-columns:1fr!important}
 		}
 	`,
-		"imogi-dashboard-inline-css-v8"
+		"imogi-dashboard-inline-css-v16"
 	);
+}
+
+function imogi_dashboard_kds_enabled() {
+	return cint(frappe.boot?.imogi_pos_enable_kds);
+}
+
+function imogi_dash_clean_label(text) {
+	const raw = String(text || "").trim();
+	if (!raw) return "";
+	return raw
+		.replace(/\bUMKM\b/gi, "")
+		.replace(/[_-]?umkm[_-]?/gi, "-")
+		.replace(/--+/g, "-")
+		.replace(/\s{2,}/g, " ")
+		.replace(/^[\s_-]+|[\s_-]+$/g, "")
+		.trim() || raw;
 }
 
 frappe.pages["imogi-pos-dashboard"].on_page_load = function (wrapper) {
 	inject_dashboard_css();
+	document.body.classList.add("imogi-dashboard-fullscreen");
 
 	const is_umkm = frappe.boot.imogi_pos_business_type === "UMKM";
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: is_umkm ? __("Dashboard UMKM") : __("IMOGI POS Dashboard"),
+		title: __("IMOGI POS Dashboard"),
 		single_column: true,
 	});
 
 	page.main.addClass("imogi-dashboard-page");
+	$(wrapper).closest(".page-container").find("> .page-head").hide();
+	$(wrapper).find(".page-head").hide();
+	if (page.set_title) page.set_title(__("IMOGI POS Dashboard"));
+	document.title = __("IMOGI POS Dashboard");
+	if (!window.__imogi_dashboard_fullscreen_bound) {
+		window.__imogi_dashboard_fullscreen_bound = true;
+		$(document).on("page-change.imogi-dashboard-fs", () => {
+			const route = (frappe.get_route_str && frappe.get_route_str()) || "";
+			if (route.indexOf("imogi-pos-dashboard") === -1) {
+				document.body.classList.remove("imogi-dashboard-fullscreen");
+			} else {
+				document.body.classList.add("imogi-dashboard-fullscreen");
+			}
+		});
+	}
 	if (is_umkm) {
 		new imogi_pos.UmkDashboard(page);
 	} else {
@@ -233,6 +458,11 @@ frappe.pages["imogi-pos-dashboard"].on_page_load = function (wrapper) {
 			window.__imogi_dashboard_styles_ready = true;
 		});
 	}
+};
+
+frappe.pages["imogi-pos-dashboard"].on_page_show = function () {
+	document.body.classList.add("imogi-dashboard-fullscreen");
+	inject_dashboard_css();
 };
 
 const IMOGI_DASHBOARD_BRANCH_KEY = "imogi_dashboard_branch_v1";
@@ -258,6 +488,9 @@ imogi_pos.DashboardBase = class DashboardBase {
 		frappe.realtime.on("imogi_pos_order_status", () => this.refresh());
 		frappe.realtime.on("imogi_low_stock_alert", () => this.refresh());
 		frappe.realtime.on("imogi_pos_settings_updated", () => this.refresh());
+		if (imogi_dashboard_kds_enabled()) {
+			frappe.realtime.on("imogi_kitchen_updated", () => this.refresh());
+		}
 	}
 
 	bind_toolbar() {
@@ -274,6 +507,16 @@ imogi_pos.DashboardBase = class DashboardBase {
 			this.set_date(frappe.datetime.add_days(frappe.datetime.get_today(), -1));
 		});
 		this.wrapper.find(".imogi-dash-refresh").on("click", () => this.refresh());
+		this._sync_quick_date_chips();
+	}
+
+	_sync_quick_date_chips() {
+		const today = frappe.datetime.get_today();
+		const yesterday = frappe.datetime.add_days(today, -1);
+		this.wrapper.find(".imogi-dash-quick-today").toggleClass("is-active", this.selected_date === today);
+		this.wrapper
+			.find(".imogi-dash-quick-yesterday")
+			.toggleClass("is-active", this.selected_date === yesterday);
 	}
 
 	set_branch(branch_code) {
@@ -312,9 +555,8 @@ imogi_pos.DashboardBase = class DashboardBase {
 		const options = [`<option value="">${__("Semua Cabang")}</option>`]
 			.concat(
 				branches.map((row) => {
-					const label = row.city
-						? `${row.branch_name} (${row.city})`
-						: row.branch_name || row.branch_code;
+					const name = imogi_dash_clean_label(row.branch_name || row.branch_code);
+					const label = row.city ? `${name} (${row.city})` : name;
 					return `<option value="${frappe.utils.escape_html(row.branch_code)}"${
 						row.branch_code === active ? " selected" : ""
 					}>${frappe.utils.escape_html(label)}</option>`;
@@ -339,19 +581,56 @@ imogi_pos.DashboardBase = class DashboardBase {
 			  )}</div>`
 			: "";
 		$panel.show().html(`
-			<div class="imogi-dash-stats-card">
-				<div class="imogi-dash-stats-head">${__("Perbandingan Cabang")}</div>
-				<div class="imogi-dash-panel-body" style="padding:16px 18px 18px">
+			<section class="imogi-dash-section">
+				<div class="imogi-dash-section-head">
+					<h2>${__("Perbandingan Cabang")}</h2>
+				</div>
+				<div class="imogi-dash-panel" style="padding:0">
+					<div class="imogi-dash-panel-body" style="padding:16px 18px 18px">
 					${currencyNote}
-					<div class="imogi-dash-branch-grid">${rows
+					<div class="imogi-dash-branch-grid" data-count="${Math.min(rows.length, 4)}">${rows
 						.map((row) => {
 							const pct = Math.min(100, Math.max(4, flt(row.target_progress_pct)));
+							const wide = rows.length === 1;
+							if (wide) {
+								return `
+							<div class="imogi-dash-branch-card imogi-dash-branch-card--wide">
+								<div class="imogi-dash-branch-card-head">
+									<div>
+										<div class="imogi-dash-branch-card-name">${frappe.utils.escape_html(
+											imogi_dash_clean_label(row.branch_name || row.branch_code)
+										)}</div>
+										${
+											row.city
+												? `<div class="imogi-dash-branch-card-city">${frappe.utils.escape_html(
+														row.city
+												  )}</div>`
+												: ""
+										}
+									</div>
+								</div>
+								<div class="imogi-dash-branch-kpi">
+									<div class="imogi-dash-branch-kpi-label">${__("Omzet Hari Ini")}</div>
+									<div class="imogi-dash-branch-card-sales">${format_currency(row.sales_today || 0)}</div>
+								</div>
+								<div>
+									<div class="imogi-dash-branch-kpi-label">${__("Target Bulanan")} · ${pct}%</div>
+									<div class="imogi-dash-branch-card-track">
+										<div class="imogi-dash-branch-card-fill" style="width:${pct}%"></div>
+									</div>
+								</div>
+								<div class="imogi-dash-branch-card-meta">
+									<span><b>${row.completed_today || 0}</b> ${__("transaksi selesai")}</span>
+									<span>${__("Progress target")} ${pct}%</span>
+								</div>
+							</div>`;
+							}
 							return `
 							<div class="imogi-dash-branch-card">
 								<div class="imogi-dash-branch-card-head">
 									<div>
 										<div class="imogi-dash-branch-card-name">${frappe.utils.escape_html(
-											row.branch_name || row.branch_code
+											imogi_dash_clean_label(row.branch_name || row.branch_code)
 										)}</div>
 										${
 											row.city
@@ -375,8 +654,9 @@ imogi_pos.DashboardBase = class DashboardBase {
 							</div>`;
 						})
 						.join("")}</div>
+					</div>
 				</div>
-			</div>
+			</section>
 		`);
 	}
 
@@ -384,6 +664,7 @@ imogi_pos.DashboardBase = class DashboardBase {
 		this.selected_date = date;
 		this.wrapper.find(".imogi-dash-date").val(date);
 		this.wrapper.find(".imogi-dash-date-display").text(frappe.datetime.str_to_user(date));
+		this._sync_quick_date_chips();
 		this.refresh();
 	}
 
@@ -410,63 +691,94 @@ imogi_pos.DashboardBase = class DashboardBase {
 		const actions = options.actions || "";
 		this.wrapper.html(`
 			<div class="imogi-dash-shell">
-				<div class="imogi-dash-topbar">
-					<div class="imogi-dash-topbar-left">
-						<span class="imogi-dash-live-dot" title="${__("Live")}"></span>
-						<span class="imogi-dash-topbar-title">IMOGI POS</span>
-						<span class="imogi-dash-topbar-co"></span>
-					</div>
-					<div class="imogi-dash-topbar-right">
-						<span class="imogi-dash-tier-badge"></span>
-						<span class="imogi-dash-topbar-date"></span>
-					</div>
-				</div>
-				<div class="imogi-dash-upgrade-slot"></div>
-				<div class="imogi-dash-hero">
-					<div class="imogi-dash-hero-text">
-						<div class="imogi-dash-date-display">${frappe.utils.escape_html(
-							frappe.datetime.str_to_user(this.selected_date)
-						)}</div>
-						${subtitle ? `<p class="imogi-dash-hero-sub">${subtitle}</p>` : ""}
-					</div>
-					<div class="imogi-dash-hero-right">
-						<div class="imogi-dash-hero-controls">
-							<div class="imogi-dash-branch-wrap" style="display:none;">
-								<label>${__("Cabang")}</label>
-								<select class="form-control form-control-sm imogi-dash-branch-select imogi-dash-branch-select"></select>
-							</div>
-							<div class="imogi-dash-date-wrap">
-								<label>${__("Tanggal")}</label>
-								<input type="date" class="form-control form-control-sm imogi-dash-date" />
-							</div>
-							<div class="imogi-dash-quick-group">
-								<button type="button" class="imogi-dash-chip imogi-dash-quick-today">${__(
-									"Hari ini"
-								)}</button>
-								<button type="button" class="imogi-dash-chip imogi-dash-quick-yesterday">${__(
-									"Kemarin"
-								)}</button>
-								<button type="button" class="imogi-dash-chip imogi-dash-chip--icon imogi-dash-refresh" title="${__(
-									"Muat ulang"
-								)}">
-									<i class="fa fa-refresh"></i>
-								</button>
-							</div>
-							${actions ? `<div class="imogi-dash-hero-actions">${actions}</div>` : ""}
+				<section class="imogi-dash-hero">
+					<div class="imogi-dash-hero-top">
+						<div class="imogi-dash-header-brand">
+							<span class="imogi-dash-logo">IMOGI POS</span>
+							<span class="imogi-dash-live-pill"><span class="imogi-dash-live-dot"></span>${__("Live")}</span>
+						</div>
+						<div class="imogi-dash-header-meta">
+							<span class="imogi-dash-topbar-co"></span>
+							<span class="imogi-dash-tier-badge"></span>
+							<span class="imogi-dash-topbar-date"></span>
 						</div>
 					</div>
-				</div>
+					<div class="imogi-dash-hero-body">
+						<div class="imogi-dash-toolbar-main">
+							<div class="imogi-dash-date-display">${frappe.utils.escape_html(
+								frappe.datetime.str_to_user(this.selected_date)
+							)}</div>
+							${subtitle ? `<p class="imogi-dash-hero-sub">${subtitle}</p>` : ""}
+						</div>
+						<div class="imogi-dash-toolbar-actions">
+							<div class="imogi-dash-hero-controls">
+								<div class="imogi-dash-branch-wrap" style="display:none;">
+									<label>${__("Cabang")}</label>
+									<select class="form-control form-control-sm imogi-dash-branch-select"></select>
+								</div>
+								<div class="imogi-dash-date-wrap">
+									<label>${__("Tanggal")}</label>
+									<input type="date" class="form-control form-control-sm imogi-dash-date" />
+								</div>
+								<div class="imogi-dash-quick-group">
+									<button type="button" class="imogi-dash-chip imogi-dash-quick-today">${__(
+										"Hari ini"
+									)}</button>
+									<button type="button" class="imogi-dash-chip imogi-dash-quick-yesterday">${__(
+										"Kemarin"
+									)}</button>
+									<button type="button" class="imogi-dash-chip imogi-dash-chip--icon imogi-dash-refresh" title="${__(
+										"Muat ulang"
+									)}">
+										<i class="fa fa-refresh"></i>
+									</button>
+								</div>
+								${actions ? `<div class="imogi-dash-hero-actions">${actions}</div>` : ""}
+							</div>
+						</div>
+					</div>
+				</section>
+				<div class="imogi-dash-upgrade-slot"></div>
 				<div class="imogi-dash-alerts-stack">
 					<div class="imogi-pos-shift-alert" style="display:none;"></div>
 					<div class="imogi-awaiting-alert" style="display:none;"></div>
 				</div>
 				<div class="imogi-sales-target-banner" style="display:none;"></div>
 				<div class="imogi-dash-branch-panel" style="display:none;"></div>
-				<div class="imogi-dash-stats-card">
-					<div class="imogi-dash-stats-head">${__("Ringkasan Hari Ini")}</div>
+				<section class="imogi-dash-section">
+					<div class="imogi-dash-section-head">
+						<h2>${__("Ringkasan Hari Ini")}</h2>
+						<span>${__("vs kemarin · auto refresh 30 detik")}</span>
+					</div>
 					<div class="imogi-dash-stats-grid"></div>
+				</section>
+				<div class="imogi-dash-insight-grid"></div>
+				<div class="imogi-dash-split">
+					<div class="imogi-dash-trend-card">
+						<div class="imogi-dash-panel-head">
+							<div class="imogi-dash-panel-head-left">
+								<span class="imogi-dash-panel-icon" style="background:#eff6ff;color:#2563eb"><i class="fa fa-line-chart"></i></span>
+								<span class="imogi-dash-panel-title">${__("Tren 7 Hari")}</span>
+							</div>
+						</div>
+						<div class="imogi-dash-trend-body imogi-dash-trend-host"></div>
+					</div>
+					<div class="imogi-dash-funnel-card">
+						<div class="imogi-dash-panel-head">
+							<div class="imogi-dash-panel-head-left">
+								<span class="imogi-dash-panel-icon" style="background:#f5f3ff;color:#7c3aed"><i class="fa fa-filter"></i></span>
+								<span class="imogi-dash-panel-title">${__("Status Order Hari Ini")}</span>
+							</div>
+						</div>
+						<div class="imogi-dash-funnel-list imogi-dash-funnel-host"></div>
+					</div>
 				</div>
-				<div class="imogi-dash-panels"></div>
+				<section class="imogi-dash-section imogi-dash-section--panels">
+					<div class="imogi-dash-section-head">
+						<h2>${__("Analitik & Operasional")}</h2>
+					</div>
+					<div class="imogi-dash-panels"></div>
+				</section>
 				<div class="imogi-dash-footer"></div>
 			</div>
 		`);
@@ -503,16 +815,141 @@ imogi_pos.DashboardBase = class DashboardBase {
 			const hero = metric.hero ? " imogi-stat-card--hero" : "";
 			const alert =
 				metric.warn && cint(metric.value) > 0 ? " imogi-stat-card--alert" : "";
+			const delta_html =
+				this._render_delta_badge(metric.delta) ||
+				`<span class="imogi-stat-delta is-muted">${metric.meta || __("hari ini")}</span>`;
 			this.stats_grid.append(`
 				<div class="imogi-stat-card imogi-stat-card--${tone}${hero}${alert}">
-					<span class="imogi-stat-card-icon"><i class="fa ${metric.icon || "fa-bar-chart"}"></i></span>
+					<div class="imogi-stat-card-top">
+						<span class="imogi-stat-card-icon"><i class="fa ${metric.icon || "fa-bar-chart"}"></i></span>
+					</div>
 					<div class="imogi-stat-card-body">
 						<div class="imogi-stat-card-value">${metric.value ?? 0}</div>
 						<div class="imogi-stat-card-label">${metric.label}</div>
+						<div class="imogi-stat-card-foot">${delta_html}</div>
 					</div>
 				</div>
 			`);
 		});
+	}
+
+	_render_delta_badge(delta) {
+		if (delta === undefined || delta === null || delta === "") return "";
+		const n = flt(delta);
+		const cls = n > 0 ? "is-up" : n < 0 ? "is-down" : "is-flat";
+		const icon = n > 0 ? "fa-arrow-up" : n < 0 ? "fa-arrow-down" : "fa-minus";
+		const sign = n > 0 ? "+" : "";
+		return `<span class="imogi-stat-delta ${cls}"><i class="fa ${icon}"></i>${sign}${n}%</span>`;
+	}
+
+	render_insight_strip(data) {
+		const $grid = this.wrapper.find(".imogi-dash-insight-grid");
+		if (!$grid.length) return;
+		const insights = data.insights || {};
+		const wtd = insights.week_to_date || {};
+		const mtd = insights.month_to_date || {};
+		const peak = insights.peak_hour;
+		const cards = [
+			{
+				label: __("Week to Date"),
+				value: format_currency(wtd.sales || 0),
+				meta: __("{0} transaksi selesai", [wtd.completed || 0]),
+			},
+			{
+				label: __("Month to Date"),
+				value: format_currency(mtd.sales || 0),
+				meta: __("{0} transaksi selesai", [mtd.completed || 0]),
+			},
+			{
+				label: __("Conversion Rate"),
+				value: `${flt(insights.conversion_rate || 0)}%`,
+				meta: __("Selesai / total order hari ini"),
+			},
+			{
+				label: __("Peak Hour"),
+				value: peak?.label || "—",
+				meta: peak
+					? `${peak.orders || 0} order · ${format_currency(peak.sales || 0)}`
+					: __("Belum ada data jam sibuk"),
+			},
+		];
+		$grid.html(
+			cards
+				.map(
+					(c) => `<div class="imogi-dash-insight-card">
+					<div class="imogi-dash-insight-label">${c.label}</div>
+					<div class="imogi-dash-insight-value">${c.value}</div>
+					<div class="imogi-dash-insight-meta">${c.meta}</div>
+				</div>`
+				)
+				.join("")
+		);
+	}
+
+	render_trend_chart(data) {
+		const $host = this.wrapper.find(".imogi-dash-trend-host");
+		if (!$host.length) return;
+		const rows = (data.insights || {}).last_7_days || [];
+		if (!rows.length) {
+			$host.html(this.render_empty(__("Belum ada tren 7 hari.")));
+			return;
+		}
+		const max = Math.max(...rows.map((r) => flt(r.sales)), 1);
+		const today = data.date || frappe.datetime.get_today();
+		$host.html(`<div class="imogi-dash-trend-chart">${rows
+			.map((r) => {
+				const pct = Math.max(8, Math.round((flt(r.sales) / max) * 100));
+				const is_today = r.date === today ? " is-today" : "";
+				return `<div class="imogi-dash-trend-col${is_today}" title="${frappe.utils.escape_html(
+					r.date
+				)}">
+					<div class="imogi-dash-trend-amt">${format_currency(r.sales || 0)}</div>
+					<div class="imogi-dash-trend-bar-wrap"><div class="imogi-dash-trend-bar" style="height:${pct}%"></div></div>
+					<div class="imogi-dash-trend-day">${frappe.utils.escape_html(r.label || "")}</div>
+				</div>`;
+			})
+			.join("")}</div>`);
+	}
+
+	render_status_funnel(data) {
+		const $host = this.wrapper.find(".imogi-dash-funnel-host");
+		if (!$host.length) return;
+		const rows = (data.insights || {}).status_funnel || [];
+		if (!rows.length) {
+			$host.html(this.render_empty(__("Belum ada order hari ini.")));
+			return;
+		}
+		const max = Math.max(...rows.map((r) => cint(r.count)), 1);
+		const labels = {
+			Draft: __("Draft"),
+			"Awaiting Payment": __("Menunggu Bayar"),
+			Paid: __("Paid"),
+			"In Kitchen": __("Di Dapur"),
+			"Kitchen Ready": __("Siap Saji"),
+			"In Service": __("In Service"),
+			"In Fulfillment": __("Fulfillment"),
+			Completed: __("Selesai"),
+			Cancelled: __("Dibatalkan"),
+		};
+		$host.html(
+			rows
+				.map((r) => {
+					const pct = Math.max(6, Math.round((cint(r.count) / max) * 100));
+					const name = labels[r.status] || r.status;
+					return `<div class="imogi-dash-funnel-row">
+						<div class="imogi-dash-funnel-name">${frappe.utils.escape_html(name)}</div>
+						<div class="imogi-dash-funnel-track"><div class="imogi-dash-funnel-fill" style="width:${pct}%"></div></div>
+						<div class="imogi-dash-funnel-count">${cint(r.count)}</div>
+					</div>`;
+				})
+				.join("")
+		);
+	}
+
+	render_saas_insights(data) {
+		this.render_insight_strip(data);
+		this.render_trend_chart(data);
+		this.render_status_funnel(data);
 	}
 
 	render_topbar(data) {
@@ -521,7 +958,7 @@ imogi_pos.DashboardBase = class DashboardBase {
 			frappe.defaults.get_user_default("Company") ||
 			frappe.boot?.imogi_pos_default_company ||
 			"";
-		this.wrapper.find(".imogi-dash-topbar-co").text(company);
+		this.wrapper.find(".imogi-dash-topbar-co").text(imogi_dash_clean_label(company));
 		if (imogi_dashboard_subscription_disabled()) {
 			this.wrapper.find(".imogi-dash-tier-badge").hide();
 		} else {
@@ -646,9 +1083,7 @@ imogi_pos.DashboardBase = class DashboardBase {
 		const ts = data.timestamp ? frappe.datetime.str_to_user(data.timestamp) : "";
 		this.wrapper.find(".imogi-dash-footer").html(
 			ts
-				? `<i class="fa fa-clock-o"></i> ${__("Terakhir diperbarui")}: ${frappe.utils.escape_html(
-						ts
-				  )} · ${__("Auto refresh 30 detik")}`
+				? `${__("Terakhir diperbarui")}: ${frappe.utils.escape_html(ts)}`
 				: ""
 		);
 	}
@@ -753,10 +1188,18 @@ imogi_pos.DashboardBase = class DashboardBase {
 					value_key: "sales",
 					show_rank: true,
 					tone: "brand",
-					meta_fn: (r) =>
-						`<strong>${r.qty}</strong> ${__("pcs")} · ${format_currency(r.sales || 0)}`,
 				})}</div>` +
 				this.render_panel_close()
+		);
+		this.attach_export(
+			$el,
+			`menu-terlaris-${this.selected_date}.csv`,
+			[
+				{ label: __("Produk"), value: "item_name" },
+				{ label: __("Qty"), value: "qty" },
+				{ label: __("Penjualan"), value: "sales" },
+			],
+			rows
 		);
 	}
 
@@ -906,6 +1349,149 @@ imogi_pos.DashboardBase = class DashboardBase {
 				})}</div>` +
 				this.render_panel_close()
 		);
+		this.attach_export(
+			el,
+			`sales-by-payment-${this.selected_date}.csv`,
+			[
+				{ label: __("Metode"), value: "mode_of_payment" },
+				{ label: __("Jumlah"), value: "amount" },
+				{ label: __("Count"), value: "count" },
+			],
+			rows
+		);
+	}
+
+	render_kitchen_performance(report) {
+		const el = this.wrapper.find(".imogi-kitchen-performance");
+		if (!el.length || report.locked) return;
+		const rows = report.rows || [];
+		const live = report.live || {};
+		const range =
+			report.date_from && report.date_to ? `${report.date_from} — ${report.date_to}` : "";
+		const live_html = `
+			<div class="imogi-dash-branch-card-meta" style="margin:0 0 12px;gap:10px;flex-wrap:wrap">
+				<span><b>${cint(live.active)}</b> ${__("aktif")}</span>
+				<span><b>${cint(live.pending)}</b> ${__("antrian")}</span>
+				<span><b>${cint(live.preparing)}</b> ${__("dimasak")}</span>
+				<span><b>${cint(live.ready)}</b> ${__("siap")}</span>
+			</div>`;
+		if (!rows.length) {
+			el.html(
+				this.render_panel_open(__("Kitchen Performance"), "fa-fire", null, range) +
+					live_html +
+					this.render_empty(
+						cint(live.active)
+							? __("Ada order aktif di KDS. Selesaikan order untuk melihat rata-rata waktu per stasiun.")
+							: __(
+									"Belum ada data KPI dapur. Pastikan order masuk KDS dan stasiun dapur sudah diatur."
+							  )
+					) +
+					`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-performance">${__("Buka Laporan")}</a>
+						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
+						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-station">${__("Atur Stasiun")}</a>
+					</div>` +
+					this.render_panel_close()
+			);
+			return;
+		}
+		el.html(
+			this.render_panel_open(__("Kitchen Performance"), "fa-fire", `${rows.length} stasiun`, range) +
+				live_html +
+				`<div class="imogi-dash-bars">${rows
+					.map((r) => {
+						const label = r.station_label || r.kitchen_station || __("Tanpa stasiun");
+						const type = r.station_type === "Bar" ? __("Bar") : __("Dapur");
+						const avg = Math.round(flt(r.avg_minutes));
+						const avg_label = avg > 0 ? `${avg} min` : "—";
+						return `<div>
+						<div class="imogi-dash-bar-head">
+							<span class="imogi-dash-bar-name">${frappe.utils.escape_html(label)} <span class="imogi-dash-muted">(${frappe.utils.escape_html(type)})</span></span>
+							<span class="imogi-dash-bar-meta">${r.orders || 0} order · ${avg_label} · ${r.completed || 0} ${__("selesai")}</span>
+						</div>
+						<div class="imogi-dash-muted" style="font-size:11px;margin:-2px 0 8px">
+							${cint(r.pending)} ${__("antrian")} · ${cint(r.preparing)} ${__("dimasak")} · ${cint(r.ready)} ${__("siap")}
+						</div>
+					</div>`;
+					})
+					.join("")}</div>
+				<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+					<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-performance">${__("Buka Laporan")}</a>
+					<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
+				</div>` +
+				this.render_panel_close()
+		);
+	}
+
+	render_bars_panel(el, title, icon, rows, opts) {
+		if (!el?.length) return;
+		if (!rows.length) {
+			el.html(this.render_panel_open(title, icon) + this.render_empty(__("Belum ada data.")) + this.render_panel_close());
+			return;
+		}
+		el.html(
+			this.render_panel_open(title, icon) +
+				`<div class="imogi-dash-bars">${this.render_bars(rows, opts)}</div>` +
+				this.render_panel_close()
+		);
+	}
+
+	render_simple_list(el, title, icon, rows, badge) {
+		if (!el?.length) return;
+		if (!rows.length) {
+			el.html(
+				this.render_panel_open(title, icon) +
+					this.render_empty(__("Belum ada data.")) +
+					this.render_panel_close()
+			);
+			return;
+		}
+		el.html(
+			this.render_panel_open(title, icon, badge || null) +
+				`<div class="imogi-dash-bars">${rows
+					.map(
+						(r) => `<div class="imogi-dash-bar-head">
+						<span class="imogi-dash-bar-name">${frappe.utils.escape_html(r.label)}</span>
+						<span class="imogi-dash-bar-meta">${frappe.utils.escape_html(r.meta || "")}</span>
+					</div>`
+					)
+					.join("")}</div>` +
+				this.render_panel_close()
+		);
+	}
+
+	export_csv(filename, headers, rows) {
+		const escape_cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+		const line = (cells) => cells.map(escape_cell).join(",");
+		const lines = [
+			line(headers.map((h) => h.label)),
+			...rows.map((row) =>
+				line(headers.map((h) => (typeof h.value === "function" ? h.value(row) : row[h.value])))
+			),
+		];
+		const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+		const a = document.createElement("a");
+		a.href = URL.createObjectURL(blob);
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(a.href);
+	}
+
+	attach_export($el, filename, headers, rows) {
+		if (!$el?.length || !rows?.length) return;
+		const $head = $el.find(".imogi-dash-panel-head").first();
+		if (!$head.length) return;
+		$head.find(".imogi-dash-panel-export").remove();
+		const $btn = $(
+			`<button type="button" class="imogi-dash-panel-export" title="${__("Export Excel")}"><i class="fa fa-download"></i></button>`
+		);
+		$btn.on("click", (e) => {
+			e.stopPropagation();
+			this.export_csv(filename, headers, rows);
+		});
+		$head.append($btn);
 	}
 };
 
@@ -940,11 +1526,15 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 		this.add_panel("imogi-refund-report", "danger", "refund_report");
 		this.add_panel("imogi-payment-chart", "purple", "sales_by_payment");
 		this.add_panel("imogi-food-cost", "orange", "food_cost_report");
+		this.add_panel("imogi-waste-report", "warning", "waste_report");
+		this.add_panel("imogi-tax-report", "blue", "tax_report");
 		this.add_panel("imogi-table-turnover", "slate", "table_turnover_report");
+		this.add_panel("imogi-customer-visit", "brand", "customer_visit_report");
 		this.add_panel("imogi-kitchen-performance", "orange", "kitchen_performance");
 	}
 
 	render(data) {
+		const deltas = (data.insights || {}).deltas || {};
 		this.render_topbar(data);
 		this.render_pos_shift(data);
 		this.render_awaiting_alert(data);
@@ -952,19 +1542,27 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 		this.render_branch_breakdown(data);
 		this.render_stat_cards([
 			{
-				label: __("Penjualan"),
+				label: __("Penjualan Hari Ini"),
 				value: format_currency(data.sales_today || 0),
 				icon: "fa-money",
 				tone: "brand",
 				hero: true,
+				delta: deltas.sales_pct,
 			},
 			{
 				label: __("Order Selesai"),
 				value: data.completed_today || 0,
 				icon: "fa-check-circle",
 				tone: "success",
+				delta: deltas.completed_pct,
 			},
-			{ label: __("Total Order"), value: data.orders_today || 0, icon: "fa-list-alt", tone: "slate" },
+			{
+				label: __("Total Order"),
+				value: data.orders_today || 0,
+				icon: "fa-list-alt",
+				tone: "slate",
+				delta: deltas.orders_pct,
+			},
 			{ label: __("Di Kitchen"), value: data.in_kitchen || 0, icon: "fa-fire", tone: "orange" },
 			{ label: __("In Service"), value: data.in_service || 0, icon: "fa-cutlery", tone: "blue" },
 			{
@@ -974,6 +1572,7 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 				tone: "warning",
 			},
 		]);
+		this.render_saas_insights(data);
 
 		this.render_top_products(data);
 		this.render_low_stock(data);
@@ -1002,36 +1601,61 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 			order_count: r.order_count,
 			sales: r.sales,
 		}));
-		this.render_bars_panel(
-			this.wrapper.find(".imogi-sales-hour"),
-			__("Penjualan per Jam"),
-			"fa-clock-o",
-			hour,
-			{
-				label_key: "hour_label",
-				value_key: "sales",
-				tone: "success",
-				meta_fn: (r) => `${r.order_count} order · ${format_currency(r.sales)}`,
-			}
+		const $salesHour = this.wrapper.find(".imogi-sales-hour");
+		this.render_bars_panel($salesHour, __("Penjualan per Jam"), "fa-clock-o", hour, {
+			label_key: "hour_label",
+			value_key: "sales",
+			tone: "success",
+			meta_fn: (r) => `${r.order_count} order · ${format_currency(r.sales)}`,
+		});
+		this.attach_export(
+			$salesHour,
+			`penjualan-per-jam-${this.selected_date}.csv`,
+			[
+				{ label: __("Jam"), value: "hour_label" },
+				{ label: __("Order"), value: "order_count" },
+				{ label: __("Penjualan"), value: "sales" },
+			],
+			hour
 		);
 		const cat = reports.sales_by_category?.rows || [];
-		this.render_bars_panel(
-			this.wrapper.find(".imogi-sales-category"),
-			__("Penjualan per Kategori"),
-			"fa-pie-chart",
-			cat,
-			{ label_key: "category", value_key: "sales", tone: "brand" }
+		const $salesCat = this.wrapper.find(".imogi-sales-category");
+		this.render_bars_panel($salesCat, __("Penjualan per Kategori"), "fa-pie-chart", cat, {
+			label_key: "category",
+			value_key: "sales",
+			tone: "brand",
+		});
+		this.attach_export(
+			$salesCat,
+			`penjualan-per-kategori-${this.selected_date}.csv`,
+			[
+				{ label: __("Kategori"), value: "category" },
+				{ label: __("Penjualan"), value: "sales" },
+			],
+			cat
 		);
 		const disc = reports.discount_report || {};
+		const discRows = disc.rows || [];
+		const $discPanel = this.wrapper.find(".imogi-discount-report");
 		this.render_simple_list(
-			this.wrapper.find(".imogi-discount-report"),
+			$discPanel,
 			__("Laporan Diskon"),
 			"fa-tag",
-			(disc.rows || []).slice(0, 8).map((r) => ({
+			discRows.slice(0, 8).map((r) => ({
 				label: r.name,
 				meta: `${format_currency(r.discount_amount || 0)} · ${frappe.datetime.str_to_user(r.creation)}`,
 			})),
 			disc.count ? `${disc.count} transaksi` : ""
+		);
+		this.attach_export(
+			$discPanel,
+			`laporan-diskon-${this.selected_date}.csv`,
+			[
+				{ label: __("Order"), value: "name" },
+				{ label: __("Diskon"), value: "discount_amount" },
+				{ label: __("Tanggal"), value: (r) => frappe.datetime.str_to_user(r.creation) },
+			],
+			discRows
 		);
 		const ref = reports.refund_report || {};
 		this.render_simple_list(
@@ -1056,11 +1680,102 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 					</div>` +
 					this.render_panel_close()
 			);
+			this.attach_export(
+				$fc,
+				`food-cost-${this.selected_date}.csv`,
+				[
+					{ label: __("Penjualan"), value: "sales" },
+					{ label: __("Food Cost"), value: "food_cost" },
+					{ label: __("Margin"), value: "margin" },
+					{ label: __("Food Cost %"), value: "food_cost_percent" },
+				],
+				[food]
+			);
+		}
+		const waste = reports.waste_report || {};
+		if (!waste.locked) {
+			const $w = this.wrapper.find(".imogi-waste-report");
+			$w.html(
+				this.render_panel_open(
+					__("Waste Report"),
+					"fa-trash",
+					waste.total_value ? format_currency(waste.total_value) : ""
+				) +
+					`<div class="imogi-mini-stats imogi-mini-stats--grid">
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Baris")}</span><span class="imogi-mini-stat-val">${cint(waste.count)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Qty")}</span><span class="imogi-mini-stat-val">${flt(waste.total_qty).toFixed(2)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Nilai")}</span><span class="imogi-mini-stat-val">${format_currency(waste.total_value || 0)}</span></div>
+					</div>
+					<div class="imogi-simple-list" style="margin-top:10px">
+						${(waste.rows || [])
+							.slice(0, 6)
+							.map(
+								(r) => `<div class="imogi-simple-list-row">
+							<span class="imogi-simple-list-label">${frappe.utils.escape_html(r.item_name || r.item_code || r.name)}</span>
+							<span class="imogi-simple-list-meta">${flt(r.qty)} · ${format_currency(r.amount || 0)}</span>
+						</div>`
+							)
+							.join("") || `<div class="imogi-simple-list-empty">${__("Belum ada waste/spoilage di periode ini.")}</div>`}
+					</div>
+					<div style="margin-top:10px">
+						<a class="imogi-btn-ghost" href="/app/inventory-hub/waste"><i class="fa fa-external-link"></i> ${__("Inventory Hub / Waste")}</a>
+					</div>` +
+					this.render_panel_close()
+			);
+			this.attach_export(
+				$w,
+				`waste-report-${this.selected_date}.csv`,
+				[
+					{ label: __("Item"), value: (r) => r.item_name || r.item_code || r.name },
+					{ label: __("Qty"), value: "qty" },
+					{ label: __("Nilai"), value: "amount" },
+				],
+				waste.rows || []
+			);
+		}
+		const tax = reports.tax_report || {};
+		if (!tax.locked) {
+			const $t = this.wrapper.find(".imogi-tax-report");
+			$t.html(
+				this.render_panel_open(__("Tax Report (PPN)"), "fa-percent", format_currency(tax.tax_amount || 0)) +
+					`<div class="imogi-mini-stats imogi-mini-stats--grid">
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("DPP")}</span><span class="imogi-mini-stat-val">${format_currency(tax.taxable_amount || 0)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("PPN")}</span><span class="imogi-mini-stat-val">${format_currency(tax.tax_amount || 0)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Omzet")}</span><span class="imogi-mini-stat-val">${format_currency(tax.grand_total || 0)}</span></div>
+					</div>
+					<div class="imogi-simple-list" style="margin-top:10px">
+						${(tax.daily || [])
+							.slice(0, 6)
+							.map(
+								(r) => `<div class="imogi-simple-list-row">
+							<span class="imogi-simple-list-label">${frappe.utils.escape_html(String(r.posting_date || ""))}</span>
+							<span class="imogi-simple-list-meta">${cint(r.order_count)} order · PPN ${format_currency(r.tax_amount || 0)}</span>
+						</div>`
+							)
+							.join("") || `<div class="imogi-simple-list-empty">${__("Belum ada transaksi ber-PPN.")}</div>`}
+					</div>
+					<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+						<a class="imogi-btn-ghost" href="/app/query-report/Sales%20Register"><i class="fa fa-file-text-o"></i> ${__("Sales Register")}</a>
+						<a class="imogi-btn-ghost" href="/app/finance-hub"><i class="fa fa-university"></i> ${__("Finance Hub")}</a>
+					</div>` +
+					this.render_panel_close()
+			);
+			this.attach_export(
+				$t,
+				`tax-report-${this.selected_date}.csv`,
+				[
+					{ label: __("Tanggal"), value: (r) => String(r.posting_date || "") },
+					{ label: __("Order"), value: "order_count" },
+					{ label: __("PPN"), value: "tax_amount" },
+				],
+				tax.daily || []
+			);
 		}
 		const turnover = reports.table_turnover_report?.rows || [];
 		if (!reports.table_turnover_report?.locked) {
+			const $turnover = this.wrapper.find(".imogi-table-turnover");
 			this.render_simple_list(
-				this.wrapper.find(".imogi-table-turnover"),
+				$turnover,
 				__("Table Turnover"),
 				"fa-table",
 				turnover.slice(0, 8).map((r) => ({
@@ -1068,85 +1783,56 @@ imogi_pos.OperationsDashboard = class OperationsDashboard extends imogi_pos.Dash
 					meta: `${r.turns || 0} putaran · ${format_currency(r.sales || 0)}`,
 				}))
 			);
+			this.attach_export(
+				$turnover,
+				`table-turnover-${this.selected_date}.csv`,
+				[
+					{ label: __("Meja"), value: (r) => r.table_number || r.name },
+					{ label: __("Putaran"), value: "turns" },
+					{ label: __("Penjualan"), value: "sales" },
+				],
+				turnover
+			);
 		}
-		this.render_kitchen_performance(reports.kitchen_performance || {});
-	}
-
-	render_kitchen_performance(report) {
-		const el = this.wrapper.find(".imogi-kitchen-performance");
-		if (!el.length || report.locked) return;
-		const rows = report.rows || [];
-		const range =
-			report.date_from && report.date_to ? `${report.date_from} — ${report.date_to}` : "";
-		if (!rows.length) {
-			el.html(
-				this.render_panel_open(__("Kitchen Performance"), "fa-fire", null, range) +
-					this.render_empty(
-						__(
-							"Belum ada data KPI dapur. Pastikan order masuk KDS dan stasiun dapur sudah diatur."
-						)
-					) +
-					`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
-						<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-station">${__("Atur Stasiun")}</a>
+		const visits = reports.customer_visit_report || {};
+		if (!visits.locked) {
+			const $v = this.wrapper.find(".imogi-customer-visit");
+			$v.html(
+				this.render_panel_open(
+					__("Customer Visit"),
+					"fa-users",
+					visits.unique_customers ? `${cint(visits.unique_customers)} ${__("customer")}` : ""
+				) +
+					`<div class="imogi-mini-stats imogi-mini-stats--grid">
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Kunjungan")}</span><span class="imogi-mini-stat-val">${cint(visits.total_visits)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Spend")}</span><span class="imogi-mini-stat-val">${format_currency(visits.total_spend || 0)}</span></div>
+						<div class="imogi-mini-stat"><span class="imogi-mini-stat-label">${__("Rata2/Visit")}</span><span class="imogi-mini-stat-val">${format_currency(visits.avg_spend_per_visit || 0)}</span></div>
+					</div>
+					<div class="imogi-simple-list" style="margin-top:10px">
+						${(visits.rows || [])
+							.slice(0, 8)
+							.map(
+								(r) => `<div class="imogi-simple-list-row">
+							<span class="imogi-simple-list-label">${frappe.utils.escape_html(r.customer_name || r.customer || "")}</span>
+							<span class="imogi-simple-list-meta">${cint(r.visits)}x · ${format_currency(r.spend || 0)}</span>
+						</div>`
+							)
+							.join("") || `<div class="imogi-simple-list-empty">${__("Belum ada customer terdaftar di periode ini.")}</div>`}
 					</div>` +
 					this.render_panel_close()
 			);
-			return;
-		}
-		el.html(
-			this.render_panel_open(__("Kitchen Performance"), "fa-fire", `${rows.length} stasiun`, range) +
-				`<div class="imogi-dash-bars">${rows
-					.map((r) => {
-						const label = r.station_label || r.kitchen_station || __("Tanpa stasiun");
-						const type = r.station_type === "Bar" ? __("Bar") : __("Dapur");
-						const avg = Math.round(flt(r.avg_minutes));
-						return `<div class="imogi-dash-bar-head">
-						<span class="imogi-dash-bar-name">${frappe.utils.escape_html(label)} <span class="imogi-dash-muted">(${frappe.utils.escape_html(type)})</span></span>
-						<span class="imogi-dash-bar-meta">${r.orders || 0} order · ${avg} min · ${r.completed || 0} ${__("selesai")}</span>
-					</div>`;
-					})
-					.join("")}</div>
-				<div style="margin-top:10px;">
-					<a class="imogi-btn-ghost imogi-btn-ghost--xs" href="/app/kitchen-display">${__("Buka KDS")}</a>
-				</div>` +
-				this.render_panel_close()
-		);
-	}
-
-	render_bars_panel(el, title, icon, rows, opts) {
-		if (!rows.length) {
-			el.html(this.render_panel_open(title, icon) + this.render_empty(__("Belum ada data.")) + this.render_panel_close());
-			return;
-		}
-		el.html(
-			this.render_panel_open(title, icon) +
-				`<div class="imogi-dash-bars">${this.render_bars(rows, opts)}</div>` +
-				this.render_panel_close()
-		);
-	}
-
-	render_simple_list(el, title, icon, rows, badge) {
-		if (!rows.length) {
-			el.html(
-				this.render_panel_open(title, icon) +
-					this.render_empty(__("Belum ada data.")) +
-					this.render_panel_close()
+			this.attach_export(
+				$v,
+				`customer-visit-${this.selected_date}.csv`,
+				[
+					{ label: __("Customer"), value: (r) => r.customer_name || r.customer || "" },
+					{ label: __("Kunjungan"), value: "visits" },
+					{ label: __("Spend"), value: "spend" },
+				],
+				visits.rows || []
 			);
-			return;
 		}
-		el.html(
-			this.render_panel_open(title, icon, badge || null) +
-				`<div class="imogi-dash-bars">${rows
-					.map(
-						(r) => `<div class="imogi-dash-bar-head">
-						<span class="imogi-dash-bar-name">${frappe.utils.escape_html(r.label)}</span>
-						<span class="imogi-dash-bar-meta">${frappe.utils.escape_html(r.meta || "")}</span>
-					</div>`
-					)
-					.join("")}</div>` +
-				this.render_panel_close()
-		);
+		this.render_kitchen_performance(reports.kitchen_performance || {});
 	}
 };
 
@@ -1163,7 +1849,7 @@ imogi_pos.UmkDashboard = class UmkDashboard extends imogi_pos.DashboardBase {
 		this.render_shell({
 			subtitle:
 				focus_meta?.subtitle ||
-				__("Ringkasan penjualan UMKM — pantau omzet harian outlet Anda."),
+				__("Dashboard operasional — omzet, tren, funnel order, dan performa outlet."),
 			actions: `
 				<a class="imogi-btn-ghost" href="/app/imogi-pos-sales-report"><i class="fa fa-bar-chart"></i> ${__(
 					"Laporan Penjualan"
@@ -1183,12 +1869,17 @@ imogi_pos.UmkDashboard = class UmkDashboard extends imogi_pos.DashboardBase {
 			this.render_owner_upgrade_strip("owner");
 		}
 		this.add_panel("imogi-top-products", "brand", "top_menu");
-		this.add_panel("imogi-low-stock", "warning", "low_stock");
-		this.add_panel("imogi-payment-chart", "success", "sales_by_payment");
+		this.add_panel("imogi-sales-hour", "success", "sales_by_hour");
+		this.add_panel("imogi-payment-chart", "purple", "sales_by_payment");
 		this.add_panel("imogi-source-chart", "blue", "channel");
+		this.add_panel("imogi-low-stock", "warning", "low_stock");
+		if (imogi_dashboard_kds_enabled()) {
+			this.add_panel("imogi-kitchen-performance", "orange", "kitchen_performance");
+		}
 	}
 
 	render(data) {
+		const deltas = (data.insights || {}).deltas || {};
 		this.render_topbar(data);
 		this.render_pos_shift(data);
 		this.render_awaiting_alert(data);
@@ -1196,23 +1887,26 @@ imogi_pos.UmkDashboard = class UmkDashboard extends imogi_pos.DashboardBase {
 		this.render_branch_breakdown(data);
 		this.render_stat_cards([
 			{
-				label: __("Penjualan"),
+				label: __("Penjualan Hari Ini"),
 				value: format_currency(data.sales_today || 0),
 				icon: "fa-money",
 				tone: "brand",
 				hero: true,
+				delta: deltas.sales_pct,
 			},
 			{
 				label: __("Transaksi Selesai"),
 				value: data.completed_today || 0,
 				icon: "fa-check-circle",
 				tone: "success",
+				delta: deltas.completed_pct,
 			},
 			{
 				label: __("Rata-rata / Transaksi"),
 				value: format_currency(data.avg_ticket || 0),
 				icon: "fa-calculator",
 				tone: "slate",
+				delta: deltas.avg_ticket_pct,
 			},
 			{
 				label: __("Menunggu Bayar"),
@@ -1220,26 +1914,50 @@ imogi_pos.UmkDashboard = class UmkDashboard extends imogi_pos.DashboardBase {
 				icon: "fa-clock-o",
 				tone: "danger",
 				warn: true,
+				delta: deltas.awaiting_pct,
 			},
 			{
 				label: __("Total Order"),
 				value: data.orders_today || 0,
 				icon: "fa-shopping-cart",
 				tone: "blue",
+				delta: deltas.orders_pct,
 			},
 			{
-				label: __("POS Invoice"),
-				value: data.pos_invoices_today || 0,
-				icon: "fa-file-text-o",
-				tone: "purple",
+				label: __("Dibatalkan"),
+				value: (data.insights || {}).cancelled_today || 0,
+				icon: "fa-ban",
+				tone: "warning",
+				delta: deltas.cancelled_pct,
 			},
 		]);
+		this.render_saas_insights(data);
 
 		this.render_top_products(data);
-		this.render_low_stock(data);
+		this.render_sales_hour_panel(data);
 		this.render_payment_list(data.by_payment || []);
 		this.render_source_list(data.by_source || []);
+		this.render_low_stock(data);
+		if (imogi_dashboard_kds_enabled()) {
+			this.render_kitchen_performance((data.extended_reports || {}).kitchen_performance || {});
+		}
 		this.render_footer(data);
+	}
+
+	render_sales_hour_panel(data) {
+		const el = this.wrapper.find(".imogi-sales-hour");
+		if (!el.length) return;
+		const hour = ((data.extended_reports || {}).sales_by_hour?.rows || []).map((r) => ({
+			hour_label: `${String(r.hour_slot).padStart(2, "0")}:00`,
+			order_count: r.order_count,
+			sales: r.sales,
+		}));
+		this.render_bars_panel(el, __("Penjualan per Jam"), "fa-clock-o", hour, {
+			label_key: "hour_label",
+			value_key: "sales",
+			tone: "success",
+			meta_fn: (r) => `${r.order_count} order · ${format_currency(r.sales)}`,
+		});
 	}
 
 	render_source_list(rows) {

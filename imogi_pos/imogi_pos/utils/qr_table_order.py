@@ -22,11 +22,58 @@ DEFAULT_QR_ORDER_RECEIVED_MESSAGE = (
 	"Pesanan sedang diproses. Mohon tunggu di meja Anda."
 )
 
+DEFAULT_QR_CASH_HOLD_MESSAGE = (
+	"Terima kasih, {customer}!\n\n"
+	"Pesanan *{order_name}* di Meja *{table_number}* sudah kami catat.\n"
+	"Total: {total}\n\n"
+	"Silakan bayar tunai di kasir. Tunjukkan nomor order ini kepada kasir."
+)
+
 DEFAULT_QR_ORDER_COMPLETE_MESSAGE = (
 	"Terima kasih sudah makan di {store_name}!\n\n"
 	"Pesanan *{order_name}* · Meja *{table_number}* sudah selesai.\n"
-	"Total: {total}"
+	"Total: {total}\n\n"
+	"Silahkan Ambil Pesanan"
 )
+
+QR_CASH_FLOW_KITCHEN_FIRST = "Kitchen First"
+QR_CASH_FLOW_PAY_FIRST = "Pay First"
+
+
+def get_qr_cash_cashier_flow(settings=None):
+	settings = settings or get_settings()
+	flow = (getattr(settings, "qr_cash_cashier_flow", None) or QR_CASH_FLOW_KITCHEN_FIRST).strip()
+	if flow not in (QR_CASH_FLOW_KITCHEN_FIRST, QR_CASH_FLOW_PAY_FIRST):
+		return QR_CASH_FLOW_KITCHEN_FIRST
+	return flow
+
+
+def is_unpaid_qr_cash_order(order):
+	"""QR dine-in order waiting for cashier cash payment."""
+	if (getattr(order, "order_channel", None) or "").strip().upper() != "QR":
+		return False
+	if getattr(order, "pos_invoice", None):
+		return False
+	return (getattr(order, "status", None) or "") in (
+		"Awaiting Payment",
+		"In Kitchen",
+		"Kitchen Ready",
+		"In Fulfillment",
+		"Fulfilled",
+		"In Service",
+	)
+
+
+def _qr_wa_cache_key(order_name: str, event: str) -> str:
+	return f"imogi:qr_wa:{order_name}:{event}"
+
+
+def _qr_wa_already_sent(order_name: str, event: str) -> bool:
+	return bool(frappe.cache().get_value(_qr_wa_cache_key(order_name, event)))
+
+
+def _mark_qr_wa_sent(order_name: str, event: str) -> None:
+	frappe.cache().set_value(_qr_wa_cache_key(order_name, event), 1, expires_in_sec=60 * 60 * 24 * 30)
 
 
 def _signing_secret() -> bytes:
@@ -162,7 +209,13 @@ def get_table_public_context(table_name: str, token: str) -> dict:
 
 
 def send_qr_order_whatsapp(order_name, *, event="received", customer_phone=None):
-	"""Send text WA for QR dine-in order events."""
+	"""Send text WA for QR dine-in order events.
+
+	Events:
+	- received: tamu checkout, pesanan masuk dapur/kasir
+	- cash_hold: tamu checkout cash, bayar di kasir (Pay First)
+	- ready / complete: makanan siap diambil (kitchen/fulfillment selesai)
+	"""
 	settings = get_settings()
 	wa_cfg = get_qr_whatsapp_config(settings)
 	if not cint(wa_cfg.get("enable_whatsapp_receipt")):
@@ -171,7 +224,16 @@ def send_qr_order_whatsapp(order_name, *, event="received", customer_phone=None)
 	if (wa_cfg.get("whatsapp_api_provider") or "").strip() != "Fonnte":
 		return {"sent": False, "reason": "manual_only"}
 
+	normalized_event = "ready" if event in ("complete", "ready") else event
+	if normalized_event not in ("received", "cash_hold"):
+		normalized_event = "received"
+	if _qr_wa_already_sent(order_name, normalized_event):
+		return {"sent": False, "reason": "already_sent"}
+
 	order = frappe.get_doc("Riwayat Order", order_name)
+	if (order.order_channel or "").strip().upper() != "QR":
+		return {"sent": False, "reason": "not_qr_order"}
+
 	phone = (customer_phone or order.customer_phone or "").strip()
 	if not phone:
 		return {"sent": False, "reason": "no_phone"}
@@ -182,8 +244,10 @@ def send_qr_order_whatsapp(order_name, *, event="received", customer_phone=None)
 
 	store_name = settings.default_company or "IMOGI POS"
 	template = wa_cfg["whatsapp_qr_order_received_message"]
-	if event == "complete":
+	if normalized_event == "ready":
 		template = wa_cfg["whatsapp_qr_order_complete_message"]
+	elif normalized_event == "cash_hold":
+		template = DEFAULT_QR_CASH_HOLD_MESSAGE
 
 	message = format_qr_whatsapp_message(
 		template,
@@ -198,13 +262,7 @@ def send_qr_order_whatsapp(order_name, *, event="received", customer_phone=None)
 	from imogi_pos.imogi_pos.utils.whatsapp_send import send_fonnte_message
 
 	result = send_fonnte_message(wa_cfg["fonnte_api_token"], phone, message)
-	if event == "complete" and cint(wa_cfg.get("enable_whatsapp_receipt")):
-		try:
-			from imogi_pos.api.cashier import send_whatsapp_receipt
-
-			send_whatsapp_receipt(order.name, customer_phone=phone)
-		except Exception:
-			frappe.log_error(title="IMOGI QR WA Receipt")
+	_mark_qr_wa_sent(order_name, normalized_event)
 	return {"sent": True, **result}
 
 

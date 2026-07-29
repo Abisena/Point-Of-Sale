@@ -124,11 +124,27 @@ class RiwayatOrder(Document):
 		return self.name
 
 	@frappe.whitelist()
+	def action_start_qr_cash_kitchen_flow(self):
+		"""Kitchen First: start kitchen/WA before cashier collects cash."""
+		self.check_permission("write")
+		if (self.order_channel or "").strip().upper() != "QR":
+			frappe.throw(_("Hanya untuk pesanan QR"))
+		if self.status != "Awaiting Payment":
+			return self.name
+		self._notify_qr_order_received_if_needed()
+		self._start_conditional_steps()
+		self.reload()
+		return self.name
+
+	@frappe.whitelist()
 	def action_process_payment(self, silent=False):
 		"""Step 02 — Payment processing, POS Invoice, stock (Step 06 via invoice)."""
 		silent = cint(silent)
 		self.check_permission("write")
-		if self.status not in ("Awaiting Payment", "Draft", "Paid"):
+		from imogi_pos.imogi_pos.utils.qr_table_order import is_unpaid_qr_cash_order
+
+		unpaid_qr_cash = is_unpaid_qr_cash_order(self)
+		if not unpaid_qr_cash and self.status not in ("Awaiting Payment", "Draft", "Paid"):
 			frappe.throw(_("Payment can only be processed for orders awaiting payment"))
 
 		if self.status == "Paid" and self.pos_invoice:
@@ -193,6 +209,7 @@ class RiwayatOrder(Document):
 
 	def _run_post_payment_steps(self):
 		try:
+			self._notify_qr_order_received_if_needed()
 			self._start_conditional_steps()
 			self._notify_status()
 		except Exception:
@@ -214,7 +231,7 @@ class RiwayatOrder(Document):
 		notify_order_status(self.name, self.status)
 
 	def _start_conditional_steps(self):
-		from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+		from imogi_pos.imogi_pos.utils.feature_gating import is_fulfillment_operational, is_setting_enabled
 
 		settings = get_settings()
 
@@ -224,13 +241,17 @@ class RiwayatOrder(Document):
 			self._notify_status()
 			return
 
-		if self.requires_fulfillment and is_setting_enabled("enable_fulfillment", settings) and not self.fulfillment_task:
+		if self.requires_fulfillment and is_fulfillment_operational(settings) and not self.fulfillment_task:
 			ft = create_fulfillment_task(self)
 			self.db_set({"fulfillment_task": ft.name, "status": "In Fulfillment"})
 			self._notify_status()
 			return
 
 		if not self.requires_kitchen and not self.requires_fulfillment:
+			if (self.order_type or "").strip() == "Dine-in" and self.restaurant_table:
+				self._start_service_phase()
+				self._notify_status()
+				return
 			self._complete_direct_order()
 			return
 
@@ -238,15 +259,25 @@ class RiwayatOrder(Document):
 			self._start_service_phase()
 			self._notify_status()
 
-	def _notify_qr_order_complete_if_needed(self):
+	def _notify_qr_order_received_if_needed(self):
 		if (self.order_channel or "").strip().upper() != "QR":
 			return
 		try:
 			from imogi_pos.imogi_pos.utils.qr_table_order import send_qr_order_whatsapp
 
-			send_qr_order_whatsapp(self.name, event="complete", customer_phone=self.customer_phone)
+			send_qr_order_whatsapp(self.name, event="received", customer_phone=self.customer_phone)
 		except Exception:
-			frappe.log_error(title="IMOGI QR Order WhatsApp Complete")
+			frappe.log_error(title="IMOGI QR Order WhatsApp Received")
+
+	def _notify_qr_order_ready_if_needed(self):
+		if (self.order_channel or "").strip().upper() != "QR":
+			return
+		try:
+			from imogi_pos.imogi_pos.utils.qr_table_order import send_qr_order_whatsapp
+
+			send_qr_order_whatsapp(self.name, event="ready", customer_phone=self.customer_phone)
+		except Exception:
+			frappe.log_error(title="IMOGI QR Order WhatsApp Ready")
 
 	def _complete_direct_order(self):
 		"""Payment completes the order when no kitchen/fulfillment steps apply."""
@@ -258,7 +289,7 @@ class RiwayatOrder(Document):
 		)
 		release_restaurant_table(self)
 		frappe.publish_realtime("imogi_pos_order_completed", {"order": self.name})
-		self._notify_qr_order_complete_if_needed()
+		self._notify_qr_order_ready_if_needed()
 		if self.order_source != "IMOGI API":
 			self._emit_webhook("order.completed")
 
@@ -285,18 +316,25 @@ class RiwayatOrder(Document):
 		if self.kitchen_order:
 			ko = frappe.get_doc("IMOGI Kitchen Order", self.kitchen_order)
 			if ko.docstatus == 0:
+				# KDS completes without a QC checkbox — marking items Siap is the check.
+				if not ko.quality_check_passed:
+					ko.quality_check_passed = 1
 				ko.submit()
 			ko.db_set("status", "Done")
+			from imogi_pos.api.kitchen import _sync_kitchen_order_items
 
-		from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+			_sync_kitchen_order_items(ko.name, "Done")
+
+		from imogi_pos.imogi_pos.utils.feature_gating import is_fulfillment_operational
 
 		settings = get_settings()
-		if self.requires_fulfillment and is_setting_enabled("enable_fulfillment", settings):
+		if self.requires_fulfillment and is_fulfillment_operational(settings):
 			ft = create_fulfillment_task(self)
 			self.db_set({"fulfillment_task": ft.name, "status": "In Fulfillment"})
 		else:
 			self.db_set("status", "Kitchen Ready")
 			self._start_service_phase()
+			self._notify_qr_order_ready_if_needed()
 		return self.name
 
 	@frappe.whitelist()
@@ -315,6 +353,7 @@ class RiwayatOrder(Document):
 
 		self.db_set("status", "Fulfilled")
 		self._start_service_phase()
+		self._notify_qr_order_ready_if_needed()
 		return self.name
 
 	@frappe.whitelist()
@@ -338,7 +377,6 @@ class RiwayatOrder(Document):
 		)
 		release_restaurant_table(self)
 		frappe.publish_realtime("imogi_pos_order_completed", {"order": self.name})
-		self._notify_qr_order_complete_if_needed()
 		return self.name
 
 	@frappe.whitelist()

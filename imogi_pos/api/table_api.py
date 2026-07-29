@@ -7,6 +7,8 @@ from frappe.utils import cint
 from imogi_pos.api.cashier import _require_cashier_access
 from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational, require_feature_operational
 from imogi_pos.imogi_pos.utils.floor_area import (
+	assert_table_number_available_on_floor,
+	get_area_background,
 	get_floor_background,
 	list_areas_for_service,
 	list_floors_for_service,
@@ -32,12 +34,23 @@ def _require_table_service_access():
 
 
 @frappe.whitelist()
-def list_restaurant_tables(company=None, status=None, include_occupied=1):
+def list_restaurant_tables(company=None, status=None, include_occupied=1, ensure_table=None):
 	"""List restaurant tables for cashier table picker."""
 	_require_cashier_access()
 	require_feature_operational("table_management")
 
+	ensure_table = (ensure_table or "").strip()
+	if ensure_table:
+		include_occupied = 1
+
 	rows = list_tables_for_service(company=company, include_occupied=include_occupied, status=status)
+	if ensure_table and ensure_table not in {row.get("name") for row in rows}:
+		occupied_rows = list_tables_for_service(company=company, include_occupied=1)
+		for row in occupied_rows:
+			if row.get("name") == ensure_table:
+				rows.append(row)
+				break
+	rows.sort(key=lambda row: (row.get("table_number") or row.get("name") or ""))
 	return {"tables": rows}
 
 
@@ -62,7 +75,7 @@ def get_table_service_board(company=None, floor=None):
 	board = {
 		"company": company,
 		"floors": floors,
-		"areas": list_areas_for_service(company=company),
+		"areas": list_areas_for_service(company=company, active_only=0),
 		"active_floor": floor,
 		"tables": list_tables_for_service(company=company, include_occupied=1),
 		"reservations": [],
@@ -92,7 +105,56 @@ def get_table_service_board(company=None, floor=None):
 	return board
 
 
+@frappe.whitelist()
+def get_pos_order_kitchen_tracking(pos_order):
+	"""Kitchen item progress for Table Service order popup."""
+	_require_table_service_access()
+	from imogi_pos.api.kitchen import build_pos_order_kitchen_tracking
+
+	return build_pos_order_kitchen_tracking(pos_order)
+
+
+@frappe.whitelist()
+def get_table_kitchen_tracking(restaurant_table, pos_order=None):
+	"""Kitchen progress aggregated across all open orders on a table."""
+	_require_table_service_access()
+	from imogi_pos.api.kitchen import build_table_kitchen_tracking
+
+	if pos_order:
+		from imogi_pos.api.kitchen import build_pos_order_kitchen_tracking
+
+		return build_pos_order_kitchen_tracking(pos_order)
+	if restaurant_table:
+		return build_table_kitchen_tracking(restaurant_table)
+	return {
+		"has_kitchen": False,
+		"items": [],
+		"summary": {"pending": 0, "preparing": 0, "ready": 0, "total": 0},
+		"message": _("Meja atau order tidak ditemukan"),
+	}
+
+
 _TABLE_SHAPES = ("Square", "Round", "Bar")
+_AREA_TYPES = ("Indoor", "Outdoor", "VIP", "Bar", "Private Room", "Smoking", "Other")
+
+
+def _normalize_area_type(area_type):
+	area_type = (area_type or "Indoor").strip()
+	return area_type if area_type in _AREA_TYPES else "Other"
+
+
+def _area_service_row(doc):
+	return {
+		"name": doc.name,
+		"area_name": doc.area_name,
+		"area_type": doc.area_type,
+		"restaurant_floor": doc.restaurant_floor,
+		"company": doc.company,
+		"sort_order": doc.sort_order,
+		"is_active": doc.is_active,
+		"floor_background": doc.floor_background or None,
+		"description": doc.description,
+	}
 
 
 def _normalize_shape(shape):
@@ -150,12 +212,12 @@ def create_restaurant_table(
 	if capacity < 1:
 		frappe.throw(_("Kapasitas minimal 1 orang"))
 
-	if frappe.db.exists("IMOGI Restaurant Table", table_number):
-		frappe.throw(_("Meja {0} sudah ada").format(table_number))
-
 	area = _resolve_area(restaurant_area, location, restaurant_floor)
 	if not area:
 		frappe.throw(_("Ruangan / area wajib dipilih"))
+
+	floor = frappe.db.get_value("IMOGI Restaurant Area", area, "restaurant_floor")
+	assert_table_number_available_on_floor(floor, table_number)
 
 	doc = frappe.get_doc(
 		{
@@ -198,41 +260,33 @@ def update_restaurant_table(
 	frappe.has_permission("IMOGI Restaurant Table", "write", throw=True)
 
 	doc = get_table_doc(name)
-	updates = {}
 
 	if table_number is not None:
 		new_number = (table_number or "").strip()
 		if not new_number:
 			frappe.throw(_("Nomor meja wajib diisi"))
-		if new_number != doc.table_number:
-			if frappe.db.exists("IMOGI Restaurant Table", new_number):
-				frappe.throw(_("Meja {0} sudah ada").format(new_number))
-			doc.rename(new_number, force=False)
-			doc = get_table_doc(new_number)
+		doc.table_number = new_number
 
 	if capacity is not None:
 		capacity = cint(capacity)
 		if capacity < 1:
 			frappe.throw(_("Kapasitas minimal 1 orang"))
-		updates["capacity"] = capacity
+		doc.capacity = capacity
 
-	area = None
 	if restaurant_area is not None:
 		area = _resolve_area(restaurant_area, location, doc.restaurant_floor)
-	elif location is not None:
-		area = _resolve_area(None, location, doc.restaurant_floor)
-	if area is not None:
 		if not area:
 			frappe.throw(_("Ruangan / area wajib dipilih"))
-		updates["restaurant_area"] = area
+		doc.restaurant_area = area
+	elif location is not None:
+		area = _resolve_area(None, location, doc.restaurant_floor)
+		if area:
+			doc.restaurant_area = area
 
 	if shape is not None:
-		updates["shape"] = _normalize_shape(shape)
+		doc.shape = _normalize_shape(shape)
 
-	if updates:
-		doc.db_set(updates)
-		if updates.get("restaurant_area"):
-			sync_table_area_fields(doc.name, updates["restaurant_area"])
+	doc.save(ignore_permissions=False)
 	frappe.db.commit()
 	doc.reload()
 
@@ -247,6 +301,117 @@ def update_restaurant_table(
 		"shape": doc.shape,
 		"status": doc.status,
 	}
+
+
+@frappe.whitelist()
+def create_restaurant_area(
+	area_name,
+	restaurant_floor,
+	area_type=None,
+	sort_order=None,
+	description=None,
+):
+	"""Create a restaurant area/zone from Table Service desk."""
+	_require_table_service_access()
+	require_feature_operational("table_management")
+	frappe.has_permission("IMOGI Restaurant Area", "create", throw=True)
+
+	area_name = (area_name or "").strip()
+	restaurant_floor = (restaurant_floor or "").strip()
+	if not area_name:
+		frappe.throw(_("Nama ruangan wajib diisi"))
+	if not restaurant_floor or not frappe.db.exists("IMOGI Restaurant Floor", restaurant_floor):
+		frappe.throw(_("Lantai tidak ditemukan"))
+
+	if sort_order is None:
+		sort_order = frappe.db.count("IMOGI Restaurant Area", {"restaurant_floor": restaurant_floor})
+	else:
+		sort_order = cint(sort_order)
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "IMOGI Restaurant Area",
+			"area_name": area_name,
+			"restaurant_floor": restaurant_floor,
+			"area_type": _normalize_area_type(area_type),
+			"sort_order": sort_order,
+			"is_active": 1,
+			"description": (description or "").strip() or None,
+		}
+	)
+	doc.insert(ignore_permissions=False)
+	frappe.db.commit()
+	return _area_service_row(doc)
+
+
+@frappe.whitelist()
+def update_restaurant_area(
+	name,
+	area_name=None,
+	area_type=None,
+	sort_order=None,
+	is_active=None,
+	description=None,
+):
+	"""Edit an existing restaurant area/zone from Table Service desk."""
+	_require_table_service_access()
+	require_feature_operational("table_management")
+	frappe.has_permission("IMOGI Restaurant Area", "write", throw=True)
+
+	name = (name or "").strip()
+	if not name or not frappe.db.exists("IMOGI Restaurant Area", name):
+		frappe.throw(_("Ruangan tidak ditemukan"))
+
+	doc = frappe.get_doc("IMOGI Restaurant Area", name)
+	old_name = doc.name
+
+	if area_name is not None:
+		area_name = (area_name or "").strip()
+		if not area_name:
+			frappe.throw(_("Nama ruangan wajib diisi"))
+		doc.area_name = area_name
+	if area_type is not None:
+		doc.area_type = _normalize_area_type(area_type)
+	if sort_order is not None:
+		doc.sort_order = cint(sort_order)
+	if is_active is not None:
+		doc.is_active = cint(is_active)
+	if description is not None:
+		doc.description = (description or "").strip() or None
+
+	doc.save(ignore_permissions=False)
+
+	expected_name = f"{doc.restaurant_floor} / {doc.area_name}"
+	if expected_name != old_name:
+		frappe.rename_doc("IMOGI Restaurant Area", old_name, expected_name, force=True)
+		doc = frappe.get_doc("IMOGI Restaurant Area", expected_name)
+		frappe.db.set_value(
+			"IMOGI Restaurant Table",
+			{"restaurant_area": expected_name},
+			"location",
+			doc.area_name,
+			update_modified=False,
+		)
+
+	frappe.db.commit()
+	return _area_service_row(doc)
+
+
+@frappe.whitelist()
+def delete_restaurant_area(name):
+	"""Remove a restaurant area/zone from Table Service desk."""
+	_require_table_service_access()
+	require_feature_operational("table_management")
+	frappe.has_permission("IMOGI Restaurant Area", "delete", throw=True)
+
+	name = (name or "").strip()
+	if not name or not frappe.db.exists("IMOGI Restaurant Area", name):
+		frappe.throw(_("Ruangan tidak ditemukan"))
+
+	area_name = frappe.db.get_value("IMOGI Restaurant Area", name, "area_name")
+	frappe.delete_doc("IMOGI Restaurant Area", name, ignore_permissions=False)
+	frappe.db.commit()
+	return {"deleted": name, "area_name": area_name}
 
 
 @frappe.whitelist()
@@ -272,6 +437,24 @@ def set_floor_background(image_url=None, floor=None):
 
 
 @frappe.whitelist()
+def set_area_background(image_url=None, area=None):
+	"""Set or clear the floor-plan background for a restaurant area/zone."""
+	_require_table_service_access()
+	require_feature_operational("table_management")
+	frappe.has_permission("IMOGI Restaurant Area", "write", throw=True)
+
+	value = (image_url or "").strip() or None
+	area = (area or "").strip()
+	if not area or not frappe.db.exists("IMOGI Restaurant Area", area):
+		frappe.throw(_("Ruangan tidak ditemukan"))
+
+	frappe.db.set_value("IMOGI Restaurant Area", area, "floor_background", value)
+	frappe.db.commit()
+	frappe.clear_cache(doctype="IMOGI Restaurant Area")
+	return {"floor_background": value, "area": area}
+
+
+@frappe.whitelist()
 def save_table_positions(positions):
 	"""Persist floor-plan coordinates (percent 0-100) for one or more tables."""
 	_require_table_service_access()
@@ -289,6 +472,18 @@ def save_table_positions(positions):
 		except (TypeError, ValueError):
 			return None
 
+	def _clamp_scale(value):
+		try:
+			return max(0.5, min(2.5, round(float(value), 2)))
+		except (TypeError, ValueError):
+			return None
+
+	def _clamp_rotation(value):
+		try:
+			return round(float(value) % 360, 1)
+		except (TypeError, ValueError):
+			return None
+
 	saved = 0
 	for entry in positions:
 		name = (entry or {}).get("name")
@@ -298,7 +493,14 @@ def save_table_positions(positions):
 		y = _clamp(entry.get("pos_y"))
 		if x is None or y is None:
 			continue
-		frappe.db.set_value("IMOGI Restaurant Table", name, {"pos_x": x, "pos_y": y}, update_modified=False)
+		updates = {"pos_x": x, "pos_y": y}
+		scale = _clamp_scale(entry.get("pos_scale")) if entry.get("pos_scale") is not None else None
+		rotation = _clamp_rotation(entry.get("pos_rotation")) if entry.get("pos_rotation") is not None else None
+		if scale is not None:
+			updates["pos_scale"] = scale
+		if rotation is not None:
+			updates["pos_rotation"] = rotation
+		frappe.db.set_value("IMOGI Restaurant Table", name, updates, update_modified=False)
 		saved += 1
 
 	frappe.db.commit()

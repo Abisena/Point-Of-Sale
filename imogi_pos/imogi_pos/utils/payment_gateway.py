@@ -2,9 +2,12 @@
 """Midtrans / Xendit QRIS payment helpers for IMOGI Kasir."""
 
 import base64
+import hashlib
+import hmac
 import io
 import json
 import re
+import time
 from contextlib import contextmanager
 
 import frappe
@@ -409,6 +412,73 @@ def _normalize_status(raw_status):
 	return "Pending"
 
 
+def _maybe_send_qr_qris_receipt_whatsapp(gateway_doc, order_name):
+	"""QR Self-Service + QRIS: kirim struk PDF ke WA sekali setelah pembayaran sukses."""
+	order_name = (order_name or "").strip()
+	if not order_name:
+		return
+
+	gateway_name = getattr(gateway_doc, "name", None) or gateway_doc
+	if cint(frappe.db.get_value("IMOGI POS Gateway Payment", gateway_name, "whatsapp_receipt_sent")):
+		return
+
+	snapshot = json.loads(getattr(gateway_doc, "cart_snapshot", None) or "{}")
+	if (snapshot.get("order_channel") or "").upper() != "QR":
+		return
+
+	from imogi_pos.api.cashier import send_order_receipt_whatsapp_auto
+
+	result = send_order_receipt_whatsapp_auto(
+		order_name,
+		customer_phone=(snapshot.get("customer_phone") or "").strip() or None,
+	)
+	if result.get("sent"):
+		frappe.db.set_value(
+			"IMOGI POS Gateway Payment",
+			gateway_name,
+			"whatsapp_receipt_sent",
+			1,
+			update_modified=False,
+		)
+		frappe.db.commit()
+
+
+def send_qr_qris_receipt_whatsapp_job(gateway_name):
+	"""Background job — PDF + Fonnte can take minutes; never block webhook/poll."""
+	try:
+		doc = frappe.get_doc("IMOGI POS Gateway Payment", gateway_name)
+		order_name = doc.order or frappe.db.get_value("IMOGI POS Gateway Payment", gateway_name, "order")
+		if order_name:
+			_maybe_send_qr_qris_receipt_whatsapp(doc, order_name)
+	except Exception:
+		frappe.log_error(
+			title=_("IMOGI QR receipt WA job failed for {0}").format(gateway_name),
+			message=frappe.get_traceback(),
+		)
+
+
+def _queue_qr_qris_receipt_whatsapp(gateway_doc, order_name):
+	gateway_name = getattr(gateway_doc, "name", None) or gateway_doc
+	if not gateway_name or not (order_name or "").strip():
+		return
+	if cint(frappe.db.get_value("IMOGI POS Gateway Payment", gateway_name, "whatsapp_receipt_sent")):
+		return
+	frappe.enqueue(
+		"imogi_pos.imogi_pos.utils.payment_gateway.send_qr_qris_receipt_whatsapp_job",
+		queue="short",
+		gateway_name=gateway_name,
+		job_id=f"imogi_qr_wa_{gateway_name}",
+		deduplicate=True,
+		timeout=120,
+	)
+
+
+def mark_gateway_paid_job(payment_name, remarks=None):
+	"""Background job for payment gateway webhooks (fast HTTP 200 for Xendit)."""
+	doc = frappe.get_doc("IMOGI POS Gateway Payment", payment_name)
+	mark_gateway_paid(doc, remarks=remarks)
+
+
 def refresh_gateway_payment(name):
 	doc = frappe.get_doc("IMOGI POS Gateway Payment", name)
 	if doc.status in ("Paid", "Cancelled"):
@@ -468,6 +538,7 @@ def mark_gateway_paid(doc, remarks=None):
 
 	order_name = _ensure_gateway_order(doc)
 	doc.reload()
+	_queue_qr_qris_receipt_whatsapp(doc, order_name)
 	result = serialize_gateway_payment(doc)
 	result["order"] = order_name
 	return result
@@ -516,7 +587,7 @@ def _ensure_gateway_order(doc):
 			if order_name:
 				return order_name
 			frappe.db.commit()
-			frappe.sleep(0.1)
+			time.sleep(0.1)
 		frappe.throw(_("Pembayaran sedang diproses. Silakan refresh halaman."))
 
 	try:
@@ -598,14 +669,6 @@ def _ensure_gateway_order(doc):
 				update_modified=False,
 			)
 			frappe.db.commit()
-			try:
-				if (snapshot.get("order_channel") or "").upper() == "QR":
-					from imogi_pos.imogi_pos.utils.qr_table_order import send_qr_order_whatsapp
-
-					phone = snapshot.get("customer_phone")
-					send_qr_order_whatsapp(order.name, event="received", customer_phone=phone)
-			except Exception:
-				frappe.log_error(title="IMOGI QR Gateway WhatsApp")
 			return order.name
 	finally:
 		if acquired:
@@ -636,6 +699,43 @@ def serialize_gateway_payment(doc):
 	return result
 
 
+def _verify_gateway_webhook_signature(provider, data):
+	"""Reject forged webhooks. Midtrans signs each notification with the server
+	key (SHA512 of order_id+status_code+gross_amount+ServerKey); Xendit sends a
+	shared Verification Token in the X-Callback-Token header. Fails closed: if
+	the provider's secret isn't configured, the webhook is rejected rather than
+	trusted — an unconfigured secret is exactly the situation an attacker would
+	rely on to get a fake "paid" notification accepted."""
+	try:
+		cfg = get_gateway_settings()
+	except frappe.ValidationError:
+		cfg = None
+	if not cfg or cfg.get("provider") != provider:
+		return False
+
+	if provider == "Midtrans":
+		signature = str(data.get("signature_key") or "")
+		if not signature:
+			return False
+		order_id = str(data.get("order_id") or "")
+		status_code = str(data.get("status_code") or "")
+		gross_amount = str(data.get("gross_amount") or "")
+		expected = hashlib.sha512(
+			f"{order_id}{status_code}{gross_amount}{cfg['server_key']}".encode()
+		).hexdigest()
+		return hmac.compare_digest(expected, signature)
+
+	if provider == "Xendit":
+		settings = get_settings()
+		expected_token = settings.get_password("payment_gateway_webhook_token", raise_exception=False) or ""
+		if not expected_token:
+			return False
+		received_token = frappe.get_request_header("X-Callback-Token") or ""
+		return hmac.compare_digest(expected_token, received_token)
+
+	return False
+
+
 def handle_gateway_webhook(provider, payload):
 	provider = (provider or "").strip()
 	data = payload
@@ -644,6 +744,13 @@ def handle_gateway_webhook(provider, payload):
 			data = json.loads(payload)
 		except Exception:
 			data = frappe.parse_json(payload)
+
+	if not _verify_gateway_webhook_signature(provider, data):
+		frappe.log_error(
+			title=_("IMOGI Gateway Webhook rejected (invalid signature)"),
+			message=f"Provider: {provider}\nPayload: {json.dumps(data, default=str)[:2000]}",
+		)
+		return {"ok": False, "reason": "invalid signature"}
 
 	qr_code = data.get("qr_code") or {}
 	external_id = (
@@ -689,8 +796,19 @@ def handle_gateway_webhook(provider, payload):
 		or ""
 	)
 	if _normalize_status(status_raw) == "Paid":
-		result = mark_gateway_paid(doc, remarks=f"webhook:{provider}")
-		return {"ok": True, "order": result.get("order") or doc.order}
+		doc.reload()
+		if doc.status == "Paid":
+			return {"ok": True, "order": doc.order}
+		frappe.enqueue(
+			"imogi_pos.imogi_pos.utils.payment_gateway.mark_gateway_paid_job",
+			queue="short",
+			payment_name=doc.name,
+			remarks=f"webhook:{provider}",
+			job_id=f"imogi_gw_paid_{doc.name}",
+			deduplicate=True,
+			timeout=120,
+		)
+		return {"ok": True, "accepted": True}
 	if _normalize_status(status_raw) == "Failed":
 		doc.status = "Failed"
 		doc.save(ignore_permissions=True)

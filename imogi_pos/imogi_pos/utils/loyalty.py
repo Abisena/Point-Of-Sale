@@ -98,21 +98,46 @@ def serialize_member(member, config=None):
 		"min_redeem_points": config["min_redeem_points"],
 		"tier": serialize_tier(tier),
 		"tier_multiplier": flt(member.tier_multiplier) or (flt(tier.point_multiplier) if tier else 1),
+		"date_of_birth": str(member.date_of_birth) if member.date_of_birth else None,
 	}
 
 
 def get_customer_loyalty(customer, company=None):
-	if not customer or not is_loyalty_enabled():
-		return {"enabled": False, "customer": customer}
+	from imogi_pos.imogi_pos.utils.planned_features import get_birthday_promo_status
 
 	company = resolve_company(company)
+	birthday = get_birthday_promo_status(customer, company=company)
+
+	if not customer or not is_loyalty_enabled():
+		return {
+			"enabled": False,
+			"customer": customer,
+			"birthday": birthday,
+		}
+
 	member = get_or_create_member(customer, company)
 	config = get_loyalty_config()
 	from imogi_pos.imogi_pos.utils.stamp_card import serialize_stamp
 
 	result = {"enabled": True, **serialize_member(member, config)}
 	result["stamp"] = serialize_stamp(member)
+	result["birthday"] = birthday
+	result["date_of_birth"] = birthday.get("date_of_birth")
 	return result
+
+
+def set_member_birthday(customer, date_of_birth, company=None):
+	"""Simpan tanggal lahir di loyalty member (+ sync Customer.imogi_birthday)."""
+	if not customer:
+		frappe.throw(_("Customer wajib diisi"))
+	company = resolve_company(company)
+	member = get_or_create_member(customer, company)
+	dob = getdate(date_of_birth) if date_of_birth else None
+	member.date_of_birth = dob
+	member.save(ignore_permissions=True)
+	if frappe.get_meta("Customer").has_field("imogi_birthday"):
+		frappe.db.set_value("Customer", customer, "imogi_birthday", dob, update_modified=False)
+	return get_customer_loyalty(customer, company=company)
 
 
 def _manual_discount(subtotal, discount_type=None, discount_value=None):
@@ -256,6 +281,7 @@ def compute_checkout_totals(
 	promo_result = apply_promo_rules(items, company=company, branch=branch)
 	items = promo_result["items"]
 	promo_discount = flt(promo_result["promo_discount"])
+	applied_promos = list(promo_result["applied_promos"] or [])
 
 	subtotal = 0
 	for row in items or []:
@@ -263,6 +289,29 @@ def compute_checkout_totals(
 	subtotal = flt(subtotal)
 
 	manual_discount = _manual_discount(subtotal, discount_type, discount_value)
+
+	birthday_discount = 0
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+	from imogi_pos.imogi_pos.utils.planned_features import apply_birthday_promo, get_birthday_promo_status
+
+	if customer and is_setting_enabled("enable_birthday_promo", settings):
+		# Base birthday on cart after rules, before manual/voucher — use subtotal - promo_rules
+		birthday_base = max(0, subtotal - promo_discount)
+		birthday_discount = apply_birthday_promo(
+			customer, birthday_base, settings=settings, company=company
+		)
+		if birthday_discount > 0:
+			status = get_birthday_promo_status(customer, company=company, settings=settings)
+			pct = flt(status.get("discount_percent"))
+			applied_promos.append(
+				{
+					"promo": "BIRTHDAY_PROMO",
+					"label": _("Promo ulang tahun ({0}%)").format(pct),
+					"discount": flt(birthday_discount),
+				}
+			)
+			promo_discount = flt(promo_discount) + flt(birthday_discount)
+
 	after_manual = max(0, subtotal - manual_discount - promo_discount)
 
 	voucher_discount = 0
@@ -304,8 +353,9 @@ def compute_checkout_totals(
 		"items": items,
 		"subtotal": subtotal,
 		"promo_discount": promo_discount,
-		"applied_promos": promo_result["applied_promos"],
-		"applied_promo_json": serialize_applied_promos(promo_result["applied_promos"]),
+		"birthday_discount": flt(birthday_discount),
+		"applied_promos": applied_promos,
+		"applied_promo_json": serialize_applied_promos(applied_promos),
 		"manual_discount": flt(manual_discount),
 		"voucher_discount": flt(voucher_discount),
 		"loyalty_discount": flt(loyalty_discount),

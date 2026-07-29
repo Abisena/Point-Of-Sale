@@ -99,7 +99,9 @@ def _upsert_customer_contact(customer, customer_name, mobile_no=None, email_id=N
 	contact.insert(ignore_permissions=True)
 
 
-def create_customer_record(customer_name, customer_type="Individual", mobile_no=None, email_id=None, company=None):
+def create_customer_record(
+	customer_name, customer_type="Individual", mobile_no=None, email_id=None, company=None, date_of_birth=None
+):
 	"""Create Customer (+ optional Contact) using IMOGI POS defaults."""
 	customer_name = (customer_name or "").strip()
 	if not customer_name:
@@ -121,6 +123,7 @@ def create_customer_record(customer_name, customer_type="Individual", mobile_no=
 	if existing_name:
 		customer = frappe.get_doc("Customer", existing_name)
 		_upsert_customer_contact(customer, customer_name, mobile_no=mobile_no, email_id=email_id)
+		_sync_customer_birthday(customer.name, date_of_birth, company=company)
 		frappe.db.commit()
 		return _serialize_customer(customer, mobile_no=mobile_no)
 
@@ -128,12 +131,27 @@ def create_customer_record(customer_name, customer_type="Individual", mobile_no=
 	customer.customer_name = customer_name
 	customer.customer_type = customer_type
 	customer.default_currency = frappe.get_cached_value("Company", company, "default_currency")
+	if date_of_birth and frappe.get_meta("Customer").has_field("imogi_birthday"):
+		customer.imogi_birthday = date_of_birth
 	customer.insert(ignore_permissions=True)
 
 	_upsert_customer_contact(customer, customer_name, mobile_no=mobile_no, email_id=email_id)
+	_sync_customer_birthday(customer.name, date_of_birth, company=company)
 
 	frappe.db.commit()
 	return _serialize_customer(customer, mobile_no=mobile_no)
+
+
+def _sync_customer_birthday(customer, date_of_birth, company=None):
+	if not customer or not date_of_birth:
+		return
+	from imogi_pos.imogi_pos.utils.loyalty import set_member_birthday
+
+	try:
+		set_member_birthday(customer, date_of_birth, company=company)
+	except Exception:
+		frappe.log_error(title="Sync customer birthday", message=frappe.get_traceback())
+
 
 
 def _find_customers(search, limit):

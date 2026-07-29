@@ -743,6 +743,20 @@ body.imogi-pos-cashier-fullscreen .imogi-pos-order-history .page-body {
 	padding: 0 !important;
 }
 
+body.imogi-table-service-fullscreen .imogi-table-service-page.layout-main-section,
+body.imogi-table-service-fullscreen .imogi-table-service-page,
+body.imogi-table-service-fullscreen .imogi-table-service-page .page-body,
+body.imogi-table-service-fullscreen .imogi-ts-shell,
+body.imogi-table-service-fullscreen .imogi-ts-shell--v2,
+body.imogi-table-service-active .imogi-ts-shell--v2,
+body.imogi-table-service-active .imogi-table-service-page,
+body.imogi-table-service-active .imogi-table-service-page .page-body,
+body.imogi-table-service-active .layout-main-section-wrapper:has(.imogi-table-service-page),
+body.imogi-table-service-active .layout-main-section:has(.imogi-table-service-page) {
+	background: #fff !important;
+	background-image: none !important;
+}
+
 body.imogi-pos-cashier-fullscreen .imogi-table-service-page.layout-main-section,
 body.imogi-pos-cashier-fullscreen .imogi-table-service-page,
 body.imogi-pos-cashier-fullscreen .imogi-table-service-page .page-body,

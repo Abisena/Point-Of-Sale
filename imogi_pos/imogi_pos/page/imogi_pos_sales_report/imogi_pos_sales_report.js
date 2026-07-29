@@ -110,10 +110,10 @@ function imogi_pos_sales_report_init(wrapper, limits) {
 			<a class="imogi-web-btn imogi-web-btn-ghost" href="/app/imogi-pos-dashboard"><i class="fa fa-line-chart"></i> ${__(
 				"Dashboard"
 			)}</a>
+			<button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-rpt-export" style="display:none"><i class="fa fa-download"></i> ${__(
+				"Export Excel"
+			)}</button>
 		`,
-		// <button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-rpt-export" style="display:none"><i class="fa fa-download"></i> ${__(
-		// 	"Export CSV"
-		// )}</button>
 	});
 	const $shell = $content.closest(".imogi-web-shell");
 	if (!$content.length) {

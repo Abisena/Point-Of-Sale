@@ -33,6 +33,7 @@ app_include_css = [
 	"/assets/imogi_pos/css/imogi_pos.css",
 	"/assets/imogi_pos/css/imogi_pos_desk_theme.css",
 	"/assets/imogi_pos/css/imogi_pos_setup_wizard.css",
+	"/assets/imogi_pos/css/imogi_pos_workspace.css",
 ]
 app_include_js = [
 	"/assets/imogi_pos/js/imogi_pos_boot.js",
@@ -84,10 +85,12 @@ doctype_js = {
 	"POS Opening Entry": "public/js/imogi_pos_opening_entry.js",
 	"POS Closing Entry": "public/js/imogi_pos_closing_entry.js",
 	"User": "public/js/imogi_user_roles.js",
+	"Purchase Order": "public/js/imogi_purchase_order.js",
 }
 doctype_list_js = {
 	"Riwayat Order": "public/js/imogi_pos_order_list.js",
 	"IMOGI POS Promo Rule": "public/js/imogi_pos_promo_rule_list.js",
+	"Purchase Order": "public/js/imogi_purchase_order_list.js",
 }
 
 fixtures = [
@@ -101,6 +104,11 @@ fixtures = [
 			"POS Invoice-imogi_pos_order",
 			"POS Invoice-imogi_order_channel",
 			"POS Invoice-imogi_order_type",
+			"Customer-imogi_birthday",
+			"Material Request-imogi_preferred_supplier",
+			"Purchase Order-imogi_approval_status",
+			"Purchase Order-imogi_order_month",
+			"Bank Transaction-imogi_bank_statement_import",
 		]]],
 	},
 ]
@@ -225,11 +233,45 @@ doc_events = {
 	"Item": {
 		"on_update": "imogi_pos.imogi_pos.utils.catalog_cache.invalidate_catalog_cache_on_item_update",
 	},
+	"Supplier": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+	},
+	"Material Request": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+		"before_submit": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+	},
 	"Purchase Order": {
-		"before_submit": "imogi_pos.imogi_pos.utils.approval_hooks.purchase_order_before_submit",
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+		"validate": [
+			"imogi_pos.imogi_pos.utils.purchase_order_hooks.set_order_month",
+			"imogi_pos.imogi_pos.utils.purchase_order_hooks.sync_item_tax_rows",
+		],
+		"before_submit": [
+			"imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+			"imogi_pos.imogi_pos.utils.approval_hooks.purchase_order_before_submit",
+		],
+	},
+	"Purchase Receipt": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+		"before_submit": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+	},
+	"Purchase Invoice": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
+		"before_submit": "imogi_pos.imogi_pos.utils.feature_gating.require_purchasing_feature",
 	},
 	"Stock Entry": {
 		"before_submit": "imogi_pos.imogi_pos.utils.approval_hooks.stock_entry_before_submit",
+	},
+	"IMOGI POS Shift Opening": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_shift_feature",
+		"before_submit": "imogi_pos.imogi_pos.utils.feature_gating.require_shift_feature",
+	},
+	"IMOGI POS Shift Closing": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_shift_feature",
+		"before_submit": "imogi_pos.imogi_pos.utils.feature_gating.require_shift_feature",
+	},
+	"IMOGI POS Cash Movement": {
+		"before_insert": "imogi_pos.imogi_pos.utils.feature_gating.require_shift_feature",
 	},
 	"IMOGI Kitchen Order": {
 		"after_insert": "imogi_pos.imogi_pos.utils.planned_features.on_kitchen_order_created",
@@ -258,6 +300,7 @@ scheduler_events = {
 #
 override_whitelisted_methods = {
 	"frappe.desk.desktop.get_desktop_page": "imogi_pos.overrides.desktop.get_desktop_page",
+	"erpnext.stock.doctype.material_request.material_request.make_purchase_order": "imogi_pos.overrides.material_request.make_purchase_order",
 }
 #
 # each overriding function accepts a `data` argument;

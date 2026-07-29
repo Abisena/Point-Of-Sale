@@ -24,6 +24,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	before_save(frm) {
 		sync_dock_fields_to_doc(frm);
+		sync_kitchen_dock_table_rows_to_doc(frm);
 	},
 
 	generate_order_api_key(frm) {
@@ -41,14 +42,21 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	enable_loyalty(frm) {
 		render_loyalty_dock_summary(frm);
+		schedule_settings_field_state(frm, apply_program_promo_field_state);
 	},
 
 	enable_stamp_card(frm) {
 		render_loyalty_dock_summary(frm);
+		schedule_settings_field_state(frm, apply_program_promo_field_state);
 	},
 
 	enable_promo_rules(frm) {
 		render_loyalty_dock_summary(frm);
+		schedule_settings_field_state(frm, apply_program_promo_field_state);
+	},
+
+	enable_birthday_promo(frm) {
+		schedule_settings_field_state(frm, apply_program_promo_field_state);
 	},
 
 	enable_payment_gateway(frm) {
@@ -113,6 +121,7 @@ frappe.ui.form.on("IMOGI POS Settings", {
 
 	after_save(frm) {
 		show_pending_api_credentials(frm);
+		frm._imogi_reconcile_after_save = true;
 		render_target_dock_summary(frm);
 		render_loyalty_dock_summary(frm);
 		render_payment_dock_summary(frm);
@@ -283,18 +292,17 @@ frappe.ui.form.on("IMOGI POS Settings", {
 	enable_kitchen_display(frm) {
 		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
-		if (cint(frm.doc.enable_kitchen_display)) {
-			ensure_dock_field_rendered(frm, "kitchen_item_group_rows");
-		}
+		frappe.after_ajax(() => layout_kitchen_settings(frm));
+	},
+
+	kds_station_mode(frm) {
+		render_kitchen_dock_summary(frm);
 		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
 	enable_fulfillment(frm) {
 		render_mode_summary(frm);
 		render_kitchen_dock_summary(frm);
-		if (cint(frm.doc.enable_fulfillment)) {
-			ensure_dock_field_rendered(frm, "fulfillment_order_type_rows");
-		}
 		frappe.after_ajax(() => layout_kitchen_settings(frm));
 	},
 
@@ -460,8 +468,8 @@ const SETTINGS_TABS = [
 		id: "transactions",
 		label: __("Program & Promo"),
 		icon: "fa-exchange",
-		desc: __("Loyalty, stamp card, dan promo otomatis"),
-		sections: ["loyalty_section", "stamp_section", "promo_section"],
+		desc: __("Loyalty, stamp, promo otomatis, dan ulang tahun"),
+		sections: ["loyalty_section", "stamp_section", "promo_section", "birthday_section"],
 	},
 	{
 		id: "payment",
@@ -552,8 +560,10 @@ const SETTINGS_FORM_LAYOUT = [
 	"sync_subscription_tier",
 	{ section: "flow_section" },
 	"enable_kitchen_display",
+	"kds_station_mode",
 	"enable_fulfillment",
 	"kitchen_item_group_rows",
+	"bar_item_group_rows",
 	"fulfillment_order_type_rows",
 	{ section: "inventory_section" },
 	"low_stock_check_interval",
@@ -597,6 +607,10 @@ const SETTINGS_FORM_LAYOUT = [
 	"stamp_reward_min_order",
 	{ section: "promo_section" },
 	"enable_promo_rules",
+	{ section: "birthday_section" },
+	"enable_birthday_promo",
+	"birthday_discount_percent",
+	"birthday_window_days",
 	{ section: "payment_gateway_section" },
 	"enable_payment_gateway",
 	"payment_gateway_provider",
@@ -635,8 +649,6 @@ const SETTINGS_FORM_LAYOUT = [
 	"enable_kitchen_printer",
 	"enable_cashback",
 	"cashback_percent",
-	"enable_birthday_promo",
-	"birthday_discount_percent",
 	{ section: "franchise_section" },
 	"generate_franchise_royalty",
 	"post_franchise_royalty_journals",
@@ -654,10 +666,9 @@ const SETTINGS_DEFERRED_OPERATIONAL_FIELDS = [
 	"enable_role_gating",
 	"enable_central_kitchen",
 	"central_kitchen_station",
+	"enable_kitchen_printer",
 	"enable_cashback",
 	"cashback_percent",
-	"enable_birthday_promo",
-	"birthday_discount_percent",
 ];
 
 const SETTINGS_BILLING_FIELD_NAMES = [
@@ -772,7 +783,7 @@ const ENDPOINT_GROUPS = {
 
 function ensure_imogi_styles(callback) {
 	const run = () => callback && callback();
-	if (document.getElementById("imogi-settings-inline-css-v81")) {
+	if (document.getElementById("imogi-settings-inline-css-v82")) {
 		run();
 		return;
 	}
@@ -785,7 +796,7 @@ function ensure_imogi_styles(callback) {
 }
 
 function inject_imogi_settings_css() {
-	if (document.getElementById("imogi-settings-inline-css-v81")) return;
+	if (document.getElementById("imogi-settings-inline-css-v82")) return;
 	document.getElementById("imogi-settings-inline-css-v80")?.remove();
 	document.getElementById("imogi-settings-inline-css-v79")?.remove();
 	document.getElementById("imogi-settings-inline-css-v78")?.remove();
@@ -1459,6 +1470,10 @@ function inject_imogi_settings_css() {
 			border-color: #dc2626;
 			color: #dc2626;
 		}
+		.imogi-kitchen-list-section {
+			position: relative;
+			z-index: 2;
+		}
 		.imogi-kitchen-list-add {
 			align-items: center;
 			background: #fff;
@@ -1471,6 +1486,8 @@ function inject_imogi_settings_css() {
 			font-weight: 600;
 			gap: 5px;
 			padding: 6px 10px;
+			position: relative;
+			z-index: 3;
 		}
 		.imogi-kitchen-list-add:hover {
 			background: #f9fafb;
@@ -1481,6 +1498,12 @@ function inject_imogi_settings_css() {
 			font-size: 11px;
 			line-height: 1.4;
 			padding: 2px 0;
+		}
+		.imogi-kitchen-native-table-hidden .grid-field,
+		.imogi-kitchen-native-table-hidden .form-grid,
+		.imogi-kitchen-native-table-hidden .grid-buttons,
+		.imogi-kitchen-native-table-hidden .grid-add-row {
+			display: none !important;
 		}
 		.imogi-dock-check-row {
 			align-items: center;
@@ -2080,7 +2103,7 @@ function inject_imogi_settings_css() {
 		body.imogi-pos-settings-active .form-timeline,
 		body.imogi-pos-settings-active .new-timeline,
 		body.imogi-pos-settings-active .timeline { display: none !important; }
-	`, "imogi-settings-inline-css-v81");
+	`, "imogi-settings-inline-css-v82");
 }
 
 function hide_marketplace_integration_ui(frm) {
@@ -2366,6 +2389,7 @@ function init_settings_page(frm) {
 	render_role_authorization_matrix(frm);
 	render_page_authorization_matrix(frm);
 	bind_dock_checkbox_handlers_once(frm);
+	bind_kitchen_dock_list_actions_once(frm);
 	hook_settings_form_save(frm);
 	frappe.after_ajax(() => render_receipt_whatsapp_dock_summary(frm));
 	activate_settings_tab(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
@@ -3045,6 +3069,7 @@ function style_setting_cards(frm) {
 		loyalty_section: { icon: "fa-star", title: __("Loyalty & Poin Member") },
 		stamp_section: { icon: "fa-ticket", title: __("Stamp Card") },
 		promo_section: { icon: "fa-tags", title: __("Promo Otomatis") },
+		birthday_section: { icon: "fa-gift", title: __("Promo Ulang Tahun") },
 		payment_gateway_section: { icon: "fa-credit-card", title: __("Payment Gateway") },
 		transfer_payment_section: { icon: "fa-university", title: __("Transfer Bank") },
 		integrations_section: { icon: "fa-random", title: __("Offline & Marketplace") },
@@ -3530,6 +3555,9 @@ const SETTINGS_DEPENDENT_FIELD_CONDITIONS = {
 	stamp_reward_discount_type: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
 	stamp_reward_discount_value: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
 	stamp_reward_min_order: (d) => cint(d.enable_loyalty) && cint(d.enable_stamp_card),
+	enable_birthday_promo: (d) => cint(d.enable_loyalty),
+	birthday_discount_percent: (d) => cint(d.enable_loyalty) && cint(d.enable_birthday_promo),
+	birthday_window_days: (d) => cint(d.enable_loyalty) && cint(d.enable_birthday_promo),
 	// Tab Printer & Struk (PPN + Cetak Struk)
 	sales_tax_rate: (d) => cint(d.enable_sales_tax),
 	prices_include_tax: (d) => cint(d.enable_sales_tax),
@@ -4278,9 +4306,13 @@ const KITCHEN_SETTINGS_FIELDS = [
 	"enable_table_service",
 	"enable_qr_self_service",
 	"qr_self_service_payment_mode",
+	"qr_cash_cashier_flow",
 	"enable_kitchen_display",
+	"kds_station_mode",
 	"enable_fulfillment",
 ];
+
+const FULFILLMENT_SETTINGS_FIELDS = ["enable_fulfillment", "fulfillment_order_type_rows"];
 
 const KITCHEN_DOCK_LIST_CONFIGS = [
 	{
@@ -4294,6 +4326,18 @@ const KITCHEN_DOCK_LIST_CONFIGS = [
 		is_enabled: (frm) => cint(frm.doc.enable_kitchen_display),
 	},
 	{
+		fieldname: "bar_item_group_rows",
+		value_field: "item_group",
+		label: __("Item Group Bar (Minuman)"),
+		fieldtype: "Link",
+		options: "Item Group",
+		add_label: __("Tambah item group bar"),
+		empty_label: __("Opsional — kosong = deteksi otomatis (Minuman/Beverage/Coffee)."),
+		is_enabled: (frm) =>
+			cint(frm.doc.enable_kitchen_display) &&
+			(frm.doc.kds_station_mode || "") === "Separate Kitchen and Bar",
+	},
+	{
 		fieldname: "fulfillment_order_type_rows",
 		value_field: "order_type",
 		label: __("Tipe Order"),
@@ -4305,11 +4349,55 @@ const KITCHEN_DOCK_LIST_CONFIGS = [
 	},
 ];
 
-const DOCK_TABLE_FIELDS = ["kitchen_item_group_rows", "fulfillment_order_type_rows"];
+const DOCK_TABLE_FIELDS = [
+	"kitchen_item_group_rows",
+	"bar_item_group_rows",
+	"fulfillment_order_type_rows",
+];
+
+function is_fulfillment_rollout_enabled() {
+	return cint(frappe.boot?.imogi_pos_fulfillment_rollout_enabled);
+}
+
+function get_kitchen_settings_fields() {
+	if (is_fulfillment_rollout_enabled()) {
+		return KITCHEN_SETTINGS_FIELDS;
+	}
+	return KITCHEN_SETTINGS_FIELDS.filter((fieldname) => !FULFILLMENT_SETTINGS_FIELDS.includes(fieldname));
+}
+
+function get_kitchen_dock_table_fields() {
+	if (is_fulfillment_rollout_enabled()) {
+		return DOCK_TABLE_FIELDS;
+	}
+	return DOCK_TABLE_FIELDS.filter((fieldname) => fieldname !== "fulfillment_order_type_rows");
+}
+
+function get_kitchen_dock_all_fields() {
+	return [...get_kitchen_settings_fields(), ...get_kitchen_dock_table_fields()];
+}
 
 const KITCHEN_DOCK_ALL_FIELDS = [...KITCHEN_SETTINGS_FIELDS, ...DOCK_TABLE_FIELDS];
 
 const _kitchen_dock_list_controls = new Map();
+let _imogi_kitchen_dock_quiet = false;
+
+function with_kitchen_dock_quiet(callback) {
+	_imogi_kitchen_dock_quiet = true;
+	try {
+		return callback();
+	} finally {
+		_imogi_kitchen_dock_quiet = false;
+	}
+}
+
+function kitchen_dock_track_change(frm, rows, idx, config, control) {
+	if (_imogi_kitchen_dock_quiet) return;
+	const next = control.get_value() || "";
+	if (rows[idx][config.value_field] === next) return;
+	rows[idx][config.value_field] = next;
+	frm.dirty();
+}
 
 const GENERAL_TAB_DOCK_FIELDS = [...SHIFT_SETTINGS_FIELDS, ...KITCHEN_DOCK_ALL_FIELDS];
 
@@ -4436,7 +4524,11 @@ function configure_shift_dock_fields(frm) {
 
 function dock_field_depends_visible(frm, fieldname) {
 	const depends_map = {
+		kds_station_mode: () => cint(frm.doc.enable_kitchen_display),
 		kitchen_item_group_rows: () => cint(frm.doc.enable_kitchen_display),
+		bar_item_group_rows: () =>
+			cint(frm.doc.enable_kitchen_display) &&
+			(frm.doc.kds_station_mode || "") === "Separate Kitchen and Bar",
 		fulfillment_order_type_rows: () => cint(frm.doc.enable_fulfillment),
 		enable_shift_cash_detail: () => cint(frm.doc.enable_pos_shift),
 	};
@@ -4477,9 +4569,12 @@ const DOCK_FIELD_HOME_SECTION = {
 	enable_table_service: "flow_section",
 	enable_qr_self_service: "flow_section",
 	qr_self_service_payment_mode: "flow_section",
+	qr_cash_cashier_flow: "flow_section",
 	enable_kitchen_display: "flow_section",
+	kds_station_mode: "flow_section",
 	enable_fulfillment: "flow_section",
 	kitchen_item_group_rows: "flow_section",
+	bar_item_group_rows: "flow_section",
 	fulfillment_order_type_rows: "flow_section",
 };
 
@@ -4583,6 +4678,7 @@ function hook_settings_form_save(frm) {
 
 function apply_dock_fields_before_save(frm) {
 	sync_dock_fields_to_doc(frm);
+	sync_kitchen_dock_table_rows_to_doc(frm);
 	if (frm.is_dirty()) return;
 	const saved = frappe.model.get_doc(frm.doctype, frm.doc.name);
 	if (!saved) return;
@@ -4593,6 +4689,25 @@ function apply_dock_fields_before_save(frm) {
 		const original = DOCK_CHECKBOX_FIELDS.includes(fieldname)
 			? cint(saved[fieldname])
 			: String(saved[fieldname] ?? "");
+		if (current !== original) {
+			frm.dirty();
+			break;
+		}
+	}
+	if (frm.is_dirty()) return;
+	for (const config of KITCHEN_DOCK_LIST_CONFIGS) {
+		if (!kitchen_dock_config_enabled(frm, config)) continue;
+		sync_kitchen_dock_controls_to_doc(frm);
+		const current = kitchen_dock_rows_fingerprint(
+			get_kitchen_dock_rows(frm, config).filter((row) =>
+				String(row[config.value_field] || "").trim()
+			),
+			config.value_field
+		);
+		const original = kitchen_dock_rows_fingerprint(
+			saved[config.fieldname] || [],
+			config.value_field
+		);
 		if (current !== original) {
 			frm.dirty();
 			break;
@@ -4637,45 +4752,221 @@ function sync_dock_fields_to_doc(frm) {
 }
 
 function destroy_kitchen_dock_list_controls() {
-	_kitchen_dock_list_controls.forEach((ctrl) => ctrl?.destroy?.());
+	_kitchen_dock_list_controls.forEach((ctrl) => {
+		ctrl?.$input?.off(".imogi_kitchen_dock");
+		ctrl?.destroy?.();
+	});
 	_kitchen_dock_list_controls.clear();
 }
 
-function hide_kitchen_native_table_fields(frm) {
-	DOCK_TABLE_FIELDS.forEach((fieldname) => {
-		frm.toggle_display(fieldname, false);
-		frm.$wrapper.find(`.frappe-control[data-fieldname="${fieldname}"]`).hide();
+function kitchen_dock_rows_match_doc(frm) {
+	sync_kitchen_dock_controls_to_doc(frm);
+	return KITCHEN_DOCK_LIST_CONFIGS.every((config) => {
+		if (!kitchen_dock_config_enabled(frm, config)) return true;
+		const rows = get_kitchen_dock_rows(frm, config).filter((row) =>
+			String(row[config.value_field] || "").trim()
+		);
+		return (
+			kitchen_dock_rows_fingerprint(rows, config.value_field) ===
+			kitchen_dock_rows_fingerprint(frm.doc[config.fieldname], config.value_field)
+		);
 	});
 }
 
-function render_kitchen_dock_list_cards(frm, $dock) {
-	destroy_kitchen_dock_list_controls();
-	hide_kitchen_native_table_fields(frm);
+function clear_phantom_kitchen_dock_dirty(frm) {
+	if (!frm?._imogi_reconcile_after_save || !frm.is_dirty()) return;
+	frm._imogi_reconcile_after_save = false;
+	if (!kitchen_dock_rows_match_doc(frm)) return;
+	delete frm.doc.__unsaved;
+	frm.refresh_header?.();
+}
 
-	let $lists = $dock.find(".imogi-kitchen-list-cards-wrap");
-	if (!$lists.length) {
-		$lists = $('<div class="imogi-kitchen-list-cards-wrap"></div>');
-		$dock.find(".imogi-kitchen-form-grid").after($lists);
+const KITCHEN_DOCK_CHILD_DOCTYPES = {
+	kitchen_item_group_rows: "IMOGI POS Settings Kitchen Item Group",
+	bar_item_group_rows: "IMOGI POS Settings Bar Item Group",
+	fulfillment_order_type_rows: "IMOGI POS Settings Fulfillment Order Type",
+};
+
+function kitchen_dock_config_enabled(frm, config) {
+	if (config.fieldname === "kitchen_item_group_rows") {
+		return (
+			cint(frm.doc.enable_kitchen_display) ||
+			cint(read_dock_checkbox_value(frm, "enable_kitchen_display"))
+		);
 	}
-	$lists.empty();
+	if (config.fieldname === "bar_item_group_rows") {
+		return (
+			(cint(frm.doc.enable_kitchen_display) ||
+				cint(read_dock_checkbox_value(frm, "enable_kitchen_display"))) &&
+			(frm.doc.kds_station_mode || "") === "Separate Kitchen and Bar"
+		);
+	}
+	if (config.fieldname === "fulfillment_order_type_rows") {
+		return (
+			cint(frm.doc.enable_fulfillment) || cint(read_dock_checkbox_value(frm, "enable_fulfillment"))
+		);
+	}
+	return config.is_enabled(frm);
+}
+
+function ensure_kitchen_dock_table_field(frm, fieldname) {
+	ensure_dock_field_rendered(frm, fieldname);
+	if (!frm.doc[fieldname]) {
+		frm.doc[fieldname] = [];
+	}
+}
+
+function get_kitchen_dock_rows(frm, config) {
+	ensure_kitchen_dock_table_field(frm, config.fieldname);
+	return frm.doc[config.fieldname];
+}
+
+function kitchen_dock_rows_fingerprint(rows, value_field) {
+	return (rows || []).map((row) => String(row[value_field] || "").trim()).join("\u0001");
+}
+
+function sync_kitchen_dock_controls_to_doc(frm) {
+	KITCHEN_DOCK_LIST_CONFIGS.forEach((config) => {
+		if (!kitchen_dock_config_enabled(frm, config)) return;
+		const rows = get_kitchen_dock_rows(frm, config);
+		rows.forEach((row, idx) => {
+			const control = _kitchen_dock_list_controls.get(`${config.fieldname}-${idx}`);
+			if (control) {
+				row[config.value_field] = control.get_value() || "";
+			}
+		});
+	});
+}
+
+function sync_kitchen_dock_table_rows_to_doc(frm) {
+	sync_kitchen_dock_controls_to_doc(frm);
+	let changed = false;
 
 	KITCHEN_DOCK_LIST_CONFIGS.forEach((config) => {
-		if (!config.is_enabled(frm)) return;
+		if (!kitchen_dock_config_enabled(frm, config)) return;
+		const rows = get_kitchen_dock_rows(frm, config);
+		for (let i = rows.length - 1; i >= 0; i--) {
+			if (!String(rows[i][config.value_field] || "").trim()) {
+				const row = rows[i];
+				if (row.name) {
+					frappe.model.clear_doc(row.doctype, row.name);
+				}
+				rows.splice(i, 1);
+				changed = true;
+			}
+		}
+	});
 
-		const rows = frm.doc[config.fieldname] || [];
-		const $section = $(`
+	if (changed) frm.dirty();
+	return changed;
+}
+
+function add_kitchen_dock_row(frm, config) {
+	ensure_kitchen_dock_table_field(frm, config.fieldname);
+	const child = frappe.model.add_child(
+		frm.doc,
+		KITCHEN_DOCK_CHILD_DOCTYPES[config.fieldname],
+		config.fieldname
+	);
+	child[config.value_field] = "";
+	if (!_imogi_kitchen_dock_quiet) frm.dirty();
+}
+
+function remove_kitchen_dock_row(frm, config, idx) {
+	const rows = get_kitchen_dock_rows(frm, config);
+	const row = rows[idx];
+	if (!row) return;
+	if (row.name) {
+		frappe.model.clear_doc(row.doctype, row.name);
+	}
+	rows.splice(idx, 1);
+	if (!_imogi_kitchen_dock_quiet) frm.dirty();
+}
+
+function suppress_kitchen_native_table_fields(frm) {
+	lock_kitchen_dock_native_table_fields(frm);
+}
+
+function lock_kitchen_dock_native_table_fields(frm) {
+	DOCK_TABLE_FIELDS.forEach((fieldname) => {
+		ensure_dock_field_rendered(frm, fieldname);
+		const field = frm.fields_dict[fieldname];
+		if (!field?.$wrapper?.length) return;
+		field.$wrapper.addClass("imogi-kitchen-native-table-hidden").hide();
+		field.$wrapper.find(".grid-field, .form-grid, .grid-buttons, .grid-add-row").hide();
+		if (field.grid?.wrapper?.length) {
+			field.grid.wrapper.hide();
+		}
+		frm.toggle_display(fieldname, false);
+	});
+}
+
+function bind_kitchen_dock_list_actions_once(frm) {
+	if (frm._imogi_kitchen_dock_actions_bound) return;
+	frm._imogi_kitchen_dock_actions_bound = true;
+
+	frm.$wrapper.on("click.imogi_kitchen_dock", ".imogi-kitchen-list-add", function on_kitchen_dock_add(e) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		const fieldname = $(this).closest(".imogi-kitchen-list-section").attr("data-fieldname");
+		const config = KITCHEN_DOCK_LIST_CONFIGS.find((c) => c.fieldname === fieldname);
+		if (!config || !kitchen_dock_config_enabled(frm, config)) return;
+		const $dock = $(this).closest(".imogi-kitchen-settings-dock");
+		add_kitchen_dock_row(frm, config);
+		render_kitchen_dock_list_cards(frm, $dock);
+	});
+
+	frm.$wrapper.on(
+		"click.imogi_kitchen_dock",
+		".imogi-kitchen-list-card-remove",
+		function on_kitchen_dock_remove(e) {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			const fieldname = $(this).closest(".imogi-kitchen-list-section").attr("data-fieldname");
+			const config = KITCHEN_DOCK_LIST_CONFIGS.find((c) => c.fieldname === fieldname);
+			if (!config) return;
+			const idx = parseInt($(this).closest(".imogi-kitchen-list-card").attr("data-idx"), 10);
+			if (Number.isNaN(idx)) return;
+			const $dock = $(this).closest(".imogi-kitchen-settings-dock");
+			remove_kitchen_dock_row(frm, config, idx);
+			render_kitchen_dock_list_cards(frm, $dock);
+		}
+	);
+}
+
+function hide_kitchen_native_table_fields(frm) {
+	suppress_kitchen_native_table_fields(frm);
+}
+
+function render_kitchen_dock_list_cards(frm, $dock) {
+	with_kitchen_dock_quiet(() => {
+		lock_kitchen_dock_native_table_fields(frm);
+		destroy_kitchen_dock_list_controls();
+
+		let $lists = $dock.find(".imogi-kitchen-list-cards-wrap");
+		if (!$lists.length) {
+			$lists = $('<div class="imogi-kitchen-list-cards-wrap"></div>');
+			$dock.find(".imogi-kitchen-form-grid").after($lists);
+		}
+		$lists.empty();
+
+		KITCHEN_DOCK_LIST_CONFIGS.forEach((config) => {
+			if (!kitchen_dock_config_enabled(frm, config)) return;
+
+			const rows = get_kitchen_dock_rows(frm, config);
+			const $section = $(`
 			<div class="imogi-kitchen-list-section" data-fieldname="${config.fieldname}">
 				<div class="imogi-kitchen-list-section-label">${frappe.utils.escape_html(config.label)}</div>
 				<div class="imogi-kitchen-list-cards"></div>
 			</div>
 		`);
-		const $cards = $section.find(".imogi-kitchen-list-cards");
+			const $cards = $section.find(".imogi-kitchen-list-cards");
 
-		if (!rows.length) {
-			$cards.append(`<div class="imogi-kitchen-list-empty">${config.empty_label}</div>`);
-		} else {
-			rows.forEach((row, idx) => {
-				const $card = $(`
+			if (!rows.length) {
+				$cards.append(`<div class="imogi-kitchen-list-empty">${config.empty_label}</div>`);
+			} else {
+				rows.forEach((row, idx) => {
+					const $card = $(`
 					<div class="imogi-kitchen-list-card" data-idx="${idx}">
 						<div class="imogi-kitchen-list-card-col">
 							<label>${frappe.utils.escape_html(config.label)}</label>
@@ -4684,45 +4975,35 @@ function render_kitchen_dock_list_cards(frm, $dock) {
 						<button type="button" class="imogi-kitchen-list-card-remove" title="${__("Hapus")}"><i class="fa fa-trash-o"></i></button>
 					</div>
 				`);
-				$cards.append($card);
+					$cards.append($card);
 
-				const controlKey = `${config.fieldname}-${idx}`;
-				const control = frappe.ui.form.make_control({
-					df: {
-						fieldtype: config.fieldtype,
-						options: config.options,
-						fieldname: `${config.fieldname}_${idx}`,
-						label: config.label,
-					},
-					parent: $card.find(".imogi-kitchen-list-card-input-host")[0],
-					render_input: true,
-					only_input: true,
+					const controlKey = `${config.fieldname}-${idx}`;
+					const control = frappe.ui.form.make_control({
+						df: {
+							fieldtype: config.fieldtype,
+							options: config.options,
+							fieldname: `${config.fieldname}_${idx}`,
+							label: config.label,
+						},
+						parent: $card.find(".imogi-kitchen-list-card-input-host")[0],
+						render_input: true,
+						only_input: true,
+					});
+					control.make();
+					control.set_value(row[config.value_field] || "");
+					const write_row = () => kitchen_dock_track_change(frm, rows, idx, config, control);
+					control.df.onchange = write_row;
+					control.$input?.on("change.imogi_kitchen_dock awesomplete-selectcomplete.imogi_kitchen_dock", write_row);
+					_kitchen_dock_list_controls.set(controlKey, control);
 				});
-				control.make();
-				control.set_value(row[config.value_field] || "");
-				control.$input?.on("change awesomplete-selectcomplete", () => {
-					frm.doc[config.fieldname][idx][config.value_field] = control.get_value();
-					frm.dirty();
-				});
-				_kitchen_dock_list_controls.set(controlKey, control);
+			}
 
-				$card.find(".imogi-kitchen-list-card-remove").on("click", () => {
-					frm.doc[config.fieldname].splice(idx, 1);
-					frm.dirty();
-					layout_kitchen_settings(frm);
-				});
-			});
-		}
-
-		const $add = $(`<button type="button" class="imogi-kitchen-list-add"><i class="fa fa-plus"></i> ${config.add_label}</button>`);
-		$add.on("click", () => {
-			frm.add_child(config.fieldname, {});
-			frm.dirty();
-			layout_kitchen_settings(frm);
+			const $add = $(`<button type="button" class="imogi-kitchen-list-add"><i class="fa fa-plus"></i> ${config.add_label}</button>`);
+			$section.append($add);
+			$lists.append($section);
 		});
-		$section.append($add);
-		$lists.append($section);
 	});
+	clear_phantom_kitchen_dock_dirty(frm);
 }
 
 function bind_dock_table_field_sync(frm) {
@@ -4820,6 +5101,8 @@ function layout_kitchen_settings(frm) {
 	const ctx = get_settings_section(frm, "store_identity_section");
 	if (!ctx || !ctx.$wrapper) return;
 
+	lock_kitchen_dock_native_table_fields(frm);
+
 	const $body = ctx.section.body || ctx.$wrapper.find(".section-body");
 	let $dock = $body.find(".imogi-kitchen-settings-dock");
 	if (!$dock.length) {
@@ -4829,30 +5112,43 @@ function layout_kitchen_settings(frm) {
 			</div>`);
 		$body.append($dock);
 	}
-	ensure_dock_section_head($dock, __("Layanan, Dapur & Fulfillment"), "");
+	ensure_dock_section_head(
+		$dock,
+		is_fulfillment_rollout_enabled() ? __("Layanan, Dapur & Fulfillment") : __("Layanan & Dapur"),
+		""
+	);
 
 	const $grid = $dock.find(".imogi-kitchen-form-grid");
 	$grid.addClass("imogi-kitchen-form-grid--horizontal");
-	mount_settings_dock_fields(frm, $grid, KITCHEN_SETTINGS_FIELDS, "imogi-kitchen-field");
-	group_dock_checkbox_row($grid, frm, [
+	mount_settings_dock_fields(frm, $grid, get_kitchen_settings_fields(), "imogi-kitchen-field");
+	const kitchen_checkboxes = [
 		"enable_table_service",
 		"enable_qr_self_service",
 		"enable_kitchen_display",
-		"enable_fulfillment",
-	]);
+		...(is_fulfillment_rollout_enabled() ? ["enable_fulfillment"] : []),
+	];
+	group_dock_checkbox_row($grid, frm, kitchen_checkboxes);
 	configure_kitchen_dock_tables(frm);
+	get_kitchen_dock_table_fields().forEach((fieldname) => ensure_kitchen_dock_table_field(frm, fieldname));
 	render_kitchen_dock_list_cards(frm, $dock);
-	sync_dock_checkbox_from_doc(frm, [
-		"enable_table_service",
-		"enable_qr_self_service",
-		"enable_kitchen_display",
-		"enable_fulfillment",
-	]);
+	sync_dock_checkbox_from_doc(frm, kitchen_checkboxes);
 	const table_on = cint(frm.doc.enable_table_service);
 	const qr_on = table_on && cint(frm.doc.enable_qr_self_service);
 	set_settings_field_disabled(frm, "enable_qr_self_service", !table_on);
 	set_settings_field_disabled(frm, "qr_self_service_payment_mode", !qr_on);
-	hide_duplicate_dock_fields(frm, KITCHEN_DOCK_ALL_FIELDS);
+	set_settings_field_disabled(frm, "qr_cash_cashier_flow", !qr_on);
+	const kds_on = cint(frm.doc.enable_kitchen_display);
+	set_settings_field_disabled(frm, "kds_station_mode", !kds_on);
+	if (frm.fields_dict.kds_station_mode) {
+		frm.set_df_property(
+			"kds_station_mode",
+			"description",
+			__(
+				"Kitchen Only = semua ke Dapur. Separate = makanan→Dapur, minuman→Bar. Combined = makanan+minuman di satu stasiun."
+			)
+		);
+	}
+	hide_duplicate_dock_fields(frm, get_kitchen_dock_all_fields());
 	$dock.find(".imogi-kitchen-status, .imogi-kitchen-quick-links").remove();
 
 	const flow_ctx = get_settings_section(frm, "flow_section");
@@ -4868,12 +5164,21 @@ function render_kitchen_dock_summary(frm) {
 	const table_on = cint(frm.doc.enable_table_service);
 	const qr_on = table_on && cint(frm.doc.enable_qr_self_service);
 	const kds_on = cint(frm.doc.enable_kitchen_display);
-	const fulfillment_on = cint(frm.doc.enable_fulfillment);
+	const fulfillment_on = is_fulfillment_rollout_enabled() && cint(frm.doc.enable_fulfillment);
 
 	const active = [];
 	if (table_on) active.push(__("Table Service"));
 	if (qr_on) active.push(__("QR Self-Service"));
-	if (kds_on) active.push(__("KDS"));
+	if (kds_on) {
+		const mode = frm.doc.kds_station_mode || "Separate Kitchen and Bar";
+		const mode_label =
+			mode === "Kitchen Only"
+				? __("KDS · Dapur saja")
+				: mode === "Combined Kitchen & Bar"
+					? __("KDS · Kitchen & Bar gabungan")
+					: __("KDS · Dapur + Bar terpisah");
+		active.push(mode_label);
+	}
 	if (fulfillment_on) active.push(__("Fulfillment"));
 
 	$status

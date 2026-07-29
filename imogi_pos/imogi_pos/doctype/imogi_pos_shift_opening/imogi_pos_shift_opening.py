@@ -27,7 +27,9 @@ class IMOGIPOSShiftOpening(Document):
 			self.company = settings.default_company
 		if not self.pos_profile:
 			self.pos_profile = settings.default_pos_profile
-		if not self.user:
-			self.user = frappe.session.user
+		# Always the actual session user — never trust a client-supplied value
+		# here, otherwise a direct insert (Desk/REST, bypassing the whitelisted
+		# API) could open a shift "as" someone else.
+		self.user = frappe.session.user
 		if not self.posting_date:
 			self.posting_date = nowdate()

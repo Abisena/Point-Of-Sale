@@ -27,8 +27,15 @@ WORKSPACE_LINK_FEATURES: dict[tuple[str, str], str | None] = {
 	("Page", "imogi-pos-open-shift"): "open_shift",
 	("Page", "imogi-pos-close-shift"): "close_shift",
 	("Page", "kitchen-display"): "kitchen_display",
+	("Page", "kitchen-performance"): "kitchen_performance",
 	("Page", "kitchen-order"): "kitchen_queue",
 	("Page", "kitchen-station"): "kitchen_station",
+	("Page", "recipe-hub"): "recipe_management",
+	("Page", "inventory-hub"): "raw_material",
+	("Page", "purchasing-hub"): "supplier",
+	("Page", "finance-hub"): "cash_bank",
+	("Page", "audit-hub"): "audit_log",
+	("Page", "multi-outlet-hub"): "multi_outlet",
 	("Page", "fulfillment-queue"): "delivery_order",
 	("Page", "table-service"): "table_management",
 	("Page", "imogi-pos-add-branch"): "multi_outlet",
@@ -60,7 +67,9 @@ WORKSPACE_LINK_FEATURES: dict[tuple[str, str], str | None] = {
 	("DocType", "IMOGI POS Shift Opening"): "open_shift",
 	("DocType", "IMOGI POS Shift Closing"): "close_shift",
 	("DocType", "POS Opening Entry"): "open_shift",
-	("DocType", "POS Closing Entry"): "end_of_day",
+	("DocType", "POS Closing Entry"): "close_shift",
+	("DocType", "IMOGI POS Cash Movement"): "cash_in_out",
+	("Report", "IMOGI Shift Closing Report"): "shift_closing_report",
 	("DocType", "IMOGI Branch"): "multi_outlet",
 	("DocType", "IMOGI POS Offline Checkout"): "api_access",
 	("DocType", "IMOGI POS Subscription Event"): "api_access",
@@ -305,6 +314,10 @@ def is_workspace_item_allowed_for_user(
 		is_feature_suppressed_for_business,
 		is_workspace_hidden_for_umkm,
 	)
+	from imogi_pos.imogi_pos.utils.feature_registry import (
+		FULFILLMENT_WORKSPACE_KEYS,
+		is_fulfillment_rollout_enabled,
+	)
 	from imogi_pos.imogi_pos.utils.role_gating import (
 		is_workspace_role_allowed_for_feature,
 		user_bypasses_role_gating,
@@ -313,6 +326,8 @@ def is_workspace_item_allowed_for_user(
 	tier = tier or get_subscription_tier()
 	user = user or getattr(frappe.session, "user", None)
 	if is_workspace_hidden_for_umkm(link_type, link_to, settings):
+		return False
+	if not is_fulfillment_rollout_enabled() and workspace_link_key(link_type, link_to) in FULFILLMENT_WORKSPACE_KEYS:
 		return False
 	if _user_is_dedicated_cashier(user):
 		return False

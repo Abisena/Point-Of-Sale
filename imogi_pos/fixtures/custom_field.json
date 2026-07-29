@@ -73,5 +73,67 @@
   "options": "Dine-in\nTakeaway\nDelivery",
   "read_only": 1,
   "name": "POS Invoice-imogi_order_type"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Customer",
+  "fieldname": "imogi_birthday",
+  "fieldtype": "Date",
+  "insert_after": "customer_type",
+  "label": "Tanggal Lahir (IMOGI POS)",
+  "description": "Dipakai untuk Promo Ulang Tahun di kasir IMOGI POS",
+  "name": "Customer-imogi_birthday"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Material Request",
+  "fieldname": "imogi_preferred_supplier",
+  "fieldtype": "Link",
+  "options": "Supplier",
+  "insert_after": "schedule_date",
+  "label": "Supplier Tujuan",
+  "description": "Vendor yang dituju untuk Purchase Request ini (opsional). Terbawa otomatis saat dibuatkan Purchase Order.",
+  "name": "Material Request-imogi_preferred_supplier"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Purchase Order",
+  "fieldname": "imogi_approval_status",
+  "fieldtype": "Select",
+  "options": "\nMenunggu Approval\nDitolak",
+  "insert_after": "status",
+  "label": "Status Approval IMOGI",
+  "read_only": 1,
+  "in_list_view": 0,
+  "description": "Status approval hirarki PO IMOGI — terpisah dari status bawaan ERPNext. Ditampilkan lewat badge indicator (imogi_purchase_order_list.js), bukan kolom mentah.",
+  "name": "Purchase Order-imogi_approval_status"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Purchase Order",
+  "fieldname": "imogi_order_month",
+  "fieldtype": "Data",
+  "insert_after": "imogi_approval_status",
+  "label": "Bulan Order",
+  "read_only": 1,
+  "hidden": 1,
+  "no_copy": 1,
+  "in_list_view": 0,
+  "description": "Auto-terisi dari Order Date (format YYYY-MM), dipakai sebagai facet Group By di List View (bukan buat diedit manual).",
+  "name": "Purchase Order-imogi_order_month"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Bank Transaction",
+  "fieldname": "imogi_bank_statement_import",
+  "fieldtype": "Link",
+  "options": "IMOGI Bank Statement Import",
+  "insert_after": "transaction_id",
+  "label": "Imogi Bank Statement Import",
+  "read_only": 1,
+  "no_copy": 1,
+  "in_list_view": 0,
+  "description": "Referensi ke batch import mutasi bank (fitur BCA import IMOGI POS) yang membuat baris ini. Dipakai untuk traceability, bukan untuk dedupe (dedupe pakai transaction_id).",
+  "name": "Bank Transaction-imogi_bank_statement_import"
  }
 ]

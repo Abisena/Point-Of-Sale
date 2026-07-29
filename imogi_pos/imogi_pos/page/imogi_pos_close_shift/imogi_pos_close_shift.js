@@ -47,6 +47,7 @@ function inject_close_shift_css() {
 		"imogi-close-shift-css-v4",
 		"imogi-close-shift-css-v5",
 		"imogi-close-shift-css-v6",
+		"imogi-close-shift-css-v7",
 	].forEach((id) => document.getElementById(id)?.remove());
 	if (typeof imogi_pos.inject_cash_denom_css === "function") {
 		imogi_pos.inject_cash_denom_css();
@@ -113,6 +114,18 @@ function inject_close_shift_css() {
 		.imogi-close-btn-primary.is-balanced { background: #0f1f35 !important; }
 		.imogi-close-btn-secondary { background: #fff !important; border: 1px solid #d4d4d8 !important; border-radius: 12px !important; color: #0f1f35 !important; font-weight: 700 !important; padding: 12px 16px !important; width: 100%; }
 		.imogi-close-loading { align-items: center; color: #a1a1aa; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: 320px; }
+		.imogi-close-cashmove-list { display: grid; gap: 8px; margin-bottom: 12px; max-height: 220px; overflow-y: auto; }
+		.imogi-close-cashmove-empty { color: #a1a1aa; font-size: 13px; padding: 8px 0; }
+		.imogi-close-cashmove-row { align-items: center; background: #fafafa; border: 1px solid #f4f4f5; border-radius: 10px; display: flex; gap: 10px; justify-content: space-between; padding: 8px 12px; }
+		.imogi-close-cashmove-info { display: flex; flex-direction: column; min-width: 0; }
+		.imogi-close-cashmove-reason { color: #0f1f35; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+		.imogi-close-cashmove-time { color: #a1a1aa; font-size: 11px; }
+		.imogi-close-cashmove-row strong { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+		.imogi-close-cashmove-row.is-in strong { color: #047857; }
+		.imogi-close-cashmove-row.is-out strong { color: #b91c1c; }
+		.imogi-close-cashmove-totals { display: flex; font-size: 12px; gap: 16px; margin-bottom: 12px; }
+		.imogi-close-cashmove-totals span { color: #52525b; }
+		.imogi-close-cashmove-totals strong { color: #0f1f35; }
 		@media (max-width: 960px) {
 			.imogi-close-layout { grid-template-columns: minmax(0, 1fr); }
 			.imogi-close-sidebar { position: static; }
@@ -138,7 +151,7 @@ function inject_close_shift_css() {
 			.imogi-close-diff-value { font-size: 20px; }
 			.imogi-cash-denom-grid { gap: 8px; }
 		}
-	`, "imogi-close-shift-css-v7");
+	`, "imogi-close-shift-css-v8");
 }
 
 imogi_pos.CloseShiftPage = class CloseShiftPage {
@@ -235,7 +248,13 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 	}
 
 	get_expected_cash() {
-		return flt(this.context?.opening_cash) + flt(this.context?.cash_sales) - flt(this.expenses);
+		return (
+			flt(this.context?.opening_cash) +
+			flt(this.context?.cash_sales) -
+			flt(this.expenses) +
+			flt(this.context?.cash_in_total) -
+			flt(this.context?.cash_out_total)
+		);
 	}
 
 	get_difference() {
@@ -263,6 +282,129 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 			</div>`
 			)
 			.join("");
+	}
+
+	render_cash_movements() {
+		const rows = this.context?.cash_movements || [];
+		const rows_html = rows.length
+			? rows
+					.map((row) => {
+						const sign = row.movement_type === "Cash In" ? "+" : "−";
+						const cls = row.movement_type === "Cash In" ? "is-in" : "is-out";
+						// str_to_user(val, only_time=true) assumes val is ALREADY a bare
+						// "HH:mm:ss" string — feeding it a full datetime (what
+						// posting_datetime actually is) makes moment mis-parse it, so
+						// convert system -> user timezone properly first, same as
+						// str_to_user's own non-only_time branch does internally.
+						const time = row.posting_datetime
+							? moment
+									.tz(row.posting_datetime, frappe.defaultDatetimeFormat, frappe.boot.time_zone.system)
+									.clone()
+									.tz(frappe.boot.time_zone.user)
+									.format(frappe.datetime.get_user_time_fmt())
+							: "";
+						return `
+					<div class="imogi-close-cashmove-row ${cls}">
+						<div class="imogi-close-cashmove-info">
+							<span class="imogi-close-cashmove-reason">${frappe.utils.escape_html(row.reason || "")}</span>
+							<span class="imogi-close-cashmove-time">${frappe.utils.escape_html(time)}</span>
+						</div>
+						<strong>${sign} ${imogi_close_format_rp(row.amount)}</strong>
+					</div>`;
+					})
+					.join("")
+			: `<div class="imogi-close-cashmove-empty">${__("Belum ada catatan kas masuk/keluar.")}</div>`;
+
+		return `
+			<div class="imogi-close-cashmove-list">${rows_html}</div>
+			<div class="imogi-close-cashmove-totals">
+				<span>${__("Total Cash In")}: <strong>${imogi_close_format_rp(this.context?.cash_in_total)}</strong></span>
+				<span>${__("Total Cash Out")}: <strong>${imogi_close_format_rp(this.context?.cash_out_total)}</strong></span>
+			</div>
+			<button type="button" class="btn imogi-close-btn-secondary imogi-close-add-cashmove">
+				<i class="fa fa-plus"></i> ${__("Catat Kas Masuk/Keluar")}
+			</button>
+		`;
+	}
+
+	open_cash_movement_dialog() {
+		const d = new frappe.ui.Dialog({
+			title: __("Catat Kas Masuk/Keluar"),
+			fields: [
+				{
+					fieldname: "movement_type",
+					fieldtype: "Select",
+					label: __("Tipe"),
+					options: "Cash In\nCash Out",
+					default: "Cash In",
+					reqd: 1,
+				},
+				{ fieldname: "amount", fieldtype: "Currency", label: __("Jumlah"), reqd: 1 },
+				{ fieldname: "reason", fieldtype: "Small Text", label: __("Alasan"), reqd: 1 },
+			],
+			primary_action_label: __("Simpan"),
+			primary_action: (values) => {
+				this.save_cash_movement(values, () => {
+					d.hide();
+					frappe.show_alert({ message: __("Kas dicatat"), indicator: "green" }, 3);
+					this.load_context();
+				});
+			},
+		});
+		d.show();
+	}
+
+	save_cash_movement(values, on_done, approval_code) {
+		// NOTE: frappe.call()'s `callback` only fires on HTTP 200 — a thrown
+		// exception (e.g. frappe.PermissionError -> 403) only reaches `error`,
+		// and for 403 that fires with *no arguments at all*, so the response
+		// body can't be inspected there. create_cash_movement_api() therefore
+		// always returns 200 and signals "needs approval" via
+		// message.approval_request instead of throwing — check that here.
+		frappe.call({
+			method: "imogi_pos.api.cashier.create_cash_movement_api",
+			args: {
+				pos_opening_entry: this.context.pos_opening_entry,
+				movement_type: values.movement_type,
+				amount: values.amount,
+				reason: values.reason,
+				approval_code: approval_code || undefined,
+			},
+			freeze: true,
+			callback: (r) => {
+				const res = r.message || {};
+				if (res.approval_request) {
+					this.prompt_cash_movement_supervisor_approval(values, on_done, res.approval_request);
+					return;
+				}
+				on_done(res);
+			},
+		});
+	}
+
+	prompt_cash_movement_supervisor_approval(values, on_done, request_name) {
+		frappe.prompt(
+			[{ fieldname: "pin", fieldtype: "Password", label: __("PIN Supervisor"), reqd: 1 }],
+			(pin_values) => {
+				frappe.call({
+					method: "imogi_pos.api.approval_api.approve_with_pin",
+					args: { request_name, pin: pin_values.pin },
+					freeze: true,
+					callback: () => {
+						this.save_cash_movement(values, on_done, request_name);
+					},
+					error: () => {
+						frappe.msgprint({
+							title: __("PIN Salah"),
+							indicator: "red",
+							message: __("PIN supervisor tidak valid. Coba lagi."),
+						});
+					},
+				});
+			},
+			__("Perlu Approval Supervisor"),
+			__("Approve")
+		);
 	}
 
 	render_denom_grid() {
@@ -372,6 +514,14 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 									<strong>+ ${imogi_close_format_rp(ctx.cash_sales)}</strong>
 								</div>
 								<div class="imogi-close-cash-row">
+									<span>${__("Cash In")}</span>
+									<strong>+ ${imogi_close_format_rp(ctx.cash_in_total)}</strong>
+								</div>
+								<div class="imogi-close-cash-row">
+									<span>${__("Cash Out")}</span>
+									<strong>− ${imogi_close_format_rp(ctx.cash_out_total)}</strong>
+								</div>
+								<div class="imogi-close-cash-row">
 									<span>${__("Pengeluaran")}</span>
 									<input type="number" min="0" step="1" class="imogi-close-input imogi-close-expenses"
 										value="${flt(this.expenses) || ""}" placeholder="0">
@@ -381,6 +531,11 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 									<strong class="imogi-close-expected-main">${imogi_close_format_rp(this.get_expected_cash())}</strong>
 								</div>
 							</div>
+						</div>
+
+						<div class="imogi-close-card">
+							<div class="imogi-close-card-title">${__("Cash In/Out")}</div>
+							${this.render_cash_movements()}
 						</div>
 
 						<div class="imogi-close-card">
@@ -470,6 +625,8 @@ imogi_pos.CloseShiftPage = class CloseShiftPage {
 		$shell.find(".imogi-close-remarks").on("input", (e) => {
 			this.remarks = e.target.value;
 		});
+
+		$shell.find(".imogi-close-add-cashmove").on("click", () => this.open_cash_movement_dialog());
 
 		this.bind_verify_events();
 	}

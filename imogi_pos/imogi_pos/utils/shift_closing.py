@@ -36,6 +36,100 @@ def _get_open_pos_opening(user=None, pos_opening_entry=None):
 	return frappe.get_doc("POS Opening Entry", entries[0].name)
 
 
+def get_cash_movement_totals(pos_opening_entry):
+	"""Sum of submitted Cash In / Cash Out movements for an open shift."""
+	if not pos_opening_entry:
+		return 0, 0
+	rows = frappe.get_all(
+		"IMOGI POS Cash Movement",
+		filters={"pos_opening_entry": pos_opening_entry, "docstatus": 1},
+		fields=["movement_type", "amount"],
+	)
+	cash_in = sum(flt(r.amount) for r in rows if r.movement_type == "Cash In")
+	cash_out = sum(flt(r.amount) for r in rows if r.movement_type == "Cash Out")
+	return cash_in, cash_out
+
+
+def create_cash_movement(pos_opening_entry, movement_type, amount, reason, approval_code=None):
+	movement_type = (movement_type or "").strip()
+	if movement_type not in ("Cash In", "Cash Out"):
+		frappe.throw(_("Tipe harus 'Cash In' atau 'Cash Out'."))
+	reason = (reason or "").strip()
+	if not reason:
+		frappe.throw(_("Alasan wajib diisi."))
+	if flt(amount) <= 0:
+		frappe.throw(_("Jumlah harus lebih besar dari 0."))
+
+	# Reuses the same "shift still open + belongs to this user" check the
+	# closing flow relies on, so a movement can't be logged against a shift
+	# that's already closed or belongs to someone else.
+	_get_open_pos_opening(frappe.session.user, pos_opening_entry)
+
+	from imogi_pos.imogi_pos.utils.approval import cash_movement_requires_approval, require_supervisor_approval
+
+	if cash_movement_requires_approval(amount):
+		try:
+			require_supervisor_approval(
+				movement_type,
+				amount=flt(amount),
+				approval_code=approval_code,
+				reason=reason,
+			)
+		except frappe.PermissionError:
+			# frappe.call()'s callback never fires on a thrown exception — only
+			# error(), and only with no arguments for a 403/PermissionError (see
+			# frappe/public/js/frappe/request.js statusCode[403]). Returning a
+			# normal "needs approval" payload instead of letting this propagate
+			# is the pattern that actually works client-side (same as
+			# submit_purchase_order's approval flow).
+			frappe.clear_messages()
+			request_name = frappe.db.get_value(
+				"IMOGI POS Approval Request",
+				{"approval_type": movement_type, "amount": flt(amount), "status": "Pending"},
+				"name",
+				order_by="creation desc",
+			)
+			return {
+				"name": None,
+				"status": "Pending Approval",
+				"approval_request": request_name,
+				"message": _("Cash {0} menunggu approval supervisor. Kode: {1}").format(
+					movement_type, request_name or "-"
+				),
+			}
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "IMOGI POS Cash Movement",
+			"pos_opening_entry": pos_opening_entry,
+			"movement_type": movement_type,
+			"amount": flt(amount),
+			"reason": reason,
+		}
+	)
+	doc.insert()
+	doc.submit()
+	frappe.db.commit()
+	return {
+		"name": doc.name,
+		"movement_type": doc.movement_type,
+		"amount": flt(doc.amount),
+		"approval_request": None,
+	}
+
+
+def list_cash_movements(pos_opening_entry):
+	rows = frappe.get_all(
+		"IMOGI POS Cash Movement",
+		filters={"pos_opening_entry": pos_opening_entry, "docstatus": 1},
+		fields=["name", "movement_type", "amount", "reason", "user", "posting_datetime"],
+		order_by="posting_datetime desc",
+	)
+	cash_in_total = sum(flt(r.amount) for r in rows if r.movement_type == "Cash In")
+	cash_out_total = sum(flt(r.amount) for r in rows if r.movement_type == "Cash Out")
+	return {"rows": rows, "cash_in_total": cash_in_total, "cash_out_total": cash_out_total}
+
+
 def build_closing_summary(opening):
 	from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
 
@@ -49,6 +143,7 @@ def build_closing_summary(opening):
 	opening_cash = flt(cash_row.opening_amount) if cash_row else 0
 	expected_cash = flt(cash_row.expected_amount) if cash_row else 0
 	cash_sales = expected_cash - opening_cash
+	cash_in_total, cash_out_total = get_cash_movement_totals(opening.name)
 
 	payment_breakdown = []
 	for row in closing.payment_reconciliation:
@@ -76,6 +171,8 @@ def build_closing_summary(opening):
 		"opening_cash": opening_cash,
 		"cash_sales": cash_sales,
 		"expected_cash": expected_cash,
+		"cash_in_total": cash_in_total,
+		"cash_out_total": cash_out_total,
 		"payment_breakdown": payment_breakdown,
 	}
 
@@ -101,6 +198,12 @@ def get_shift_closing_page_context(user=None, pos_opening_entry=None):
 
 	summary = build_closing_summary(opening)
 	pending = get_pending_shift_closing(user, opening.name)
+	cash_movements = frappe.get_all(
+		"IMOGI POS Cash Movement",
+		filters={"pos_opening_entry": opening.name, "docstatus": 1},
+		fields=["name", "movement_type", "amount", "reason", "user", "posting_datetime"],
+		order_by="posting_datetime desc",
+	)
 
 	from imogi_pos.imogi_pos.utils.flow import get_settings
 
@@ -113,6 +216,7 @@ def get_shift_closing_page_context(user=None, pos_opening_entry=None):
 		"expenses": 0,
 		"actual_cash": 0,
 		"remarks": "",
+		"cash_movements": cash_movements,
 		"enable_shift_cash_detail": cint(getattr(settings, "enable_shift_cash_detail", 0)),
 	}
 
@@ -281,10 +385,12 @@ def sync_to_pos_closing_entry(doc):
 	cash_mode = get_cash_payment_mode(doc.company)
 	expenses = flt(doc.expenses)
 	actual_cash = flt(doc.actual_cash)
+	cash_in_total = flt(doc.cash_in_total)
+	cash_out_total = flt(doc.cash_out_total)
 
 	for row in closing.payment_reconciliation:
 		if row.mode_of_payment == cash_mode:
-			row.expected_amount = flt(row.expected_amount) - expenses
+			row.expected_amount = flt(row.expected_amount) - expenses + cash_in_total - cash_out_total
 			row.closing_amount = actual_cash
 			row.difference = flt(row.closing_amount) - flt(row.expected_amount)
 		else:
@@ -444,6 +550,16 @@ def validate_shift_closing(doc):
 	opening = frappe.get_doc("POS Opening Entry", doc.pos_opening_entry)
 	if opening.pos_closing_entry:
 		frappe.throw(_("Shift sudah ditutup."))
+
+	# Runs inside the DocType's own validate(), so this applies no matter how the
+	# document was created (custom API, Desk form, or a raw REST call) — a
+	# cashier's create/write/submit DocPerm on IMOGI POS Shift Closing lets them
+	# insert one directly, and without this check they could close (and set the
+	# counted cash for) a shift that belongs to someone else entirely.
+	user = frappe.session.user
+	is_admin = user == "Administrator" or "System Manager" in frappe.get_roles(user)
+	if not is_admin and opening.user != user and opening.owner != user:
+		frappe.throw(_("Anda tidak punya akses menutup shift ini."), frappe.PermissionError)
 
 	if flt(doc.actual_cash) < 0:
 		frappe.throw(_("Kas aktual tidak boleh negatif."))

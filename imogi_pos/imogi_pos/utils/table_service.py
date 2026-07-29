@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 from imogi_pos.imogi_pos.utils.flow import get_settings, release_restaurant_table, reserve_restaurant_table
 from imogi_pos.imogi_pos.utils.floor_area import list_areas_for_service, list_floors_for_service
@@ -115,7 +115,7 @@ def seat_table_reservation(reservation_name: str):
 	}
 
 
-def get_open_orders_by_table(company: str | None = None) -> dict[str, dict]:
+def get_open_orders_by_table(company: str | None = None) -> dict[str, list[dict]]:
 	settings = get_settings()
 	company = company or settings.default_company
 	filters = {
@@ -140,13 +140,13 @@ def get_open_orders_by_table(company: str | None = None) -> dict[str, dict]:
 			"requires_kitchen",
 			"kitchen_order",
 		],
-		order_by="modified desc",
+		order_by="creation asc",
 		limit=200,
 	)
-	by_table: dict[str, dict] = {}
+	by_table: dict[str, list[dict]] = {}
 	for row in rows:
-		if row.restaurant_table and row.restaurant_table not in by_table:
-			by_table[row.restaurant_table] = row
+		if row.restaurant_table:
+			by_table.setdefault(row.restaurant_table, []).append(row)
 	return by_table
 
 
@@ -177,6 +177,8 @@ def list_tables_for_service(company=None, include_occupied=1, status=None):
 			"shape",
 			"pos_x",
 			"pos_y",
+			"pos_scale",
+			"pos_rotation",
 		],
 		order_by="table_number asc",
 	)
@@ -211,15 +213,29 @@ def list_tables_for_service(company=None, include_occupied=1, status=None):
 		floor = floor_map.get(row.restaurant_floor)
 		if floor:
 			row["floor_name"] = floor.floor_name
-		order = open_orders.get(row.name)
+		orders = open_orders.get(row.name) or []
+		order = orders[0] if orders else None
+		row["open_orders"] = [o.name for o in orders]
+		row["open_order_count"] = len(orders)
 		row["open_order"] = order.name if order else None
 		row["open_order_status"] = order.status if order else None
-		row["open_order_total"] = order.grand_total if order else None
+		row["open_order_total"] = sum(flt(o.grand_total) for o in orders) if orders else None
 		row["open_order_customer"] = order.customer_name if order else None
 		row["open_order_type"] = order.order_type if order else None
 		row["open_order_since"] = order.creation.isoformat() if order and order.creation else None
-		if order and cint(order.requires_kitchen):
-			row["open_order_kitchen"] = "done" if order.kitchen_order else "pending"
+		if orders and any(cint(o.requires_kitchen) for o in orders):
+			row["open_order_kitchen"] = (
+				"done" if all(o.kitchen_order for o in orders if cint(o.requires_kitchen)) else "pending"
+			)
 		else:
 			row["open_order_kitchen"] = None
+		if order and (row.status != "Occupied" or row.current_order != order.name):
+			row["status"] = "Occupied"
+			row["current_order"] = order.name
+			frappe.db.set_value(
+				"IMOGI Restaurant Table",
+				row.name,
+				{"status": "Occupied", "current_order": order.name},
+				update_modified=False,
+			)
 	return rows

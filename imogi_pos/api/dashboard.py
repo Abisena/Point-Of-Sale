@@ -161,6 +161,17 @@ def get_dashboard_metrics(date=None, branch=None, pos_profile=None, company=None
 	else:
 		payload.update(_get_restaurant_metrics(day_start, day_end, company=company, pos_profile=pos_profile))
 
+	payload["insights"] = _get_saas_insights(
+		day_start,
+		day_end,
+		company=company,
+		pos_profile=pos_profile,
+		sales_today=payload.get("sales_today"),
+		completed_today=payload.get("completed_today"),
+		orders_today=payload.get("orders_today"),
+		avg_ticket=payload.get("avg_ticket"),
+	)
+
 	try:
 		from imogi_pos.api.reports_api import get_extended_reports
 
@@ -174,6 +185,184 @@ def get_dashboard_metrics(date=None, branch=None, pos_profile=None, company=None
 		payload["extended_reports"] = {}
 
 	return payload
+
+
+def _pct_change(current, previous):
+	current = flt(current)
+	previous = flt(previous)
+	if previous == 0:
+		if current == 0:
+			return 0
+		return 100
+	return round(((current - previous) / abs(previous)) * 100, 1)
+
+
+def _day_sales_snapshot(day_start, day_end, company=None, pos_profile=None):
+	scope_clause, scope_values = _scoped_clauses(company, pos_profile)
+	values = {"day_start": day_start, "day_end": day_end, **scope_values}
+	row = frappe.db.sql(
+		f"""
+		select
+			count(*) as orders,
+			sum(case when status = 'Completed' then 1 else 0 end) as completed,
+			sum(case when status = 'Cancelled' then 1 else 0 end) as cancelled,
+			sum(case when status = 'Awaiting Payment' then 1 else 0 end) as awaiting,
+			coalesce(sum(case when status = 'Completed' then grand_total else 0 end), 0) as sales
+		from `tabRiwayat Order`
+		where creation >= %(day_start)s and creation < %(day_end)s
+		{scope_clause}
+		""",
+		values,
+		as_dict=True,
+	)[0]
+	completed = cint(row.completed)
+	sales = flt(row.sales)
+	return {
+		"orders": cint(row.orders),
+		"completed": completed,
+		"cancelled": cint(row.cancelled),
+		"awaiting": cint(row.awaiting),
+		"sales": sales,
+		"avg_ticket": flt(sales / completed) if completed else 0,
+	}
+
+
+def _get_saas_insights(
+	day_start,
+	day_end,
+	company=None,
+	pos_profile=None,
+	sales_today=None,
+	completed_today=None,
+	orders_today=None,
+	avg_ticket=None,
+):
+	"""SaaS-style comparisons, funnel, and trend series for the dashboard."""
+	scope_clause, scope_values = _scoped_clauses(company, pos_profile)
+
+	yesterday_start = add_days(day_start, -1)
+	yesterday_end = day_start
+	yesterday = _day_sales_snapshot(yesterday_start, yesterday_end, company, pos_profile)
+
+	if sales_today is None or completed_today is None or orders_today is None:
+		today = _day_sales_snapshot(day_start, day_end, company, pos_profile)
+		today_sales = today["sales"]
+		today_completed = today["completed"]
+		today_orders = today["orders"]
+		today_avg = today["avg_ticket"]
+	else:
+		today_sales = flt(sales_today)
+		today_completed = cint(completed_today)
+		today_orders = cint(orders_today)
+		today_avg = (
+			flt(avg_ticket)
+			if avg_ticket is not None
+			else (flt(today_sales / today_completed) if today_completed else 0)
+		)
+
+	# Week starts Monday
+	weekday = day_start.weekday()  # Mon=0
+	week_start = add_days(day_start, -weekday)
+	month_start = day_start.replace(day=1)
+
+	wtd = _day_sales_snapshot(week_start, day_end, company, pos_profile)
+	mtd = _day_sales_snapshot(month_start, day_end, company, pos_profile)
+
+	trend_start = add_days(day_start, -6)
+	trend_rows = frappe.db.sql(
+		f"""
+		select date(creation) as day,
+			count(*) as orders,
+			sum(case when status = 'Completed' then 1 else 0 end) as completed,
+			coalesce(sum(case when status = 'Completed' then grand_total else 0 end), 0) as sales
+		from `tabRiwayat Order`
+		where creation >= %(trend_start)s and creation < %(day_end)s
+		{scope_clause}
+		group by date(creation)
+		order by day asc
+		""",
+		{"trend_start": trend_start, "day_end": day_end, **scope_values},
+		as_dict=True,
+	)
+	by_day = {str(r.day): r for r in trend_rows}
+	last_7_days = []
+	for offset in range(7):
+		d = add_days(trend_start, offset)
+		key = str(d)
+		row = by_day.get(key)
+		last_7_days.append(
+			{
+				"date": key,
+				"label": d.strftime("%d/%m"),
+				"weekday": d.strftime("%a"),
+				"orders": cint(row.orders) if row else 0,
+				"completed": cint(row.completed) if row else 0,
+				"sales": flt(row.sales) if row else 0,
+			}
+		)
+
+	funnel_rows = frappe.db.sql(
+		f"""
+		select status, count(*) as count
+		from `tabRiwayat Order`
+		where creation >= %(day_start)s and creation < %(day_end)s
+		{scope_clause}
+		group by status
+		order by count desc
+		""",
+		{"day_start": day_start, "day_end": day_end, **scope_values},
+		as_dict=True,
+	)
+
+	hour_rows = frappe.db.sql(
+		f"""
+		select hour(creation) as hour_slot,
+			count(*) as order_count,
+			coalesce(sum(case when status = 'Completed' then grand_total else 0 end), 0) as sales
+		from `tabRiwayat Order`
+		where creation >= %(day_start)s and creation < %(day_end)s
+			and status not in ('Cancelled', 'Draft')
+		{scope_clause}
+		group by hour(creation)
+		order by sales desc
+		limit 1
+		""",
+		{"day_start": day_start, "day_end": day_end, **scope_values},
+		as_dict=True,
+	)
+	peak = hour_rows[0] if hour_rows else None
+
+	cancelled_today = next((cint(r.count) for r in funnel_rows if r.status == "Cancelled"), 0)
+	awaiting_today = next((cint(r.count) for r in funnel_rows if r.status == "Awaiting Payment"), 0)
+	conversion = round((today_completed / today_orders) * 100, 1) if today_orders else 0
+
+	return {
+		"yesterday": yesterday,
+		"deltas": {
+			"sales_pct": _pct_change(today_sales, yesterday["sales"]),
+			"completed_pct": _pct_change(today_completed, yesterday["completed"]),
+			"orders_pct": _pct_change(today_orders, yesterday["orders"]),
+			"avg_ticket_pct": _pct_change(today_avg, yesterday["avg_ticket"]),
+			"awaiting_pct": _pct_change(awaiting_today, yesterday["awaiting"]),
+			"cancelled_pct": _pct_change(cancelled_today, yesterday["cancelled"]),
+		},
+		"week_to_date": wtd,
+		"month_to_date": mtd,
+		"last_7_days": last_7_days,
+		"status_funnel": [{"status": r.status, "count": cint(r.count)} for r in funnel_rows],
+		"cancelled_today": cancelled_today,
+		"conversion_rate": conversion,
+		"peak_hour": (
+			{
+				"hour": cint(peak.hour_slot),
+				"label": f"{int(peak.hour_slot):02d}:00",
+				"orders": cint(peak.order_count),
+				"sales": flt(peak.sales),
+			}
+			if peak
+			else None
+		),
+	}
 
 
 def _get_top_products(day_start, day_end, company=None, pos_profile=None, limit=5):
@@ -304,6 +493,7 @@ def _get_restaurant_metrics(day_start, day_end, company=None, pos_profile=None):
 		"in_kitchen": in_kitchen,
 		"in_service": in_service,
 		"sales_today": flt(sales),
+		"avg_ticket": flt(sales / completed) if completed else 0,
 		"by_channel": by_channel,
 		"by_type": by_type,
 		"open_kitchen_orders": open_kitchen,

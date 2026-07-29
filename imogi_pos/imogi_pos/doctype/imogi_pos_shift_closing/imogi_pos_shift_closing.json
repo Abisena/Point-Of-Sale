@@ -22,6 +22,9 @@
   "cash_sales",
   "cash_section",
   "expenses",
+  "cash_in_total",
+  "column_break_cash",
+  "cash_out_total",
   "expected_cash",
   "actual_cash",
   "difference",
@@ -136,6 +139,22 @@
    "label": "Pengeluaran"
   },
   {
+   "fieldname": "cash_in_total",
+   "fieldtype": "Currency",
+   "label": "Total Cash In",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cash",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cash_out_total",
+   "fieldtype": "Currency",
+   "label": "Total Cash Out",
+   "read_only": 1
+  },
+  {
    "fieldname": "expected_cash",
    "fieldtype": "Currency",
    "label": "Kas Diharapkan",
@@ -216,6 +235,38 @@
    "share": 0,
    "submit": 1,
    "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "read": 1,
+   "report": 1,
+   "role": "IMOGI Supervisor",
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "read": 1,
+   "report": 1,
+   "role": "IMOGI Manager",
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "read": 1,
+   "report": 1,
+   "role": "IMOGI Owner",
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "read": 1,
+   "report": 1,
+   "role": "IMOGI Finance",
+   "write": 0
   }
  ],
  "sort_field": "modified",

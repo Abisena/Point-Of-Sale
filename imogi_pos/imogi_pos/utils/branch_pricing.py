@@ -178,17 +178,20 @@ def sync_prices_from_master(branch_codes=None, item_codes=None, price_lists=None
 
 
 def sync_item_price_to_branches(item_code, rate, uom=None, company=None):
-	"""Push one item price to all branch lists (used by menu import)."""
-	settings = get_settings()
-	if not cint(settings.get("sync_prices_to_branches_on_import")) and not cint(settings.multi_branch):
-		master = get_master_selling_price_list(settings, company=company)
-		return _upsert_item_price_on_list(item_code, rate, master, uom=uom)
+	"""Upsert selling Item Price on master/POS list (used by menu import).
 
+	By default writes **one** Item Price only. Optional fan-out to branch lists when
+	Settings → Juga Sync Harga ke Cabang saat Import Menu is enabled.
+	"""
+	settings = get_settings()
 	master = get_master_selling_price_list(settings, company=company)
 	result = _upsert_item_price_on_list(item_code, rate, master, uom=uom)
-	for price_list in collect_branch_price_lists(company=company or settings.default_company, include_master=0):
-		if price_list != master:
-			_upsert_item_price_on_list(item_code, rate, price_list, uom=uom)
+	if cint(settings.get("sync_prices_to_branches_on_import")):
+		for price_list in collect_branch_price_lists(
+			company=company or settings.default_company, include_master=0
+		):
+			if price_list and price_list != master:
+				_upsert_item_price_on_list(item_code, rate, price_list, uom=uom)
 	return result
 
 

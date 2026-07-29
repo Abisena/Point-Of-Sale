@@ -28,12 +28,10 @@ def is_restaurant():
 
 def uses_kitchen_or_fulfillment_flow(settings=None) -> bool:
 	"""Kitchen / packing steps follow IMOGI POS Settings toggles, not business mode."""
-	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+	from imogi_pos.imogi_pos.utils.feature_gating import is_fulfillment_operational, is_setting_enabled
 
 	settings = settings or get_settings()
-	return is_setting_enabled("enable_kitchen_display", settings) or is_setting_enabled(
-		"enable_fulfillment", settings
-	)
+	return is_setting_enabled("enable_kitchen_display", settings) or is_fulfillment_operational(settings)
 
 
 def is_feature_suppressed_for_business(feature_id: str | None, settings=None) -> bool:
@@ -65,8 +63,10 @@ def apply_business_profile(business_type):
 
 def get_flow_summary(business_type=None):
 	settings = get_settings()
+	from imogi_pos.imogi_pos.utils.feature_gating import is_fulfillment_operational
+
 	kds_on = bool(settings.enable_kitchen_display)
-	fulfillment_on = bool(settings.enable_fulfillment)
+	fulfillment_on = is_fulfillment_operational(settings)
 	if not kds_on and not fulfillment_on:
 		return {
 			"label": _("Alur Langsung"),

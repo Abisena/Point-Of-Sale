@@ -54,10 +54,25 @@ const IMOGI_DASH_FOCUS_META = {
 		page_title: __("Food Cost"),
 		selector: '[data-imogi-dash-focus="food_cost_report"]',
 	},
+	waste_report: {
+		subtitle: __("Waste & spoilage dari Inventory Hub (Material Issue)."),
+		page_title: __("Waste Report"),
+		selector: '[data-imogi-dash-focus="waste_report"]',
+	},
+	tax_report: {
+		subtitle: __("Ringkasan PPN kasir — DPP, pajak, dan omzet per hari."),
+		page_title: __("Tax Report"),
+		selector: '[data-imogi-dash-focus="tax_report"]',
+	},
 	table_turnover_report: {
 		subtitle: __("Table turnover — rotasi dan penjualan per meja."),
 		page_title: __("Table Turnover"),
 		selector: '[data-imogi-dash-focus="table_turnover_report"]',
+	},
+	customer_visit_report: {
+		subtitle: __("Frekuensi kunjungan dan spend customer terdaftar."),
+		page_title: __("Customer Visit"),
+		selector: '[data-imogi-dash-focus="customer_visit_report"]',
 	},
 	low_stock: {
 		subtitle: __("Stok menipis — item yang perlu restock."),

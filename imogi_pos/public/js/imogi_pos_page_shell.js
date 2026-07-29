@@ -226,20 +226,26 @@ imogi_pos.page_shell.render_pagination = function (page, total, page_size) {
 	}
 	const start = (page - 1) * page_size;
 	const end = Math.min(start + page_size, total);
+	const prev_page = Math.max(1, page - 1);
+	const next_page = Math.min(total_pages, page + 1);
 	return {
 		page,
 		total_pages,
 		html: `
-			<div class="imogi-web-pagination">
+			<div class="imogi-web-pagination imogi-web-pager">
 				<span class="imogi-web-pagination-info">${__("Menampilkan")} ${start + 1}–${end} ${__(
 					"dari"
 				)} ${total}</span>
 				<div class="imogi-web-pagination-controls">
-					<button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-web-btn--xs imogi-web-page-prev"${page <= 1 ? " disabled" : ""}>
+					<button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-web-btn--xs imogi-web-page-prev" data-page="${prev_page}"${
+			page <= 1 ? " disabled" : ""
+		}>
 						<i class="fa fa-chevron-left"></i> ${__("Sebelumnya")}
 					</button>
 					<span class="imogi-web-pagination-page">${page} / ${total_pages}</span>
-					<button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-web-btn--xs imogi-web-page-next"${page >= total_pages ? " disabled" : ""}>
+					<button type="button" class="imogi-web-btn imogi-web-btn-ghost imogi-web-btn--xs imogi-web-page-next" data-page="${next_page}"${
+			page >= total_pages ? " disabled" : ""
+		}>
 						${__("Berikutnya")} <i class="fa fa-chevron-right"></i>
 					</button>
 				</div>

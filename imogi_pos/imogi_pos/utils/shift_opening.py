@@ -116,23 +116,45 @@ def _build_shift_opening_doc(payments, draft_name=None, remarks=None, user=None,
 	return doc
 
 
+def _acquire_shift_open_lock(user, expires_in_sec=15):
+	"""SET NX lock so two concurrent 'buka shift' requests for the same user
+	can't both pass the 'no open shift yet' check in validate_shift_opening()
+	before either has committed — same pattern as the QRIS gateway order lock
+	in payment_gateway.py."""
+	cache = frappe.cache()
+	key = cache.make_key(f"imogi_shift_open_lock:{user}")
+	try:
+		return bool(cache.set(name=key, value=b"1", nx=True, ex=expires_in_sec))
+	except Exception:
+		return True
+
+
+def _release_shift_open_lock(user):
+	frappe.cache().delete_value(f"imogi_shift_open_lock:{user}")
+
+
 def create_and_submit_shift_opening(payments, remarks=None, user=None, pos_profile=None, company=None):
 	user = user or frappe.session.user
-	doc = _build_shift_opening_doc(
-		payments,
-		draft_name=get_pending_shift_opening(user),
-		remarks=remarks,
-		user=user,
-		pos_profile=pos_profile,
-		company=company,
-	)
-	doc.submit()
-	frappe.db.commit()
+	if not _acquire_shift_open_lock(user):
+		frappe.throw(_("Permintaan buka shift sedang diproses. Coba lagi sebentar."))
+	try:
+		doc = _build_shift_opening_doc(
+			payments,
+			draft_name=get_pending_shift_opening(user),
+			remarks=remarks,
+			user=user,
+			pos_profile=pos_profile,
+			company=company,
+		)
+		doc.submit()
+		frappe.db.commit()
 
-	return {
-		"name": doc.name,
-		"pos_opening_entry": doc.pos_opening_entry,
-	}
+		return {
+			"name": doc.name,
+			"pos_opening_entry": doc.pos_opening_entry,
+		}
+	finally:
+		_release_shift_open_lock(user)
 
 
 def sync_to_pos_opening_entry(doc):

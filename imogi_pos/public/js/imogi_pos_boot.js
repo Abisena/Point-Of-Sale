@@ -275,7 +275,7 @@ imogi_pos.VARIANT_MODAL_ASSET_VERSION = "v12";
 
 // Frappe caches Page JS in localStorage (`_page:<name>`). Bump when cashier UI changes.
 (function imogi_pos_bust_page_cache() {
-	const CACHE_VERSION = "20260702-table-service-spa-v50";
+	const CACHE_VERSION = "20260721-fix-post-checkout-table-reload-v55";
 	const VERSION_KEY = "_imogi_pos_page_cache_version";
 	const PAGES = [
 		"imogi-pos-cashier",

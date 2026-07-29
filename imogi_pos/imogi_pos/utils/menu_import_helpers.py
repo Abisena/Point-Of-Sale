@@ -253,6 +253,22 @@ def normalize_menu_sheet_rows(raw_rows):
 	return sheet_rows_to_dicts(raw_rows)
 
 
+def _detect_csv_delimiter(csv_text: str) -> str:
+	"""Excel often saves 'CSV' as tab- or semicolon-separated depending on locale."""
+	sample = (csv_text or "")[:4096]
+	if not sample.strip():
+		return ","
+	try:
+		return csv.Sniffer().sniff(sample, delimiters=",;\t|").delimiter
+	except csv.Error:
+		pass
+	first = next((line for line in sample.splitlines() if line.strip()), "")
+	for delim in ("\t", ";", ",", "|"):
+		if first.count(delim) >= 1:
+			return delim
+	return ","
+
+
 def _load_csv_rows(csv_text):
 	if not csv_text:
 		frappe.throw(_("Upload file CSV/Excel atau tempel teks CSV"))
@@ -260,7 +276,8 @@ def _load_csv_rows(csv_text):
 	if not csv_text.strip():
 		frappe.throw(_("Upload file CSV/Excel atau tempel teks CSV"))
 
-	reader = csv.reader(io.StringIO(csv_text))
+	delimiter = _detect_csv_delimiter(csv_text)
+	reader = csv.reader(io.StringIO(csv_text), delimiter=delimiter)
 	raw_rows = list(reader)
 	if not raw_rows:
 		frappe.throw(_("File tidak memiliki baris header"))
@@ -268,13 +285,13 @@ def _load_csv_rows(csv_text):
 	if _looks_like_legacy_bom(raw_rows):
 		return convert_legacy_bom_rows(raw_rows)
 
-	dict_reader = csv.DictReader(io.StringIO(csv_text))
+	dict_reader = csv.DictReader(io.StringIO(csv_text), delimiter=delimiter)
 	if not dict_reader.fieldnames:
 		frappe.throw(_("File tidak memiliki baris header"))
 
 	rows = []
 	for idx, raw in enumerate(dict_reader, start=2):
-		row = dict(raw)
+		row = {k: v for k, v in dict(raw).items() if k is not None}
 		row["_row"] = idx
 		rows.append(row)
 	return rows

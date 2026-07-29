@@ -2,6 +2,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import cint
 
 from imogi_pos.imogi_pos.utils.feature_gating import get_settings_field_locks
 from imogi_pos.imogi_pos.utils.feature_registry import (
@@ -32,7 +33,7 @@ def _require_matrix_access():
 
 @frappe.whitelist()
 def get_feature_matrix(tier=None):
-	"""Return full 101-feature matrix for admin UI / debugging."""
+	"""Return full feature matrix for admin UI / debugging."""
 	_require_matrix_access()
 	preview_tier = (tier or "").strip() or None
 	return serialize_feature_matrix(preview_tier or get_subscription_tier())
@@ -40,7 +41,7 @@ def get_feature_matrix(tier=None):
 
 @frappe.whitelist()
 def get_tier_summary():
-	"""Return tier counts (Free=7, Starter=15, Pro=79, Enterprise=101)."""
+	"""Return tier counts (Free=7, Starter=15, Pro=79, Enterprise=99)."""
 	_require_matrix_access()
 	return {
 		"tiers": list(SUBSCRIPTION_TIERS),
@@ -106,6 +107,73 @@ def get_workspace_tier_context():
 		"tier": tier,
 		"tier_disabled": is_subscription_tier_disabled(),
 		"tier_access": serialize_workspace_link_access(tier, user=frappe.session.user),
+	}
+
+
+@frappe.whitelist()
+def get_workspace_hub():
+	"""Branded hub payload for Imogi POS workspace (filtered by tier + role)."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Login required"), frappe.AuthenticationError)
+
+	from imogi_pos.imogi_pos.utils.deployment_mode import is_subscription_tier_disabled
+	from imogi_pos.imogi_pos.utils.workspace_catalog import WORKSPACE_SECTIONS, WORKSPACE_SHORTCUTS
+	from imogi_pos.imogi_pos.utils.workspace_tier_gating import is_workspace_item_allowed_for_user
+
+	tier = None if is_subscription_tier_disabled() else get_subscription_tier()
+	user = frappe.session.user
+
+	def allowed(item):
+		return is_workspace_item_allowed_for_user(
+			item.get("type") or item.get("link_type"),
+			item.get("link_to"),
+			tier,
+			user,
+			label=item.get("label"),
+			feature_id=item.get("feature_id"),
+		)
+
+	shortcuts = []
+	for row in WORKSPACE_SHORTCUTS:
+		if not allowed(row):
+			continue
+		shortcuts.append(
+			{
+				"label": row["label"],
+				"link_type": row.get("type") or "Page",
+				"link_to": row["link_to"],
+				"color": row.get("color") or "Orange",
+				"feature_id": row.get("feature_id"),
+				"dashboard_focus": row.get("dashboard_focus"),
+			}
+		)
+
+	sections = []
+	for section in WORKSPACE_SECTIONS:
+		links = []
+		for link in section.get("links") or []:
+			if not allowed(link):
+				continue
+			links.append(
+				{
+					"label": link["label"],
+					"link_type": link["link_type"],
+					"link_to": link["link_to"],
+					"is_query_report": cint(link.get("is_query_report")),
+					"feature_id": link.get("feature_id"),
+					"dashboard_focus": link.get("dashboard_focus"),
+				}
+			)
+		if links:
+			sections.append({"label": section["label"], "links": links})
+
+	full_name = frappe.db.get_value("User", user, "full_name") or user
+	return {
+		"tier": tier,
+		"tier_disabled": is_subscription_tier_disabled(),
+		"user_name": full_name,
+		"shortcuts": shortcuts,
+		"sections": sections,
 	}
 
 

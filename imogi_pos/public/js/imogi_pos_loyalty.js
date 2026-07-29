@@ -73,6 +73,7 @@ imogi_pos.loyalty.setup_payment_ui = function (page, dialog, subtotal) {
 	const sync_balance = () => {
 		const loyalty = me.customer_loyalty || {};
 		const points = cint(loyalty.points);
+		const birthday = loyalty.birthday || {};
 		if (points > 0) {
 			$balance.text(`${points} ${__("poin")}`);
 		} else if (me.selected_customer) {
@@ -81,6 +82,15 @@ imogi_pos.loyalty.setup_payment_ui = function (page, dialog, subtotal) {
 			$balance.text(__("Pilih customer untuk poin"));
 		}
 		$points.prop("disabled", !me.selected_customer);
+		if (birthday.eligible) {
+			$hint.text(
+				__("Promo ulang tahun aktif: diskon {0}% otomatis di total.").format(
+					flt(birthday.discount_percent) || 10
+				)
+			);
+		} else {
+			$hint.text(__("Voucher dan poin bisa digabung dengan diskon manual."));
+		}
 	};
 
 	$toggle.off("click.imogiPromo").on("click.imogiPromo", () => {
@@ -105,7 +115,6 @@ imogi_pos.loyalty.setup_payment_ui = function (page, dialog, subtotal) {
 	});
 
 	sync_balance();
-	$hint.text(__("Voucher dan poin bisa digabung dengan diskon manual."));
 };
 
 imogi_pos.loyalty.refresh_preview = function (page, dialog, subtotal) {

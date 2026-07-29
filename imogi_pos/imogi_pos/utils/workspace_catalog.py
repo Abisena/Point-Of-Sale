@@ -24,7 +24,7 @@ WORKSPACE_SECTIONS = [
 				"onboard": 1,
 			},
 			{
-				"label": "Penjualan Harian UMKM",
+				"label": "Penjualan Harian",
 				"link_type": "Report",
 				"link_to": "IMOGI UMKM Daily Sales",
 				"is_query_report": 1,
@@ -84,6 +84,7 @@ WORKSPACE_SECTIONS = [
 		"label": "Kitchen & Fulfillment",
 		"links": [
 			{"label": "Kitchen Display", "link_type": "Page", "link_to": "kitchen-display", "feature_id": "kitchen_display", "onboard": 1},
+			{"label": "Kitchen Performance", "link_type": "Page", "link_to": "kitchen-performance", "feature_id": "kitchen_performance"},
 			{"label": "Kitchen Order", "link_type": "Page", "link_to": "kitchen-order", "feature_id": "kitchen_queue"},
 			{"label": "Kitchen Station", "link_type": "Page", "link_to": "kitchen-station", "feature_id": "kitchen_station"},
 			{"label": "Fulfillment Queue", "link_type": "Page", "link_to": "fulfillment-queue", "feature_id": "delivery_order", "onboard": 1},
@@ -92,7 +93,7 @@ WORKSPACE_SECTIONS = [
 		],
 	},
 	{
-		"label": 		"Meja & Layanan",
+		"label": "Meja & Layanan",
 		"links": [
 			{"label": "Table Service", "link_type": "Page", "link_to": "table-service", "feature_id": "table_management", "onboard": 1},
 			{"label": "Restaurant Floor", "link_type": "DocType", "link_to": "IMOGI Restaurant Floor", "feature_id": "table_management"},
@@ -109,6 +110,7 @@ WORKSPACE_SECTIONS = [
 			{"label": "Kategori Menu", "link_type": "Page", "link_to": "imogi-pos-menu-category", "feature_id": "menu_category"},
 			{"label": "Item / Produk", "link_type": "DocType", "link_to": "Item", "feature_id": "menu"},
 			{"label": "Combo Package", "link_type": "DocType", "link_to": "IMOGI POS Combo Package", "feature_id": "combo_package"},
+			{"label": "Recipe Hub", "link_type": "Page", "link_to": "recipe-hub", "feature_id": "recipe_management", "onboard": 1},
 			{"label": "BOM / Recipe", "link_type": "DocType", "link_to": "BOM", "feature_id": "recipe_management"},
 		],
 	},
@@ -128,12 +130,15 @@ WORKSPACE_SECTIONS = [
 			{"label": "IMOGI Shift Opening", "link_type": "DocType", "link_to": "IMOGI POS Shift Opening", "feature_id": "open_shift"},
 			{"label": "IMOGI Shift Closing", "link_type": "DocType", "link_to": "IMOGI POS Shift Closing", "feature_id": "close_shift"},
 			{"label": "POS Opening Entry", "link_type": "DocType", "link_to": "POS Opening Entry", "feature_id": "open_shift"},
-			{"label": "POS Closing Entry", "link_type": "DocType", "link_to": "POS Closing Entry", "feature_id": "end_of_day"},
+			{"label": "POS Closing Entry", "link_type": "DocType", "link_to": "POS Closing Entry", "feature_id": "close_shift"},
+			{"label": "Cash In/Out", "link_type": "DocType", "link_to": "IMOGI POS Cash Movement", "feature_id": "cash_in_out"},
+			{"label": "Shift Closing Report", "link_type": "Report", "link_to": "IMOGI Shift Closing Report", "feature_id": "shift_closing_report"},
 		],
 	},
 	{
 		"label": "Inventori & Stok",
 		"links": [
+			{"label": "Inventory Hub", "link_type": "Page", "link_to": "inventory-hub", "feature_id": "raw_material", "onboard": 1},
 			{"label": "Stock Entry", "link_type": "DocType", "link_to": "Stock Entry", "feature_id": "waste_management"},
 			{"label": "Stock Reconciliation", "link_type": "DocType", "link_to": "Stock Reconciliation", "feature_id": "stock_opname"},
 			{"label": "Stock Ledger", "link_type": "Report", "link_to": "Stock Ledger", "is_query_report": 1, "feature_id": "stock_raw"},
@@ -152,10 +157,19 @@ WORKSPACE_SECTIONS = [
 	{
 		"label": "Keuangan & Audit",
 		"links": [
+			{"label": "Finance Hub", "link_type": "Page", "link_to": "finance-hub", "feature_id": "cash_bank", "onboard": 1},
 			{"label": "Kas & Bank", "link_type": "DocType", "link_to": "Payment Entry", "feature_id": "cash_bank"},
 			{"label": "Hutang Supplier", "link_type": "DocType", "link_to": "Purchase Invoice", "feature_id": "supplier_payable"},
+			{"label": "Accounting (POS → GL)", "link_type": "Page", "link_to": "finance-hub", "feature_id": "accounting_integration"},
 			{"label": "Sales Invoice", "link_type": "DocType", "link_to": "Sales Invoice", "feature_id": "accounting_integration"},
 			{"label": "Royalty Accrual", "link_type": "DocType", "link_to": "IMOGI POS Royalty Accrual", "feature_id": "supplier_payable"},
+			{
+				"label": "Tax Report (PPN)",
+				"link_type": "Page",
+				"link_to": "imogi-pos-dashboard",
+				"dashboard_focus": "tax_report",
+				"feature_id": "tax_report",
+			},
 			{
 				"label": "Profit and Loss",
 				"link_type": "Report",
@@ -165,6 +179,7 @@ WORKSPACE_SECTIONS = [
 			},
 			{"label": "Cash Flow", "link_type": "Report", "link_to": "Cash Flow", "is_query_report": 1, "feature_id": "cash_flow"},
 			{"label": "Sales Register", "link_type": "Report", "link_to": "Sales Register", "is_query_report": 1, "feature_id": "tax_report"},
+			{"label": "Audit Hub", "link_type": "Page", "link_to": "audit-hub", "feature_id": "audit_log", "onboard": 1},
 			{"label": "Version Log", "link_type": "DocType", "link_to": "Version", "feature_id": "audit_log"},
 			{"label": "Activity Log", "link_type": "DocType", "link_to": "Activity Log", "feature_id": "login_history"},
 		],
@@ -172,6 +187,7 @@ WORKSPACE_SECTIONS = [
 	{
 		"label": "Multi Outlet",
 		"links": [
+			{"label": "Multi-Outlet Hub", "link_type": "Page", "link_to": "multi-outlet-hub", "feature_id": "multi_outlet", "onboard": 1},
 			{"label": "Penugasan Area Manager", "link_type": "DocType", "link_to": "IMOGI Area Manager Assignment"},
 			{"label": "IMOGI Branch", "link_type": "DocType", "link_to": "IMOGI Branch", "feature_id": "multi_outlet"},
 			{"label": "Tambah Company & Cabang", "link_type": "Page", "link_to": "imogi-pos-add-branch", "feature_id": "multi_outlet"},
@@ -207,7 +223,13 @@ WORKSPACE_SHORTCUTS = [
 	{"color": "Orange", "label": "IMOGI Kasir", "link_to": "imogi-pos-cashier", "type": "Page", "feature_id": "pos_order"},
 	{"color": "Yellow", "label": "Riwayat Transaksi", "link_to": "imogi-pos-order-history", "type": "Page", "feature_id": "order_history"},
 	{"color": "Purple", "label": "Menu Produk", "link_to": "imogi-pos-menu", "type": "Page", "feature_id": "menu"},
+	{"color": "Blue", "label": "Inventory Hub", "link_to": "inventory-hub", "type": "Page", "feature_id": "raw_material"},
+	{"color": "Teal", "label": "Finance Hub", "link_to": "finance-hub", "type": "Page", "feature_id": "cash_bank"},
+	{"color": "Grey", "label": "Audit Hub", "link_to": "audit-hub", "type": "Page", "feature_id": "audit_log"},
+	{"color": "Blue", "label": "Multi-Outlet Hub", "link_to": "multi-outlet-hub", "type": "Page", "feature_id": "multi_outlet"},
+	{"color": "Orange", "label": "Recipe Hub", "link_to": "recipe-hub", "type": "Page", "feature_id": "recipe_management"},
 	{"color": "Red", "label": "Kitchen Display", "link_to": "kitchen-display", "type": "Page", "feature_id": "kitchen_display"},
+	{"color": "Orange", "label": "Kitchen Performance", "link_to": "kitchen-performance", "type": "Page", "feature_id": "kitchen_performance"},
 	{"color": "Grey", "label": "IMOGI POS Settings", "link_to": "IMOGI POS Settings", "type": "DocType"},
 ]
 
@@ -244,13 +266,26 @@ def build_workspace_links() -> list[dict]:
 def build_workspace_content(*, variant: str = "restaurant") -> str:
 	if variant == "umkm":
 		header = (
-			'<span class="h4"><b>IMOGI POS — UMKM</b></span><br>'
-			'<span class="text-muted">Modul IMOGI POS — satu menu per halaman, akses menyesuaikan role.</span>'
+			'<div class="imogi-ws-hero">'
+			'<div>'
+			'<div class="imogi-ws-hero-kicker">IMOGI POS</div>'
+			'<div class="imogi-ws-hero-title">Workspace Operasional</div>'
+			'<p class="imogi-ws-hero-sub">Satu menu per halaman — akses menyesuaikan role.</p>'
+			"</div>"
+			'<span class="imogi-ws-hero-pill"><i class="fa fa-bolt"></i> Siap pakai</span>'
+			"</div>"
 		)
 	else:
 		header = (
-			'<span class="h4"><b>IMOGI POS — Restoran &amp; Cafe</b></span><br>'
-			'<span class="text-muted">Modul IMOGI POS — satu menu per halaman, akses menyesuaikan role.</span>'
+			'<div class="imogi-ws-hero">'
+			'<div>'
+			'<div class="imogi-ws-hero-kicker">IMOGI POS</div>'
+			'<div class="imogi-ws-hero-title">Restoran &amp; Cafe</div>'
+			'<p class="imogi-ws-hero-sub">Satu menu per halaman — akses menyesuaikan role. '
+			"Kasir, dapur, meja, resep, dan laporan dalam satu workspace.</p>"
+			"</div>"
+			'<span class="imogi-ws-hero-pill"><i class="fa fa-cutlery"></i> Operasional harian</span>'
+			"</div>"
 		)
 
 	blocks = [
@@ -273,7 +308,8 @@ def build_workspace_content(*, variant: str = "restaurant") -> str:
 				{"id": "sc3", "type": "shortcut", "data": {"shortcut_name": "Kitchen Display", "col": 2}},
 				{"id": "sc4", "type": "shortcut", "data": {"shortcut_name": "Dashboard & Analitik", "col": 2}},
 				{"id": "sc5", "type": "shortcut", "data": {"shortcut_name": "Menu Produk", "col": 2}},
-				{"id": "sc6", "type": "shortcut", "data": {"shortcut_name": "IMOGI POS Settings", "col": 2}},
+				{"id": "sc6", "type": "shortcut", "data": {"shortcut_name": "Recipe Hub", "col": 2}},
+				{"id": "sc7", "type": "shortcut", "data": {"shortcut_name": "IMOGI POS Settings", "col": 2}},
 			]
 		)
 	blocks.extend(

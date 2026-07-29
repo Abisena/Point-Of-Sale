@@ -260,14 +260,19 @@ def _create_cashier_order(
 		order.offline_client_id = offline_client_id
 	if restaurant_table:
 		order.restaurant_table = restaurant_table
+		_assert_no_duplicate_table_order(restaurant_table, company=company)
 
 	for row in totals.get("items") or parsed_items:
 		if not row.get("item_code"):
 			frappe.throw(_("Each item must include item_code"))
+		item_code = row["item_code"]
+		from imogi_pos.api.order import _resolve_item_display_name
+
 		order.append(
 			"items",
 			{
-				"item_code": row["item_code"],
+				"item_code": item_code,
+				"item_name": _resolve_item_display_name(item_code, row.get("item_name")),
 				"qty": flt(row.get("qty") or 1),
 				"rate": flt(row.get("rate") or 0),
 				"warehouse": row.get("warehouse") or default_warehouse,
@@ -297,12 +302,51 @@ def _create_cashier_order(
 
 
 def _verify_cashier_pending_order(order):
-	if order.docstatus != 1 or order.status != "Awaiting Payment":
+	if order.docstatus != 1:
+		frappe.throw(_("Order {0} is not awaiting payment").format(order.name))
+	from imogi_pos.imogi_pos.utils.qr_table_order import is_unpaid_qr_cash_order
+
+	if is_unpaid_qr_cash_order(order):
+		return
+	if order.status != "Awaiting Payment":
 		frappe.throw(_("Order {0} is not awaiting payment").format(order.name))
 	user = frappe.session.user
 	cashier = (order.cashier or order.owner or "").strip()
 	if cashier and cashier != user:
 		frappe.throw(_("Not permitted to access this order"), frappe.PermissionError)
+
+
+def _claim_qr_cash_order(order):
+	from imogi_pos.imogi_pos.utils.qr_table_order import is_unpaid_qr_cash_order
+
+	if not is_unpaid_qr_cash_order(order):
+		return
+	user = frappe.session.user
+	if (order.cashier or "").strip() != user:
+		order.db_set("cashier", user, update_modified=False)
+
+
+def _apply_order_guest_name(order, guest_name):
+	guest_name = (guest_name or "").strip()
+	if not guest_name:
+		return
+	frappe.db.set_value("Riwayat Order", order.name, "customer_name", guest_name, update_modified=False)
+	order.customer_name = guest_name
+
+
+def _guest_name_to_preserve(order, customer_label=None):
+	"""Keep tamu/QR display name instead of default POS customer link name."""
+	guest_name = (customer_label or order.customer_name or "").strip()
+	if not guest_name:
+		return ""
+	linked_name = ""
+	if order.customer:
+		linked_name = (frappe.db.get_value("Customer", order.customer, "customer_name") or order.customer or "").strip()
+	if (order.order_channel or "").strip().upper() == "QR":
+		return guest_name
+	if linked_name and guest_name != linked_name:
+		return guest_name
+	return ""
 
 
 def _sync_awaiting_order_from_checkout(
@@ -315,11 +359,13 @@ def _sync_awaiting_order_from_checkout(
 	loyalty_points_redeem=0,
 	customer=None,
 	customer_phone=None,
+	customer_label=None,
 	warehouse=None,
 	branch_code=None,
 	settings=None,
 ):
 	settings = settings or get_settings()
+	guest_name = _guest_name_to_preserve(order, customer_label=customer_label)
 	if customer and frappe.db.exists("Customer", customer):
 		order.customer = customer
 	_apply_customer_phone(order, order.customer, customer_phone)
@@ -360,6 +406,8 @@ def _sync_awaiting_order_from_checkout(
 	order.calculate_totals()
 	order.flags.ignore_validate_update_after_submit = True
 	order.save(ignore_permissions=True)
+	if guest_name:
+		_apply_order_guest_name(order, guest_name)
 	order.reload()
 	return order
 
@@ -381,6 +429,144 @@ def _apply_payments_to_order(order, payments_list):
 	order.save(ignore_permissions=True)
 	order.db_set("paid_amount", flt(order.paid_amount), update_modified=False)
 	order.reload()
+
+
+TABLE_ORDER_ADDON_STATUSES = (
+	"Awaiting Payment",
+	"Paid",
+	"In Kitchen",
+	"Kitchen Ready",
+	"In Fulfillment",
+	"Fulfilled",
+	"In Service",
+)
+
+
+def _get_open_orders_on_table(restaurant_table, *, company=None):
+	restaurant_table = (restaurant_table or "").strip()
+	if not restaurant_table:
+		return []
+	from imogi_pos.imogi_pos.utils.table_service import get_open_orders_by_table
+
+	return get_open_orders_by_table(company=company).get(restaurant_table) or []
+
+
+def _resolve_table_addon_order(restaurant_table, addon_order_name=None, *, company=None):
+	addon_order_name = (addon_order_name or "").strip()
+	if addon_order_name:
+		return addon_order_name
+	restaurant_table = (restaurant_table or "").strip()
+	if not restaurant_table:
+		return None
+	existing = _get_open_orders_on_table(restaurant_table, company=company)
+	return existing[0].name if existing else None
+
+
+def _assert_no_duplicate_table_order(
+	restaurant_table, *, addon_order_name=None, order_name=None, company=None
+):
+	if not restaurant_table or addon_order_name or order_name:
+		return
+	existing = _get_open_orders_on_table(restaurant_table, company=company)
+	if existing:
+		frappe.throw(
+			_("Meja ini sudah punya order aktif ({0}). Gunakan <b>Tambah Order</b> di Table Service.").format(
+				existing[0].name
+			),
+			title=_("Order meja sudah ada"),
+		)
+
+
+def _verify_table_order_addon(order):
+	if order.docstatus != 1:
+		frappe.throw(_("Order {0} is not submitted").format(order.name))
+	if order.status not in TABLE_ORDER_ADDON_STATUSES:
+		frappe.throw(
+			_("Tidak bisa menambah item pada order berstatus {0}").format(order.status)
+		)
+	if not order.restaurant_table:
+		frappe.throw(_("Order tidak terhubung ke meja"))
+
+
+def _append_payments_to_order(order, payments_list):
+	for row in payments_list:
+		if not row.get("mode_of_payment"):
+			frappe.throw(_("Each payment must include mode_of_payment"))
+		order.append(
+			"payments",
+			{
+				"mode_of_payment": row["mode_of_payment"],
+				"amount": flt(row.get("amount") or 0),
+			},
+		)
+	order.calculate_totals()
+	order.flags.ignore_validate_update_after_submit = True
+	order.save(ignore_permissions=True)
+	order.reload()
+
+
+def _append_addon_to_table_order(
+	order,
+	parsed_items,
+	payments_list,
+	*,
+	warehouse,
+	settings=None,
+):
+	from imogi_pos.api.order import _resolve_item_display_name
+	from imogi_pos.imogi_pos.utils.flow import (
+		create_kitchen_order_for_items,
+		create_pos_invoice_from_addon_items,
+		is_kitchen_item,
+		set_order_flags,
+	)
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
+	settings = settings or get_settings()
+	new_rows = []
+	for row in parsed_items:
+		if not row.get("item_code"):
+			frappe.throw(_("Each item must include item_code"))
+		item_code = row["item_code"]
+		child = {
+			"item_code": item_code,
+			"item_name": _resolve_item_display_name(item_code, row.get("item_name")),
+			"qty": flt(row.get("qty") or 1),
+			"rate": flt(row.get("rate") or 0),
+			"warehouse": row.get("warehouse") or warehouse,
+			"uom": row.get("uom"),
+			"is_kitchen_item": 1 if is_kitchen_item(item_code) else 0,
+		}
+		order.append("items", child)
+		new_rows.append(child)
+
+	set_order_flags(order)
+	order.calculate_totals()
+	order.flags.ignore_validate_update_after_submit = True
+	order.save(ignore_permissions=True)
+
+	create_pos_invoice_from_addon_items(order, new_rows, payments_list)
+	_append_payments_to_order(order, payments_list)
+
+	if is_setting_enabled("enable_kitchen_display", settings):
+		kitchen_rows = [row for row in new_rows if row.get("is_kitchen_item")]
+		if kitchen_rows:
+			try:
+				create_kitchen_order_for_items(order, kitchen_rows)
+				if not order.requires_kitchen:
+					order.db_set("requires_kitchen", 1, update_modified=False)
+			except Exception:
+				frappe.log_error(
+					title=_("IMOGI addon kitchen order failed for {0}").format(order.name),
+					message=frappe.get_traceback(),
+				)
+
+	frappe.publish_realtime(
+		"imogi_table_service_updated",
+		{"pos_order": order.name, "restaurant_table": order.restaurant_table},
+	)
+	order.reload()
+	return order
 
 
 def _validate_cashier_cart(
@@ -465,6 +651,7 @@ def submit_awaiting_order(
 	items,
 	customer=None,
 	customer_phone=None,
+	customer_label=None,
 	order_channel="Walk-in",
 	order_type="Takeaway",
 	discount_type=None,
@@ -475,6 +662,7 @@ def submit_awaiting_order(
 	branch=None,
 	restaurant_table=None,
 	marketplace_order_name=None,
+	addon_order_name=None,
 	approval_code=None,
 ):
 	"""Submit cart as Riwayat Order in Awaiting Payment when cashier opens payment."""
@@ -501,6 +689,24 @@ def submit_awaiting_order(
 		discount_type=discount_type,
 		discount_value=discount_value,
 		approval_code=approval_code,
+	)
+
+	addon_order_name = _resolve_table_addon_order(
+		restaurant_table,
+		addon_order_name,
+		company=branch_ctx.get("company"),
+	)
+	if addon_order_name:
+		order = frappe.get_doc("Riwayat Order", addon_order_name)
+		order.check_permission("write")
+		_verify_table_order_addon(order)
+		result = _serialize_order(order)
+		result["is_table_addon"] = True
+		return result
+
+	_assert_no_duplicate_table_order(
+		restaurant_table,
+		company=branch_ctx.get("company"),
 	)
 
 	order = _create_cashier_order(
@@ -645,6 +851,7 @@ def get_cashier_context(branch=None, pos_profile=None):
 
 	from imogi_pos.imogi_pos.utils.payment_gateway import is_gateway_enabled
 	from imogi_pos.imogi_pos.utils.loyalty import get_loyalty_config, is_loyalty_enabled
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 	from imogi_pos.imogi_pos.utils.offline_checkout import is_offline_cashier_enabled
 	from imogi_pos.imogi_pos.utils.promo_rules import is_promo_enabled
 	from imogi_pos.imogi_pos.utils.sales_tax import get_sales_tax_config
@@ -679,6 +886,11 @@ def get_cashier_context(branch=None, pos_profile=None):
 		"transfer_payment": get_transfer_payment_config(settings),
 		"loyalty_enabled": is_loyalty_enabled(settings),
 		"loyalty": get_loyalty_config(settings),
+		"birthday_promo": {
+			"enabled": is_setting_enabled("enable_birthday_promo", settings),
+			"discount_percent": flt(getattr(settings, "birthday_discount_percent", 10)) or 10,
+			"window_days": cint(getattr(settings, "birthday_window_days", 0)),
+		},
 		"enable_promo_rules": is_promo_enabled(settings),
 		"sales_tax": get_sales_tax_config(settings),
 		"enable_offline_cashier": is_offline_cashier_enabled(settings),
@@ -753,6 +965,7 @@ def checkout(
 	payments,
 	customer=None,
 	customer_phone=None,
+	customer_label=None,
 	order_channel="Walk-in",
 	order_type="Takeaway",
 	discount_type=None,
@@ -762,6 +975,7 @@ def checkout(
 	offline_client_id=None,
 	marketplace_order_name=None,
 	order_name=None,
+	addon_order_name=None,
 	pos_profile=None,
 	branch=None,
 	restaurant_table=None,
@@ -796,7 +1010,13 @@ def checkout(
 		customer,
 		customer_phone,
 		branch_ctx["pos_profile"],
-		order_name=order_name,
+		order_name=order_name or addon_order_name,
+	)
+
+	addon_order_name = _resolve_table_addon_order(
+		restaurant_table,
+		addon_order_name,
+		company=branch_ctx.get("company"),
 	)
 
 	if len(payments_list) > 1:
@@ -825,10 +1045,22 @@ def checkout(
 			loyalty_points_redeem=loyalty_points_redeem,
 			items=parsed_items,
 		)
+	elif addon_order_name:
+		order = frappe.get_doc("Riwayat Order", addon_order_name)
+		order.check_permission("write")
+		_verify_table_order_addon(order)
+		order = _append_addon_to_table_order(
+			order,
+			parsed_items,
+			payments_list,
+			warehouse=branch_ctx["warehouse"],
+			settings=settings,
+		)
 	elif order_name:
 		order = frappe.get_doc("Riwayat Order", order_name)
 		order.check_permission("write")
 		_verify_cashier_pending_order(order)
+		_claim_qr_cash_order(order)
 		order = _sync_awaiting_order_from_checkout(
 			order,
 			parsed_items,
@@ -838,12 +1070,17 @@ def checkout(
 			loyalty_points_redeem=loyalty_points_redeem,
 			customer=customer,
 			customer_phone=customer_phone,
+			customer_label=customer_label,
 			warehouse=branch_ctx["warehouse"],
 			branch_code=branch_ctx.get("branch_code"),
 			settings=settings,
 		)
 		_apply_payments_to_order(order, payments_list)
 	else:
+		_assert_no_duplicate_table_order(
+			restaurant_table,
+			company=branch_ctx.get("company"),
+		)
 		order = _create_cashier_order(
 			items,
 			customer,
@@ -862,7 +1099,8 @@ def checkout(
 			branch=branch_ctx.get("branch_code"),
 			customer_phone=customer_phone,
 		)
-	order.action_process_payment(silent=True)
+	if not addon_order_name:
+		order.action_process_payment(silent=True)
 	order.reload()
 	frappe.db.commit()
 
@@ -1094,6 +1332,31 @@ def save_shift_closing_draft(pos_opening_entry, actual_cash=0, expenses=0, remar
 
 
 @frappe.whitelist()
+def create_cash_movement_api(pos_opening_entry, movement_type, amount, reason, approval_code=None):
+	"""Catat kas masuk/keluar ad-hoc selama shift masih terbuka."""
+	_require_cashier_access()
+	ensure_setup_ready()
+
+	if not _is_pos_shift_enabled():
+		frappe.throw(_("Shift kasir dinonaktifkan di IMOGI POS Settings"))
+
+	from imogi_pos.imogi_pos.utils.shift_closing import create_cash_movement
+
+	return create_cash_movement(pos_opening_entry, movement_type, amount, reason, approval_code=approval_code)
+
+
+@frappe.whitelist()
+def list_cash_movements_api(pos_opening_entry):
+	"""Histori Cash In/Out buat shift ini — dipakai selama shift jalan & di halaman Tutup Shift."""
+	_require_cashier_access()
+	ensure_setup_ready()
+
+	from imogi_pos.imogi_pos.utils.shift_closing import list_cash_movements
+
+	return list_cash_movements(pos_opening_entry)
+
+
+@frappe.whitelist()
 def get_shift_opening_defaults():
 	"""Defaults for IMOGI POS Shift Opening form (company, profile, payment rows)."""
 	_require_cashier_access()
@@ -1168,13 +1431,15 @@ def search_customers(search=None, limit=10):
 
 
 @frappe.whitelist()
-def create_customer(customer_name, customer_type="Individual", mobile_no=None, email_id=None):
+def create_customer(customer_name, customer_type="Individual", mobile_no=None, email_id=None, date_of_birth=None):
 	"""Quick-create customer from IMOGI Kasir."""
 	_require_cashier_access()
 	ensure_setup_ready()
 	from imogi_pos.api.customer_api import create_customer_record
 
-	return create_customer_record(customer_name, customer_type, mobile_no, email_id)
+	return create_customer_record(
+		customer_name, customer_type, mobile_no, email_id, date_of_birth=date_of_birth
+	)
 
 
 @frappe.whitelist()
@@ -1318,7 +1583,9 @@ def _build_receipt_pdf_path(order_name, print_format):
 
 
 def _build_receipt_pdf_url(order_name, print_format):
-	return get_url(_build_receipt_pdf_path(order_name, print_format))
+	from imogi_pos.imogi_pos.utils.receipt_branding import build_public_site_url
+
+	return build_public_site_url(_build_receipt_pdf_path(order_name, print_format))
 
 
 def _generate_receipt_pdf_bytes(order_name, print_format):
@@ -1328,23 +1595,23 @@ def _generate_receipt_pdf_bytes(order_name, print_format):
 	return generate_receipt_pdf_bytes(order_name, print_format)
 
 
-def _format_whatsapp_message(template, *, order_name, total, customer, pdf_url=""):
+def _format_whatsapp_message(template, *, order_name, total, customer, pdf_url="", strip_pdf_lines=False):
 	message = (template or "").format(
 		order_name=order_name,
 		total=total,
 		pdf_url=pdf_url or "",
 		customer=customer or "",
 	)
-	# Drop empty "unduh pdf" lines when sending file attachment instead of link.
+	# Optionally drop pdf-link lines when sending file attachment.
 	lines = []
 	for line in message.splitlines():
 		stripped = line.strip()
 		if not stripped:
 			lines.append("")
 			continue
-		if pdf_url and pdf_url in stripped:
+		if strip_pdf_lines and pdf_url and pdf_url in stripped:
 			continue
-		if stripped.lower().startswith("unduh struk pdf"):
+		if strip_pdf_lines and stripped.lower().startswith("unduh struk pdf"):
 			continue
 		lines.append(line)
 	text = "\n".join(lines)
@@ -1363,30 +1630,107 @@ def get_receipt_whatsapp_share(order_name, customer_phone=None):
 	return payload
 
 
+def send_order_receipt_whatsapp_auto(order_name, customer_phone=None):
+	"""Auto-send receipt WA (Fonnte Free-safe: text + PDF link)."""
+	try:
+		if cint(frappe.db.get_value("Riwayat Order", order_name, "whatsapp_receipt_sent")):
+			return {"sent": False, "reason": "already_sent"}
+
+		settings = get_settings()
+		wa_cfg = get_whatsapp_receipt_config(settings)
+		if not wa_cfg["enable_whatsapp_receipt"]:
+			return {"sent": False, "reason": "disabled"}
+		if (wa_cfg.get("whatsapp_api_provider") or "").strip() != "Fonnte":
+			return {"sent": False, "reason": "manual_only"}
+
+		from imogi_pos.imogi_pos.utils.qr_table_order import _mark_qr_wa_sent, _qr_wa_already_sent
+
+		if _qr_wa_already_sent(order_name, "receipt"):
+			return {"sent": False, "reason": "already_sent"}
+
+		payload = _prepare_whatsapp_receipt(
+			order_name,
+			customer_phone,
+			include_pdf_bytes=False,
+			use_guest_receipt_link=True,
+		)
+		payload.pop("_pdf_bytes", None)
+		from imogi_pos.imogi_pos.utils.whatsapp_send import send_fonnte_message
+
+		result = send_fonnte_message(
+			wa_cfg["fonnte_api_token"],
+			payload["phone"],
+			payload["message_with_pdf_link"] or payload["message"],
+		)
+		frappe.db.set_value(
+			"Riwayat Order",
+			order_name,
+			"whatsapp_receipt_sent",
+			1,
+			update_modified=False,
+		)
+		frappe.db.commit()
+		_mark_qr_wa_sent(order_name, "receipt")
+		frappe.enqueue(
+			"imogi_pos.imogi_pos.utils.receipt_branding.publish_receipt_pdf_job",
+			queue="long",
+			order_name=order_name,
+			job_id=f"imogi_pdf_{order_name}",
+			deduplicate=True,
+			timeout=600,
+		)
+		return {"sent": True, "phone": result.get("phone") or payload["phone"]}
+	except Exception:
+		frappe.log_error(
+			title=_("IMOGI auto WhatsApp receipt failed for {0}").format(order_name),
+			message=frappe.get_traceback(),
+		)
+		return {"sent": False, "reason": "error"}
+
+
 @frappe.whitelist()
 def send_whatsapp_receipt(order_name, customer_phone=None):
-	"""Send receipt PDF via WhatsApp — Fonnte server or browser fallback payload."""
+	"""Send receipt via WhatsApp — Fonnte Free-safe text + PDF link."""
 	_require_cashier_access()
-	payload = _prepare_whatsapp_receipt(order_name, customer_phone)
-	pdf_bytes = payload.pop("_pdf_bytes")
+	payload = _prepare_whatsapp_receipt(
+		order_name,
+		customer_phone,
+		include_pdf_bytes=False,
+		use_guest_receipt_link=True,
+	)
+	pdf_bytes = payload.pop("_pdf_bytes", b"")
 	settings = get_settings()
 	wa_cfg = get_whatsapp_receipt_config(settings)
 
 	if (wa_cfg.get("whatsapp_api_provider") or "").strip() == "Fonnte":
-		from imogi_pos.imogi_pos.utils.whatsapp_send import send_fonnte_document
+		from imogi_pos.imogi_pos.utils.whatsapp_send import send_fonnte_message
 
-		result = send_fonnte_document(
+		result = send_fonnte_message(
 			wa_cfg["fonnte_api_token"],
 			payload["phone"],
-			payload["message"],
-			pdf_bytes,
-			payload["filename"],
+			payload["message_with_pdf_link"] or payload["message"],
+		)
+		frappe.db.set_value(
+			"Riwayat Order",
+			order_name,
+			"whatsapp_receipt_sent",
+			1,
+			update_modified=False,
+		)
+		frappe.db.commit()
+		frappe.enqueue(
+			"imogi_pos.imogi_pos.utils.receipt_branding.publish_receipt_pdf_job",
+			queue="long",
+			order_name=order_name,
+			job_id=f"imogi_pdf_{order_name}",
+			deduplicate=True,
+			timeout=600,
 		)
 		return {
 			"sent": True,
 			"method": "fonnte",
 			"phone": result.get("phone") or payload["phone"],
-			"message": payload["message"],
+			"message": payload["message_with_pdf_link"] or payload["message"],
 		}
 
 	payload["pdf_base64"] = base64.b64encode(pdf_bytes).decode("ascii")
@@ -1394,7 +1738,12 @@ def send_whatsapp_receipt(order_name, customer_phone=None):
 	return payload
 
 
-def _prepare_whatsapp_receipt(order_name, customer_phone=None):
+def _prepare_whatsapp_receipt(
+	order_name,
+	customer_phone=None,
+	include_pdf_bytes=True,
+	use_guest_receipt_link=False,
+):
 	"""Build WhatsApp receipt payload + PDF bytes."""
 	if not frappe.db.exists("Riwayat Order", order_name):
 		frappe.throw(_("Order {0} not found").format(order_name))
@@ -1417,6 +1766,14 @@ def _prepare_whatsapp_receipt(order_name, customer_phone=None):
 	template = wa_cfg["whatsapp_receipt_message"]
 	total = fmt_money(order.grand_total, currency=order.currency)
 	customer_label = order.customer_name or order.customer or ""
+	if use_guest_receipt_link:
+		from imogi_pos.api.receipt_api import build_guest_receipt_url
+
+		pdf_public_url = build_guest_receipt_url(order_name)
+	else:
+		from imogi_pos.imogi_pos.utils.receipt_branding import ensure_receipt_pdf_published
+
+		pdf_public_url = ensure_receipt_pdf_published(order_name, print_format)
 	message = _format_whatsapp_message(
 		template,
 		order_name=order.name,
@@ -1424,14 +1781,31 @@ def _prepare_whatsapp_receipt(order_name, customer_phone=None):
 		customer=customer_label,
 		pdf_url="",
 	)
-	wa_url = f"https://wa.me/{phone}?text={quote(message)}" if phone else ""
-	pdf_bytes = _generate_receipt_pdf_bytes(order_name, print_format)
+	message_with_pdf_link = _format_whatsapp_message(
+		template,
+		order_name=order.name,
+		total=total,
+		customer=customer_label,
+		pdf_url=pdf_public_url,
+	)
+	if "{pdf_url}" not in (template or ""):
+		message_with_pdf_link = (
+			f"{message_with_pdf_link}\n\nUnduh struk PDF:\n{pdf_public_url}".strip()
+			if message_with_pdf_link
+			else f"Unduh struk PDF:\n{pdf_public_url}"
+		)
+	wa_url = f"https://wa.me/{phone}?text={quote(message_with_pdf_link)}" if phone else ""
+	pdf_bytes = b""
+	if include_pdf_bytes:
+		pdf_bytes = _generate_receipt_pdf_bytes(order_name, print_format)
 
 	return {
 		"phone": phone,
 		"message": message,
+		"message_with_pdf_link": message_with_pdf_link,
 		"pdf_path": pdf_path,
-		"pdf_url": get_url(pdf_path),
+		"pdf_url": pdf_public_url or get_url(pdf_path),
+		"pdf_public_url": pdf_public_url,
 		"wa_url": wa_url,
 		"filename": f"{order.name}.pdf",
 		"server_send_enabled": (wa_cfg.get("whatsapp_api_provider") or "").strip() == "Fonnte"
@@ -1441,12 +1815,17 @@ def _prepare_whatsapp_receipt(order_name, customer_phone=None):
 
 
 @frappe.whitelist()
-def update_awaiting_order_customer(order_name, customer=None, customer_phone=None):
-	"""Sync customer + phone on unpaid cashier order."""
+def update_awaiting_order_customer(order_name, customer=None, customer_phone=None, customer_label=None):
+	"""Sync customer + phone on unpaid cashier order or table addon checkout."""
 	_require_cashier_access()
 	order = frappe.get_doc("Riwayat Order", order_name)
 	order.check_permission("write")
-	_verify_cashier_pending_order(order)
+	if order.status == "Awaiting Payment":
+		_verify_cashier_pending_order(order)
+	elif order.restaurant_table and order.status in TABLE_ORDER_ADDON_STATUSES:
+		_verify_table_order_addon(order)
+	else:
+		frappe.throw(_("Order {0} is not awaiting payment").format(order.name))
 
 	resolved_customer = customer if customer and frappe.db.exists("Customer", customer) else order.customer
 	phone = (customer_phone or "").strip() or _resolve_checkout_customer_phone(
@@ -1459,6 +1838,9 @@ def update_awaiting_order_customer(order_name, customer=None, customer_phone=Non
 		updates["customer"] = customer
 	if phone:
 		updates["customer_phone"] = phone
+	guest_name = _guest_name_to_preserve(order, customer_label=customer_label)
+	if guest_name:
+		updates["customer_name"] = guest_name
 
 	if updates:
 		for field, value in updates.items():
@@ -1468,6 +1850,7 @@ def update_awaiting_order_customer(order_name, customer=None, customer_phone=Non
 	return {
 		"customer": updates.get("customer") or order.customer,
 		"customer_phone": updates.get("customer_phone") or order.customer_phone or "",
+		"customer_name": updates.get("customer_name") or order.customer_name or "",
 	}
 
 
@@ -1521,3 +1904,19 @@ def get_awaiting_orders(limit=10):
 		order_by="modified desc",
 		limit=limit,
 	)
+
+
+@frappe.whitelist()
+def load_checkout_order(order_name, pos_profile=None, branch=None):
+	"""Load an awaiting QR Cash order into cashier checkout."""
+	_require_cashier_access()
+	ensure_setup_ready()
+	order_name = (order_name or "").strip()
+	if not order_name:
+		frappe.throw(_("Order wajib diisi"))
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("read")
+	_verify_cashier_pending_order(order)
+	_claim_qr_cash_order(order)
+	frappe.db.commit()
+	return _serialize_order(order)

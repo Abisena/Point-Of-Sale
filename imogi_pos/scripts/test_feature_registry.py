@@ -14,7 +14,7 @@ from imogi_pos.imogi_pos.utils.feature_registry import (
 	summarize_tiers,
 )
 
-EXPECTED_CUMULATIVE = {"Free": 7, "Starter": 15, "Professional": 79, "Enterprise": 101}
+EXPECTED_CUMULATIVE = {"Free": 7, "Starter": 15, "Professional": 78, "Enterprise": 98}
 
 
 def _raw_cumulative_counts():
@@ -31,8 +31,8 @@ def _raw_cumulative_counts():
 
 
 def run():
-	assert len(FEATURES) == 101, f"expected 101 features, got {len(FEATURES)}"
-	assert len({f["id"] for f in FEATURES}) == 101, "duplicate feature ids in registry"
+	assert len(FEATURES) == 98, f"expected 98 features, got {len(FEATURES)}"
+	assert len({f["id"] for f in FEATURES}) == 98, "duplicate feature ids in registry"
 
 	# Always-valid check: raw matrix intent via min_tier.
 	raw = _raw_cumulative_counts()
@@ -48,8 +48,8 @@ def run():
 	if tier_disabled:
 		# All tiers unlock everything when subscription gating is off.
 		for tier in SUBSCRIPTION_TIERS:
-			assert per_tier[tier] == 100, (
-				f"tier-disabled: {tier} should open all 100, got {per_tier[tier]}"
+			assert per_tier[tier] == 98, (
+				f"tier-disabled: {tier} should open all 98, got {per_tier[tier]}"
 			)
 		print("Feature registry OK (tier-disabled mode):", raw)
 	else:

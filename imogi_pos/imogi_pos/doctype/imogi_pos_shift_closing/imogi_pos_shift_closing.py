@@ -18,7 +18,14 @@ class IMOGIPOSShiftClosing(Document):
 			self.db_set("pos_closing_entry", closing_name)
 
 	def recalculate_cash_fields(self):
-		self.expected_cash = flt(self.opening_cash) + flt(self.cash_sales) - flt(self.expenses)
+		from imogi_pos.imogi_pos.utils.shift_closing import get_cash_movement_totals
+
+		cash_in, cash_out = get_cash_movement_totals(self.pos_opening_entry)
+		self.cash_in_total = cash_in
+		self.cash_out_total = cash_out
+		self.expected_cash = (
+			flt(self.opening_cash) + flt(self.cash_sales) - flt(self.expenses) + cash_in - cash_out
+		)
 		self.difference = flt(self.actual_cash) - flt(self.expected_cash)
 		if not self.posting_date:
 			self.posting_date = nowdate()

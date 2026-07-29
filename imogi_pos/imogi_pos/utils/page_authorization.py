@@ -141,6 +141,110 @@ PAGE_ACCESS_CATALOG: tuple[PageAccessEntry, ...] = (
 		),
 	},
 	{
+		"id": "kitchen-performance",
+		"label": "Kitchen Performance",
+		"description": "Laporan detail waktu & order dapur",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Supervisor",
+				"IMOGI Chef",
+			}
+		),
+	},
+	{
+		"id": "purchasing-hub",
+		"label": "Purchasing Hub",
+		"description": "Supplier, PR, PO & receiving barang",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Supervisor",
+				"IMOGI Purchasing",
+			}
+		),
+	},
+	{
+		"id": "finance-hub",
+		"label": "Finance Hub",
+		"description": "Kas/bank, hutang, piutang, laba rugi & arus kas",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Finance",
+			}
+		),
+	},
+	{
+		"id": "audit-hub",
+		"label": "Audit Hub",
+		"description": "Audit log, login, timeline, analisis diskon & void",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Auditor",
+				"IMOGI Finance",
+			}
+		),
+	},
+	{
+		"id": "multi-outlet-hub",
+		"label": "Multi-Outlet Hub",
+		"description": "Cabang, stok antar outlet, pembelian pusat & transfer",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Inventory",
+				"IMOGI Purchasing",
+			}
+		),
+	},
+	{
+		"id": "inventory-hub",
+		"label": "Inventory Hub",
+		"description": "Stok bahan, waste, batch, opname & forecast",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Supervisor",
+				"IMOGI Inventory",
+			}
+		),
+	},
+	{
+		"id": "recipe-hub",
+		"label": "Recipe Hub",
+		"description": "Resep, porsi, food cost, substitusi & versi",
+		"eligible_roles": IMOGI_ROLES,
+		"default_enabled": frozenset(
+			{
+				"IMOGI Owner",
+				"IMOGI Manager",
+				"IMOGI Area Manager",
+				"IMOGI Supervisor",
+				"IMOGI Chef",
+			}
+		),
+	},
+	{
 		"id": "imogi-pos-feature-matrix",
 		"label": "Feature Matrix",
 		"description": "Status fitur & langganan",
@@ -212,7 +316,11 @@ def get_allowed_pages_for_user(user: str | None = None, settings=None) -> list[s
 	settings = settings or get_settings()
 	roles = set(frappe.get_roles(user))
 	allowed: set[str] = set(ALWAYS_ALLOWED_PAGES)
+	from imogi_pos.imogi_pos.utils.feature_registry import is_fulfillment_rollout_enabled
+
 	for page in PAGE_ACCESS_CATALOG:
+		if page["id"] == "fulfillment-queue" and not is_fulfillment_rollout_enabled():
+			continue
 		for role in roles:
 			if is_page_enabled_for_role(role, page["id"], settings):
 				allowed.add(page["id"])
@@ -249,7 +357,11 @@ def serialize_page_authorization_matrix(settings=None) -> dict:
 	settings = settings or get_settings()
 	page_map = _settings_page_map(settings)
 	pages = []
+	from imogi_pos.imogi_pos.utils.feature_registry import is_fulfillment_rollout_enabled
+
 	for page in PAGE_ACCESS_CATALOG:
+		if page["id"] == "fulfillment-queue" and not is_fulfillment_rollout_enabled():
+			continue
 		roles = []
 		for role in page["eligible_roles"]:
 			key = (role, page["id"])

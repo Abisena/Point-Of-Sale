@@ -21,6 +21,7 @@
   "cashier_name",
   "customer_phone",
   "customer_email",
+  "whatsapp_receipt_sent",
   "restaurant_table",
   "items_section",
   "items",
@@ -167,6 +168,14 @@
    "fieldtype": "Data",
    "label": "Customer Email",
    "options": "Email"
+  },
+  {
+   "default": "0",
+   "fieldname": "whatsapp_receipt_sent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "WhatsApp Receipt Sent",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.order_type=='Dine-in'",

@@ -1,0 +1,25 @@
+{
+ "creation": "2026-07-12 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "money",
+ "idx": 0,
+ "modified": "2026-07-12 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Imogi POS",
+ "name": "finance-hub",
+ "owner": "Administrator",
+ "page_name": "finance-hub",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Accounts Manager"},
+  {"role": "Accounts User"},
+  {"role": "IMOGI Owner"},
+  {"role": "IMOGI Manager"},
+  {"role": "IMOGI Area Manager"},
+  {"role": "IMOGI Finance"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Finance Hub"
+}

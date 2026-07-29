@@ -3,9 +3,17 @@
 import frappe
 from frappe import _
 
+from imogi_pos.imogi_pos.utils.feature_registry import is_fulfillment_rollout_enabled
+
+
+def _require_fulfillment_rollout():
+	if not is_fulfillment_rollout_enabled():
+		frappe.throw(_("Fitur Fulfillment sementara dinonaktifkan."), title=_("Fitur Nonaktif"))
+
 
 @frappe.whitelist()
 def get_fulfillment_queue():
+	_require_fulfillment_rollout()
 	frappe.only_for(("IMOGI Fulfillment Staff", "Sales Manager", "Sales User", "System Manager"))
 
 	return frappe.db.sql(
@@ -28,6 +36,7 @@ def get_fulfillment_queue():
 
 @frappe.whitelist()
 def update_fulfillment_checks(fulfillment_task, field, value):
+	_require_fulfillment_rollout()
 	frappe.only_for(("IMOGI Fulfillment Staff", "Sales Manager", "System Manager"))
 	ft = frappe.get_doc("IMOGI Fulfillment Task", fulfillment_task)
 	ft.check_permission("write")
@@ -56,6 +65,7 @@ def update_fulfillment_checks(fulfillment_task, field, value):
 
 @frappe.whitelist()
 def complete_fulfillment_from_queue(fulfillment_task):
+	_require_fulfillment_rollout()
 	frappe.only_for(("IMOGI Fulfillment Staff", "Sales Manager", "System Manager"))
 	ft = frappe.get_doc("IMOGI Fulfillment Task", fulfillment_task)
 	ft.check_permission("write")

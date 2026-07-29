@@ -27,7 +27,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Station Type",
-   "options": "Kitchen\nBar\nPastry\nGrill"
+   "options": "Kitchen\nBar\nKitchen & Bar\nPastry\nGrill"
   },
   {
    "fieldname": "company",
