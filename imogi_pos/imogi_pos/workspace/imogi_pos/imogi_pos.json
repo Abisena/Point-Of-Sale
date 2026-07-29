@@ -293,7 +293,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Pengaturan Sistem",
-   "link_count": 6,
+   "link_count": 5,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -330,15 +330,6 @@
    "label": "Tambah Company & Cabang",
    "link_count": 0,
    "link_to": "imogi-pos-add-branch",
-   "link_type": "Page",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Setup Wizard",
-   "link_count": 0,
-   "link_to": "imogi-pos-setup",
    "link_type": "Page",
    "type": "Link"
   },

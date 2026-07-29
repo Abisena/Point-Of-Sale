@@ -203,7 +203,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Pengaturan Sistem",
-   "link_count": 4,
+   "link_count": 3,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -222,15 +222,6 @@
    "label": "Matrix Paket & Fitur",
    "link_count": 0,
    "link_to": "imogi-pos-feature-matrix",
-   "link_type": "Page",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Setup Wizard",
-   "link_count": 0,
-   "link_to": "imogi-pos-setup",
    "link_type": "Page",
    "type": "Link"
   },

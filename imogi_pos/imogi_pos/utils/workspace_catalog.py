@@ -206,7 +206,6 @@ WORKSPACE_SECTIONS = [
 		"links": [
 			{"label": "IMOGI POS Settings", "link_type": "DocType", "link_to": "IMOGI POS Settings"},
 			{"label": "Matrix Paket & Fitur", "link_type": "Page", "link_to": "imogi-pos-feature-matrix"},
-			{"label": "Setup Wizard", "link_type": "Page", "link_to": "imogi-pos-setup"},
 		],
 	},
 ]
