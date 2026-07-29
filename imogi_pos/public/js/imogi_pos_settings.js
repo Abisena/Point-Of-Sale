@@ -2342,6 +2342,7 @@ function init_settings_page(frm) {
 	render_mode_summary(frm);
 	toggle_settings_by_business_type(frm);
 	build_settings_tabs(frm);
+	guard_billing_date_fields(frm);
 	build_api_dock(frm);
 	build_loyalty_dock(frm);
 	build_payment_dock(frm);
@@ -2858,6 +2859,25 @@ function build_settings_tabs(frm) {
 		});
 
 	update_settings_tab_desc(frm, normalize_settings_tab_id(__imogi_settings_active_tab));
+}
+
+// Detaching/reattaching .form-layout in build_settings_tabs (for the custom tab
+// shell) confuses the Date/Datetime picker widget on billing_period_end and
+// billing_last_synced: it can emit a stray "Invalid date" through a native
+// change event, which frappe's DateControl.validate() then msgprints. Both
+// fields stay empty/hidden while billing sync is off, so it's safe to swallow
+// exactly that sentinel value instead of letting it reach the user.
+function guard_billing_date_fields(frm) {
+	["billing_period_end", "billing_last_synced"].forEach((fieldname) => {
+		const field = frm.fields_dict[fieldname];
+		if (!field || field._imogi_invalid_date_guard) return;
+		field._imogi_invalid_date_guard = true;
+		const orig_validate = field.validate.bind(field);
+		field.validate = function (value) {
+			if (value === "Invalid date" || value === "Invalid Date") return "";
+			return orig_validate(value);
+		};
+	});
 }
 
 function update_settings_tab_desc(frm, tabId) {
