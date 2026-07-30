@@ -149,7 +149,8 @@ def create_pos_invoice_from_order(order):
 		)
 		paid_total += amount
 
-	if not invoice.payments:
+	if not order.payments:
+		# Caller gave no payment info at all — default to one full payment.
 		default_mode = (order.payment_method or "Cash").split(",")[0].strip() or "Cash"
 		invoice.append(
 			"payments",
@@ -222,7 +223,8 @@ def create_pos_invoice_from_addon_items(order, item_rows, payments_list):
 		invoice.append("payments", {"mode_of_payment": mode, "amount": amount})
 		paid_total += amount
 
-	if not invoice.payments:
+	if not payments_list:
+		# Caller gave no payment info at all — default to one full payment.
 		default_mode = (order.payment_method or "Cash").split(",")[0].strip() or "Cash"
 		invoice.append("payments", {"mode_of_payment": default_mode, "amount": invoice_total})
 		paid_total = invoice_total
