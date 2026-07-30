@@ -29,6 +29,14 @@ def merge_restaurant_orders(primary_order: str, secondary_order: str) -> dict:
 	if primary.name == secondary.name:
 		frappe.throw(_("Order tidak boleh digabung dengan dirinya sendiri"))
 
+	for order in (primary, secondary):
+		if order.docstatus == 1 or order.pos_invoice:
+			frappe.throw(
+				_("Tidak bisa gabung meja — order {0} sudah dibayar. Gabung meja hanya bisa dilakukan sebelum pembayaran.").format(
+					order.name
+				)
+			)
+
 	moved = 0
 	for row in secondary.items:
 		primary.append(
