@@ -6392,6 +6392,12 @@ imogi_pos.CashierPage = class CashierPage {
 					}
 					this.sync_pending_order_customer(() => this._open_payment_dialog_ui(options));
 				},
+				error: () => {
+					// Network/transport failure — callback never fires, so busy must be
+					// cleared here too or "Bayar Sekarang" stays disabled until reload.
+					this.busy = false;
+					this.update_mobile_dock();
+				},
 			});
 		};
 		this.sync_pending_order_customer(open_payment);
@@ -6927,6 +6933,13 @@ imogi_pos.CashierPage = class CashierPage {
 						? flt(paid_amount) - total
 						: 0;
 				finish(r.message || {}, change);
+			},
+			error: () => {
+				// Network/transport failure — callback never fires, so busy must be
+				// cleared here too or "Bayar Sekarang" stays disabled until reload.
+				this.busy = false;
+				this.update_mobile_dock();
+				dialog.get_primary_btn().prop("disabled", false);
 			},
 		});
 	}
