@@ -118,7 +118,14 @@ imogi_pos.cashier_extras.render_table_row = function (page) {
 		page.$table_select = $row.find(".imogi-cashier-table-select");
 		page.$table_chip = $row.find(".imogi-cashier-table-chip");
 		page.$table_select.on("change", function () {
-			page.selected_table = $(this).val() || "";
+			const previous_table = page.selected_table || "";
+			const next_table = $(this).val() || "";
+			// Switching tables mid-order must not drag the cart along — those
+			// items would otherwise silently end up billed to the wrong table.
+			if (previous_table !== next_table && page.cart?.length && typeof page.clear_cart === "function") {
+				page.clear_cart();
+			}
+			page.selected_table = next_table;
 			const label = $(this).find("option:selected").data("label") || "";
 			page.$table_chip.toggle(!!page.selected_table).text(label);
 			imogi_pos.cashier_extras.sync_table_addon_mode(page);
@@ -210,6 +217,12 @@ imogi_pos.cashier_extras.apply_table_prefill = function (page) {
 	}
 	if (!prefill || !prefill.restaurant_table) return;
 	if (!page.feature_allowed("table_management")) return;
+	// Coming from Table Service for a specific table — any cart left over from
+	// whichever table the cashier was previously working on must not carry
+	// across, or it silently gets billed to the wrong table.
+	if (page.selected_table !== prefill.restaurant_table && typeof page.clear_cart === "function") {
+		page.clear_cart();
+	}
 	if (typeof page.set_order_type === "function") {
 		page.set_order_type("Dine-in", true);
 	}
