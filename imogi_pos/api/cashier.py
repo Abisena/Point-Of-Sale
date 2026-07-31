@@ -1031,11 +1031,17 @@ def checkout(
 		order_name=order_name or addon_order_name,
 	)
 
-	addon_order_name = _resolve_table_addon_order(
-		restaurant_table,
-		addon_order_name,
-		company=branch_ctx.get("company"),
-	)
+	if not order_name:
+		# Only auto-detect an addon target when the caller isn't already
+		# resuming a specific order — otherwise the table's own pending
+		# order (the one order_name points at) gets "discovered" as an
+		# addon target and its items get appended a second time on top
+		# of what submit_awaiting_order already saved.
+		addon_order_name = _resolve_table_addon_order(
+			restaurant_table,
+			addon_order_name,
+			company=branch_ctx.get("company"),
+		)
 
 	if len(payments_list) > 1:
 		from imogi_pos.imogi_pos.utils.feature_gating import require_feature_operational
