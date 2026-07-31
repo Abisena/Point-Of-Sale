@@ -564,3 +564,18 @@ def move_restaurant_table(order_name, new_table, company=None):
 		"restaurant_table": new_table,
 		"table_number": new_table_doc.table_number,
 	}
+
+
+@frappe.whitelist()
+def complete_table_service(order_name):
+	"""Close out a Dine-in order once service is done (In Service -> Completed)
+	and free its table. Table Service has no other way to reach this — the
+	only prior entry point was the Riwayat Order desk form."""
+	_require_cashier_access()
+	if not order_name:
+		frappe.throw(_("Order wajib dipilih"))
+	order = frappe.get_doc("Riwayat Order", order_name)
+	order.check_permission("write")
+	order.action_complete_service()
+	frappe.db.commit()
+	return {"order": order_name, "status": "Completed"}

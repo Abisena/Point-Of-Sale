@@ -3763,6 +3763,9 @@ imogi_pos.TableService = class TableService {
 			if (features.merge_table) {
 				$actions.append(`<button type="button" class="imogi-ts-act" data-action="merge"><i class="fa fa-compress"></i> ${__("Gabung")}</button>`);
 			}
+			if (table.open_order_status === "In Service") {
+				$actions.append(`<button type="button" class="imogi-ts-act imogi-ts-act--primary" data-action="complete-service"><i class="fa fa-check"></i> ${__("Selesai")}</button>`);
+			}
 		} else if (table.status === "Available" || table.status === "Reserved") {
 			if (!features.qr_self_service) {
 				$actions.addClass("imogi-ts-table-actions--single");
@@ -3787,6 +3790,10 @@ imogi_pos.TableService = class TableService {
 		$card.on("click", "[data-action='merge']", (e) => {
 			e.stopPropagation();
 			this.prompt_merge_table(table);
+		});
+		$card.on("click", "[data-action='complete-service']", (e) => {
+			e.stopPropagation();
+			this.complete_table_service(table);
 		});
 		$card.on("click", "[data-action='new-order']", (e) => {
 			e.stopPropagation();
@@ -4018,6 +4025,27 @@ imogi_pos.TableService = class TableService {
 			/* ignore */
 		}
 		frappe.set_route("imogi-pos-cashier");
+	}
+
+	complete_table_service(table) {
+		if (!table.open_order) return;
+		frappe.confirm(
+			__("Tandai order {0} di meja {1} selesai dan bebaskan mejanya?", [
+				table.open_order,
+				table.table_number || table.name,
+			]),
+			() => {
+				frappe.call({
+					method: "imogi_pos.api.table_api.complete_table_service",
+					args: { order_name: table.open_order },
+					freeze: true,
+					callback: () => {
+						frappe.show_alert({ message: __("Meja diselesaikan"), indicator: "green" });
+						this.refresh();
+					},
+				});
+			}
+		);
 	}
 
 	prompt_move_table(table) {
