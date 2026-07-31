@@ -526,6 +526,21 @@ def _append_addon_to_table_order(
 	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
 
 	settings = settings or get_settings()
+
+	# Validate the payment BEFORE touching the order — appending items and
+	# saving, only to have the invoice step reject a short payment afterwards,
+	# leaves the extra items permanently stuck on the order with no matching
+	# payment (nothing rolls the append back).
+	if payments_list:
+		new_items_total = sum(flt(row.get("qty") or 1) * flt(row.get("rate") or 0) for row in parsed_items)
+		paid_total = sum(flt(p.get("amount") or 0) for p in payments_list)
+		if abs(paid_total - new_items_total) > 0.01:
+			frappe.throw(
+				_("Total pembayaran ({0}) tidak sama dengan tagihan ({1})").format(
+					paid_total, new_items_total
+				)
+			)
+
 	new_rows = []
 	for row in parsed_items:
 		if not row.get("item_code"):
