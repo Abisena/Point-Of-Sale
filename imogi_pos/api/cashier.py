@@ -259,6 +259,9 @@ def _create_cashier_order(
 	if offline_client_id:
 		order.offline_client_id = offline_client_id
 	if restaurant_table:
+		from imogi_pos.imogi_pos.utils.table_service import validate_table_assignable
+
+		validate_table_assignable(restaurant_table)
 		order.restaurant_table = restaurant_table
 		_assert_no_duplicate_table_order(restaurant_table, company=company)
 
