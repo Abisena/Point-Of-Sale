@@ -3856,6 +3856,22 @@ imogi_pos.TableService = class TableService {
 			on_submit: () => {
 				this.open_cashier_for_table_addon(table);
 			},
+			...(table.open_order_status === "In Service"
+				? {
+						secondary_label: __("Selesaikan"),
+						on_secondary: (dlg) => {
+							imogi_ts_confirm(
+								__("Tandai order {0} selesai dan bebaskan meja {1}?", [
+									table.open_order,
+									table.table_number || table.name,
+								]),
+								() => this._call_complete_table_service(table),
+								{ parent_dialog: dlg }
+							);
+							return false;
+						},
+				  }
+				: {}),
 		});
 		this._bind_order_kitchen_tracking(table, dialog);
 	}
@@ -4034,18 +4050,20 @@ imogi_pos.TableService = class TableService {
 				table.open_order,
 				table.table_number || table.name,
 			]),
-			() => {
-				frappe.call({
-					method: "imogi_pos.api.table_api.complete_table_service",
-					args: { order_name: table.open_order },
-					freeze: true,
-					callback: () => {
-						frappe.show_alert({ message: __("Meja diselesaikan"), indicator: "green" });
-						this.refresh();
-					},
-				});
-			}
+			() => this._call_complete_table_service(table)
 		);
+	}
+
+	_call_complete_table_service(table) {
+		frappe.call({
+			method: "imogi_pos.api.table_api.complete_table_service",
+			args: { order_name: table.open_order },
+			freeze: true,
+			callback: () => {
+				frappe.show_alert({ message: __("Meja diselesaikan"), indicator: "green" });
+				this.refresh();
+			},
+		});
 	}
 
 	prompt_move_table(table) {
