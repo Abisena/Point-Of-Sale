@@ -1445,6 +1445,18 @@ def create_opname(
 	}
 
 
+def _resolve_single_active_batch(item_code: str, warehouse: str) -> str | None:
+	"""Batch to reconcile against — only unambiguous when exactly one batch
+	of this item currently has stock in the warehouse."""
+	from erpnext.stock.doctype.batch.batch import get_batch_qty
+
+	batch_names = frappe.get_all("Batch", filters={"item": item_code, "disabled": 0}, pluck="name")
+	active = [b for b in batch_names if flt(get_batch_qty(batch_no=b, warehouse=warehouse)) > 0]
+	if len(active) == 1:
+		return active[0]
+	return None
+
+
 def submit_opname_reconciliation(
 	items: list,
 	warehouse: str | None = None,
@@ -1462,14 +1474,29 @@ def submit_opname_reconciliation(
 		qty = flt(row.get("qty")) if isinstance(row, dict) else 0
 		if not code:
 			continue
-		rows.append(
-			{
-				"item_code": code,
-				"warehouse": warehouse,
-				"qty": qty,
-				"allow_zero_valuation_rate": 1,
-			}
-		)
+		item_row = {
+			"item_code": code,
+			"warehouse": warehouse,
+			"qty": qty,
+			"allow_zero_valuation_rate": 1,
+		}
+		# Batch-tracked items need a batch on the reconciliation line — Stock
+		# Reconciliation (unlike Stock Entry) won't auto-pick one. Only safe
+		# to resolve automatically when there's exactly one active batch;
+		# with none or several, opname via this flow is ambiguous.
+		if cint(frappe.db.get_value("Item", code, "has_batch_no")):
+			batch_no = _resolve_single_active_batch(code, warehouse)
+			if not batch_no:
+				frappe.throw(
+					_(
+						"Item {0} punya lebih dari satu batch aktif (atau tidak ada) di gudang ini. "
+						"Opname belum bisa otomatis menentukan batch mana yang disesuaikan — "
+						"gunakan Stock Adjustment per-batch untuk item ini."
+					).format(frappe.bold(code))
+				)
+			item_row["use_serial_batch_fields"] = 1
+			item_row["batch_no"] = batch_no
+		rows.append(item_row)
 	if not rows:
 		frappe.throw(_("Tidak ada item valid untuk opname"))
 
