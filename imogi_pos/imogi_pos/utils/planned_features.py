@@ -313,7 +313,7 @@ def get_kitchen_performance_report(date_from=None, date_to=None, date=None, **_k
 					then timestampdiff(
 						MINUTE,
 						coalesce(ko.started_at, ko.creation),
-						ko.modified
+						coalesce(ko.finished_at, ko.modified)
 					)
 					else null
 				end
@@ -401,6 +401,7 @@ def get_kitchen_performance_detail(
 			coalesce(ks.station_type, 'Kitchen') as station_type,
 			ko.creation,
 			ko.started_at,
+			ko.finished_at,
 			ko.modified,
 			ko.timer_minutes,
 			po.order_type,
@@ -454,7 +455,7 @@ def get_kitchen_performance_detail(
 	for row in orders:
 		start_dt = row.started_at or row.creation
 		finished = row.status in ("Done", "Ready")
-		end_dt = row.modified if finished else None
+		end_dt = (row.finished_at or row.modified) if finished else None
 		duration_minutes = None
 		if start_dt and end_dt:
 			duration_minutes = max(

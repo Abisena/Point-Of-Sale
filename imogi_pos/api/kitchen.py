@@ -86,6 +86,8 @@ def update_kitchen_status(kitchen_order, status):
 		from frappe.utils import add_to_date
 
 		updates["expected_ready_at"] = add_to_date(started_at, minutes=timer)
+	if status in ("Ready", "Done") and not ko.finished_at:
+		updates["finished_at"] = now_datetime()
 
 	ko.db_set(updates)
 	_sync_kitchen_order_items(ko.name, status)
@@ -173,6 +175,9 @@ def _recompute_kitchen_order_status(ko):
 	if ko.status != new_status:
 		updates["status"] = new_status
 
+	if new_status == "Ready" and not ko.finished_at:
+		updates["finished_at"] = now_datetime()
+
 	if updates:
 		ko.db_set(updates)
 
@@ -196,7 +201,10 @@ def complete_kitchen_from_display(kitchen_order):
 
 	# Active KDS ticket but POS status drifted (smoke seed / partial flow recovery).
 	if ko.status in ("Pending", "Preparing", "Ready"):
-		ko.db_set("status", "Done")
+		updates = {"status": "Done"}
+		if not ko.finished_at:
+			updates["finished_at"] = now_datetime()
+		ko.db_set(updates)
 		_sync_kitchen_order_items(ko.name, "Done")
 		frappe.publish_realtime(
 			"imogi_kitchen_updated",

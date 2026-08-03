@@ -320,7 +320,10 @@ class RiwayatOrder(Document):
 				if not ko.quality_check_passed:
 					ko.quality_check_passed = 1
 				ko.submit()
-			ko.db_set("status", "Done")
+			ko_updates = {"status": "Done"}
+			if not ko.finished_at:
+				ko_updates["finished_at"] = now_datetime()
+			ko.db_set(ko_updates)
 			from imogi_pos.api.kitchen import _sync_kitchen_order_items
 
 			_sync_kitchen_order_items(ko.name, "Done")

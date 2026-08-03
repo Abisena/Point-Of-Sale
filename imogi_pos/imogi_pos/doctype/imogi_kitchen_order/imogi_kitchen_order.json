@@ -14,6 +14,7 @@
   "started_at",
   "timer_minutes",
   "expected_ready_at",
+  "finished_at",
   "quality_check_passed",
   "items",
   "remarks"
@@ -81,6 +82,13 @@
    "read_only": 1
   },
   {
+   "description": "Set once, the first time status reaches Ready/Done — unlike \"modified\", later unrelated edits don't shift this.",
+   "fieldname": "finished_at",
+   "fieldtype": "Datetime",
+   "label": "Finished At",
+   "read_only": 1
+  },
+  {
    "default": "0",
    "fieldname": "quality_check_passed",
    "fieldtype": "Check",
@@ -100,7 +108,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-04 00:00:00.000000",
+ "modified": "2026-08-03 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Imogi POS",
  "name": "IMOGI Kitchen Order",
