@@ -54,7 +54,6 @@ HIDDEN_UI_FEATURE_IDS = frozenset(
 # Remove ids from this set (or clear it) to re-enable refund flows.
 DISABLED_OPERATIONAL_FEATURE_IDS = frozenset(
 	{
-		"refund",
 		"approval_refund",
 		"refund_report",
 		"kitchen_printer",

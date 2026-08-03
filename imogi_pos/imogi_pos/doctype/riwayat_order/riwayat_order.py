@@ -555,6 +555,28 @@ class RiwayatOrder(Document):
 			frappe.throw(_("Nothing left to refund for selected items"))
 
 		return_invoice.items = new_rows
+		return_invoice.calculate_taxes_and_totals()
+
+		# make_return_doc() mirrors the payments/write-off of the FULL original
+		# invoice; after trimming to a subset of items the totals no longer
+		# match, so rescale payments + write-off proportionally to the new total.
+		new_total = flt(return_invoice.rounded_total) or flt(return_invoice.grand_total)
+		old_total = flt(sum(flt(p.amount) for p in return_invoice.payments)) + flt(
+			return_invoice.write_off_amount
+		)
+		if old_total:
+			ratio = new_total / old_total
+			for p in return_invoice.payments:
+				p.amount = flt(p.amount) * ratio
+			if return_invoice.write_off_amount:
+				return_invoice.write_off_amount = flt(return_invoice.write_off_amount) * ratio
+
+		# validate_pos() runs before before_save()'s set_paid_amount(), so it still
+		# sees the stale mirrored paid_amount unless we set it here explicitly.
+		paid_amount = flt(sum(flt(p.amount) for p in return_invoice.payments))
+		return_invoice.paid_amount = paid_amount
+		return_invoice.base_paid_amount = flt(paid_amount * flt(return_invoice.conversion_rate or 1))
+
 		return_invoice.insert(ignore_permissions=True)
 		return_invoice.submit()
 
