@@ -95,7 +95,7 @@ BUSINESS_TEMPLATES = {
 		"enable_kitchen": 1,
 		"enable_fulfillment": 0,
 		"enable_pos_shift": 1,
-		"kitchen_item_groups": "Consumable,Food",
+		"kitchen_item_groups": "Consumable,Food,Beverage",
 	},
 	TYPE_FASHION: {
 		"title": _("Fashion / Retail"),
