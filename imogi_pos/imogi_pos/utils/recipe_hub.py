@@ -404,6 +404,16 @@ def upsert_ingredient_substitute(
 		if not frappe.has_permission("BOM", "write"):
 			frappe.throw(_("Tidak punya akses kelola substitusi"), frappe.PermissionError)
 
+	# ERPNext's Item Alternative hard-requires "Allow Alternative Item" checked
+	# on the source item (and on both items for two-way) — off by default for
+	# every item, and nothing in the Recipe Hub UI exposes that toggle. Calling
+	# this function is an unambiguous request to allow a substitute, so enable
+	# it here instead of leaving the caller to hit a raw ERPNext error.
+	if not frappe.db.get_value("Item", item_code, "allow_alternative_item"):
+		frappe.db.set_value("Item", item_code, "allow_alternative_item", 1)
+	if cint(two_way) and not frappe.db.get_value("Item", alternative_item_code, "allow_alternative_item"):
+		frappe.db.set_value("Item", alternative_item_code, "allow_alternative_item", 1)
+
 	existing = frappe.db.get_value(
 		"Item Alternative",
 		{"item_code": item_code, "alternative_item_code": alternative_item_code},
