@@ -98,6 +98,10 @@ def create_pos_invoice_from_order(order):
 	if not pos_profile:
 		frappe.throw(_("Set POS Profile on the order or in IMOGI POS Settings"))
 
+	from imogi_pos.imogi_pos.utils.shift_opening import ensure_system_pos_opening_entry
+
+	ensure_system_pos_opening_entry(pos_profile, order.company)
+
 	profile = frappe.get_doc("POS Profile", pos_profile)
 	invoice = frappe.new_doc("POS Invoice")
 	invoice.is_pos = 1
@@ -179,6 +183,10 @@ def create_pos_invoice_from_addon_items(order, item_rows, payments_list):
 	pos_profile = order.pos_profile or settings.default_pos_profile
 	if not pos_profile:
 		frappe.throw(_("Set POS Profile on the order or in IMOGI POS Settings"))
+
+	from imogi_pos.imogi_pos.utils.shift_opening import ensure_system_pos_opening_entry
+
+	ensure_system_pos_opening_entry(pos_profile, order.company)
 
 	profile = frappe.get_doc("POS Profile", pos_profile)
 	invoice = frappe.new_doc("POS Invoice")

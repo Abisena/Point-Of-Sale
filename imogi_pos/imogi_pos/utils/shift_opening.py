@@ -191,6 +191,60 @@ def sync_to_pos_opening_entry(doc):
 	return new_pos_opening.name
 
 
+def ensure_system_pos_opening_entry(pos_profile, company):
+	"""Auto-open a POS shift when IMOGI's shift toggle (enable_pos_shift) is off.
+
+	ERPNext's own POS Invoice validation (validate_pos_opening_entry) hard-requires
+	an open POS Opening Entry for the profile no matter what IMOGI's setting says.
+	When the toggle is off, the cashier is never shown the "Buka Shift" flow and no
+	opening entry ever gets created, so the very first checkout would otherwise
+	dead-end on "No open POS Opening Entry found" with no way to fix it from the UI.
+	Create one silently (zero opening balance) so checkout can proceed. Built directly
+	as a POS Opening Entry rather than via IMOGI POS Shift Opening, since that wrapper's
+	validate_shift_opening() requires a positive opening amount (a UX guard for real
+	cashiers) that doesn't apply to this system-managed, invisible entry.
+	"""
+	from imogi_pos.imogi_pos.utils.feature_gating import is_setting_enabled
+
+	if is_setting_enabled("enable_pos_shift"):
+		return None
+
+	if frappe.db.exists(
+		"POS Opening Entry",
+		{"pos_profile": pos_profile, "status": "Open", "docstatus": 1},
+	):
+		return None
+
+	user = frappe.session.user
+	if not _acquire_shift_open_lock(f"system:{pos_profile}"):
+		return None
+	try:
+		if frappe.db.exists(
+			"POS Opening Entry",
+			{"pos_profile": pos_profile, "status": "Open", "docstatus": 1},
+		):
+			return None
+
+		cash_mode = get_cash_payment_mode(company)
+		opening = frappe.get_doc(
+			{
+				"doctype": "POS Opening Entry",
+				"period_start_date": frappe.utils.get_datetime(),
+				"posting_date": frappe.utils.getdate(),
+				"user": user,
+				"pos_profile": pos_profile,
+				"company": company,
+				"balance_details": [{"mode_of_payment": cash_mode, "opening_amount": 0}],
+			}
+		)
+		opening.flags.ignore_permissions = True
+		opening.insert(ignore_permissions=True)
+		opening.submit()
+		return opening.name
+	finally:
+		_release_shift_open_lock(f"system:{pos_profile}")
+
+
 def validate_shift_opening(doc):
 	if not doc.payments:
 		frappe.throw(_("Tambahkan minimal satu metode pembayaran."))
