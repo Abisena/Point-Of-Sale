@@ -16,6 +16,23 @@ from imogi_pos.imogi_pos.utils.planned_features import (
 )
 
 
+RAW_MATERIAL_ITEM_GROUPS = frozenset({"Raw Material", "Bahan Baku"})
+
+
+def apply_raw_material_defaults(doc, method=None):
+	"""New items under a raw-material item group default is_sales_item=1 in
+	ERPNext (checked by default for every item), which silently excludes them
+	from Inventory Hub's stock listing — list_stock_items()/get_stock_summary()
+	both require is_sales_item=0 to tell ingredients apart from sellable menu
+	items. Only the bulk Excel/BOM import flow set this correctly; an item
+	created the normal way (New Item in Desk) never showed up in Bahan Baku /
+	Stock Bahan at all. Force the right default on insert only, so an explicit
+	later edit to re-enable direct sale isn't overridden.
+	"""
+	if doc.item_group in RAW_MATERIAL_ITEM_GROUPS and cint(doc.is_sales_item):
+		doc.is_sales_item = 0
+
+
 def _settings():
 	return get_settings()
 
@@ -79,14 +96,16 @@ def list_stock_items(
 		limit_page_length=cint(limit) or 300,
 	)
 
-	# Fallback: jika belum ada item is_sales_item=0, tampilkan group Bahan Baku eksplisit
+	# Fallback: item lama yang keburu dibuat dengan is_sales_item=1 (sebelum
+	# apply_raw_material_defaults ada) tapi sudah benar di-group-kan sebagai
+	# bahan baku — tampilkan tetap, apa pun status is_sales_item-nya.
 	if not items and not search:
 		items = frappe.get_all(
 			"Item",
 			filters={
 				"is_stock_item": 1,
 				"disabled": 0,
-				"item_group": "Bahan Baku",
+				"item_group": ["in", list(RAW_MATERIAL_ITEM_GROUPS)],
 				"has_variants": 0,
 			},
 			fields=["name", "item_code", "item_name", "stock_uom", "item_group", "has_batch_no", "has_expiry_date"],
@@ -208,7 +227,12 @@ def get_stock_summary(
 	if not items and not search:
 		items = frappe.get_all(
 			"Item",
-			filters={"is_stock_item": 1, "disabled": 0, "item_group": "Bahan Baku", "has_variants": 0},
+			filters={
+				"is_stock_item": 1,
+				"disabled": 0,
+				"item_group": ["in", list(RAW_MATERIAL_ITEM_GROUPS)],
+				"has_variants": 0,
+			},
 			fields=["name", "item_name", "stock_uom"],
 			order_by="item_name asc",
 			limit_page_length=limit,

@@ -231,6 +231,7 @@ doc_events = {
 		"before_submit": "imogi_pos.imogi_pos.utils.pos_consolidation.before_consolidated_sales_invoice_submit",
 	},
 	"Item": {
+		"before_insert": "imogi_pos.imogi_pos.utils.inventory_hub.apply_raw_material_defaults",
 		"on_update": "imogi_pos.imogi_pos.utils.catalog_cache.invalidate_catalog_cache_on_item_update",
 	},
 	"Supplier": {
