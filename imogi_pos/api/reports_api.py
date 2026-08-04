@@ -54,7 +54,7 @@ def get_sales_by_hour(date=None, date_from=None, date_to=None, company=None, pos
 			count(*) as order_count,
 			coalesce(sum(grand_total), 0) as sales
 		from `tabRiwayat Order`
-		where status not in ('Cancelled', 'Draft')
+		where status = 'Completed'
 			and creation >= %(day_start)s and creation < %(day_end)s
 			{scope_clause}
 		group by hour(creation)
@@ -109,7 +109,7 @@ def get_discount_report(date=None, date_from=None, date_to=None, company=None, p
 		select name, customer, grand_total, discount_amount, discount_type, discount_value,
 			voucher_discount_amount, loyalty_discount_amount, promo_discount_amount, creation
 		from `tabRiwayat Order`
-		where status not in ('Cancelled', 'Draft')
+		where status = 'Completed'
 			and (
 				coalesce(discount_amount, 0) > 0
 				or coalesce(voucher_discount_amount, 0) > 0
