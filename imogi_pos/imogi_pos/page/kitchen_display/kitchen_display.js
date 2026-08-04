@@ -37,7 +37,13 @@ imogi_pos.KitchenDisplay = class KitchenDisplay {
 		this.refresh();
 		this.bind_realtime();
 		this._clock_timer = setInterval(() => this.update_clocks(), 1000);
-		this.page.on_page_hide?.(() => {
+		// frappe.ui.Page has no on_page_hide hook in this Frappe version — that
+		// call was silently a no-op (optional chaining on undefined), so
+		// deactivate_fullscreen() never ran and the sidebar/navbar stayed hidden
+		// on every other page after leaving Kitchen Display. frappe.router does
+		// emit a real "change" event on every navigation; .once() cleans up
+		// exactly when the user navigates away and self-unsubscribes.
+		frappe.router.once("change", () => {
 			clearInterval(this._timer);
 			clearInterval(this._clock_timer);
 			this.deactivate_fullscreen();
