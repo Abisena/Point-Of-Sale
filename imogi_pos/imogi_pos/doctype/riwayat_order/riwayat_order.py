@@ -160,9 +160,15 @@ class RiwayatOrder(Document):
 		try:
 			from imogi_pos.imogi_pos.utils.franchise import apply_order_royalty
 
-			apply_order_royalty(self)
+			royalty_amount = apply_order_royalty(self)
 			pos_invoice = create_pos_invoice_from_order(self)
-			self.db_set({"pos_invoice": pos_invoice.name, "status": "Paid"})
+			self.db_set(
+				{
+					"pos_invoice": pos_invoice.name,
+					"status": "Paid",
+					"royalty_amount": royalty_amount,
+				}
+			)
 			frappe.db.commit()
 			self.reload()
 			from imogi_pos.imogi_pos.utils.loyalty import apply_loyalty_after_payment
