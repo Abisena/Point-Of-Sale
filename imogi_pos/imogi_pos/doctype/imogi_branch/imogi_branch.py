@@ -9,6 +9,9 @@ from frappe.utils import cint, flt
 
 
 class IMOGIBranch(Document):
+	def before_insert(self):
+		self._clear_auto_defaulted_price_list()
+
 	def validate(self):
 		self._normalize_branch_code()
 		self._validate_company_links()
@@ -16,6 +19,16 @@ class IMOGIBranch(Document):
 		self._validate_custom_menu()
 		if cint(self.is_default):
 			self._ensure_single_default()
+
+	def _clear_auto_defaulted_price_list(self):
+		"""Frappe auto-fills any Link field named like a known global default (e.g.
+		"selling_price_list") on new docs of ANY doctype — not just Selling ones. Without
+		this, every new branch looks like it already has its own price list and
+		ensure_branch_price_list() never creates a dedicated one."""
+		if self.selling_price_list and self.selling_price_list == frappe.defaults.get_global_default(
+			"selling_price_list"
+		):
+			self.selling_price_list = None
 
 	def _validate_price_list(self):
 		if not self.selling_price_list:

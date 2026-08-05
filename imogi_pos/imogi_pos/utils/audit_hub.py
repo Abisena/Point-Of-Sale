@@ -187,11 +187,12 @@ def get_accounting_bridge(limit: int = 40) -> dict:
 	pos_invoices = frappe.db.count("POS Invoice", pos_filters)
 	linked = frappe.db.sql(
 		"""
-		select count(*) from `tabPOS Invoice`
-		where docstatus = 1 and creation >= %(start)s
-			and imogi_pos_order is not null and imogi_pos_order != ''
+		select count(distinct o.name)
+		from `tabRiwayat Order` o
+		inner join `tabPOS Invoice` pi on pi.imogi_pos_order = o.name and pi.docstatus = 1
+		where o.status = 'Completed' and o.creation >= %(start)s
 			{company_clause}
-		""".format(company_clause="and company = %(company)s" if company else ""),
+		""".format(company_clause="and o.company = %(company)s" if company else ""),
 		{"start": day_start, "company": company},
 	)[0][0]
 	rows = frappe.db.sql(

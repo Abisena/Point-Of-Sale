@@ -201,8 +201,10 @@ def ensure_branch_price_list(branch_code, copy_from_master=1):
 	if not branch:
 		frappe.throw(_("Cabang tidak ditemukan"))
 
+	settings = get_settings()
+	master = get_master_selling_price_list(settings, company=branch.get("company"))
 	existing = branch.get("selling_price_list")
-	if existing:
+	if existing and existing != master:
 		return {"price_list": existing, "created": False}
 
 	doc = frappe.get_doc("IMOGI Branch", branch["name"] or branch["branch_code"])
