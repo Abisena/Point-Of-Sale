@@ -7,13 +7,10 @@ from frappe.utils import cint, flt
 from imogi_pos.imogi_pos.utils.approval import (
 	PO_FINAL_APPROVER_ROLE,
 	get_po_approver_role,
-	is_approval_enabled,
 	po_requires_approval,
 	require_supervisor_approval,
 	user_can_approve_po_tier,
 )
-from imogi_pos.imogi_pos.utils.feature_gating import is_feature_operational
-from imogi_pos.imogi_pos.utils.flow import get_settings
 
 
 def _approval_flag_set(doc) -> bool:
@@ -74,18 +71,12 @@ def purchase_order_before_submit(doc, method=None):
 
 
 def stock_entry_before_submit(doc, method=None):
-	if _approval_flag_set(doc):
-		return
-	if doc.stock_entry_type not in ("Material Issue", "Material Receipt"):
-		return
-	if not is_feature_operational("approval_stock_adjustment"):
-		return
-	if not is_approval_enabled():
-		return
-	frappe.throw(
-		_("Stock adjustment/issue memerlukan approval supervisor."),
-		title=_("Perlu Approval"),
-	)
+	"""Disabled: this used to hard-block submission with no way to actually get
+	approved (frappe.throw() with no approval request ever created), leaving Stock
+	Entries permanently stuck. The app's own Stock Adjustment flow already bypasses
+	this gate by design, so blocking here only ever hurt direct Stock Entry
+	submissions with no benefit."""
+	return
 
 
 def complimentary_discount_check(order_doc):
