@@ -407,7 +407,16 @@ class RiwayatOrder(Document):
 		if self.status in ("Cancelled", "Refunded"):
 			frappe.throw(_("Order is already {0}").format(self.status))
 
-		if self.pos_invoice and self.status not in ("Awaiting Payment", "Draft"):
+		has_invoice = self.pos_invoice or frappe.db.exists(
+			"POS Invoice", {"imogi_pos_order": self.name, "docstatus": 1}
+		)
+		# self.pos_invoice only tracks one invoice, but addon rounds create extra
+		# POS Invoices that share imogi_pos_order without ever populating this
+		# field — checking self.pos_invoice alone let those orders get voided
+		# while their real, paid invoices stayed active, later crashing shift
+		# closing when consolidation tried to save an invoice linked to a
+		# cancelled order.
+		if has_invoice and self.status not in ("Awaiting Payment", "Draft"):
 			frappe.throw(
 				_("Paid orders cannot be voided. Use <b>Refund Order</b> instead."),
 				title=_("Use Refund"),
