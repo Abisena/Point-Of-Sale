@@ -765,7 +765,13 @@ def _void_awaiting_cashier_order(order, reason=None, approval_code=None):
 	if order.status in ("Cancelled", "Refunded"):
 		frappe.throw(_("Order is already {0}").format(order.status))
 
-	if order.pos_invoice and order.status not in ("Awaiting Payment", "Draft"):
+	has_invoice = order.pos_invoice or frappe.db.exists(
+		"POS Invoice", {"imogi_pos_order": order.name, "docstatus": 1}
+	)
+	# order.pos_invoice only tracks one invoice, but addon rounds create extra
+	# POS Invoices that share imogi_pos_order without ever populating this
+	# field — same gap as RiwayatOrder.action_void_order().
+	if has_invoice and order.status not in ("Awaiting Payment", "Draft"):
 		frappe.throw(
 			_("Paid orders cannot be voided. Use <b>Refund Order</b> instead."),
 			title=_("Use Refund"),

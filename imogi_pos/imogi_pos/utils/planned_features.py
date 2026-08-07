@@ -30,7 +30,13 @@ def merge_restaurant_orders(primary_order: str, secondary_order: str) -> dict:
 		frappe.throw(_("Order tidak boleh digabung dengan dirinya sendiri"))
 
 	for order in (primary, secondary):
-		if order.docstatus == 1 or order.pos_invoice:
+		# docstatus is 1 for every order right after creation regardless of
+		# payment (submit happens at insert, not at payment) — it's never a
+		# valid "already paid" signal. Check for an actual invoice instead.
+		has_invoice = order.pos_invoice or frappe.db.exists(
+			"POS Invoice", {"imogi_pos_order": order.name, "docstatus": 1}
+		)
+		if has_invoice and order.status not in ("Awaiting Payment", "Draft"):
 			frappe.throw(
 				_("Tidak bisa gabung meja — order {0} sudah dibayar. Gabung meja hanya bisa dilakukan sebelum pembayaran.").format(
 					order.name
